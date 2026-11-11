@@ -322,6 +322,12 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .laterbox{border:2px solid var(--ink);background:#E4E7F0;padding:12px;display:flex;flex-direction:column;gap:8px}
 .laterbox span{font-size:.9rem;color:var(--muted)}
 .vlist .lsw{width:30px;align-self:stretch;display:grid;place-items:center;background:var(--pc);flex:none;margin-left:-12px}
+.okbtn{background:var(--pt,var(--band-ink))!important;color:var(--pc,var(--band))!important}
+.gbar{touch-action:pan-x;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.gbar.dragging{opacity:.85;outline:3px solid var(--ink);z-index:5;cursor:grabbing;position:relative}
+.gbar.dragging::after{content:attr(data-tip);position:absolute;left:0;top:-22px;background:var(--ink);color:#fff;font-size:.7rem;padding:1px 5px;white-space:nowrap}
+.gbar.dragging{overflow:visible!important}
+@media (pointer:fine){.gbar{cursor:grab}}
 .danger{border:2px solid var(--neg);background:var(--cell);padding:12px;display:flex;flex-direction:column;gap:10px;font-size:.92rem}
 
 /* Cases de la semaine */
@@ -762,13 +768,13 @@ function minisSheet(showDone){
 }
 function detailMini(p,msg){
   const closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, hasNotes=p.notes&&p.notes.some(x=>x.t);
-  openSheet(`<div class="shead" style="--pc:${MINI_COLOR};--pt:#1E1E1E"><h2>${esc(p.name)}<small>Mini projet${closed?' · terminé le '+fmt(p.closed):''}</small></h2><button class="xbtn" data-act="minis">‹ Liste</button></div><div class="sbody">
+  openSheet(`<div class="shead" style="--pc:${MINI_COLOR};--pt:#1E1E1E"><h2>${esc(p.name)}<small>Mini projet${closed?' · terminé le '+fmt(p.closed):''}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="miniSave">OK</button>'}<button class="xbtn" data-act="minis">‹ Liste</button></div><div class="sbody">
   ${tasksBlock(p,closed,'étape')}
   ${closed?'':`<div class="field"><label for="f-mname">Nom</label><input class="input" id="f-mname" autocomplete="off" autocorrect="off" data-field="name" value="${esc(p.name)}"></div>`}
   ${closed?'':`<div class="field"><span class="lbl">Importance</span>${starPick(p.imp,'imp')}</div>
   <div class="field"><label for="f-due">Échéance</label><div class="duerow"><input class="input" type="date" id="f-due" data-field="due" value="${p.due||''}"><button data-act="clearDue">Aucune</button></div><p class="duehint">${dueHint(p.due,durOf(p))}</p></div>`}
   <div class="field"><span class="lbl">Notes</span>${hasNotes?`<button class="notesprev" data-act="notes">${p.notes.filter(x=>x.t).slice(0,3).map(x=>`<span style="padding-left:${x.l*14}px">• ${esc(x.t)}</span>`).join('')}<b>Ouvrir les notes</b></button>`:`<button class="btn ghost" data-act="notes">+ Notes</button>`}</div>
-  ${closed?`<button class="btn ghost" data-act="reopen">Remettre en cours</button>`:`<div class="actions"><button class="btn ghost" data-act="miniSave">Valider</button><button class="btn" data-act="miniDone">Clôturer le projet</button></div>`}
+  ${closed?`<button class="btn ghost" data-act="reopen">Remettre en cours</button>`:`<button class="btn" data-act="miniDone">Clôturer le projet</button>`}
   ${closed?'':`<details class="more"><summary>En faire un projet plus grand</summary><div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(true,null,'dur')}</div><p class="note" style="margin:0">Une durée d'1 jour ou plus le transforme en projet complet, avec émoji, couleur et planning.</p></details>`}
   ${msg==='del'?`<div class="danger"><div>Supprimer <b>${esc(p.name)}</b> définitivement ?</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer</button>`}
   </div>`,'d:'+p.id);
@@ -870,7 +876,7 @@ function vPlanning(){
     const bars=items.filter(it=>it.lane===L).map(({p,segs,bridge})=>{ let named=false;
       return segs.map(([a,b])=>{const len=b-a+1, long=len>=5;
         let bgs=''; if([...bridge].some(i=>i>=a&&i<=b)){ const light=`color-mix(in srgb, ${p.color} 38%, #fff)`, st=[]; for(let i=a;i<=b;i++){ const c=bridge.has(i)?light:p.color, x0=((i-a)/len*100).toFixed(3), x1=((i-a+1)/len*100).toFixed(3); st.push(`${c} ${x0}% ${x1}%`); } bgs=`;background:linear-gradient(to right,${st.join(',')})`; }
-        let out=`<button class="gbar${long?'':' s'}" style="${pv(p)};grid-column:${a+1} / span ${len}${bgs}" data-act="open" data-id="${p.id}" title="${esc(p.name)}">${long?`<span class="glbl"><span class="ge">${p.emoji}</span><span class="gt">${esc(p.name)}</span></span>`:`<span class="ge">${p.emoji}</span>`}</button>`;
+        let out=`<button class="gbar${long?'':' s'}" style="${pv(p)};grid-column:${a+1} / span ${len}${bgs}" data-act="open" data-id="${p.id}" data-a="${dayS[a]}" data-b="${dayS[b]}" title="${esc(p.name)}">${long?`<span class="glbl"><span class="ge">${p.emoji}</span><span class="gt">${esc(p.name)}</span></span>`:`<span class="ge">${p.emoji}</span>`}</button>`;
         if(long) named=true; else if(!named){const f=freeAfter(b); if(f>=3){out+=`<span class="glab" style="grid-column:${b+2} / span ${f}">${esc(p.name)}</span>`; named=true;}} return out;}).join('');
     }).join('');
     return `<div class="grow proj"><div class="gl"></div><div class="gg">${bg}${bars}</div></div>`;
@@ -886,7 +892,7 @@ function vPlanning(){
    <div class="grow proj blank"><div class="gl"></div><div class="gg">${bg}</div></div>
   </div><button class="gmore" data-act="planMore3" aria-label="Afficher 3 mois de plus">+<small>3 mois</small></button></div></div>
   <div class="planlegend"><span><b style="background:#EE9DC0"></b>vacances et congés</span><span><b style="background:#E2DFD5"></b>week-end</span><span>2/5 = projets dans la semaine (5 au plus, dont 3 sur la semaine entière)</span></div>
-  <p class="note">Touche une case vide pour y placer un projet, une semaine en haut pour voir ses 3 cases, une barre pour ouvrir le projet.</p>
+  <p class="note">Touche une case vide pour y placer un projet, une barre pour l'ouvrir. Pour déplacer une barre : glisse-la (au doigt, appuie longuement d'abord).</p>
   <button class="btn ghost" data-act="offs">🏖️ Vacances et congés prévus${S.offs.length?' ('+S.offs.length+')':''}</button>`;
   const g=document.getElementById('gantt'), ti=idx(tgt); if(g){ try{ if(ui.planScroll!=null){ g.scrollLeft=ui.planScroll; ui.planScroll=null; } else if(ti>=0) g.scrollLeft=ti*28; }catch(e){} }
 }
@@ -1049,11 +1055,12 @@ const nextOf=p=>{ const t=(p.tasks||[]).find(x=>!x.d); return t?t.t.replace(TASK
 function sinkDone(p){ const o=p.tasks.filter(x=>!x.d), d=p.tasks.filter(x=>x.d); const nt=o.concat(d); if(nt.some((x,i)=>x!==p.tasks[i])) p.tasks=nt; }
 function tasksBlock(p,closed,word){
   const all=p.tasks.map((x,i)=>({x,i})), adminN=all.filter(o=>parseTask(o.x.t).admin).length, only=!!(ui.taskAdmin&&adminN);
-  const list=only?all.filter(o=>parseTask(o.x.t).admin):all, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length;
+  const list=(only?all.filter(o=>parseTask(o.x.t).admin):all).filter(o=>ui.showDone||!o.x.d), n=p.tasks.length, d=p.tasks.filter(x=>x.d).length;
   const rest=all.filter(o=>!o.x.d).reduce((a,o)=>a+(parseTask(o.x.t).mins||0),0), firstOpen=p.tasks.findIndex(x=>!x.d);
   return `<div class="field"><span class="lbl">${word==='étape'?'Étapes':'Tâches'} ${n?d+'/'+n:''}${rest?' · reste ≈ '+fmtMins(rest):''}</span>
    ${adminN?`<div class="seg tfilt"><button data-act="tfilt" data-v="0" aria-pressed="${!only}">Toutes</button><button data-act="tfilt" data-v="1" aria-pressed="${only}">Admin (${adminN})</button></div>`:''}
    ${list.length?`<ul class="list tasks" data-pid="${p.id}">${list.map(({x,i})=>`<li class="${x.d?'done':''}${i===firstOpen&&!closed?' next':''}" data-i="${i}"><input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider la ${word}"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer">≡</span>'}</li>`).join('')}</ul>`:''}
+   ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
    ${closed?'':`<form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form><p class="note" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative.</p>`}</div>`;
 }
 function durPick(isM,dur,act){ return `<div class="durrow"><div class="dfree${isM?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="mini" aria-pressed="${isM}">Moins d'1 jour<small>→ mini projet</small></button></div>`; }
@@ -1099,11 +1106,11 @@ function emojiDone(e){ if(emojiFor==='new'){ if(e){draft.emoji=e; draft.picked=t
 /* Fiche projet */
 let lastDetail=null;
 function detail(id,msg){
-  const p=P(id); if(!p) return; if(lastDetail!==id){ ui.taskAdmin=false; lastDetail=id; } sheetId=id; ctx=null; draft=null; placeMode=null;
+  const p=P(id); if(!p) return; if(lastDetail!==id){ ui.taskAdmin=false; ui.showDone=false; lastDetail=id; } sheetId=id; ctx=null; draft=null; placeMode=null;
   if(isMini(p)){ detailMini(p,msg); return; }
   const st=state(p), closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, mo=money(id), h=hoursOf(id);
   const placed=[...p.weeks.map(w=>({k:w,l:'S'+wkNum(w)+' · lun–ven '+wkRange(w).split(' – ')[0],w,o:iso(wkMon(w))})),...p.days.map(x=>({k:x,l:dayLbl(x)+' '+MOIS[parse(x).getMonth()],w:wkKey(parse(x)),o:x}))].sort((u,v)=>u.o.localeCompare(v.o));
-  openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>${esc(p.name)}<small>${durLbl(p)} · ${IMP[p.imp]}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>${esc(p.name)}<small>${durLbl(p)} · ${IMP[p.imp]}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="projSave">OK</button>'}<button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
   <div><span class="state st-${st}">${STATE[st]}</span>${urgHtml(p)} ${tagsHtml(p)}</div>
   ${closed?`<div class="bilan"><span class="lbl">Clôturé le ${fmt(p.closed)}</span>${p.bilan&&p.bilan.learn?`<p><b>Ce que j'en retire.</b> ${esc(p.bilan.learn)}</p>`:''}${p.bilan&&p.bilan.diff?`<p><b>À refaire autrement.</b> ${esc(p.bilan.diff)}</p>`:''}${!(p.bilan&&(p.bilan.learn||p.bilan.diff))?'<p>Pas de bilan noté.</p>':''}</div>`:''}
   ${msg&&msg!=='del'?msg:''}
@@ -1124,7 +1131,7 @@ function detail(id,msg){
   <div class="field"><span class="lbl">Dossier sur l'ordi</span>${p.folder?`<div class="folder"><code id="fpath">${esc(folderPath(p))}</code><button data-act="copyPath">Copier</button></div>`:`<button class="btn ghost" data-act="mkFolder">Créer un dossier pour ce projet</button>`}</div>
   ${closed?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
   </details>
-  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<div class="actions"><button class="btn ghost" data-act="projSave">Valider</button><button class="btn" data-act="closeStart">Clôturer le projet</button></div>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">🕰️ Ranger dans « un autre temps »</button>`}`}
+  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Clôturer le projet</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">🕰️ Ranger dans « un autre temps »</button>`}`}
   ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, clôture-le plutôt.</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
   </div>`,'d:'+id);
 }
@@ -1278,8 +1285,46 @@ document.addEventListener('keydown',e=>{ const t=e.target; if(t&&t.classList&&t.
 let drag=null;
 document.addEventListener('pointerdown',e=>{ const h=e.target.closest&&e.target.closest('.tasks .drag'); if(!h) return; e.preventDefault(); const li=h.closest('li'); drag={li,ul:li.parentNode,pid:li.parentNode.dataset.pid}; li.classList.add('dragging'); try{ h.setPointerCapture(e.pointerId); }catch(err){} });
 document.addEventListener('pointermove',e=>{ if(!drag) return; e.preventDefault(); const y=e.clientY; let before=null; for(const it of drag.ul.children){ if(it===drag.li) continue; const r=it.getBoundingClientRect(); if(y<r.top+r.height/2){ before=it; break; } } if(before){ if(drag.li.nextSibling!==before) drag.ul.insertBefore(drag.li,before); } else if(drag.ul.lastChild!==drag.li) drag.ul.appendChild(drag.li); },{passive:false});
-const endDrag=()=>{ if(!drag) return; const {ul,li,pid}=drag; drag=null; li.classList.remove('dragging'); const p=P(pid); if(!p) return; const order=[...ul.children].map(x=>Number(x.dataset.i)); if(order.length===p.tasks.length&&order.some((v,i)=>v!==i)){ p.tasks=order.map(i=>p.tasks[i]); sinkDone(p); save(); } detail(pid); };
+const endDrag=()=>{ if(!drag) return; const {ul,li,pid}=drag; drag=null; li.classList.remove('dragging'); const p=P(pid); if(!p) return; const order=[...ul.children].map(x=>Number(x.dataset.i)); if(order.some((v,i)=>v!==[...order].sort((x,y)=>x-y)[i])){ const slots=[...order].sort((x,y)=>x-y), old=p.tasks.slice(); slots.forEach((pos,j)=>{ p.tasks[pos]=old[order[j]]; }); sinkDone(p); save(); } detail(pid); };
 document.addEventListener('pointerup',endDrag); document.addEventListener('pointercancel',endDrag);
+/* Planning : déplacer une barre (souris : glisser ; doigt : appui long puis glisser) */
+let bdrag=null;
+function moveSeg(p,a,b,delta){
+  const wk0=p.weeks.slice(), d0=p.days.slice(), sh=(x,n)=>{ const d=parse(x); d.setDate(d.getDate()+n); return iso(d); };
+  const wIn=p.weeks.filter(k=>{ const m=iso(wkMon(k)); return m>=a&&m<=b; }), dIn=p.days.filter(x=>x>=a&&x<=b), wd=Math.round(delta/7);
+  if(wIn.length&&!dIn.length&&wd===0) return 'none';
+  p.weeks=p.weeks.filter(k=>!wIn.includes(k)).concat(wIn.map(k=>wkAdd(k,wd)));
+  p.days=p.days.filter(x=>!dIn.includes(x)).concat(dIn.map(x=>sh(x,delta)));
+  p.weeks=[...new Set(p.weeks)].sort(); p.days=[...new Set(p.days)].filter(x=>!p.weeks.includes(wkKey(parse(x)))||true).sort();
+  const bad=pWeeks(p).find(k=>{ const c=inWeek(k); return c.all.length>MAXT||c.n.length>MAXW; });
+  if(bad){ p.weeks=wk0; p.days=d0; return 'full:'+bad; }
+  return 'ok';
+}
+document.addEventListener('pointerdown',e=>{ const bar=e.target.closest&&e.target.closest('.gbar'); if(!bar||e.button>0) return;
+  const g=document.getElementById('gantt'), cw=bar.parentNode.querySelector('.bgc')?bar.parentNode.querySelector('.bgc').getBoundingClientRect().width:28;
+  bdrag={bar,id:bar.dataset.id,a:bar.dataset.a,b:bar.dataset.b,x0:e.clientX,y0:e.clientY,cw,on:false,touch:e.pointerType!=='mouse',delta:0,timer:null,pid:e.pointerId};
+  if(bdrag.touch) bdrag.timer=setTimeout(()=>{ if(bdrag&&!bdrag.on){ bdrag.on=true; bar.classList.add('dragging'); try{ navigator.vibrate&&navigator.vibrate(15); }catch(err){} } },380);
+});
+document.addEventListener('pointermove',e=>{ if(!bdrag) return; const dx=e.clientX-bdrag.x0, dy=e.clientY-bdrag.y0;
+  if(!bdrag.on){ if(bdrag.touch){ if(Math.hypot(dx,dy)>8){ clearTimeout(bdrag.timer); bdrag=null; } return; } if(Math.abs(dx)<6) return; bdrag.on=true; bdrag.bar.classList.add('dragging'); }
+  e.preventDefault(); bdrag.delta=Math.round(dx/bdrag.cw); bdrag.bar.style.transform=`translateX(${bdrag.delta*bdrag.cw}px)`;
+  const d=parse(bdrag.a); d.setDate(d.getDate()+bdrag.delta); bdrag.bar.setAttribute('data-tip',dayLbl(iso(d))+' '+MOIS[d.getMonth()]);
+},{passive:false});
+document.addEventListener('touchmove',e=>{ if(bdrag&&bdrag.on) e.preventDefault(); },{passive:false});
+function bdragEnd(cancel){ if(!bdrag) return; const st=bdrag; bdrag=null; clearTimeout(st.timer); if(!st.on) return;
+  st.bar.classList.remove('dragging'); st.bar.style.transform=''; st.bar.removeAttribute('data-tip');
+  const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null;
+  window.__noClick=Date.now();
+  if(cancel||!st.delta){ render(); return; }
+  const p=P(st.id), r=moveSeg(p,st.a,st.b,st.delta);
+  if(r==='ok'){ save(); const d=parse(st.a); d.setDate(d.getDate()+st.delta); toast(p.emoji+' '+p.name+' → '+dayLbl(iso(d))+' '+MOIS[d.getMonth()]); }
+  else if(r==='none') toast('Un projet placé à la semaine se déplace d\'une semaine entière');
+  else toast('Semaine '+wkNum(r.slice(5))+' pleine : déplacement annulé');
+  render();
+}
+document.addEventListener('pointerup',()=>bdragEnd(false)); document.addEventListener('pointercancel',()=>bdragEnd(true));
+document.addEventListener('click',e=>{ if(window.__noClick&&Date.now()-window.__noClick<400&&e.target.closest&&e.target.closest('.gbar')){ e.stopPropagation(); e.preventDefault(); } },true);
+document.addEventListener('contextmenu',e=>{ if(e.target.closest&&e.target.closest('.gbar')) e.preventDefault(); });
 let tt; function toast(m){const t=document.getElementById('toast'); t.textContent=m; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,2200);}
 function syncForm(){const a=document.getElementById('f-amount'),n=document.getElementById('f-note'),d=document.getElementById('f-date'); if(a) ui.amount=a.value; if(n) ui.note=n.value; if(d) ui.date=d.value;}
 function placeWeekly(p,k){ if(p.weeks.includes(k)) return true; if(!canAdd(p,k,'s')) return false; p.weeks.push(k); p.weeks.sort(); save(); return true; }
@@ -1334,6 +1379,7 @@ document.addEventListener('click',e=>{
   else if(a==='cmode'){ ui.cellMode=el.dataset.m; cellSheet(ctx.cell); }
   else if(a==='cellAdd'){ const p=P(id), dS=ctx.cell, k=ctx.k, r=cellPlace(p,dS,k); if(!r){ const cc=inWeek(k), wkFull=(ui.cellMode||'j')==='s'&&cc.n.length>=MAXW; cellSheet(dS,`<div class="alert"><div>La semaine ${wkNum(k)} a déjà ${wkFull?MAXW+' projets sur toute la semaine':MAXT+' projets'}.</div><button class="btn ghost" data-act="goWk" data-k="${k}">Voir la semaine ${wkNum(k)}</button></div>`); return; } save(); toast(p.emoji+' '+p.name+' '+r); closeSheet(); }
   else if(a==='planMore3'){ const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null; ui.planExtra=(ui.planExtra||0)+13; render(); }
+  else if(a==='tdone'){ ui.showDone=!ui.showDone; detail(sheetId); }
   else if(a==='tfilt'){ ui.taskAdmin=el.dataset.v==='1'; detail(sheetId); }
   else if(a==='tedit'){ const p=P(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp); try{ inp.focus(); const L=inp.value.length; inp.setSelectionRange(L,L); }catch(err){} }
   else if(a==='minis') minisSheet();
