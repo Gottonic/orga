@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Forge</title>
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#D6E0FF">
 <meta name="description" content="Forge : mon entraînement parkour, calendrier, séances, suivi.">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -44,7 +44,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:12px 4px;flex-wrap:wrap}
 .brand h1{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin:0;line-height:1}
 .brand .sub{color:var(--ink-3);font-size:13px}
@@ -520,24 +519,17 @@ body.ov-open{overflow:hidden}
 .pe-body .field label input,.pe-body .field label select,.pe-body .field label textarea{color:var(--ink);font-size:15px;font-weight:400}
 .pe-body input::placeholder{color:var(--ink-3);opacity:.7}
 </style>
+<link rel="stylesheet" href="../commun/cadre.css">
 </head>
 <body>
 
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <h1><a class="orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a>Forge</h1>
-      <span class="sub" id="brand-sub">Saison 2026–27 · objectif Skills</span>
-      <span class="topbtns"><button class="mode" id="sync" type="button" data-goto="donnees" title="Synchronisation">…</button><button class="gear" id="gear" type="button" aria-label="Données et réglages" title="Données et réglages">⚙︎</button></span>
-    </div>
-    <nav class="tabs" id="tabs" aria-label="Sections">
-      <button data-view="calendrier">Calendrier</button>
-      <button data-view="semaine">Semaine</button>
-      <button data-view="suivi">Suivi</button>
-      <button data-view="nutrition">Nutrition</button>
-    </nav>
-  </div>
-</header>
+<header class="oh" style="--oh-bg:#D6E0FF;--oh-ink:#1D2B6B;--oh-acc:#4F6EF7"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Forge</h1><button class="mode" id="sync" data-sync type="button" title="Synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" id="gear" type="button" aria-label="Données et réglages" title="Données et réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+<nav class="ot" id="tabs" aria-label="Sections">
+      <button class="ot-t" data-view="calendrier">Calendrier</button>
+      <button class="ot-t" data-view="semaine">Semaine</button>
+      <button class="ot-t" data-view="suivi">Suivi</button>
+      <button class="ot-t" data-view="nutrition">Nutrition</button>
+</nav></header>
 <main class="wrap" id="app" aria-live="polite"></main>
 <div id="toast" class="toast" hidden></div>
 <div id="login" class="login" hidden>
@@ -2286,6 +2278,6 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
 render();
 startApp();
 </script>
-<script src="../commun/ampoule.js" data-app="forge" data-avant="#gear" data-classe="gear"></script>
+<script src="../commun/ampoule.js" data-app="forge"></script>
 </body>
 </html>

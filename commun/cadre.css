@@ -1,0 +1,59 @@
+/* ORGA — cadre commun : l'en-tête et les onglets, identiques dans toutes les apps.
+
+   <header class="oh" style="--oh-bg:…;--oh-ink:…;--oh-acc:…">
+     <div class="oh-bar">
+       <a class="oh-orga" href="../">(logo ORGA)</a> <h1 class="oh-nom">Nom</h1> <span class="oh-sub">(facultatif)</span>
+       <button data-sync>(état de la synchro)</button> <span class="oh-sp"></span>
+       <button class="oh-b" data-ampoule>💡</button> <button class="oh-b">(réglages)</button>
+     </div>
+     <nav class="ot"><button class="ot-t">Onglet</button>…</nav>
+   </header>
+
+   Chaque app ne choisit que ses couleurs :
+   --oh-bg  fond de l'en-tête = couleur de fond de son logo
+   --oh-ink texte et icônes de l'en-tête
+   --oh-acc trait sous l'onglet actif
+   L'onglet actif porte aria-current="page" (ou la classe « on »). */
+
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
+
+/* la barre d'état du téléphone prend la couleur de l'en-tête (l'en-tête descend sous elle) */
+body::before{content:none!important}
+
+.oh{position:sticky;top:0;z-index:20;background:var(--oh-bg,#3C3C3C);color:var(--oh-ink,#FFFFFF);
+  padding-top:env(safe-area-inset-top,0px);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.oh *{box-sizing:border-box}
+.oh .oh-bar{display:flex;align-items:center;gap:8px;height:52px;margin:0;
+  padding:0 max(4px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+.oh .oh-orga{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:40px;margin-right:2px;color:inherit;text-decoration:none}
+.oh .oh-orga svg{width:20px;height:20px;display:block}
+.oh .oh-nom{margin:0;font:700 1.15rem/1.1 "Atkinson Hyperlegible",system-ui,sans-serif;letter-spacing:.02em;text-transform:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto;color:inherit}
+.oh .oh-sub{font:400 .78rem/1 "JetBrains Mono",ui-monospace,Menlo,monospace;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.oh .oh-bar [data-sync]{all:unset;box-sizing:border-box;flex:none;cursor:pointer;padding:6px 4px;
+  font:600 .76rem/1 "JetBrains Mono",ui-monospace,Menlo,monospace;color:inherit;opacity:.8;white-space:nowrap;font-variant-numeric:tabular-nums}
+.oh .oh-bar [data-sync]:hover{opacity:1}
+.oh .oh-sp{flex:1 1 0;min-width:0}
+.oh .oh-b{all:unset;box-sizing:border-box;flex:none;width:42px;height:42px;display:grid;place-items:center;cursor:pointer;
+  color:inherit;font-size:1.15rem;line-height:1}
+.oh .oh-b:hover,.oh .oh-b[aria-current="page"],.oh .oh-b[aria-pressed="true"]{background:color-mix(in srgb,currentColor 14%,transparent)}
+.oh .oh-b svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.oh a:focus-visible,.oh button:focus-visible{outline:2px solid currentColor;outline-offset:-3px}
+
+/* Onglets : même style partout, trait de la couleur de l'app sous l'onglet actif */
+.oh .ot{display:flex;margin:0;background:#FFFFFF;border-bottom:1px solid rgba(0,0,0,.12);overflow-x:auto;scrollbar-width:none;
+  padding:0 env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
+.oh .ot::-webkit-scrollbar{display:none}
+.oh .ot .ot-t{all:unset;box-sizing:border-box;flex:1 0 auto;position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:44px;padding:10px 12px 7px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;text-align:center;
+  font:700 .92rem/1.1 "Atkinson Hyperlegible",system-ui,sans-serif;color:#6B6A62}
+.oh .ot .ot-t:hover{color:#1E1E1E}
+.oh .ot .ot-t[aria-current="page"],.oh .ot .ot-t.on{color:#1E1E1E;border-bottom-color:var(--oh-acc,#1E1E1E)}
+.oh .ot .ot-t:focus-visible{outline:2px solid #1E1E1E;outline-offset:-4px}
+.oh .ot .ot-t svg{display:none}
+
+/* grand écran : onglets regroupés au centre plutôt qu'étirés sur toute la largeur */
+@media (min-width:800px){.oh .ot{justify-content:center}.oh .ot .ot-t{flex:0 1 190px}}

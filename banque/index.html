@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Banque</title>
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#F0B54A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="../manifest.webmanifest">
@@ -37,17 +37,11 @@ h1,h2,h3{margin:0;font-family:var(--title)}
 svg.i{flex:none;display:block}
 
 /* en-tête */
-.hd{position:sticky;top:0;z-index:20;background:var(--head);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
-.hd .in{max-width:760px;margin:0 auto;padding:6px max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px))}
-.hd .row{display:flex;align-items:center;gap:4px}
 .ibtn{width:48px;height:48px;border:0;background:transparent;border-radius:24px;display:grid;place-items:center;color:var(--text);flex:none;text-decoration:none}
 .ibtn:hover{background:var(--tile)}
 .hd h1{flex:1;font-size:24px;font-weight:700}
 .sync{height:32px;padding:0 12px;border:0;border-radius:16px;background:var(--tile);font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .sync.ok{background:var(--possoft);color:var(--pos)} .sync.pend{background:var(--accsoft);color:var(--acc)} .sync.err{background:#FDE7E5;color:var(--neg)}
-.tabs{display:flex}
-.tabs button{flex:1 1 0;height:46px;border:0;background:transparent;color:var(--muted);font-size:15px;border-bottom:3px solid transparent}
-.tabs button[aria-current="page"]{color:var(--text);font-weight:700;border-bottom-color:var(--amber)}
 
 main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
 .fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:26;width:60px;height:60px;border:0;border-radius:18px;background:var(--amber);color:var(--amberink);display:grid;place-items:center;box-shadow:0 6px 16px rgba(154,106,0,.35)}
@@ -233,17 +227,12 @@ button.rk-row:hover{background:#F6F7F9}
 .lbox p{margin:0 0 8px;font-size:14px;color:var(--muted)}
 .lbox label{font-size:13px;font-weight:700;color:var(--muted);margin-top:4px}
 </style>
+<link rel="stylesheet" href="../commun/cadre.css">
 </head>
 <body>
 <div id="login" class="login" hidden><form class="lbox" id="loginForm"><span class="logo" aria-hidden="true">B</span><h1>Banque</h1><p>Connecte-toi avec ton compte ORGA.</p><label for="l-mail">Adresse e-mail</label><input class="input" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="input" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit" style="margin-top:10px">Se connecter</button><p class="err" id="l-err" hidden></p></form></div>
-<header class="hd"><div class="in">
-  <div class="row">
-    <a class="ibtn" href="../" aria-label="Retour à l'accueil ORGA"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#F0B54A"/></svg></a>
-    <h1>Banque</h1>
-    <button class="sync" id="sync" data-act="reglages" aria-label="État de la synchronisation">…</button>
-  </div>
-  <nav class="tabs" aria-label="Sections"><button data-tab="accueil">Accueil</button><button data-tab="ops">Opérations</button><button data-tab="stats">Stats</button><button data-tab="reglages">Réglages</button></nav>
-</div></header>
+<header class="oh" style="--oh-bg:#F0B54A;--oh-ink:#1A1406;--oh-acc:#F0B54A"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Banque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" type="button" data-tab="reglages" aria-label="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+<nav class="ot tabs" aria-label="Sections"><button class="ot-t" data-tab="accueil">Accueil</button><button class="ot-t" data-tab="ops">Opérations</button><button class="ot-t" data-tab="stats">Stats</button></nav></header>
 <main id="view" aria-live="polite"></main>
 <button class="fab" data-act="saisie" aria-label="Nouvelle saisie"><svg class="i" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-titre"></div></div>
@@ -394,7 +383,7 @@ function icCompte(c){ const d=c.devise&&c.devise!=='CHF'?P.hex:c.type==='epargne
 /* =============================== Écrans =============================== */
 const $view=document.getElementById('view'), $scrim=document.getElementById('scrim'), $sheet=document.getElementById('sheet');
 function render(){
-  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===ui.tab?'page':'false'));
+  document.querySelectorAll('.oh [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===ui.tab?'page':'false'));
   cacherTip();
   if(!booted){ $view.innerHTML=''; return; }
   $view.innerHTML=ui.tab==='accueil'?vAccueil():ui.tab==='ops'?vOps():ui.tab==='stats'?vStats():ui.tab==='rappro'?vRappro():vReglages();
@@ -1096,6 +1085,6 @@ async function start(){
 }
 render(); start();
 </script>
-<script src="../commun/ampoule.js" data-app="banque" data-avant="#sync" data-classe="ibtn" data-taille="20px"></script>
+<script src="../commun/ampoule.js" data-app="banque"></script>
 </body>
 </html>
