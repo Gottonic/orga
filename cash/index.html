@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cash</title>
+<meta name="theme-color" content="#3C3C3C">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+:root{color-scheme:light;--paper:#F3F1E7;--ink:#1E1E1E;--muted:#6B6A62;--band:#3C3C3C;--band-ink:#FFFFFF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 "Atkinson Hyperlegible",system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--band)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--band);color:var(--band-ink)}
+.top .in{max-width:760px;margin:0 auto;padding:9px 16px;display:flex;align-items:center;gap:8px}
+.top a{color:var(--band-ink);display:inline-flex}
+.top h1{margin:0;font-size:1.05rem;letter-spacing:.08em;text-transform:uppercase}
+main{max-width:760px;margin:0 auto;padding:24px 16px}
+p{color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><a href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1>Cash</h1></div></header>
+<main>
+  <h2>En construction</h2>
+  <p>Cash arrive bientôt ici : tes comptes, ta saisie rapide et l'import Yuh de chaque semaine.</p>
+</main>
+<script>if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('../sw.js',{scope:'../'}); }catch(e){} }</script>
+</body>
+</html>
