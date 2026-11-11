@@ -1,0 +1,2797 @@
+{
+ "version": 5,
+ "date": "2026-11-08",
+ "note": "tests automatiques en début de bloc, charges des accessoires, variantes VO2max",
+ "set": {
+  "config": {
+   "main": {
+    "start": "2026-08-31",
+    "trackingFrom": "2026-W43",
+    "weeks": 52
+   }
+  },
+  "blocks": {
+   "bl-0": {
+    "deload": "2026-W38",
+    "end": "2026-09-20",
+    "goal": "Cycle S33–S38 (ancien site) : haut du corps en hypertrophie, base aérobie, soft skills, mobilité cheville et genou. Décharge en S38.",
+    "name": "Bloc 0",
+    "start": "2026-08-10"
+   },
+   "bl-1": {
+    "deload": "2026-W45",
+    "end": "2026-11-08",
+    "goal": "Bas du corps en hypertrophie, haut du corps en force. 7 semaines, décharge en S45.",
+    "name": "Bloc 1",
+    "start": "2026-09-21",
+    "template": {
+     "sessions": [
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "cue": "Charge croissante",
+           "ex": "mec-haut",
+           "id": "mec-haut",
+           "log": false,
+           "name": "Tractions, dips et pompes",
+           "reps": "1× 5-3-1"
+          }
+         ],
+         "name": "Montée en charge"
+        },
+        {
+         "items": [
+          {
+           "cue": "Omoplates actives en bas, menton au-dessus",
+           "ex": "tractions-larges",
+           "id": "tractions-larges",
+           "link": "https://www.youtube.com/results?search_query=weighted+wide+grip+pull+up",
+           "load": "+16 kg",
+           "name": "Tractions larges pronation lestées",
+           "reps": "3–5",
+           "sets": 5
+          },
+          {
+           "cue": "Gainage complet, poitrine au contact",
+           "ex": "pompes",
+           "id": "pompes",
+           "link": "https://www.youtube.com/results?search_query=weighted+deficit+push+ups",
+           "load": "+16 kg",
+           "name": "Pompes surélevées lestées",
+           "reps": "4–6",
+           "sets": 5
+          }
+         ],
+         "kind": "superset",
+         "rounds": 5,
+         "rule": "A1, 90 s de pause, A2, 90 s de pause, puis on recommence."
+        },
+        {
+         "items": [
+          {
+           "cue": "Dernière rep limite mais propre",
+           "ex": "tractions",
+           "id": "tractions",
+           "link": "https://www.youtube.com/results?search_query=weighted+chin+up",
+           "load": "+16 kg",
+           "name": "Tractions serrées supination lestées",
+           "reps": "3–5",
+           "sets": 4
+          },
+          {
+           "cue": "Épaules basses, descente à 90° au coude",
+           "ex": "dips",
+           "id": "dips",
+           "link": "https://www.youtube.com/results?search_query=weighted+dips+technique",
+           "load": "+16 kg",
+           "name": "Dips lestés",
+           "reps": "4–6",
+           "sets": 4
+          }
+         ],
+         "kind": "superset",
+         "rounds": 4,
+         "rule": "B1, 90 s de pause, B2, 90 s de pause."
+        },
+        {
+         "items": [
+          {
+           "cue": "Pause 1 s en haut",
+           "ex": "levers-jambes",
+           "id": "levers-jambes",
+           "link": "https://www.youtube.com/results?search_query=hanging+leg+raise",
+           "name": "Levers de jambes",
+           "reps": "8",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Iso 2–3 s en haut",
+           "ex": "superman",
+           "id": "superman",
+           "name": "Supermans",
+           "reps": "8–10",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "Enchaîne C1 puis C2 sans pause, 60 s après la paire."
+        }
+       ],
+       "duration": "≈ 55 min",
+       "hideIf": "voyage",
+       "id": "s-haut",
+       "kind": "force",
+       "min": 55,
+       "nerv": true,
+       "note": "≈ 85–90 % du max. Monte de 1,25 à 2,5 kg quand le haut de la fourchette passe sur toutes les séries.",
+       "short": "Haut",
+       "title": "Force haut du corps"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "cue": "Intention maximale, réception stable",
+           "ex": "broad",
+           "id": "broad",
+           "log": false,
+           "name": "Saut en longueur debout",
+           "reps": "1",
+           "rest": "60–90 s",
+           "sets": 4
+          },
+          {
+           "cue": "Vise un point haut à toucher de la main : ça aide à sauter à fond",
+           "ex": "vertical",
+           "id": "vertical",
+           "log": false,
+           "name": "Saut vertical",
+           "reps": "1",
+           "rest": "60–90 s",
+           "sets": 4
+          }
+         ],
+         "name": "Sauts max",
+         "note": "seul, frais : 8 sauts au total, arrête dès que la distance baisse"
+        },
+        {
+         "items": [
+          {
+           "cue": "+2,5 kg si les 3 séries passent avec 1–2 reps en réserve",
+           "ex": "squat",
+           "id": "squat",
+           "link": "https://www.youtube.com/results?search_query=back+squat+technique",
+           "load": "64 kg",
+           "name": "Back squat",
+           "reps": "12",
+           "sets": 3
+          },
+          {
+           "cue": "Bassin à plat. Alterne les jambes sans poser la barre",
+           "ex": "rdl-unilat",
+           "id": "rdl-unilat",
+           "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+barbell",
+           "load": "29 kg",
+           "name": "RDL unilatéral barre",
+           "reps": "12 / jambe",
+           "sets": 3
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "Deux barres chargées à côté : A1, 90 s de pause, A2, 90 s de pause. Lourd bilatéral + unilatéral, ça évite de changer les disques."
+        },
+        {
+         "items": [
+          {
+           "cue": "Dos neutre, hanches vers l'arrière",
+           "ex": "rdl",
+           "id": "rdl",
+           "link": "https://www.youtube.com/results?search_query=romanian+deadlift+technique",
+           "load": "71,5 kg",
+           "name": "Soulevé de terre roumain",
+           "reps": "12",
+           "sets": 3
+          },
+          {
+           "ex": "fente-bulgare",
+           "id": "fente-bulgare",
+           "link": "https://www.youtube.com/results?search_query=barbell+bulgarian+split+squat",
+           "load": "39 kg",
+           "name": "Fente bulgare barre",
+           "reps": "12 / jambe",
+           "sets": 3
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "B1, 90 s, B2, 90 s."
+        },
+        {
+         "items": [
+          {
+           "cue": "Tempo lent, pause en haut",
+           "ex": "mollets",
+           "id": "mollets",
+           "link": "https://www.youtube.com/results?search_query=standing+calf+raise",
+           "load": "59 kg",
+           "name": "Mollets debout chargés",
+           "reps": "12–15",
+           "sets": 3
+          },
+          {
+           "cue": "Difficiles : talons loin du mur, poids sur les pieds",
+           "ex": "tibial",
+           "id": "tibial",
+           "link": "https://www.youtube.com/results?search_query=tibialis+raise",
+           "load": "lesté",
+           "name": "Tibialis raise",
+           "reps": "15–20",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "Enchaîne C1 puis C2 sans pause, 60 s après la paire."
+        }
+       ],
+       "doms": true,
+       "duration": "≈ 65 min",
+       "hideIf": "voyage",
+       "id": "s-bas",
+       "kind": "hypertrophie",
+       "min": 65,
+       "short": "Bas",
+       "title": "Hypertrophie bas du corps"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "iso-chaise",
+           "id": "iso-chaise",
+           "log": false,
+           "name": "Chaise contre un mur, sur les talons",
+           "reps": "40 s",
+           "sets": 2
+          },
+          {
+           "cue": "Talon avant décollé, genou arrière juste au-dessus du sol",
+           "ex": "iso-fente",
+           "id": "iso-fente",
+           "log": false,
+           "name": "Fente basse tenue, sur la pointe du pied avant",
+           "reps": "30 s / jambe",
+           "sets": 2
+          },
+          {
+           "ex": "iso-mollets",
+           "id": "iso-mollets",
+           "log": false,
+           "name": "Mollets tenus sur une jambe, en haut",
+           "reps": "30 s / jambe",
+           "sets": 2
+          },
+          {
+           "cue": "Du petit au grand, jusqu'à la vitesse de séance",
+           "ex": "ech-sauts",
+           "id": "ech-sauts",
+           "log": false,
+           "name": "Quelques sauts progressifs",
+           "reps": "5 min"
+          }
+         ],
+         "name": "Échauffement iso",
+         "note": "≈ 10 min : prépare les tendons sans fatiguer"
+        },
+        {
+         "items": [
+          {
+           "cue": "Décide ton plan avant l'élan",
+           "ex": "mid-peur",
+           "id": "mid-peur",
+           "log": false,
+           "name": "1 truc qui fait peur + 1 truc physiquement difficile",
+           "reps": "1 + 1"
+          },
+          {
+           "cue": "Sauts de chat, sauts de détente, plyos, drop precisions",
+           "ex": "lacunes",
+           "id": "lacunes",
+           "log": false,
+           "name": "Lacunes à travailler, si l'envie est là",
+           "reps": "au choix"
+          }
+         ],
+         "name": "Libre"
+        }
+       ],
+       "doms": true,
+       "duration": "libre",
+       "hideIf": "voyage",
+       "id": "s-pk1",
+       "kind": "parkour",
+       "nerv": true,
+       "note": "Session libre à haute intensité, idéalement avec d'autres traceurs. Fixe tes objectifs après l'échauffement.",
+       "short": "PK libre",
+       "title": "Parkour libre (high)"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "v-pogos",
+           "id": "v-pogos",
+           "img": "1965299094cc508e0758c8bec329a0f7",
+           "log": false,
+           "name": "Pogos",
+           "reps": "20",
+           "sets": 2
+          },
+          {
+           "cue": "Intention maximale, réception stable",
+           "ex": "v-sauts",
+           "id": "v-sauts",
+           "name": "Sauts en longueur debout",
+           "reps": "1",
+           "rest": "60 s",
+           "sets": 4,
+           "unit": "reps"
+          }
+         ],
+         "name": "Explosivité",
+         "note": "si le sol le permet, frais"
+        },
+        {
+         "items": [
+          {
+           "cue": "Tempo 3 s à la descente. Trop facile : pause 2 s en bas ou 1,5 rep",
+           "ex": "v-bulgare",
+           "id": "v-bulgare",
+           "link": "https://www.youtube.com/results?search_query=bulgarian+split+squat+bodyweight",
+           "name": "Fentes bulgares, pied arrière sur une chaise ou un lit",
+           "reps": "10–15 / jambe",
+           "rest": "60 s",
+           "sets": 4,
+           "unit": "reps"
+          },
+          {
+           "cue": "Sac à dos rempli en main si tu en as un",
+           "ex": "v-rdl",
+           "id": "v-rdl",
+           "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+bodyweight",
+           "name": "RDL unilatéral, lent",
+           "reps": "10–12 / jambe",
+           "rest": "60 s",
+           "sets": 4,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "name": "Jambes",
+         "rounds": 4,
+         "rule": "Quadriceps puis ischios : A1, 30 s, A2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "ex": "v-pistol",
+           "id": "v-pistol",
+           "link": "https://www.youtube.com/results?search_query=assisted+pistol+squat",
+           "name": "Pistol squat assisté (cadre de porte)",
+           "reps": "6–8 / jambe",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Sinon : pont ischios sur 1 jambe, 3 × 12",
+           "ex": "v-nordic",
+           "id": "v-nordic",
+           "link": "https://www.youtube.com/results?search_query=nordic+curl+at+home",
+           "name": "Nordic curl, pieds calés sous un lit ou un canapé",
+           "reps": "5–8",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "B1, 30 s, B2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "cue": "Plus dur : pompes archer",
+           "ex": "v-pompes",
+           "id": "v-pompes",
+           "name": "Pompes pieds surélevés sur une chaise",
+           "reps": "max − 2",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Sinon : tirage à la serviette coincée dans une porte",
+           "ex": "v-rowing",
+           "id": "v-rowing",
+           "link": "https://www.youtube.com/results?search_query=inverted+row+under+table",
+           "name": "Rowing inversé sous une table solide",
+           "reps": "max − 2",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "name": "Haut du corps",
+         "rounds": 3,
+         "rule": "Poussée puis tirage : C1, 30 s, C2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "ex": "v-dips",
+           "id": "v-dips",
+           "name": "Dips entre deux chaises",
+           "reps": "8–12",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Iso 2–3 s en haut",
+           "ex": "superman",
+           "id": "superman",
+           "name": "Supermans",
+           "reps": "10",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "D1, 30 s, D2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "ex": "v-mollets",
+           "id": "v-mollets",
+           "log": false,
+           "name": "Mollets sur 1 jambe, sur une marche",
+           "reps": "15–20",
+           "rest": "45 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "ex": "v-tibial",
+           "id": "v-tibial",
+           "log": false,
+           "name": "Tibialis raise, dos au mur",
+           "reps": "20",
+           "rest": "45 s",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "Mollets puis tibialis, sans pause."
+        }
+       ],
+       "doms": true,
+       "duration": "≈ 40 min",
+       "id": "s-voyage",
+       "kind": "hypertrophie",
+       "min": 40,
+       "note": "À faire 2 à 3 fois dans la semaine : elle remplace Haut, Bas et parkour.",
+       "onlyIf": "voyage",
+       "short": "Voyage",
+       "title": "Séance voyage, sans matériel"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "ech-gen",
+           "id": "ech-gen",
+           "log": false,
+           "name": "Mobilité articulaire et montée progressive",
+           "reps": "5 min"
+          },
+          {
+           "cue": "Contact court, chevilles raides",
+           "ex": "pogos",
+           "id": "pogos",
+           "img": "1965299094cc508e0758c8bec329a0f7",
+           "log": false,
+           "name": "Pogos",
+           "reps": "20",
+           "sets": 3
+          },
+          {
+           "ex": "hops",
+           "id": "hops",
+           "img": "50f28ac70b7b07d263701bbe3ff083bf",
+           "log": false,
+           "name": "Hops, lents puis rapides",
+           "reps": "20 m / jambe",
+           "sets": 2
+          }
+         ],
+         "name": "Échauffement + plyo légère",
+         "note": "≈ 15 min, volume, basse intensité"
+        },
+        {
+         "items": [
+          {
+           "cue": "Choisis 5 mouvements que tu maîtrises presque et réussis chacun 5 fois proprement : 25 répétitions de qualité, effort 70–80 %",
+           "ex": "mid-5x5",
+           "id": "mid-5x5",
+           "log": false,
+           "name": "5 défis × 5 réussites",
+           "reps": "cœur de la séance"
+          }
+         ],
+         "name": "5×5"
+        },
+        {
+         "items": [
+          {
+           "cue": "Beaucoup d'essais propres, aucun max",
+           "ex": "mid-lignes",
+           "id": "mid-lignes",
+           "log": false,
+           "name": "Lignes connues, flow, jeux",
+           "reps": "si l'envie est là"
+          }
+         ],
+         "name": "Flow"
+        }
+       ],
+       "duration": "60–90 min",
+       "hideIf": "voyage",
+       "id": "s-pk2",
+       "kind": "parkour",
+       "min": 75,
+       "note": "Garde le volume qui a construit ta technique sans fatiguer le système nerveux. Faisable seul.",
+       "short": "PK mid",
+       "title": "Parkour mid (70–80 %)"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "cue": "Le lendemain d'une grosse séance : Z1 ou marche à la place",
+           "ex": "z2",
+           "id": "z2",
+           "load": "135–148 bpm",
+           "log": false,
+           "name": "Vélo ou course",
+           "reps": "45–60 min"
+          }
+         ],
+         "name": "Continu"
+        }
+       ],
+       "duration": "45–60 min",
+       "id": "s-endu",
+       "kind": "endurance",
+       "min": 50,
+       "short": "Z2",
+       "title": "Endurance zone 2"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "vo-ech",
+           "id": "vo-ech",
+           "log": false,
+           "name": "Footing facile puis 3 accélérations progressives",
+           "reps": "8 min"
+          }
+         ],
+         "name": "Échauffement"
+        },
+        {
+         "items": [
+          {
+           "cue": "RPE 8–9 : dur mais régulier, la dernière aussi rapide que la première",
+           "ex": "vo-cotes",
+           "id": "vo-cotes",
+           "log": false,
+           "name": "Montées de côte dures",
+           "reps": "45–60 s",
+           "rest": "retour en marchant",
+           "sets": 8
+          }
+         ],
+         "name": "Variante A : côtes",
+         "note": "si tu as une pente à côté"
+        },
+        {
+         "items": [
+          {
+           "cue": "Tu peux dire 2–3 mots, pas une phrase",
+           "ex": "vo-plat",
+           "id": "vo-plat",
+           "load": "Z4–Z5, 165–185 bpm",
+           "log": false,
+           "name": "Course dure / trot",
+           "reps": "2 min / 1 min 30",
+           "sets": 5
+          }
+         ],
+         "name": "Variante B : sur le plat",
+         "note": "sinon"
+        },
+        {
+         "items": [
+          {
+           "ex": "vo-calme",
+           "id": "vo-calme",
+           "log": false,
+           "name": "Trot ou marche",
+           "reps": "3–5 min"
+          }
+         ],
+         "name": "Retour au calme"
+        }
+       ],
+       "duration": "≈ 30 min",
+       "id": "s-vo2",
+       "kind": "intervalles",
+       "min": 30,
+       "nerv": true,
+       "note": "Optionnelle. Peu de temps, effort dur : « Train a lot, sometimes hard ». Une seule des deux variantes. Pas la veille du bas du corps ni du parkour high.",
+       "optional": true,
+       "short": "VO2",
+       "title": "Intervalles VO2max"
+      }
+     ]
+    }
+   },
+   "bl-2": {
+    "deload": "2026-W51",
+    "end": "2026-12-20",
+    "goal": "Le bas passe en force max, le haut en puissance (contraste lourd puis explosif). Sprints courts et hops ouvrent la séance du bas. Les reps du bas descendent au fil des semaines (5 → 4 → 3) pendant que la charge monte.",
+    "name": "Bloc 2",
+    "start": "2026-11-09",
+    "template": {
+     "sessions": [
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "cue": "Charge croissante",
+           "ex": "mec-haut",
+           "id": "mec-haut",
+           "log": false,
+           "name": "Tractions, dips et pompes",
+           "reps": "1× 5-3-1"
+          },
+          {
+           "cue": "« Plyo pour les épaules », prépare les lâchés",
+           "ex": "kipping",
+           "id": "kipping",
+           "img": "6170f52426ee0e9a0f9469beadf355fa",
+           "log": false,
+           "name": "Kipping swing",
+           "reps": "6",
+           "sets": 2
+          }
+         ],
+         "name": "Préparation"
+        },
+        {
+         "items": [
+          {
+           "cue": "Lourd, 2 reps en réserve",
+           "ex": "tractions",
+           "id": "tractions",
+           "link": "https://www.youtube.com/results?search_query=weighted+chin+up",
+           "load": "+16 à +18 kg",
+           "name": "Tractions serrées lestées",
+           "reps": "3",
+           "sets": 4,
+           "step": 1
+          },
+          {
+           "cue": "Juste après A1 : traction explosive puis maintien. Arrête dès que la vitesse baisse",
+           "ex": "iso-catch",
+           "id": "iso-catch",
+           "img": "efa7babbf2e65e2712b4534e6de49e9d",
+           "load": "poids de corps",
+           "name": "Pull-up iso catch",
+           "reps": "3",
+           "sets": 4,
+           "unit": "reps"
+          },
+          {
+           "cue": "Lourd, 2 reps en réserve",
+           "ex": "dips",
+           "id": "dips",
+           "link": "https://www.youtube.com/results?search_query=weighted+dips+technique",
+           "load": "+16 à +18 kg",
+           "name": "Dips lestés",
+           "reps": "4",
+           "sets": 4,
+           "wave": [
+            "4",
+            "4",
+            "3",
+            "3",
+            "3"
+           ],
+           "step": 1
+          },
+          {
+           "cue": "Juste après A3, sur des disques",
+           "ex": "pompes-plyo",
+           "id": "pompes-plyo",
+           "img": "0c393f354beffb93528330967c7058f4",
+           "load": "poids de corps",
+           "name": "Pompes plyo",
+           "reps": "5",
+           "sets": 4,
+           "unit": "reps"
+          }
+         ],
+         "kind": "contraste",
+         "rounds": 4,
+         "rule": "Tirage puis poussée : A1 → A2 enchaînés, 90 s de pause, A3 → A4 enchaînés, 90 s de pause. Le tirage récupère pendant que tu pousses."
+        },
+        {
+         "items": [
+          {
+           "cue": "Vitesse maximale, pour les kongs. Push jerk si la technique est là",
+           "ex": "push-press",
+           "id": "push-press",
+           "img": "c5811b7b38246b0413f8624b5b1668aa",
+           "load": "≈ 40–45 kg",
+           "name": "Push press barre",
+           "reps": "3",
+           "sets": 3
+          },
+          {
+           "cue": "Épaules en extension complète, la position des lâchés",
+           "ex": "pullover",
+           "id": "pullover",
+           "img": "be113c27ba4a6fbcd55ba5d5a7139f2c",
+           "name": "Pull-over deux haltères",
+           "reps": "8–10",
+           "sets": 3,
+           "load": "≈ 10 kg / main",
+           "inc": 2
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "B1, 60 s, B2, 60 s."
+        },
+        {
+         "items": [
+          {
+           "cue": "Pause 1 s en haut",
+           "ex": "levers-jambes",
+           "id": "levers-jambes",
+           "name": "Levers de jambes",
+           "reps": "8",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Iso 2–3 s en haut",
+           "ex": "superman",
+           "id": "superman",
+           "name": "Supermans",
+           "reps": "8–10",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "Enchaîne C1 puis C2, 60 s après la paire."
+        }
+       ],
+       "duration": "≈ 55 min",
+       "hideIf": "voyage",
+       "id": "s-haut",
+       "kind": "puissance",
+       "min": 55,
+       "nerv": true,
+       "note": "30–60 % du max sur les gestes explosifs, intention de vitesse maximale. La qualité prime sur le nombre.",
+       "short": "Haut",
+       "title": "Puissance haut du corps"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "cue": "À fond, contact au sol court, buste droit. Arrête dès que tu ralentis. En salle : 4 sauts en longueur + 4 sauts verticaux",
+           "ex": "sprints",
+           "id": "sprints",
+           "log": false,
+           "name": "Sprints courts",
+           "reps": "10–20 m",
+           "rest": "2 min",
+           "sets": 5,
+           "unit": "reps"
+          },
+          {
+           "cue": "Garder l'élan, temps de contact court",
+           "ex": "hops-vite",
+           "id": "hops-vite",
+           "img": "50f28ac70b7b07d263701bbe3ff083bf",
+           "log": false,
+           "name": "Hops pour la vitesse",
+           "reps": "20 m / jambe",
+           "rest": "2 min",
+           "sets": 2
+          }
+         ],
+         "name": "Accélération",
+         "note": "seul, frais, repos complet : 12–15 min"
+        },
+        {
+         "items": [
+          {
+           "cue": "2 reps en réserve. Si la vitesse baisse, garde la charge la semaine suivante",
+           "ex": "squat",
+           "id": "squat",
+           "link": "https://www.youtube.com/results?search_query=back+squat+technique",
+           "load": "≈ 72–75 kg",
+           "name": "Back squat",
+           "reps": "5",
+           "sets": 4,
+           "wave": [
+            "5",
+            "5",
+            "4",
+            "4",
+            "3"
+           ],
+           "step": 2.5
+          },
+          {
+           "cue": "Bassin à plat, lourd mais contrôlé",
+           "ex": "rdl-unilat",
+           "id": "rdl-unilat",
+           "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+barbell",
+           "load": "≈ 35 kg",
+           "name": "RDL unilatéral barre",
+           "reps": "6 / jambe",
+           "sets": 4,
+           "wave": [
+            "6 / jambe",
+            "6 / jambe",
+            "5 / jambe",
+            "5 / jambe",
+            "4 / jambe"
+           ],
+           "step": 2.5
+          }
+         ],
+         "kind": "superset",
+         "rounds": 4,
+         "rule": "Deux barres chargées : A1, 2 min de pause, A2, 2 min de pause. Chaque exercice garde ainsi plus de 3 min de récupération."
+        },
+        {
+         "items": [
+          {
+           "cue": "Dos neutre",
+           "ex": "rdl",
+           "id": "rdl",
+           "link": "https://www.youtube.com/results?search_query=romanian+deadlift+technique",
+           "load": "≈ 78–80 kg",
+           "name": "Soulevé de terre roumain",
+           "reps": "5",
+           "sets": 3,
+           "wave": [
+            "5",
+            "5",
+            "4",
+            "4",
+            "3"
+           ],
+           "step": 2.5
+          },
+          {
+           "cue": "Un pilier pour les fessiers et la stabilité sur une jambe",
+           "ex": "fente-arriere",
+           "id": "fente-arriere",
+           "img": "38d5674dc3bba8efa8eef61a660c04eb",
+           "load": "≈ 45 kg",
+           "name": "Fente arrière lourde barre",
+           "reps": "6 / jambe",
+           "sets": 3,
+           "wave": [
+            "6 / jambe",
+            "6 / jambe",
+            "5 / jambe",
+            "5 / jambe",
+            "4 / jambe"
+           ],
+           "step": 2.5
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "B1, 2 min, B2, 2 min."
+        },
+        {
+         "items": [
+          {
+           "cue": "Jamais plus haut que le genou : c'est le dernier quart de l'extension qui compte en précision",
+           "ex": "step-up",
+           "id": "step-up",
+           "link": "https://www.youtube.com/results?search_query=weighted+step+up",
+           "name": "Step-up lesté, box à mi-tibia",
+           "reps": "5 / jambe",
+           "sets": 2,
+           "load": "≈ 20 kg",
+           "inc": 2.5
+          },
+          {
+           "ex": "tibial",
+           "id": "tibial",
+           "link": "https://www.youtube.com/results?search_query=tibialis+raise",
+           "load": "≈ 5 kg",
+           "name": "Tibialis raise",
+           "reps": "12–15",
+           "sets": 2,
+           "unit": "reps",
+           "inc": 1
+          }
+         ],
+         "kind": "superset",
+         "rounds": 2,
+         "rule": "C1, 30 s, C2, 90 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "cue": "Tempo lent",
+           "ex": "mollets",
+           "id": "mollets",
+           "link": "https://www.youtube.com/results?search_query=single+leg+calf+raise+weighted",
+           "name": "Mollets unilatéraux lestés",
+           "reps": "8–10 / jambe",
+           "rest": "60 s",
+           "sets": 3,
+           "load": "≈ 20 kg",
+           "inc": 2.5
+          }
+         ],
+         "name": "Mollets"
+        }
+       ],
+       "duration": "≈ 70 min",
+       "hideIf": "voyage",
+       "id": "s-bas",
+       "kind": "force",
+       "min": 70,
+       "nerv": true,
+       "note": "Le gros jour nerveux de la semaine : garde la veille et le lendemain légers.",
+       "short": "Bas",
+       "title": "Force max bas du corps"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "iso-chaise",
+           "id": "iso-chaise",
+           "log": false,
+           "name": "Chaise contre un mur, sur les talons",
+           "reps": "40 s",
+           "sets": 2
+          },
+          {
+           "cue": "Talon avant décollé, genou arrière juste au-dessus du sol",
+           "ex": "iso-fente",
+           "id": "iso-fente",
+           "log": false,
+           "name": "Fente basse tenue, sur la pointe du pied avant",
+           "reps": "30 s / jambe",
+           "sets": 2
+          },
+          {
+           "ex": "iso-mollets",
+           "id": "iso-mollets",
+           "log": false,
+           "name": "Mollets tenus sur une jambe, en haut",
+           "reps": "30 s / jambe",
+           "sets": 2
+          },
+          {
+           "cue": "Du petit au grand, jusqu'à la vitesse de séance",
+           "ex": "ech-sauts",
+           "id": "ech-sauts",
+           "log": false,
+           "name": "Quelques sauts progressifs",
+           "reps": "5 min"
+          }
+         ],
+         "name": "Échauffement iso",
+         "note": "≈ 10 min : prépare les tendons sans fatiguer"
+        },
+        {
+         "items": [
+          {
+           "cue": "Décide ton plan avant l'élan",
+           "ex": "mid-peur",
+           "id": "mid-peur",
+           "log": false,
+           "name": "1 truc qui fait peur + 1 truc physiquement difficile",
+           "reps": "1 + 1"
+          },
+          {
+           "cue": "Sauts de chat, sauts de détente, plyos, drop precisions",
+           "ex": "lacunes",
+           "id": "lacunes",
+           "log": false,
+           "name": "Lacunes à travailler, si l'envie est là",
+           "reps": "au choix"
+          }
+         ],
+         "name": "Libre"
+        }
+       ],
+       "doms": true,
+       "duration": "libre",
+       "hideIf": "voyage",
+       "id": "s-pk1",
+       "kind": "parkour",
+       "nerv": true,
+       "note": "Session libre à haute intensité, idéalement avec d'autres traceurs. Fixe tes objectifs après l'échauffement.",
+       "short": "PK libre",
+       "title": "Parkour libre (high)"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "v-pogos",
+           "id": "v-pogos",
+           "img": "1965299094cc508e0758c8bec329a0f7",
+           "log": false,
+           "name": "Pogos",
+           "reps": "20",
+           "sets": 2
+          },
+          {
+           "cue": "Intention maximale, réception stable",
+           "ex": "v-sauts",
+           "id": "v-sauts",
+           "name": "Sauts en longueur debout",
+           "reps": "1",
+           "rest": "60 s",
+           "sets": 4,
+           "unit": "reps"
+          }
+         ],
+         "name": "Explosivité",
+         "note": "si le sol le permet, frais"
+        },
+        {
+         "items": [
+          {
+           "cue": "Tempo 3 s à la descente. Trop facile : pause 2 s en bas ou 1,5 rep",
+           "ex": "v-bulgare",
+           "id": "v-bulgare",
+           "link": "https://www.youtube.com/results?search_query=bulgarian+split+squat+bodyweight",
+           "name": "Fentes bulgares, pied arrière sur une chaise ou un lit",
+           "reps": "10–15 / jambe",
+           "rest": "60 s",
+           "sets": 4,
+           "unit": "reps"
+          },
+          {
+           "cue": "Sac à dos rempli en main si tu en as un",
+           "ex": "v-rdl",
+           "id": "v-rdl",
+           "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+bodyweight",
+           "name": "RDL unilatéral, lent",
+           "reps": "10–12 / jambe",
+           "rest": "60 s",
+           "sets": 4,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "name": "Jambes",
+         "rounds": 4,
+         "rule": "Quadriceps puis ischios : A1, 30 s, A2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "ex": "v-pistol",
+           "id": "v-pistol",
+           "link": "https://www.youtube.com/results?search_query=assisted+pistol+squat",
+           "name": "Pistol squat assisté (cadre de porte)",
+           "reps": "6–8 / jambe",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Sinon : pont ischios sur 1 jambe, 3 × 12",
+           "ex": "v-nordic",
+           "id": "v-nordic",
+           "link": "https://www.youtube.com/results?search_query=nordic+curl+at+home",
+           "name": "Nordic curl, pieds calés sous un lit ou un canapé",
+           "reps": "5–8",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "B1, 30 s, B2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "cue": "Plus dur : pompes archer",
+           "ex": "v-pompes",
+           "id": "v-pompes",
+           "name": "Pompes pieds surélevés sur une chaise",
+           "reps": "max − 2",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Sinon : tirage à la serviette coincée dans une porte",
+           "ex": "v-rowing",
+           "id": "v-rowing",
+           "link": "https://www.youtube.com/results?search_query=inverted+row+under+table",
+           "name": "Rowing inversé sous une table solide",
+           "reps": "max − 2",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "name": "Haut du corps",
+         "rounds": 3,
+         "rule": "Poussée puis tirage : C1, 30 s, C2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "ex": "v-dips",
+           "id": "v-dips",
+           "name": "Dips entre deux chaises",
+           "reps": "8–12",
+           "rest": "60 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "cue": "Iso 2–3 s en haut",
+           "ex": "superman",
+           "id": "superman",
+           "name": "Supermans",
+           "reps": "10",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "D1, 30 s, D2, 60 s après la paire."
+        },
+        {
+         "items": [
+          {
+           "ex": "v-mollets",
+           "id": "v-mollets",
+           "log": false,
+           "name": "Mollets sur 1 jambe, sur une marche",
+           "reps": "15–20",
+           "rest": "45 s",
+           "sets": 3,
+           "unit": "reps"
+          },
+          {
+           "ex": "v-tibial",
+           "id": "v-tibial",
+           "log": false,
+           "name": "Tibialis raise, dos au mur",
+           "reps": "20",
+           "rest": "45 s",
+           "sets": 3,
+           "unit": "reps"
+          }
+         ],
+         "kind": "superset",
+         "rounds": 3,
+         "rule": "Mollets puis tibialis, sans pause."
+        }
+       ],
+       "doms": true,
+       "duration": "≈ 40 min",
+       "id": "s-voyage",
+       "kind": "hypertrophie",
+       "min": 40,
+       "note": "Seulement les semaines sans salle : elle remplace Haut et Bas. À faire 2 à 3 fois dans la semaine : elle remplace Haut, Bas et parkour.",
+       "short": "Voyage",
+       "title": "Séance voyage, sans matériel",
+       "optional": true
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "ech-gen",
+           "id": "ech-gen",
+           "log": false,
+           "name": "Mobilité articulaire et montée progressive",
+           "reps": "5 min"
+          },
+          {
+           "ex": "pogos",
+           "id": "pogos",
+           "img": "1965299094cc508e0758c8bec329a0f7",
+           "log": false,
+           "name": "Pogos",
+           "reps": "20",
+           "sets": 3
+          },
+          {
+           "cue": "Effort moyen, rythme et posture",
+           "ex": "bounds",
+           "id": "bounds",
+           "img": "9ec8a10ebcc7d99f5edef5a4da01dcb7",
+           "log": false,
+           "name": "Bounds / switch strides",
+           "reps": "20 m",
+           "sets": 3
+          }
+         ],
+         "name": "Échauffement + plyo légère",
+         "note": "≈ 15 min, volume, basse intensité"
+        },
+        {
+         "items": [
+          {
+           "cue": "Choisis 5 mouvements que tu maîtrises presque et réussis chacun 5 fois proprement : 25 répétitions de qualité, effort 70–80 %",
+           "ex": "mid-5x5",
+           "id": "mid-5x5",
+           "log": false,
+           "name": "5 défis × 5 réussites",
+           "reps": "cœur de la séance"
+          }
+         ],
+         "name": "5×5"
+        },
+        {
+         "items": [
+          {
+           "cue": "Beaucoup d'essais propres, aucun max",
+           "ex": "mid-lignes",
+           "id": "mid-lignes",
+           "log": false,
+           "name": "Lignes connues, flow, jeux",
+           "reps": "si l'envie est là"
+          }
+         ],
+         "name": "Flow"
+        }
+       ],
+       "duration": "60–90 min",
+       "hideIf": "voyage",
+       "id": "s-pk2",
+       "kind": "parkour",
+       "min": 75,
+       "note": "Garde le volume qui a construit ta technique sans fatiguer le système nerveux. Faisable seul.",
+       "short": "PK mid",
+       "title": "Parkour mid (70–80 %)"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "cue": "Le lendemain d'une grosse séance : Z1 ou marche à la place",
+           "ex": "z2",
+           "id": "z2",
+           "load": "135–148 bpm",
+           "log": false,
+           "name": "Vélo ou course",
+           "reps": "45–60 min"
+          }
+         ],
+         "name": "Continu"
+        }
+       ],
+       "duration": "45–60 min",
+       "id": "s-endu",
+       "kind": "endurance",
+       "min": 50,
+       "short": "Z2",
+       "title": "Endurance zone 2"
+      },
+      {
+       "blocks": [
+        {
+         "items": [
+          {
+           "ex": "vo-ech",
+           "id": "vo-ech",
+           "log": false,
+           "name": "Footing facile puis 3 accélérations progressives",
+           "reps": "8 min"
+          }
+         ],
+         "name": "Échauffement"
+        },
+        {
+         "items": [
+          {
+           "cue": "RPE 8–9 : dur mais régulier, la dernière aussi rapide que la première",
+           "ex": "vo-cotes",
+           "id": "vo-cotes",
+           "log": false,
+           "name": "Montées de côte dures",
+           "reps": "45–60 s",
+           "rest": "retour en marchant",
+           "sets": 8
+          }
+         ],
+         "name": "Côtes",
+         "note": "si tu as une pente à côté",
+         "choice": "terrain"
+        },
+        {
+         "items": [
+          {
+           "cue": "Tu peux dire 2–3 mots, pas une phrase",
+           "ex": "vo-plat",
+           "id": "vo-plat",
+           "load": "Z4–Z5, 165–185 bpm",
+           "log": false,
+           "name": "Course dure / trot",
+           "reps": "2 min / 1 min 30",
+           "sets": 5
+          }
+         ],
+         "name": "Sur le plat",
+         "note": "sinon",
+         "choice": "terrain"
+        },
+        {
+         "items": [
+          {
+           "ex": "vo-calme",
+           "id": "vo-calme",
+           "log": false,
+           "name": "Trot ou marche",
+           "reps": "3–5 min"
+          }
+         ],
+         "name": "Retour au calme"
+        }
+       ],
+       "duration": "≈ 30 min",
+       "id": "s-vo2",
+       "kind": "intervalles",
+       "min": 30,
+       "nerv": true,
+       "note": "Optionnelle. Peu de temps, effort dur : « Train a lot, sometimes hard ». Une seule des deux variantes. Pas la veille du bas du corps ni du parkour high.",
+       "optional": true,
+       "short": "VO2",
+       "title": "Intervalles VO2max"
+      }
+     ]
+    }
+   },
+   "bl-3": {
+    "deload": "2027-W06",
+    "end": "2027-02-14",
+    "goal": "Le bas passe en puissance (lourd puis saut enchaîné), le haut en french contrast (lourd → plyo → lesté léger → assisté ou accéléré). S52 en salle, S53 et S01 en vacances (séances sans matériel), S02–S05 en salle, décharge en S06. Bloc très nerveux : la plyo intense est intégrée à la séance du bas ; garde 48 h entre le contraste et le parkour high.",
+    "name": "Bloc 3",
+    "start": "2026-12-21"
+   },
+   "bl-4": {
+    "deload": "2027-W11",
+    "end": "2027-03-21",
+    "goal": "Le bas en french contrast, le haut en vitesse (charges légères, vitesse max : lâchés, kipping, lancers). Pas de plyo intense à part : elle est dans le french contrast. Parkour mid avec skills en sous-maximal ; parkour high à 48 h du contraste. À recaler à rebours dès que les dates de compétition sont connues.",
+    "name": "Bloc 4",
+    "start": "2027-02-15"
+   },
+   "bl-5": {
+    "deload": "2027-W16",
+    "end": "2027-04-25",
+    "goal": "Le bas en vitesse (sprints, runs, plyo réactive, force en maintien), le haut en maintien. Skills à fond et runs de speed de 10–20 s. Affûtage en fin de bloc : volume en baisse, intensité gardée.",
+    "name": "Bloc 5",
+    "start": "2027-03-22"
+   }
+  },
+  "phases": {
+   "bas-0": {
+    "end": "2026-09-13",
+    "name": "Prehab cheville et genou",
+    "start": "2026-08-10",
+    "track": "bas",
+    "type": "maintien"
+   },
+   "bas-1": {
+    "end": "2026-11-08",
+    "name": "Hypertrophie",
+    "start": "2026-09-21",
+    "track": "bas",
+    "type": "hypertrophie"
+   },
+   "bas-2": {
+    "end": "2026-12-20",
+    "name": "Force max",
+    "start": "2026-11-09",
+    "track": "bas",
+    "type": "force"
+   },
+   "bas-3": {
+    "end": "2027-02-14",
+    "name": "Puissance",
+    "start": "2026-12-21",
+    "track": "bas",
+    "type": "puissance"
+   },
+   "bas-4": {
+    "end": "2027-03-21",
+    "name": "French contrast",
+    "start": "2027-02-15",
+    "track": "bas",
+    "type": "contraste"
+   },
+   "bas-5": {
+    "end": "2027-04-25",
+    "name": "Vitesse",
+    "start": "2027-03-22",
+    "track": "bas",
+    "type": "vitesse"
+   },
+   "bas-6": {
+    "end": "2027-08-29",
+    "name": "Saison",
+    "start": "2027-04-26",
+    "track": "bas",
+    "type": "saison"
+   },
+   "haut-0": {
+    "end": "2026-09-13",
+    "name": "Hypertrophie",
+    "start": "2026-08-10",
+    "track": "haut",
+    "type": "hypertrophie"
+   },
+   "haut-1": {
+    "end": "2026-11-08",
+    "name": "Force max",
+    "start": "2026-09-21",
+    "track": "haut",
+    "type": "force"
+   },
+   "haut-2": {
+    "end": "2026-12-20",
+    "name": "Puissance",
+    "start": "2026-11-09",
+    "track": "haut",
+    "type": "puissance"
+   },
+   "haut-3": {
+    "end": "2027-02-14",
+    "name": "French contrast",
+    "start": "2026-12-21",
+    "track": "haut",
+    "type": "contraste"
+   },
+   "haut-4": {
+    "end": "2027-03-21",
+    "name": "Vitesse",
+    "start": "2027-02-15",
+    "track": "haut",
+    "type": "vitesse"
+   },
+   "haut-5": {
+    "end": "2027-04-25",
+    "name": "Maintien",
+    "start": "2027-03-22",
+    "track": "haut",
+    "type": "maintien"
+   },
+   "haut-6": {
+    "end": "2027-08-29",
+    "name": "Saison",
+    "start": "2027-04-26",
+    "track": "haut",
+    "type": "saison"
+   }
+  },
+  "events": {
+   "vac-noel": {
+    "end": "2027-01-10",
+    "note": "Salle sans matériel",
+    "start": "2026-12-28",
+    "title": "Vacances",
+    "type": "vacances"
+   }
+  },
+  "weeks": {
+   "2026-W43": {
+    "focus": "Bloc 1, semaine 5 : bas du corps en hypertrophie, haut du corps en force.",
+    "tip": {
+     "text": "Après chaque séance, note une seule chose qui t'a surpris, en bien ou en mal. Au moment des tests, ce sont ces lignes plus que les chiffres qui diront quoi garder pour le bloc de force.",
+     "title": "Le carnet sert à décider"
+    }
+   },
+   "2026-W44": {
+    "tip": {
+     "text": "Avant chaque exercice, demande-toi ce que tu cherches. Les sauts max avant le squat sont un stimulus : frais, peu de reps, repos complet, intention à 100 %. Le parkour mid est une stratégie : variété, volume, fatigue acceptée. Mélanger les deux ne donne ni l'un ni l'autre.",
+     "title": "Stimulus ou stratégie"
+    }
+   },
+   "2026-W45": {
+    "tip": {
+     "text": "Les gains du bloc se consolident pendant la semaine légère, pas pendant les séances dures. Garde les charges, coupe les séries, et arrive aux tests en ayant envie de sauter. Un bon ou un mauvais chiffre, c'est de l'information, pas un jugement.",
+     "title": "La décharge fait partie du programme"
+    },
+    "sessions": [
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "cue": "Charge croissante",
+          "ex": "mec-haut",
+          "id": "mec-haut",
+          "log": false,
+          "name": "Tractions, dips et pompes",
+          "reps": "1× 5-3-1"
+         }
+        ],
+        "name": "Montée en charge"
+       },
+       {
+        "items": [
+         {
+          "cue": "Omoplates actives en bas, menton au-dessus",
+          "ex": "tractions-larges",
+          "id": "tractions-larges",
+          "link": "https://www.youtube.com/results?search_query=weighted+wide+grip+pull+up",
+          "load": "+16 kg",
+          "name": "Tractions larges pronation lestées",
+          "reps": "3–5",
+          "sets": 2
+         },
+         {
+          "cue": "Gainage complet, poitrine au contact",
+          "ex": "pompes",
+          "id": "pompes",
+          "link": "https://www.youtube.com/results?search_query=weighted+deficit+push+ups",
+          "load": "+16 kg",
+          "name": "Pompes surélevées lestées",
+          "reps": "4–6",
+          "sets": 2
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "A1, 90 s de pause, A2, 90 s de pause, puis on recommence."
+       },
+       {
+        "items": [
+         {
+          "cue": "Dernière rep limite mais propre",
+          "ex": "tractions",
+          "id": "tractions",
+          "link": "https://www.youtube.com/results?search_query=weighted+chin+up",
+          "load": "+16 kg",
+          "name": "Tractions serrées supination lestées",
+          "reps": "3–5",
+          "sets": 2
+         },
+         {
+          "cue": "Épaules basses, descente à 90° au coude",
+          "ex": "dips",
+          "id": "dips",
+          "link": "https://www.youtube.com/results?search_query=weighted+dips+technique",
+          "load": "+16 kg",
+          "name": "Dips lestés",
+          "reps": "4–6",
+          "sets": 2
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "B1, 90 s de pause, B2, 90 s de pause."
+       },
+       {
+        "items": [
+         {
+          "cue": "Pause 1 s en haut",
+          "ex": "levers-jambes",
+          "id": "levers-jambes",
+          "link": "https://www.youtube.com/results?search_query=hanging+leg+raise",
+          "name": "Levers de jambes",
+          "reps": "8",
+          "sets": 2,
+          "unit": "reps"
+         },
+         {
+          "cue": "Iso 2–3 s en haut",
+          "ex": "superman",
+          "id": "superman",
+          "name": "Supermans",
+          "reps": "8–10",
+          "sets": 2,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "Enchaîne C1 puis C2 sans pause, 60 s après la paire."
+       }
+      ],
+      "duration": "≈ 55 min",
+      "hideIf": "voyage",
+      "id": "s-haut",
+      "kind": "force",
+      "min": 35,
+      "note": "Mêmes charges, 2 séries au lieu de 4–5. Aucune rep à la limite.",
+      "short": "Haut",
+      "title": "Force haut du corps (décharge)"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "cue": "+2,5 kg si les 3 séries passent avec 1–2 reps en réserve",
+          "ex": "squat",
+          "id": "squat",
+          "link": "https://www.youtube.com/results?search_query=back+squat+technique",
+          "load": "64 kg",
+          "name": "Back squat",
+          "reps": "12",
+          "sets": 2
+         },
+         {
+          "cue": "Bassin à plat. Alterne les jambes sans poser la barre",
+          "ex": "rdl-unilat",
+          "id": "rdl-unilat",
+          "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+barbell",
+          "load": "29 kg",
+          "name": "RDL unilatéral barre",
+          "reps": "12 / jambe",
+          "sets": 2
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "Deux barres chargées à côté : A1, 90 s de pause, A2, 90 s de pause. Lourd bilatéral + unilatéral, ça évite de changer les disques."
+       },
+       {
+        "items": [
+         {
+          "cue": "Dos neutre, hanches vers l'arrière",
+          "ex": "rdl",
+          "id": "rdl",
+          "link": "https://www.youtube.com/results?search_query=romanian+deadlift+technique",
+          "load": "71,5 kg",
+          "name": "Soulevé de terre roumain",
+          "reps": "12",
+          "sets": 2
+         },
+         {
+          "ex": "fente-bulgare",
+          "id": "fente-bulgare",
+          "link": "https://www.youtube.com/results?search_query=barbell+bulgarian+split+squat",
+          "load": "39 kg",
+          "name": "Fente bulgare barre",
+          "reps": "12 / jambe",
+          "sets": 2
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "B1, 90 s, B2, 90 s."
+       },
+       {
+        "items": [
+         {
+          "cue": "Tempo lent, pause en haut",
+          "ex": "mollets",
+          "id": "mollets",
+          "link": "https://www.youtube.com/results?search_query=standing+calf+raise",
+          "load": "59 kg",
+          "name": "Mollets debout chargés",
+          "reps": "12–15",
+          "sets": 2
+         },
+         {
+          "cue": "Difficiles : talons loin du mur, poids sur les pieds",
+          "ex": "tibial",
+          "id": "tibial",
+          "link": "https://www.youtube.com/results?search_query=tibialis+raise",
+          "load": "lesté",
+          "name": "Tibialis raise",
+          "reps": "15–20",
+          "sets": 2,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "Enchaîne C1 puis C2 sans pause, 60 s après la paire."
+       }
+      ],
+      "duration": "≈ 65 min",
+      "hideIf": "voyage",
+      "id": "s-bas",
+      "kind": "hypertrophie",
+      "min": 45,
+      "note": "Mêmes charges, 2 séries au lieu de 3. Pas de sauts max : ils sont dans la session de tests.",
+      "short": "Bas",
+      "title": "Hypertrophie bas du corps (décharge)"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "iso-chaise",
+          "id": "iso-chaise",
+          "log": false,
+          "name": "Chaise contre un mur, sur les talons",
+          "reps": "40 s",
+          "sets": 2
+         },
+         {
+          "cue": "Talon avant décollé, genou arrière juste au-dessus du sol",
+          "ex": "iso-fente",
+          "id": "iso-fente",
+          "log": false,
+          "name": "Fente basse tenue, sur la pointe du pied avant",
+          "reps": "30 s / jambe",
+          "sets": 2
+         },
+         {
+          "ex": "iso-mollets",
+          "id": "iso-mollets",
+          "log": false,
+          "name": "Mollets tenus sur une jambe, en haut",
+          "reps": "30 s / jambe",
+          "sets": 2
+         },
+         {
+          "cue": "Du petit au grand, jusqu'à la vitesse de séance",
+          "ex": "ech-sauts",
+          "id": "ech-sauts",
+          "log": false,
+          "name": "Quelques sauts progressifs",
+          "reps": "5 min"
+         }
+        ],
+        "name": "Échauffement iso",
+        "note": "≈ 10 min : prépare les tendons sans fatiguer"
+       },
+       {
+        "items": [
+         {
+          "cue": "Sauts de chat, sauts de détente, plyos, drop precisions",
+          "ex": "lacunes",
+          "id": "lacunes",
+          "log": false,
+          "name": "Lacunes à travailler, si l'envie est là",
+          "reps": "au choix"
+         }
+        ],
+        "name": "Libre"
+       }
+      ],
+      "duration": "libre",
+      "hideIf": "voyage",
+      "id": "s-pk1",
+      "kind": "parkour",
+      "note": "Session plaisir, pas de défi à la limite.",
+      "short": "PK libre",
+      "title": "Parkour libre (léger)"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "cue": "Le lendemain d'une grosse séance : Z1 ou marche à la place",
+          "ex": "z2",
+          "id": "z2",
+          "load": "135–148 bpm",
+          "log": false,
+          "name": "Vélo ou course",
+          "reps": "45–60 min"
+         }
+        ],
+        "name": "Continu"
+       }
+      ],
+      "duration": "45–60 min",
+      "id": "s-endu",
+      "kind": "endurance",
+      "min": 50,
+      "short": "Z2",
+      "title": "Endurance zone 2"
+     }
+    ]
+   },
+   "2026-W46": {},
+   "2026-W47": {
+    "tip": {
+     "text": "Le contraste marche parce que la série lourde réveille le système nerveux pour quelques minutes. La série explosive qui suit doit rester rapide : dès que la vitesse baisse, elle ne sert plus à rien. Arrête-la là, même si le nombre de reps n'est pas atteint.",
+     "title": "Lourd puis rapide"
+    }
+   },
+   "2026-W53": {
+    "focus": "Vacances : deux séances full body au poids de corps, à 48 h d'écart. La puissance se travaille très bien sans matériel ; la force se maintient.",
+    "sessions": [
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "va-mob",
+          "id": "va-mob",
+          "log": false,
+          "name": "Mobilité, skips, montées de genoux",
+          "reps": "5 min"
+         },
+         {
+          "cue": "Contact court, chevilles raides",
+          "ex": "pogos",
+          "id": "pogos",
+          "img": "1965299094cc508e0758c8bec329a0f7",
+          "log": false,
+          "name": "Pogos",
+          "reps": "20",
+          "sets": 3
+         }
+        ],
+        "name": "Échauffement",
+        "note": "10 min"
+       },
+       {
+        "items": [
+         {
+          "cue": "À fond, arrête dès que tu ralentis",
+          "ex": "va-sprint",
+          "id": "va-sprint",
+          "log": false,
+          "name": "Sprints départ debout",
+          "reps": "10–20 m",
+          "rest": "2 min",
+          "sets": 5,
+          "unit": "reps"
+         },
+         {
+          "cue": "Intention maximale, réception stable",
+          "ex": "broad",
+          "id": "broad",
+          "log": false,
+          "name": "Saut en longueur debout",
+          "reps": "1",
+          "rest": "60–90 s",
+          "sets": 5
+         }
+        ],
+        "name": "Vitesse et sauts",
+        "note": "frais, repos complet"
+       },
+       {
+        "items": [
+         {
+          "cue": "Descente 3 s. Trop dur : toucher le sol avec le genou arrière",
+          "ex": "va-pistol",
+          "id": "va-pistol",
+          "link": "https://www.youtube.com/results?search_query=shrimp+squat",
+          "name": "Pistol squat (ou shrimp squat)",
+          "reps": "4–6 / jambe",
+          "rest": "90 s",
+          "sets": 3,
+          "unit": "reps"
+         },
+         {
+          "cue": "Pause 2 s en haut",
+          "ex": "va-pont",
+          "id": "va-pont",
+          "name": "Pont fessier sur une jambe",
+          "reps": "12 / jambe",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Jambes",
+        "rounds": 3,
+        "rule": "Quadriceps puis fessiers : A1, 30 s, A2, 90 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "vb-archer",
+          "id": "vb-archer",
+          "link": "https://www.youtube.com/results?search_query=archer+push+up",
+          "name": "Pompes archer (ou pompes lentes 3 s)",
+          "reps": "4–5 / côté",
+          "sets": 4,
+          "unit": "reps"
+         },
+         {
+          "cue": "Arrête dès que tu décolles moins",
+          "ex": "pompes-plyo",
+          "id": "pompes-plyo",
+          "img": "0c393f354beffb93528330967c7058f4",
+          "name": "Pompes claquées",
+          "reps": "5",
+          "rest": "2–3 min",
+          "sets": 4,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Poussée",
+        "rounds": 4,
+        "rule": "Contraste : B1 puis B2 enchaînés, 2 min après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "va-mollets",
+          "id": "va-mollets",
+          "log": false,
+          "name": "Mollets sur une jambe, au sol",
+          "reps": "20",
+          "rest": "45 s",
+          "sets": 2,
+          "unit": "reps"
+         },
+         {
+          "ex": "va-tibial",
+          "id": "va-tibial",
+          "log": false,
+          "name": "Tibialis raise, dos au mur",
+          "reps": "20–25",
+          "rest": "45 s",
+          "sets": 2,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "Mollets puis tibialis, sans pause."
+       },
+       {
+        "items": [
+         {
+          "ex": "vb-hollow",
+          "id": "vb-hollow",
+          "log": false,
+          "name": "Hollow body",
+          "reps": "30 s",
+          "rest": "45 s",
+          "sets": 2
+         }
+        ],
+        "name": "Gainage"
+       }
+      ],
+      "duration": "≈ 50 min",
+      "id": "v-a",
+      "kind": "puissance",
+      "min": 50,
+      "nerv": true,
+      "note": "Les deux séances sont full body et s'alternent, à 48 h d'écart.",
+      "short": "A",
+      "title": "Full body A : sprints et force"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "vb-mob",
+          "id": "vb-mob",
+          "log": false,
+          "name": "Mobilité épaules, poignets, hanches",
+          "reps": "5 min"
+         },
+         {
+          "ex": "hops",
+          "id": "hops",
+          "img": "50f28ac70b7b07d263701bbe3ff083bf",
+          "log": false,
+          "name": "Hops, lents puis rapides",
+          "reps": "15 m / jambe",
+          "sets": 2
+         }
+        ],
+        "name": "Échauffement",
+        "note": "10 min"
+       },
+       {
+        "items": [
+         {
+          "cue": "Rythme et temps de contact court",
+          "ex": "bounds",
+          "id": "bounds",
+          "img": "9ec8a10ebcc7d99f5edef5a4da01dcb7",
+          "log": false,
+          "name": "Bounds / switch strides",
+          "reps": "20 m",
+          "rest": "90 s",
+          "sets": 4
+         },
+         {
+          "cue": "Enchaîner les trois sans perdre de distance",
+          "ex": "va-triple",
+          "id": "va-triple",
+          "log": false,
+          "name": "Triple broad jump",
+          "reps": "1",
+          "rest": "90 s",
+          "sets": 4
+         },
+         {
+          "cue": "Vise un point haut à toucher de la main : ça aide à sauter à fond",
+          "ex": "vertical",
+          "id": "vertical",
+          "log": false,
+          "name": "Saut vertical",
+          "reps": "1",
+          "rest": "60 s",
+          "sets": 4
+         }
+        ],
+        "name": "Rebonds et sauts",
+        "note": "frais"
+       },
+       {
+        "items": [
+         {
+          "cue": "4 s à la descente, bassin à plat",
+          "ex": "va-rdl",
+          "id": "va-rdl",
+          "name": "RDL sur une jambe, très lent",
+          "reps": "8–10 / jambe",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         },
+         {
+          "cue": "Réception silencieuse",
+          "ex": "vb-fentes",
+          "id": "vb-fentes",
+          "log": false,
+          "name": "Fentes sautées alternées",
+          "reps": "6 / jambe",
+          "rest": "90 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Jambes",
+        "rounds": 3,
+        "rule": "Ischios puis quadriceps : A1, 30 s, A2, 90 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "cue": "Pour la poussée des kongs",
+          "ex": "vb-hspu",
+          "id": "vb-hspu",
+          "link": "https://www.youtube.com/results?search_query=wall+handstand+push+up+progression",
+          "name": "Pompes en équilibre au mur (ou pike push-ups)",
+          "reps": "3–6",
+          "rest": "90 s",
+          "sets": 3,
+          "unit": "reps"
+         },
+         {
+          "cue": "Pause 2 s, omoplates serrées",
+          "ex": "vb-ytw",
+          "id": "vb-ytw",
+          "log": false,
+          "name": "Y-T-W allongé sur le ventre",
+          "reps": "8 de chaque",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Haut du corps",
+        "rounds": 3,
+        "rule": "Poussée puis dos : B1, 30 s, B2, 90 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "levers-jambes",
+          "id": "levers-jambes",
+          "name": "Levers de jambes au sol",
+          "reps": "12",
+          "rest": "45 s",
+          "sets": 2,
+          "unit": "reps"
+         },
+         {
+          "cue": "Iso 2–3 s en haut",
+          "ex": "superman",
+          "id": "superman",
+          "name": "Supermans",
+          "reps": "10",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Gainage",
+        "rounds": 3,
+        "rule": "Abdos puis lombaires, 45 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "vb-lateral",
+          "id": "vb-lateral",
+          "log": false,
+          "name": "Gainage latéral",
+          "reps": "30 s / côté",
+          "rest": "45 s",
+          "sets": 2
+         }
+        ],
+        "name": "Gainage latéral"
+       }
+      ],
+      "doms": true,
+      "duration": "≈ 50 min",
+      "id": "v-b",
+      "kind": "puissance",
+      "min": 50,
+      "note": "Pas de tirage sans barre : deux semaines sans tractions ne te feront rien perdre. Avec un élastique dans le sac, ajoute 3 × 12 rowings.",
+      "short": "B",
+      "title": "Full body B : rebonds et dos"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "z2",
+          "id": "z2",
+          "load": "135–148 bpm",
+          "log": false,
+          "name": "Course ou marche rapide",
+          "reps": "40–50 min"
+         }
+        ],
+        "name": "Continu"
+       }
+      ],
+      "duration": "40–50 min",
+      "id": "v-z2",
+      "kind": "endurance",
+      "min": 45,
+      "optional": true,
+      "short": "Z2",
+      "title": "Footing zone 2"
+     }
+    ],
+    "tip": {
+     "text": "Deux semaines plus légères juste après une décharge, ce n'est pas du temps perdu : tes tissus récupèrent, et la vitesse se travaille aussi bien sans barre. Fais tes deux séances avec une intention maximale sur les sauts et les sprints, puis profite.",
+     "title": "Les vacances ne coûtent rien"
+    }
+   },
+   "2027-W01": {
+    "focus": "Vacances, semaine 2 : mêmes séances full body, à 48 h d'écart.",
+    "sessions": [
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "va-mob",
+          "id": "va-mob",
+          "log": false,
+          "name": "Mobilité, skips, montées de genoux",
+          "reps": "5 min"
+         },
+         {
+          "cue": "Contact court, chevilles raides",
+          "ex": "pogos",
+          "id": "pogos",
+          "img": "1965299094cc508e0758c8bec329a0f7",
+          "log": false,
+          "name": "Pogos",
+          "reps": "20",
+          "sets": 3
+         }
+        ],
+        "name": "Échauffement",
+        "note": "10 min"
+       },
+       {
+        "items": [
+         {
+          "cue": "À fond, arrête dès que tu ralentis",
+          "ex": "va-sprint",
+          "id": "va-sprint",
+          "log": false,
+          "name": "Sprints départ debout",
+          "reps": "10–20 m",
+          "rest": "2 min",
+          "sets": 5,
+          "unit": "reps"
+         },
+         {
+          "cue": "Intention maximale, réception stable",
+          "ex": "broad",
+          "id": "broad",
+          "log": false,
+          "name": "Saut en longueur debout",
+          "reps": "1",
+          "rest": "60–90 s",
+          "sets": 5
+         }
+        ],
+        "name": "Vitesse et sauts",
+        "note": "frais, repos complet"
+       },
+       {
+        "items": [
+         {
+          "cue": "Descente 3 s. Trop dur : toucher le sol avec le genou arrière",
+          "ex": "va-pistol",
+          "id": "va-pistol",
+          "link": "https://www.youtube.com/results?search_query=shrimp+squat",
+          "name": "Pistol squat (ou shrimp squat)",
+          "reps": "4–6 / jambe",
+          "rest": "90 s",
+          "sets": 3,
+          "unit": "reps"
+         },
+         {
+          "cue": "Pause 2 s en haut",
+          "ex": "va-pont",
+          "id": "va-pont",
+          "name": "Pont fessier sur une jambe",
+          "reps": "12 / jambe",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Jambes",
+        "rounds": 3,
+        "rule": "Quadriceps puis fessiers : A1, 30 s, A2, 90 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "vb-archer",
+          "id": "vb-archer",
+          "link": "https://www.youtube.com/results?search_query=archer+push+up",
+          "name": "Pompes archer (ou pompes lentes 3 s)",
+          "reps": "4–5 / côté",
+          "sets": 4,
+          "unit": "reps"
+         },
+         {
+          "cue": "Arrête dès que tu décolles moins",
+          "ex": "pompes-plyo",
+          "id": "pompes-plyo",
+          "img": "0c393f354beffb93528330967c7058f4",
+          "name": "Pompes claquées",
+          "reps": "5",
+          "rest": "2–3 min",
+          "sets": 4,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Poussée",
+        "rounds": 4,
+        "rule": "Contraste : B1 puis B2 enchaînés, 2 min après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "va-mollets",
+          "id": "va-mollets",
+          "log": false,
+          "name": "Mollets sur une jambe, au sol",
+          "reps": "20",
+          "rest": "45 s",
+          "sets": 2,
+          "unit": "reps"
+         },
+         {
+          "ex": "va-tibial",
+          "id": "va-tibial",
+          "log": false,
+          "name": "Tibialis raise, dos au mur",
+          "reps": "20–25",
+          "rest": "45 s",
+          "sets": 2,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "rounds": 2,
+        "rule": "Mollets puis tibialis, sans pause."
+       },
+       {
+        "items": [
+         {
+          "ex": "vb-hollow",
+          "id": "vb-hollow",
+          "log": false,
+          "name": "Hollow body",
+          "reps": "30 s",
+          "rest": "45 s",
+          "sets": 2
+         }
+        ],
+        "name": "Gainage"
+       }
+      ],
+      "duration": "≈ 50 min",
+      "id": "v-a",
+      "kind": "puissance",
+      "min": 50,
+      "nerv": true,
+      "note": "Les deux séances sont full body et s'alternent, à 48 h d'écart.",
+      "short": "A",
+      "title": "Full body A : sprints et force"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "vb-mob",
+          "id": "vb-mob",
+          "log": false,
+          "name": "Mobilité épaules, poignets, hanches",
+          "reps": "5 min"
+         },
+         {
+          "ex": "hops",
+          "id": "hops",
+          "img": "50f28ac70b7b07d263701bbe3ff083bf",
+          "log": false,
+          "name": "Hops, lents puis rapides",
+          "reps": "15 m / jambe",
+          "sets": 2
+         }
+        ],
+        "name": "Échauffement",
+        "note": "10 min"
+       },
+       {
+        "items": [
+         {
+          "cue": "Rythme et temps de contact court",
+          "ex": "bounds",
+          "id": "bounds",
+          "img": "9ec8a10ebcc7d99f5edef5a4da01dcb7",
+          "log": false,
+          "name": "Bounds / switch strides",
+          "reps": "20 m",
+          "rest": "90 s",
+          "sets": 4
+         },
+         {
+          "cue": "Enchaîner les trois sans perdre de distance",
+          "ex": "va-triple",
+          "id": "va-triple",
+          "log": false,
+          "name": "Triple broad jump",
+          "reps": "1",
+          "rest": "90 s",
+          "sets": 4
+         },
+         {
+          "cue": "Vise un point haut à toucher de la main : ça aide à sauter à fond",
+          "ex": "vertical",
+          "id": "vertical",
+          "log": false,
+          "name": "Saut vertical",
+          "reps": "1",
+          "rest": "60 s",
+          "sets": 4
+         }
+        ],
+        "name": "Rebonds et sauts",
+        "note": "frais"
+       },
+       {
+        "items": [
+         {
+          "cue": "4 s à la descente, bassin à plat",
+          "ex": "va-rdl",
+          "id": "va-rdl",
+          "name": "RDL sur une jambe, très lent",
+          "reps": "8–10 / jambe",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         },
+         {
+          "cue": "Réception silencieuse",
+          "ex": "vb-fentes",
+          "id": "vb-fentes",
+          "log": false,
+          "name": "Fentes sautées alternées",
+          "reps": "6 / jambe",
+          "rest": "90 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Jambes",
+        "rounds": 3,
+        "rule": "Ischios puis quadriceps : A1, 30 s, A2, 90 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "cue": "Pour la poussée des kongs",
+          "ex": "vb-hspu",
+          "id": "vb-hspu",
+          "link": "https://www.youtube.com/results?search_query=wall+handstand+push+up+progression",
+          "name": "Pompes en équilibre au mur (ou pike push-ups)",
+          "reps": "3–6",
+          "rest": "90 s",
+          "sets": 3,
+          "unit": "reps"
+         },
+         {
+          "cue": "Pause 2 s, omoplates serrées",
+          "ex": "vb-ytw",
+          "id": "vb-ytw",
+          "log": false,
+          "name": "Y-T-W allongé sur le ventre",
+          "reps": "8 de chaque",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Haut du corps",
+        "rounds": 3,
+        "rule": "Poussée puis dos : B1, 30 s, B2, 90 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "levers-jambes",
+          "id": "levers-jambes",
+          "name": "Levers de jambes au sol",
+          "reps": "12",
+          "rest": "45 s",
+          "sets": 2,
+          "unit": "reps"
+         },
+         {
+          "cue": "Iso 2–3 s en haut",
+          "ex": "superman",
+          "id": "superman",
+          "name": "Supermans",
+          "reps": "10",
+          "rest": "60 s",
+          "sets": 3,
+          "unit": "reps"
+         }
+        ],
+        "kind": "superset",
+        "name": "Gainage",
+        "rounds": 3,
+        "rule": "Abdos puis lombaires, 45 s après la paire."
+       },
+       {
+        "items": [
+         {
+          "ex": "vb-lateral",
+          "id": "vb-lateral",
+          "log": false,
+          "name": "Gainage latéral",
+          "reps": "30 s / côté",
+          "rest": "45 s",
+          "sets": 2
+         }
+        ],
+        "name": "Gainage latéral"
+       }
+      ],
+      "doms": true,
+      "duration": "≈ 50 min",
+      "id": "v-b",
+      "kind": "puissance",
+      "min": 50,
+      "note": "Pas de tirage sans barre : deux semaines sans tractions ne te feront rien perdre. Avec un élastique dans le sac, ajoute 3 × 12 rowings.",
+      "short": "B",
+      "title": "Full body B : rebonds et dos"
+     },
+     {
+      "blocks": [
+       {
+        "items": [
+         {
+          "ex": "z2",
+          "id": "z2",
+          "load": "135–148 bpm",
+          "log": false,
+          "name": "Course ou marche rapide",
+          "reps": "40–50 min"
+         }
+        ],
+        "name": "Continu"
+       }
+      ],
+      "duration": "40–50 min",
+      "id": "v-z2",
+      "kind": "endurance",
+      "min": 45,
+      "optional": true,
+      "short": "Z2",
+      "title": "Footing zone 2"
+     }
+    ],
+    "tip": {
+     "text": "Deux semaines sans charges lourdes, c'est l'occasion de soigner la qualité : sauts propres, réceptions silencieuses, positions basses tenues. Tu reviendras frais pour attaquer le bloc 3 en salle.",
+     "title": "Profite du calme"
+    }
+   },
+   "2026-W48": {
+    "tip": {
+     "title": "Trois lignes jamais faites",
+     "text": "Retourne sur un spot que tu connais par cœur et cherche trois lignes que tu n'as encore jamais tentées. La force construite en salle ne compte en compétition que si ton œil continue de voir de nouvelles options."
+    }
+   }
+  },
+  "content": {
+   "climbup": {
+    "levels": [
+     {
+      "gif": "c9c0fab70912412229e4433dbb2eb77e",
+      "n": 1,
+      "poster": "02529e1cd1d945cdb52ccc84bb16321b",
+      "video": "31613ef1519ac3028e54c40ea1c402f4"
+     },
+     {
+      "gif": "c0b8852cd325092e12834d1de9ad77ef",
+      "n": 2,
+      "poster": "9a0938c928b62e49868a17b118a4fa95",
+      "video": "805192081ef04c7c6b9fe1161d17c90d"
+     },
+     {
+      "gif": "a0b0845943508bbeb56437e953661c84",
+      "n": 3,
+      "poster": "e47e5d2a66007ddbb1017aad757267db",
+      "video": "e5d1abd60d7213d52f8ba02888351b96"
+     },
+     {
+      "gif": "b89c0f7c593974842928528830338395",
+      "n": 4,
+      "poster": "df006d3e8c82edef6960b272e9efeebd",
+      "video": "732eecc16609352119c2ee766e4ffc35"
+     },
+     {
+      "gif": "fcdbdaf98dac34d1a979422277d5b41e",
+      "n": 5,
+      "poster": "221b599dd20b6d3416ec9c3b49e016f2",
+      "video": "c75b0639df938ba43f42ffc054b2ab85"
+     }
+    ]
+   },
+   "nutrition": {
+    "intro": "Pas de plan de repas pour l'instant, seulement les repères qui comptent pendant la phase de base. On affinera quand on aura quelques semaines de poids et de tour de taille.",
+    "sections": [
+     {
+      "points": [
+       "Viser 1,6 à 2,2 g par kg et par jour, soit environ 130 à 175 g à 80 kg.",
+       "Répartir en 3 à 4 prises de 30 à 40 g, dont une dans les heures qui suivent la séance.",
+       "Sources végétariennes faciles : séré et skyr, tofu, tempeh, seitan, lentilles, pois chiches, œufs, cottage cheese, protéine en poudre si besoin."
+      ],
+      "title": "Protéines"
+     },
+     {
+      "points": [
+       "La plupart des traceurs mangent trop peu, surtout en glucides : riz, pommes de terre, pain au levain les jours d'entraînement.",
+       "Phase de base : léger surplus. Ton rythme actuel d'environ +1 kg par mois est dans la fourchette haute.",
+       "Si le tour de taille monte plus vite que les charges, réduire un peu les portions de glucides et de graisses.",
+       "Avant la phase spécifique : stabiliser le poids. Le rapport force/poids compte en skills et en speed."
+      ],
+      "title": "Énergie et poids"
+     },
+     {
+      "points": [
+       "Un repas avec glucides 2 à 3 h avant les grosses séances (jambes, parkour long).",
+       "Après : protéines + glucides, sans se compliquer la vie.",
+       "Longues sessions en extérieur : eau et un peu de sel, surtout quand il fait chaud."
+      ],
+      "title": "Autour des séances"
+     },
+     {
+      "points": [
+       "Sommeil : c'est là que la récupération se fait ; une mauvaise nuit justifie d'alléger, comme le 13 oct.",
+       "Créatine monohydrate (3 à 5 g par jour) : le complément le plus étudié, pour la force, la récupération et le cerveau ; Max Henry la conseille à tout adulte.",
+       "Alimentation surtout végétarienne : garder un œil sur la B12, le fer et les oméga-3, et en parler à un médecin en cas de doute."
+      ],
+      "title": "Bases qui comptent"
+     },
+     {
+      "points": [
+       "Un repas connu, testé à l'entraînement, 2 à 3 h avant.",
+       "Collations faciles à digérer entre les passages (banane, barre, compote).",
+       "Rien de nouveau le jour J."
+      ],
+      "title": "Jour de compétition"
+     }
+    ],
+    "title": "Principes",
+    "updated": "2026-10-21"
+   },
+   "tests": {
+    "session": {
+     "blocks": [
+      {
+       "items": [
+        {
+         "ex": "t-cond",
+         "id": "t-cond",
+         "log": false,
+         "name": "Frais, même terrain, mêmes chaussures",
+         "reps": "3 essais, garder le meilleur"
+        }
+       ],
+       "name": "Conditions"
+      },
+      {
+       "items": [
+        {
+         "ex": "t-longueur",
+         "id": "t-longueur",
+         "log": false,
+         "name": "Saut en longueur sans élan",
+         "tests": [
+          [
+           "longueur",
+           "Meilleur essai (pieds)",
+           "num"
+          ]
+         ]
+        },
+        {
+         "cue": "Distance totale au sol",
+         "ex": "t-plyo3",
+         "id": "t-plyo3",
+         "log": false,
+         "name": "3 plyos enchaînés",
+         "tests": [
+          [
+           "plyo3",
+           "Meilleur essai (pieds)",
+           "num"
+          ]
+         ]
+        },
+        {
+         "ex": "t-1pied",
+         "id": "t-1pied",
+         "log": false,
+         "name": "Saut sur un pied, gauche puis droite",
+         "tests": [
+          [
+           "unG",
+           "Gauche (pieds)",
+           "num"
+          ],
+          [
+           "unD",
+           "Droite (pieds)",
+           "num"
+          ]
+         ]
+        }
+       ],
+       "name": "Sauts"
+      },
+      {
+       "items": [
+        {
+         "cue": "Notes de 1 à 5. Touche un niveau pour le revoir",
+         "ex": "t-cu",
+         "id": "t-cu",
+         "log": false,
+         "name": "Climb-up",
+         "tests": [
+          [
+           "cuNiv",
+           "Niveau",
+           "scale"
+          ],
+          [
+           "cuQual",
+           "Qualité",
+           "scale"
+          ],
+          [
+           "cuDiff",
+           "Difficulté ressentie",
+           "scale"
+          ]
+         ],
+         "videos": "climbup"
+        }
+       ],
+       "name": "Bras"
+      }
+     ],
+     "duration": "≈ 45 min",
+     "id": "s-tests",
+     "kind": "test",
+     "min": 45,
+     "nerv": true,
+     "note": "Première séance du bloc : frais, avant de reprendre les charges. Mêmes terrain, chaussures et heure ; 3 essais, garde le meilleur.",
+     "short": "Tests",
+     "title": "Session de tests",
+     "emoji": "📏"
+    }
+   }
+  }
+ },
+ "del": {
+  "events": [
+   "test-b1",
+   "test-b2",
+   "test-b3",
+   "test-b4",
+   "test-b5"
+  ]
+ }
+}

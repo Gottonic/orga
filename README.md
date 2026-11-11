@@ -5,8 +5,10 @@ Mes apps perso, réunies derrière un menu à tuiles. Une seule app à installer
 - Accueil : https://gottonic.github.io/orga/
 - **Établi** — mes projets, semaine par semaine : https://gottonic.github.io/orga/etabli/
 - **Cash** — mes finances (en construction) : https://gottonic.github.io/orga/cash/
+- **Forge** — mon entraînement parkour (ex-« Carnet ») : https://gottonic.github.io/orga/forge/
 
 Toutes les apps partagent la même base Supabase et la même connexion : on se connecte une fois.
+Chaque app garde son propre style : chacune est un lieu à part.
 Tout fonctionne hors ligne ; les changements partent dès que le réseau revient.
 
 ## Organisation du dépôt
@@ -16,8 +18,9 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `/` | accueil ORGA (`index.html`), `manifest.webmanifest`, `sw.js` (hors ligne pour toutes les apps), icônes |
 | `etabli/` | l'app Établi |
 | `cash/` | l'app Cash |
+| `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |
 | `commun/` | ce que les apps partagent : `supabase.js`, polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Cash) |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Cash), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
@@ -54,3 +57,16 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 - Toucher ce symbole permet aussi d'**exporter toutes tes données** dans un fichier.
 - GitHub arrête les signaux de réveil après 60 jours sans aucune modification du dépôt :
   il suffit alors de relancer l'action à la main (onglet **Actions**).
+
+## Bon à savoir (Forge)
+
+- Le programme (blocs, séances, conseils) est dans `forge/programme.json`. Quand Claude publie une nouvelle version,
+  l'app l'installe toute seule à l'ouverture (ce fichier ne passe jamais par le cache). Ton journal, tes charges
+  et tes tests ne sont jamais dans ce dépôt.
+- Un bloc ou une séance modifié dans l'app n'est plus écrasé par les mises à jour de Claude : la version de Claude
+  attend dans **Données → Programme**, où tu choisis de la prendre ou de garder la tienne.
+- **Données → Exporter** crée un fichier avec tout l'entraînement : à envoyer à Claude pour un bilan, ou à garder.
+- Les données sont dans la table `carnet` et le dossier privé `carnet` de Supabase (ancien nom, inchangé).
+- Les images d'exercices sont gardées sur l'appareil (cache `carnet-media`), que les mises à jour n'effacent pas.
+- Les clés présentes dans le code (adresse du projet, clé « publishable ») sont faites pour être publiques.
+  Ne jamais mettre ici la clé « secret / service_role » ni le mot de passe de la base.
