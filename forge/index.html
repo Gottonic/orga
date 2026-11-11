@@ -477,8 +477,6 @@ body.ov-open{overflow:hidden}
 .pe-flags{display:flex;flex-direction:column;gap:8px}
 .pe-slist{display:flex;flex-direction:column;gap:6px}
 .pe-srow{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
-.pe-st{flex:1;min-width:0;display:flex;flex-direction:column}
-.pe-st .muted{font-size:12px}
 .pe-act{display:flex;gap:4px;flex:0 0 auto}
 .pe-act button{all:unset;cursor:pointer;min-width:30px;height:30px;padding:0 6px;border-radius:9px;border:1px solid var(--line);background:var(--page);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
 .pe-act button.primary{background:var(--accent-pastel);border-color:var(--accent-pastel);color:var(--accent-ink);padding:0 10px}
@@ -518,6 +516,81 @@ body.ov-open{overflow:hidden}
 .pend details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 .pe-body .field label input,.pe-body .field label select,.pe-body .field label textarea{color:var(--ink);font-size:15px;font-weight:400}
 .pe-body input::placeholder{color:var(--ink-3);opacity:.7}
+/* bibliothèque d'exercices */
+.exq{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:15px}
+.extagsel{gap:5px}
+.extagsel button{font-size:13px}
+.exlist{display:flex;flex-direction:column;gap:6px}
+.exr{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.exr[hidden]{display:none}
+.exr:focus-visible{outline:2px solid var(--accent)}
+.exth{flex:0 0 44px;width:44px;height:52px;border-radius:8px;overflow:hidden;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;color:var(--accent-ink);font-size:18px}
+.exth img{width:100%;height:100%;object-fit:cover;display:block}
+.exth.big{flex-basis:64px;width:64px;height:80px}
+.exm{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.exm b{font-weight:600;line-height:1.25}
+.extags{display:flex;flex-wrap:wrap;gap:3px}
+.extags i{font-style:normal;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.extags i.none{background:none;border:1px dashed var(--line);color:var(--ink-3)}
+.extags.lg i{font-size:12.5px;padding:2px 9px}
+.ex1{flex:0 0 auto;text-align:right;font-family:var(--f-mono);font-size:13px;font-weight:600;display:flex;flex-direction:column;line-height:1.2}
+.ex1 small{font-family:var(--f-body);font-weight:500;font-size:11px;color:var(--ink-3)}
+.exbody{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+.exbig img{width:min(320px,100%);border-radius:14px;display:block;background:var(--surface-2)}
+.excue{margin:0;color:var(--ink-2)}
+.extips{background:var(--accent-soft);border-radius:12px;padding:10px 12px}
+.extips p{margin:4px 0 0;white-space:pre-line}
+.exstat p{margin:4px 0}
+.exr5{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.exr5 span{display:flex;flex-direction:column;background:var(--surface-2);border-radius:10px;padding:5px 10px;font-family:var(--f-mono);font-size:13px}
+.exr5 b{font-family:var(--f-body);font-size:11.5px;color:var(--ink-3)}
+.exhist{display:flex;flex-direction:column;gap:2px}
+.exhist div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;border-top:1px dashed var(--line);padding-top:4px}
+.exhist div span:last-child{font-family:var(--f-mono);font-size:12.5px}
+.exbody .field label,.exbody .lbl{font-size:12px;color:var(--ink-3)}
+.sh-tips summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent-ink)}
+.sh-tips p{margin:4px 0 0;font-size:13px;color:var(--ink-2);white-space:pre-line}
+/* éditeur de séance */
+.pe-types{display:flex;flex-wrap:wrap;gap:5px}
+.pe-types button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:13.5px;font-weight:600}
+.pe-types button.on{background:var(--accent-pastel);border-color:var(--accent);color:var(--accent-ink)}
+.pe-types button:focus-visible{outline:2px solid var(--accent)}
+.tipb{background:var(--sun-soft);border-radius:14px;padding:4px 12px 10px}
+.tipb.shut{padding-bottom:4px}
+.tipb-h{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;padding:6px 0;font-weight:700;font-size:14px}
+.tipb:not(.shut) .chev::after{transform:rotate(45deg);left:9px;top:7px}
+.tipb ul{margin:2px 0 6px;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.tipb p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.pe-row{display:flex;gap:6px;align-items:flex-start;background:var(--page);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 4px;transition:box-shadow .15s}
+.pe-row.open{background:var(--surface);border-color:var(--accent)}
+.pe-row.dragging{position:relative;z-index:3;box-shadow:0 10px 24px rgba(0,0,0,.18);background:var(--surface);opacity:.95}
+.drop-before{box-shadow:0 -3px 0 0 var(--accent)}
+.pe-hdl{flex:0 0 22px;align-self:stretch;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:15px;letter-spacing:-2px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.pe-rm{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.pe-rt{display:flex;align-items:center;gap:6px}
+.pe-rimg{flex:0 0 26px;width:26px;height:32px;border-radius:5px;overflow:hidden;background:var(--surface-2)}
+.pe-rimg img{width:100%;height:100%;object-fit:cover;display:block}
+.pe-nm{all:unset;cursor:pointer;flex:1;min-width:0;font-weight:600;line-height:1.25}
+.pe-nm small{font-weight:500;font-size:11.5px;color:var(--accent-ink);font-family:var(--f-mono)}
+.pe-del{all:unset;cursor:pointer;flex:0 0 auto;min-width:28px;height:28px;padding:0 6px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:13px}
+.pe-del.on{color:var(--bad);border:1px solid var(--bad);font-weight:600}
+.pe-ctl{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:flex-end}
+.pe-st{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--ink-3);font-weight:600}
+.pe-st select{padding:5px 8px;font-size:13.5px;border-radius:10px;height:32px;color:var(--ink);font-weight:500}
+.ed-s.sm button{width:30px;height:32px;font-size:16px}
+.ed-s.sm b{min-width:34px;font-size:13.5px;color:var(--ink)}
+.pe-chip{all:unset;cursor:pointer;height:32px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;font-size:13px;color:var(--ink)}
+.pe-chip.ghost{border-style:dashed;color:var(--ink-3)}
+.pe-det{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:8px}
+.pe-hint{margin:0;font-size:12.5px;color:var(--mint-ink);background:var(--mint-soft);border-radius:8px;padding:5px 8px}
+.pe-zone{font-size:12.5px;color:var(--ink-3);padding:4px 6px;min-height:6px}
+.pe-zone:empty{padding:0;min-height:8px}
+.pe-more{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.pe-more summary{cursor:pointer;font-weight:600}
+.pe-more[open]{display:flex;flex-direction:column;gap:10px}
+.pe-st2{flex:1;min-width:0;display:flex;flex-direction:column}
+.pe-st2 .muted{font-size:12px}
+.pe-create[hidden]{display:none}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -525,8 +598,9 @@ body.ov-open{overflow:hidden}
 
 <header class="oh" style="--oh-bg:#D6E0FF;--oh-ink:#1D2B6B;--oh-acc:#4F6EF7"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Forge</h1><button class="mode" id="sync" data-sync type="button" title="Synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" id="gear" type="button" aria-label="Données et réglages" title="Données et réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 <nav class="ot" id="tabs" aria-label="Sections">
-      <button class="ot-t" data-view="calendrier">Calendrier</button>
+      <button class="ot-t" data-view="calendrier">Saison</button>
       <button class="ot-t" data-view="semaine">Semaine</button>
+      <button class="ot-t" data-view="exos">Exos</button>
       <button class="ot-t" data-view="suivi">Suivi</button>
       <button class="ot-t" data-view="nutrition">Nutrition</button>
 </nav></header>
@@ -551,7 +625,7 @@ body.ov-open{overflow:hidden}
 <script src="../commun/supabase.js"></script>
 <script>
 "use strict";
-const COLS = ["config","blocks","phases","events","weeks","logs","tests","content"];
+const COLS = ["config","blocks","phases","events","weeks","logs","tests","content","exos"];
 const S = { data:{}, view:"calendrier", week:null, ui:{}, confirm:null };
 COLS.forEach(c => S.data[c] = {});
 const SB_URL = "https://rzcpjsffpvuvbdtqymms.supabase.co", SB_KEY = "sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC", TABLE = "carnet", BUCKET = "carnet";
@@ -591,7 +665,7 @@ const PHASES = {
 const TRACKS = [["bas","Bas du corps","Bas"],["haut","Haut du corps","Haut"]];
 const trackLabel = k => (TRACKS.find(t => t[0] === k) || [k,k,k])[1];
 const EVT = { competition:"Compétition", vacances:"Vacances", test:"Tests", autre:"Autre" };
-const KINDS = { force:"Force", hypertrophie:"Hypertrophie", puissance:"Puissance", parkour:"Parkour", endurance:"Endurance", mobilite:"Mobilité", test:"Tests", skills:"Skills", speed:"Speed", plyo:"Plyo", intervalles:"Intervalles", deload:"Décharge" };
+const KINDS = { vitesse:"Vitesse", contraste:"French contrast", autre:"Autre", force:"Force", hypertrophie:"Hypertrophie", puissance:"Puissance", parkour:"Parkour", endurance:"Endurance", mobilite:"Mobilité", test:"Tests", skills:"Skills", speed:"Speed", plyo:"Plyo", intervalles:"Intervalles", deload:"Décharge" };
 const DAYS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 
 /* ---------- season model ---------- */
@@ -711,26 +785,8 @@ function loadPlan(wk, s, it){
   if (est) return est;
   return { base: lr[0], from: null, up: 0, missed: false, src: "prog" };
 }
-/* Nouveau bloc sans séance notée : charge estimée depuis ce que tu as vraiment soulevé avant (16 semaines max),
-   (meilleure des 4 dernières semaines notées), pour le bas de la fourchette de reps du bloc, avec la même marge de 2 reps en réserve. */
-function estFromHistory(wk, b, it){
-  const ex = it.ex || it.id; const r = numRange(it.reps); if (!r || it.unit === "reps") return null;
-  const lim = isoWeekId(addDays(pd(b.start), -7 * 16));
-  const ids = Object.keys(S.data.logs).filter(id => id < isoWeekId(pd(b.start)) && id >= lim).sort().reverse();
-  let best = null, seen = 0;
-  for (const id of ids) {
-    const hits = Object.entries((S.data.logs[id] && S.data.logs[id].actual) || {}).filter(([k, a]) => (a.ex || k.split(":")[1]) === ex && numOrNull(a.load) != null && parseReps(a.reps) != null);
-    if (!hits.length) continue;
-    const W = WEIGHTED.has(ex); const bw = W ? bwAt(id) : 0;
-    hits.forEach(([, a]) => { const e1 = (numOrNull(a.load) + bw) * (1 + (parseReps(a.reps) + 2) / 30); if (!best || e1 > best.e1) best = { e1, bw, id }; });
-    if (++seen >= 4) break;
-  }
-  if (best) {
-    const inc = kgInc(it); const v = Math.floor((best.e1 / (1 + (r[0] + 2) / 30) - best.bw) / inc) * inc;
-    if (v > 0) return { base: Math.round(v * 100) / 100, from: best.id, up: 0, missed: false, src: "est" };
-  }
-  return null;
-}
+/* Nouveau bloc sans séance notée : estFromHistory (bibliothèque d'exercices) part de ce que tu as vraiment soulevé
+   (ou d'un exercice proche), pour le bas de la fourchette de reps du bloc, avec 2 reps en réserve. */
 const tracked = id => id >= (cfg().trackingFrom || "0000");
 const sessWeight = s => s.weight ?? (s.kind === "endurance" || s.id === "s-pk2" ? 0.7 : 1);
 const DAY_STATUS = [["x","annulée"],["m","manquée"]];
@@ -891,7 +947,7 @@ function scheduleRender(){ if (editing()) { pendingRender = true; return; } canc
 app.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !editing()) { pendingRender = false; render(); } }, 60));
 
 function setView(v, week){
-  S.view = v; if (week) S.week = week; S.confirm = null; if (S.ui.ov) { S.ui.ov = null; S.ui.edit = null; S.pe = null; S.run = null; clearInterval(RUN.iv); RUN.iv = null; }
+  S.view = v; if (week) S.week = week; S.confirm = null; if (S.ui.ov) { S.ui.ov = null; S.ui.edit = null; S.ui.exoEdit = null; S.pe = null; S.run = null; clearInterval(RUN.iv); RUN.iv = null; }
   try { history.replaceState(null, "", "#" + (v === "semaine" && S.week ? "s-" + S.week : v)); } catch(e) {}
   render(); window.scrollTo(0,0);
 }
@@ -903,9 +959,9 @@ function render(){
   document.getElementById("gear").setAttribute("aria-current", S.view === "donnees" ? "page" : "false");
   setSync();
   if (!S.week) S.week = currentWeekId();
-  const views = { calendrier: vCalendar, semaine: vWeek, suivi: vStats, nutrition: vNutrition, donnees: vData };
+  const views = { calendrier: vCalendar, semaine: vWeek, exos: vExos, suivi: vStats, nutrition: vNutrition, donnees: vData };
   app.innerHTML = (views[S.view] || vCalendar)() + ovHtml();
-  document.body.classList.toggle("ov-open", !!(S.ui.ov && (S.view === "semaine" || S.ui.ov.type === "pe")));
+  document.body.classList.toggle("ov-open", !!(S.ui.ov && (S.view === "semaine" || S.ui.ov.type === "pe" || S.ui.ov.type === "exo")));
   drawCharts(); hydrateMedia();
 }
 
@@ -1076,7 +1132,7 @@ function extrasPanel(log){
 /* ---------- séances : liste, fenêtre « Afficher », séance guidée ---------- */
 const fxIcons = s => (s.nerv ? `<span class="fx" title="Très exigeante pour le système nerveux">⚡<span class="sr">Très exigeante pour le système nerveux</span></span>` : "") + (s.doms ? `<span class="fx" title="Grosses courbatures probables">🔥<span class="sr">Grosses courbatures probables</span></span>` : "");
 const SESS_EMOJI = { "s-haut":"💪", "s-bas":"🦵", "s-pk1":"👟", "s-pk2":"👟", "s-endu":"🚴", "s-vo2":"🫁", "s-tests":"📏", "s-voyage":"🎒" };
-const sessEmoji = s => s.emoji || SESS_EMOJI[s.id] || ({ parkour:"👟", endurance:"🚴", intervalles:"🫁", test:"📏" })[s.kind] || (/haut/i.test(s.title || "") ? "💪" : /bas|jambe/i.test(s.title || "") ? "🦵" : "🏋️");
+const sessEmoji = s => s.emoji || SESS_EMOJI[s.id] || ({ parkour:"👟", endurance:"🚴", intervalles:"🫁", test:"📏", vitesse:"💨", plyo:"🦘", mobilite:"🧘", contraste:"⚡" })[s.kind] || (/haut/i.test(s.title || "") ? "💪" : /bas|jambe/i.test(s.title || "") ? "🦵" : "🏋️");
 /* Dernière séance ⚡ faite (cette semaine ou la précédente), pour garder 48 h entre deux séances intenses. */
 function lastNervDate(wk){
   const w = weekById(wk); if (!w) return null; let best = null;
@@ -1138,11 +1194,11 @@ function showSheet(wk, s, log){
       ${items.map(({ it, i }) => { const code = grp ? (all.length > 1 ? letter + (i+1) : letter) : ""; const key = s.id + ":" + it.id;
         const nm = `<div class="sh-nm">${code ? `<span class="code">${code}</span>` : ""}<span>${esc(it.name)}</span>${it.mod && !E ? `<span class="tag mod">modifié</span>` : ""}</div>`;
         if (E) return edItem(E, key, it, nm);
-        const zk = wk + ":show:" + key; const big = S.ui.zoom === zk;
-        return `<div class="sh-it ${big ? "zoomed" : ""}">${it.img ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(mediaPath(it.img))}" alt="${esc(it.name)}"></button>` : ""}
+        const zk = wk + ":show:" + key; const big = S.ui.zoom === zk; const xo = it.tests ? null : exoOf(it.ex || it.id); const ip = it.img ? mediaPath(it.img) : exoImg(xo);
+        return `<div class="sh-it ${big ? "zoomed" : ""}">${ip ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(ip)}" alt="${esc(it.name)}"></button>` : ""}
           <div class="sh-tx">${nm}
           ${it.tests ? "" : `<div class="sh-rx">${esc(rxOf(wk, s, it)) || "—"}${it.rest ? ` · repos ${esc(it.rest)}` : ""}</div>`}
-          ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }).join("")}
+          ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }).join("")}
     </div>`;
   }).join("");
   const w = weekById(wk); const b = w && blockOf(w);
@@ -1229,23 +1285,178 @@ function edAction(a, b){
   render();
 }
 
+/* ---------- bibliothèque d'exercices ----------
+   Collection « exos » : { name, tags[], img (média), imgPath (photo envoyée), cue, tips, link, bw (lesté au poids du corps),
+   ref:{ id, pct } (exercice proche pour estimer la charge), aliases[] (anciens identifiants du même exercice), edited }.
+   Les séances pointent vers un exercice par it.ex. Les exercices des séances absents de la bibliothèque y apparaissent quand même. */
+const EXO_TAGS = ["Haut du corps","Bas du corps","Full body","Plyo","Vitesse","Parkour","Gainage","Isométrie","Mobilité","Cardio","Sans matériel","Max Henry","Phat"];
+function exoAliases(){ const m = {}; Object.entries(S.data.exos || {}).forEach(([id, x]) => (x.aliases || []).forEach(a => m[a] = id)); return m; }
+const exoId = ex => exoAliases()[ex] || ex;
+function exoList(){
+  const out = {}; Object.entries(S.data.exos || {}).forEach(([id, x]) => { out[id] = { id, ...x }; });
+  const al = exoAliases(); const skip = new Set(["ech-gen","ech-sauts","lacunes","mec-haut","mid-5x5","mid-lignes","mid-peur","vo-calme","vo-ech"]);
+  const add = it => { const ex = it.ex || it.id; if (!ex || it.tests || skip.has(ex) || out[ex] || al[ex]) return; out[ex] = { id: ex, name: it.name || ex, img: it.img, cue: it.cue, link: it.link, tags: [], loose: true }; };
+  blocksSorted().slice().reverse().forEach(b => ((b.template && b.template.sessions) || []).forEach(s => (s.blocks || []).forEach(g => (g.items || []).forEach(add))));
+  Object.values(S.data.weeks || {}).forEach(w => (w.sessions || []).forEach(s => (s.blocks || []).forEach(g => (g.items || []).forEach(add))));
+  return Object.values(out).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+}
+const exoOf = ex => { const id = exoId(ex); const d = S.data.exos && S.data.exos[id]; return d ? { id, ...d } : exoList().find(x => x.id === id) || null; };
+const exoImg = x => x ? (x.imgPath || (x.img ? mediaPath(x.img) : "")) : "";
+const isWeighted = ex => WEIGHTED.has(ex) || !!(S.data.exos && S.data.exos[exoId(ex)] && S.data.exos[exoId(ex)].bw);
+/* Séries notées pour un exercice (et ses anciens identifiants), de la plus récente à la plus ancienne. */
+function exoHistory(ex, beforeWk){
+  const id = exoId(ex); const out = [];
+  Object.keys(S.data.logs).sort().reverse().forEach(wk => {
+    if (beforeWk && wk >= beforeWk) return;
+    Object.entries((S.data.logs[wk] && S.data.logs[wk].actual) || {}).forEach(([k, a]) => {
+      if (exoId(a.ex || k.split(":")[1]) !== id || numOrNull(a.load) == null) return;
+      const sets = (a.done || []).filter(x => x && x.kg != null && x.r != null);
+      out.push({ wk, load: numOrNull(a.load), reps: parseReps(a.reps), raw: a.reps, sets, n: a.sets });
+    });
+  });
+  return out;
+}
+/* Force estimée (charge totale pour 1 rep, poids du corps compris si lesté), en supposant ~2 reps en réserve sur les séries notées.
+   Meilleure valeur des 4 dernières semaines notées dans les 16 semaines ; sinon l'exercice de référence × pourcentage. */
+function exoE1(ex, beforeWk, depth){
+  const lim = isoWeekId(addDays(beforeWk ? weekById(beforeWk).mon : todayUTC(), -7 * 16));
+  const W = isWeighted(ex); let best = null; const weeks = new Set();
+  for (const h of exoHistory(ex, beforeWk)) {
+    if (h.wk < lim) break; if (!weeks.has(h.wk)) { if (weeks.size >= 4) break; weeks.add(h.wk); }
+    const bw = W ? bwAt(h.wk) : 0;
+    const pts = h.sets.length ? h.sets.map(x => [x.kg, x.r]) : h.reps != null ? [[h.load, h.reps]] : [];
+    pts.forEach(([kg, r]) => { const e1 = (kg + bw) * (1 + (r + 2) / 30); if (!best || e1 > best.e1) best = { e1, wk: h.wk, src: "own" }; });
+  }
+  if (best) return best;
+  const x = S.data.exos && S.data.exos[exoId(ex)];
+  if (x && x.ref && x.ref.id && (depth || 0) < 2) { const r = exoE1(x.ref.id, beforeWk, (depth || 0) + 1); if (r) return { e1: r.e1 * (x.ref.pct || 100) / 100, wk: r.wk, src: "ref", refId: x.ref.id }; }
+  return null;
+}
+/* Charge conseillée pour un nombre de reps (2 reps en réserve), arrondie à l'incrément de l'exercice. */
+function proposeKg(ex, reps, inc, beforeWk){
+  const e = exoE1(ex, beforeWk); if (!e || !reps) return null;
+  const bw = isWeighted(ex) ? bwAt(beforeWk || currentWeekId()) : 0;
+  const v = Math.floor((e.e1 / (1 + (reps + 2) / 30) - bw) / (inc || 2.5)) * (inc || 2.5);
+  return v > 0 || (bw && v >= 0) ? { kg: Math.round(v * 100) / 100, src: e.src, refId: e.refId, wk: e.wk } : null;
+}
+function estFromHistory(wk, b, it){
+  const r = numRange(it.reps); if (!r || it.unit === "reps") return null;
+  const p = proposeKg(it.ex || it.id, r[0], kgInc(it), isoWeekId(pd(b.start)));
+  return p ? { base: p.kg, from: p.wk, up: 0, missed: false, src: "est" } : null;
+}
+function exoUses(id){
+  const out = [];
+  blocksSorted().forEach(b => ((b.template && b.template.sessions) || []).forEach(s => { if ((s.blocks || []).some(g => (g.items || []).some(it => exoId(it.ex || it.id) === id))) out.push(b.name + " · " + s.title); }));
+  return [...new Set(out)];
+}
+const e1Txt = (ex, e) => { const bw = isWeighted(ex) ? bwAt(currentWeekId()) : 0; const v = Math.round((e.e1 - bw) * 2) / 2; return bw ? (v >= 0 ? "+" : "") + fmtNum(v, 1) + " kg" : fmtNum(v, 1) + " kg"; };
+
+/* ---------- onglet Exos ---------- */
+function vExos(){
+  const list = exoList(); const used = new Set(list.flatMap(x => x.tags || []));
+  const tags = [...EXO_TAGS.filter(t => used.has(t)), ...[...used].filter(t => !EXO_TAGS.includes(t)).sort()];
+  const cur = S.ui.extag || ""; const q = (S.ui.exq || "").toLowerCase();
+  const rows = list.map(x => { const e = exoE1(x.id); const img = exoImg(x);
+    const hide = (cur && !(x.tags || []).includes(cur)) || (q && !x.name.toLowerCase().includes(q));
+    return `<button class="exr" data-action="exo-open" data-id="${esc(x.id)}" data-n="${esc(x.name.toLowerCase())}" data-t="${esc((x.tags || []).join("|"))}" ${hide ? "hidden" : ""}>
+      <span class="exth">${img ? `<img src="${BLANK}" data-mpath="${esc(img)}" alt="">` : `<span>${esc(x.name.slice(0, 1))}</span>`}</span>
+      <span class="exm"><b>${esc(x.name)}</b><span class="extags">${(x.tags || []).map(t => `<i>${esc(t)}</i>`).join("") || `<i class="none">sans tag</i>`}</span></span>
+      ${e ? `<span class="ex1"><small>1RM ≈</small>${e1Txt(x.id, e)}</span>` : ""}</button>`; }).join("");
+  return `<section class="between"><div><div class="eyebrow">${list.length} exercices</div><h2>Exercices</h2></div><button class="btn primary" data-action="exo-new">+ Nouvel exercice</button></section>
+    <input id="exq" type="search" class="exq" placeholder="Chercher un exercice" value="${esc(S.ui.exq || "")}" aria-label="Chercher un exercice">
+    <div class="seg extagsel" role="group" aria-label="Filtrer par tag"><button class="${cur ? "" : "on"}" data-action="exo-tag" data-t="">Tous</button>${tags.map(t => `<button class="${cur === t ? "on" : ""}" data-action="exo-tag" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+    <div class="exlist">${rows}</div>
+    <p class="muted" style="font-size:12.5px;margin:0">1RM estimé à partir de tes meilleures séries des dernières semaines (en supposant ~2 reps en réserve). Pour les exercices lestés, c'est le lest.</p>`;
+}
+function exoFilter(){
+  const q = (S.ui.exq || "").toLowerCase(); const t = S.ui.extag || "";
+  app.querySelectorAll(".exr").forEach(r => { r.hidden = !!((q && !r.dataset.n.includes(q)) || (t && !r.dataset.t.split("|").includes(t))); });
+}
+/* fiche d'un exercice : lecture, puis modification */
+function exoSheet(){
+  const o = S.ui.ov; const E = S.ui.exoEdit; const x = E ? E.d : exoOf(o.id); if (!x) return "";
+  const img = exoImg(x); const e = !E && exoE1(x.id); const hist = E ? [] : exoHistory(x.id).slice(0, 6);
+  let body;
+  if (!E) {
+    const ref = x.ref && x.ref.id ? exoOf(x.ref.id) : null;
+    const r5 = e ? [3, 5, 8, 12].map(r => { const p = proposeKg(x.id, r, 2.5); return p ? `<span><b>${r} reps</b>${isWeighted(x.id) ? "+" : ""}${fmtNum(p.kg, 1)} kg</span>` : ""; }).join("") : "";
+    body = `${img ? `<div class="exbig"><img src="${BLANK}" data-mpath="${esc(img)}" alt="${esc(x.name)}"></div>` : ""}
+      <div class="extags lg">${(x.tags || []).map(t => `<i>${esc(t)}</i>`).join("") || `<i class="none">sans tag</i>`}</div>
+      ${x.cue ? `<p class="excue">${esc(x.cue)}</p>` : ""}
+      ${x.tips ? `<div class="extips"><b>Conseils</b><p>${esc(x.tips)}</p></div>` : ""}
+      ${x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noopener">Voir une démo ↗</a>` : ""}
+      <div class="exstat"><b>Force</b>${e ? `<p>1RM estimé ≈ <b>${e1Txt(x.id, e)}</b>${e.src === "ref" ? ` <span class="muted">(d'après ${esc((exoOf(e.refId) || {}).name || e.refId)} × ${x.ref.pct} %)</span>` : ` <span class="muted">(${wkLabel(e.wk)})</span>`}</p><div class="exr5">${r5}</div><p class="muted" style="font-size:12px;margin:0">Charges conseillées avec 2 reps en réserve.</p>`
+        : `<p class="muted">Pas encore de séries notées${ref ? "" : ". Choisis un exercice proche dans « Modifier » pour estimer une charge."}</p>`}</div>
+      ${hist.length ? `<div class="exhist"><b>Dernières séances</b>${hist.map(h => `<div><span>${wkLabel(h.wk)}</span><span>${h.sets.length ? h.sets.map(s => s.r).join(" · ") + " @ " + fmtNum(Math.max(...h.sets.map(s => s.kg)), 2) + " kg" : (h.n ? h.n + " × " : "") + (h.raw ?? "?") + " @ " + fmtNum(h.load, 2) + " kg"}</span></div>`).join("")}</div>` : ""}
+      ${exoUses(x.id).length ? `<div class="exhist"><b>Dans le programme</b>${exoUses(x.id).map(u => `<div><span>${esc(u)}</span></div>`).join("")}</div>` : ""}`;
+  } else {
+    const d = E.d; const tagsAll = [...new Set([...EXO_TAGS, ...exoList().flatMap(y => y.tags || []), ...(d.tags || [])])];
+    const others = exoList().filter(y => y.id !== d.id);
+    body = `<div class="field"><label for="exo-name">Nom</label><input id="exo-name" type="text" data-exo="name" value="${esc(d.name || "")}"></div>
+      <div class="field"><span class="lbl">Tags</span><div class="seg extagsel">${tagsAll.map(t => `<button class="${(d.tags || []).includes(t) ? "on" : ""}" aria-pressed="${(d.tags || []).includes(t)}" data-action="exo-etag" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+        <div class="row" style="margin-top:6px"><input id="exo-newtag" type="text" placeholder="Nouveau tag" style="flex:1;min-width:0"><button class="btn small" data-action="exo-addtag">Ajouter</button></div></div>
+      <div class="field"><span class="lbl">Image</span><div class="row">${img ? `<span class="exth big"><img src="${BLANK}" data-mpath="${esc(img)}" alt=""></span>` : ""}
+        <label class="btn small" for="exo-img">${img ? "Changer" : "Ajouter une image"}</label><input id="exo-img" type="file" accept="image/*" hidden>${img ? `<button class="btn small ghost" data-action="exo-noimg">Retirer</button>` : ""}</div></div>
+      <div class="field"><label for="exo-cue">Consigne courte</label><input id="exo-cue" type="text" data-exo="cue" value="${esc(d.cue || "")}" placeholder="ex. dos neutre, 2 reps en réserve"></div>
+      <div class="field"><label for="exo-tips">Conseils</label><textarea id="exo-tips" data-exo="tips" rows="4" placeholder="Technique, erreurs à éviter, variantes…">${esc(d.tips || "")}</textarea></div>
+      <div class="field"><label for="exo-link">Lien vers une vidéo</label><input id="exo-link" type="url" data-exo="link" value="${esc(d.link || "")}" placeholder="https://…"></div>
+      <label class="pe-chk"><input type="checkbox" data-exo="bw" ${d.bw ? "checked" : ""}><span>Au poids du corps<small>La charge notée est le lest ; la force estimée compte ton poids.</small></span></label>
+      <div class="field"><span class="lbl">Exercice proche, pour estimer la charge tant que celui-ci n'a pas de séries notées</span>
+        <div class="row"><select data-exo="refId" style="flex:1;min-width:0"><option value="">aucun</option>${others.map(y => `<option value="${esc(y.id)}" ${d.ref && d.ref.id === y.id ? "selected" : ""}>${esc(y.name)}</option>`).join("")}</select>
+        ${d.ref && d.ref.id ? `<div class="ed-s"><button data-action="exo-pct" data-d="-5" aria-label="Moins 5 %">−</button><b>${d.ref.pct || 100} %</b><button data-action="exo-pct" data-d="5" aria-label="Plus 5 %">+</button></div>` : ""}</div></div>`;
+  }
+  return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="exo-t"><div class="scrim" data-action="${E ? "exo-cancel" : "ov-close"}"></div>
+    <div class="sheet"><div class="sh-head"><div>${E ? `<span class="eyebrow">${E.isNew ? "Nouvel exercice" : "Modifier"}</span>` : ""}<h2 id="exo-t">${esc(E ? (E.d.name || "Nouvel exercice") : x.name)}</h2></div>
+      <div class="row" style="flex-wrap:nowrap">${E ? "" : `<button class="btn small" data-action="exo-edit">Modifier</button>`}<button class="x" data-action="${E ? "exo-cancel" : "ov-close"}" aria-label="Fermer">✕</button></div></div>
+      <div class="sh-body exbody">${body}</div>
+      ${E ? `<div class="sh-foot two"><button class="btn" data-action="exo-cancel">Annuler</button><button class="btn primary big" data-action="exo-save">Enregistrer</button></div>` : ""}</div></div>`;
+}
+function exoAction(a, b){
+  if (a === "exo-tag") { S.ui.extag = b.dataset.t; render(); return; }
+  if (a === "exo-open") { S.ui.exoEdit = null; ovOpen("exo", null); S.ui.ov.id = b.dataset.id; render(); return; }
+  if (a === "exo-new") { S.ui.exoEdit = { isNew: true, d: { id: null, name: "", tags: S.ui.extag ? [S.ui.extag] : [] } }; ovOpen("exo", null); render(); return; }
+  const E = S.ui.exoEdit;
+  if (a === "exo-edit") { const x = exoOf(S.ui.ov.id); S.ui.exoEdit = { isNew: false, d: clone({ ...x, tags: x.tags || [] }) }; render(); return; }
+  if (!E) return;
+  if (a === "exo-cancel") { S.ui.exoEdit = null; if (E.isNew || !S.ui.ov.id) { ovClose(); return; } }
+  else if (a === "exo-etag") { const t = b.dataset.t; const s = new Set(E.d.tags || []); s.has(t) ? s.delete(t) : s.add(t); E.d.tags = [...s]; }
+  else if (a === "exo-addtag") { const el = app.querySelector("#exo-newtag"); const t = el && el.value.trim(); if (t) E.d.tags = [...new Set([...(E.d.tags || []), t])]; }
+  else if (a === "exo-noimg") { delete E.d.img; delete E.d.imgPath; }
+  else if (a === "exo-pct") { E.d.ref = { ...E.d.ref, pct: Math.max(10, Math.min(200, (E.d.ref.pct || 100) + +b.dataset.d)) }; }
+  else if (a === "exo-save") {
+    const d = E.d; const name = (d.name || "").trim(); if (!name) { toast("Donne un nom à l'exercice."); return; }
+    const id = d.id || (() => { let k = slug(name), n = 2; while (S.data.exos[k] || exoList().some(y => y.id === k)) k = slug(name) + "-" + n++; return k; })();
+    const doc = { ...(S.data.exos[id] || {}), ...d, name, edited: true }; delete doc.id; delete doc.loose;
+    ["cue","tips","link"].forEach(f => { if (!doc[f]) delete doc[f]; }); if (!doc.bw) delete doc.bw; if (!doc.ref || !doc.ref.id) delete doc.ref;
+    put("exos", id, doc); S.ui.exoEdit = null; S.ui.ov.id = id; toast("Exercice enregistré");
+    if (E.onSave) E.onSave(id);
+  }
+  render();
+}
+function exoField(el){
+  const E = S.ui.exoEdit; if (!E) return; const f = el.dataset.exo; const v = el.type === "checkbox" ? el.checked : el.value;
+  if (f === "refId") { E.d.ref = v ? { id: v, pct: (E.d.ref && E.d.ref.pct) || 100 } : null; render(); return; }
+  E.d[f] = v;
+}
+async function exoImage(file){
+  const E = S.ui.exoEdit; if (!E || !file) return;
+  if (!navigator.onLine || !sb) { toast("Connexion nécessaire pour ajouter une image."); return; }
+  try {
+    const blob = await compress(file, 900, .85); const path = UID + "/media/exo-" + uid("i") + ".jpg";
+    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: "image/jpeg" }); if (error) throw error;
+    E.d.imgPath = path; delete E.d.img; render();
+  } catch (err) { toast("Image non ajoutée" + (err && err.message ? " (" + err.message + ")" : "") + "."); }
+}
+
 /* ---------- éditeur de programmes : blocs et séances ----------
    S.pe = { mode:"block"|"sess", blockId, b:{…}, sessions:[…], sd:<séance en cours d'édition>, sIdx, src, openX, pick, confirm }
    Tout se fait sur un brouillon ; rien n'est écrit avant « Enregistrer ». Les documents modifiés reçoivent edited:true :
    les mises à jour du programme publiées par Claude ne les écrasent plus (voir applyProgramme). */
-const PE_EMOJIS = ["💪","🦵","👟","🚴","🫁","📏","🎒","🏋️","🤸","🧗","🧘","⚡"];
-const PE_KINDS = [["force","Force"],["hypertrophie","Hypertrophie"],["puissance","Puissance"],["parkour","Parkour"],["endurance","Endurance"],["intervalles","Intervalles"],["plyo","Plyo"],["mobilite","Mobilité"],["test","Tests"]];
 const PE_RESTS = [0,15,30,45,60,90,120,150,180,240];
 const PE_STEPS = [["","aucune"],["1","+1 kg"],["2.5","+2,5 kg"],["5","+5 kg"]];
 const slug = t => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ex";
 const restTxt = n => n ? fmtSec(n) : "sans pause";
 function progEditBtn(b){ return `<button class="btn small" data-action="pe-block" data-id="${esc(b.id)}">Modifier</button>`; }
-function exLibrary(){
-  const lib = {}; const add = it => { if (!it || !it.name) return; const k = it.name.trim().toLowerCase(); if (!lib[k] || (!lib[k].img && it.img)) lib[k] = it; };
-  [...blocksSorted()].reverse().forEach(b => ((b.template && b.template.sessions) || []).forEach(s => (s.blocks || []).forEach(g => (g.items || []).forEach(add))));
-  Object.values(S.data.weeks || {}).forEach(w => (w.sessions || []).forEach(s => (s.blocks || []).forEach(g => (g.items || []).forEach(add))));
-  return lib;
-}
 function allSessionsLib(){
   const out = []; const seen = new Set();
   [...blocksSorted()].reverse().forEach(b => ((b.template && b.template.sessions) || []).forEach(s => { const k = s.title + "|" + b.id; if (!seen.has(k)) { seen.add(k); out.push({ s, from: b.name }); } }));
@@ -1320,6 +1531,7 @@ function peOpenSession(wk, sid){
 function peView(){
   const P = S.pe; if (!P) return "";
   if (P.pick) return pePicker();
+  if (P.xpick) return peXPicker();
   if (P.sd) return peSessView();
   return peBlockView();
 }
@@ -1329,8 +1541,8 @@ function peBlockView(){
   const starts = seasonWeeks().map(w => ds(w.mon)); if (!starts.includes(b.start)) starts.unshift(b.start);
   const old = P.blockId ? S.data.blocks[P.blockId] : null; const after = blocksSorted().filter(x => x.id !== P.blockId && pd(x.start) > pd(old ? old.end : b.start));
   const ptSel = k => `<select data-pe="b:${k}" id="pe-${k}">${Object.entries(PHASES).filter(([t]) => t !== "transition").map(([t, v]) => `<option value="${t}" ${b[k] === t ? "selected" : ""}>${v.label}</option>`).join("")}</select>`;
-  const list = P.sessions.map((s, i) => `<div class="pe-srow"><span class="semo">${sessEmoji(s)}</span><div class="pe-st"><b>${esc(s.title || "Sans titre")}</b><span class="muted">${[s.kind ? KINDS[s.kind] || s.kind : "", s.min ? "≈ " + fmtMin(s.min) : "", (s.blocks || []).reduce((a, g) => a + (g.items || []).length, 0) + " exercices", s.optional ? "optionnelle" : ""].filter(Boolean).join(" · ")}</span></div>
-      <div class="pe-act"><button data-action="pe-smove" data-i="${i}" data-d="-1" aria-label="Monter" ${i ? "" : "disabled"}>↑</button><button data-action="pe-smove" data-i="${i}" data-d="1" aria-label="Descendre" ${i < P.sessions.length - 1 ? "" : "disabled"}>↓</button><button class="primary" data-action="pe-sedit" data-i="${i}">Modifier</button></div></div>`).join("");
+  const list = P.sessions.map((s, i) => `<div class="pe-srow" data-dnd-item data-dnd="s" data-i="${i}"><span class="pe-hdl" data-dnd-handle aria-label="Déplacer ${esc(s.title || "la séance")}">⋮⋮</span><span class="semo">${sessEmoji(s)}</span><div class="pe-st2"><b>${esc(s.title || "Sans titre")}</b><span class="muted">${[s.kind ? KINDS[s.kind] || s.kind : "", s.min ? "≈ " + fmtMin(s.min) : "", (s.blocks || []).reduce((a, g) => a + (g.items || []).length, 0) + " exercices", s.optional ? "optionnelle" : ""].filter(Boolean).join(" · ")}</span></div>
+      <div class="pe-act"><button class="primary" data-action="pe-sedit" data-i="${i}">Modifier</button></div></div>`).join("");
   const conf = P.confirm === "del-block";
   return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="${P.blockId ? "Modifier le bloc" : "Nouveau bloc"}">${peTop(P.blockId ? "Modifier le bloc" : "Nouveau bloc")}
     <div class="run-body pe-body">
@@ -1351,27 +1563,63 @@ function peBlockView(){
       <div class="field"><label for="pe-goal">Objectif</label><textarea id="pe-goal" data-pe="b:goal" rows="3">${esc(b.goal)}</textarea></div>
       <div class="between pe-h"><h3>Séances du bloc</h3><button class="btn small" data-action="pe-sadd">+ Ajouter</button></div>
       <p class="pe-help">Elles se répètent chaque semaine du bloc. Les tests s'ajoutent tout seuls.</p>
-      <div class="pe-slist">${list || `<div class="muted">Aucune séance.</div>`}</div>
+      <div class="pe-slist">${list || `<div class="muted">Aucune séance.</div>`}</div>${P.sessions.length > 1 ? `<p class="pe-help">⋮⋮ pour changer l'ordre.</p>` : ""}
       ${P.blockId ? `<div class="pe-danger"><button class="btn small ${conf ? "danger" : "ghost"}" data-action="pe-bdel">${conf ? "Confirmer : supprimer ce bloc" : "Supprimer ce bloc"}</button>${conf ? `<span class="muted">${after.length && P.shift ? "Les blocs suivants seront rapprochés." : ""}</span>` : ""}</div>` : ""}
     </div>
     <div class="run-foot"><button class="btn" data-action="pe-cancel">Annuler</button><button class="btn primary big" data-action="pe-bsave">Enregistrer</button></div></div>`;
 }
+/* Types de séance : conseils affichés dans l'éditeur et valeurs de départ des nouveaux exercices et groupes. */
+const STYPES = [
+  { k:"hypertrophie", l:"Hypertrophie", e:"🏋️", def:{ sets:3, reps:"8–12", rest:"90 s", step:2.5 }, g:{ kind:"superset", between:60, after:90 },
+    tips:["6 à 12 reps (jusqu'à 15–20 pour les petits muscles), 3 à 4 séries.","Finir à 1–2 reps de l'échec ; monter la charge quand le haut de la fourchette passe sur toutes les séries.","60 à 90 s de pause ; supersets antagonistes (tirage + poussée) pour gagner du temps.","Polyarticulaires d'abord, isolation à la fin, amplitude complète."] },
+  { k:"force", l:"Force", e:"🏋️", def:{ sets:4, reps:"5", rest:"2 min", step:2.5 }, g:{ kind:"superset", between:120, after:120 },
+    tips:["3 à 6 reps, 3 à 5 séries, autour de 85–90 % du max.","Garder 1–2 reps en réserve : la vitesse doit rester propre.","2 à 4 min par exercice ; en superset antagoniste, environ 2 min entre chaque.","Le lourd bilatéral d'abord, l'unilatéral ensuite ; +2,5 kg par semaine si tout passe."] },
+  { k:"puissance", l:"Puissance", e:"⚡", def:{ sets:4, reps:"3", rest:"2 min" }, g:{ kind:"contraste", between:0, after:120 },
+    tips:["30–60 % du max ou poids du corps, intention de vitesse maximale.","3 à 5 reps : arrête dès que la vitesse baisse.","Récupération complète, 2 à 3 min.","Contraste : un exercice lourd (2–3 reps) juste avant un geste explosif du même schéma (groupe Contraste)."] },
+  { k:"contraste", l:"French contrast", e:"⚡", def:{ sets:3, reps:"3", rest:"3 min" }, g:{ kind:"superset", between:15, after:180 },
+    tips:["4 exercices enchaînés sur le même schéma : lourd (80–90 %, 2–3 reps) → plyo (3–5) → lesté léger (20–30 %, 3–5) → assisté ou accéléré (3–5).","Un groupe Superset : 10–20 s entre les exercices, 3–4 min après le tour, 3 à 4 tours.","Très nerveux : frais, en début de séance, à 48 h d'une autre séance intense."] },
+  { k:"vitesse", l:"Vitesse", e:"💨", def:{ sets:5, reps:"10–20 m", rest:"2 min" }, g:{ kind:"simple" },
+    tips:["Efforts courts (sprints, runs de 10–20 s) à 100 %.","Récupération de 1:8 à 1:15 (run de 15 s → 2 à 4 min).","4 à 6 répétitions ; arrête dès que la qualité baisse.","Toujours en début de séance, frais, après un bon échauffement."] },
+  { k:"plyo", l:"Plyo", e:"🦘", def:{ sets:3, reps:"5", rest:"60 s" }, g:{ kind:"simple" },
+    tips:["Intense : peu de contacts (20–40), récupération complète, intention maximale.","Légère : beaucoup de contacts à effort moyen, pour les tendons et le rythme.","Réceptions silencieuses et stables ; arrête dès qu'elles se dégradent."] },
+  { k:"parkour", l:"Parkour", e:"👟", def:{ sets:5, reps:"5" }, g:{ kind:"simple" },
+    tips:["High : un truc qui fait peur + un truc physiquement dur, peu de volume, repos complet.","Mid : 5 défis presque maîtrisés × 5 réussites, effort 70–80 %.","Échauffement iso (chaise, fentes, mollets) avant les grosses séances."] },
+  { k:"endurance", l:"Cardio Z2", e:"🚴", def:{ sets:1, reps:"45 min", load:"135–148 bpm" }, g:{ kind:"simple" },
+    tips:["30 à 60 min en zone 2 (135–148 bpm pour toi) : tu peux parler.","Course, vélo, marche rapide ; le lendemain d'une grosse séance, Z1 ou marche.","Fractionner (25 + 25 min) compte presque autant."] },
+  { k:"intervalles", l:"VO2max", e:"🫁", def:{ sets:5, reps:"2 min", rest:"2 min" }, g:{ kind:"simple" },
+    tips:["4 à 8 répétitions de 1 à 4 min à 90–95 % de la FC max (165–185 bpm).","Récupération à peu près égale à l'effort, en marchant ou trottinant.","30 min maximum avec l'échauffement ; jamais la veille d'une séance intense."] },
+  { k:"mobilite", l:"Mobilité", e:"🧘", def:{ sets:2, reps:"45 s", rest:"15 s" }, g:{ kind:"simple" },
+    tips:["Rester à 0–2/10 de gêne.","Positions tenues 30–60 s ou mouvements lents et contrôlés.","Peu et souvent vaut mieux qu'une grosse séance."] },
+  { k:"test", l:"Tests", e:"📏", def:{ sets:3, reps:"1" }, g:{ kind:"simple" }, tips:["Frais, même terrain, mêmes chaussures, même heure.","3 essais, garder le meilleur."] },
+  { k:"autre", l:"Autre", e:"🤸", def:{ sets:3, reps:"8" }, g:{ kind:"simple" }, tips:[] },
+];
+const stype = k => STYPES.find(t => t.k === k) || STYPES.find(t => t.k === "autre");
+const PE_EMOJIS = ["💪","🦵","👟","🚴","🫁","📏","🎒","🏋️","🤸","🧗","🧘","⚡","💨","🦘"];
+/* charge écrite dans le programme ↔ nombre */
+const loadKg = it => /kg/i.test(it.load || "") ? (numRange(it.load) || [null])[0] : null;
+const setLoadKg = (it, v) => { const lest = /^\s*\+/.test(it.load || ""); const main = /\/\s*main/.test(it.load || ""); it.load = (lest ? "+" : "") + fmtNum(v, 2).replace(/ /g, "") + " kg" + (main ? " / main" : ""); };
 function peSessView(){
-  const P = S.pe; const s = P.sd; const inBlock = P.mode === "block";
+  const P = S.pe; const s = P.sd; const inBlock = P.mode === "block"; const T = stype(s.kind);
+  const tipsOpen = P.tips !== false;
+  const types = `<div class="pe-types" role="group" aria-label="Type de séance">${STYPES.map(t => `<button class="${s.kind === t.k ? "on" : ""}" aria-pressed="${s.kind === t.k}" data-action="pe-type" data-k="${t.k}"><span>${t.e}</span>${t.l}</button>`).join("")}</div>`;
+  const tips = T.tips.length ? `<div class="tipb ${tipsOpen ? "" : "shut"}"><button class="tipb-h" data-action="pe-tips" aria-expanded="${tipsOpen}"><span>💡 Construire une séance ${esc(T.l.toLowerCase())}</span><span class="chev" aria-hidden="true"></span></button>
+    ${tipsOpen ? `<ul>${T.tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul><p>Nouveaux exercices : ${T.def.sets} × ${esc(T.def.reps)}${T.def.rest ? ", pause " + esc(T.def.rest) : ""}${T.def.step ? ", +" + fmtNum(T.def.step, 1) + " kg par semaine" : ""}.</p>` : ""}</div>` : "";
+  let L = 0;
   const groups = (s.blocks || []).map((g, gi) => {
+    const grp = g._kind !== "simple"; const letter = String.fromCharCode(65 + gi);
     const kinds = [["simple","Simple"],["superset","Superset"],["contraste","Contraste"]];
     const rs = (f, v) => `<select data-pe="g:${f}" data-g="${gi}">${PE_RESTS.map(n => `<option value="${n}" ${n === (v || 0) ? "selected" : ""}>${restTxt(n)}</option>`).join("")}</select>`;
-    const help = g._kind === "superset" ? "Les exercices alternent : A1, A2, A1, A2…" : g._kind === "contraste" ? "Par paires : le lourd puis l'explosif enchaînés (A1 → A2), pause, puis A3 → A4…" : "Toutes les séries d'un exercice, puis le suivant.";
-    const items = (g.items || []).map((it, xi) => peItem(g, gi, it, xi)).join("");
+    const help = g._kind === "superset" ? "Les exercices alternent : " + letter + "1, " + letter + "2, " + letter + "1…" : g._kind === "contraste" ? "Par paires : lourd puis explosif enchaînés, pause, paire suivante." : "Toutes les séries d'un exercice, puis le suivant.";
     const conf = P.confirm === "g:" + gi;
+    const items = (g.items || []).map((it, xi) => peRow(g, gi, it, xi, letter)).join("");
     return `<div class="pe-g">
-      <div class="pe-gh"><input type="text" class="pe-gname" data-pe="g:name" data-g="${gi}" value="${esc(g.name || "")}" placeholder="Groupe ${gi + 1}" aria-label="Nom du groupe">
+      <div class="pe-gh"><span class="ssl" aria-hidden="true">${letter}</span><input type="text" class="pe-gname" data-pe="g:name" data-g="${gi}" value="${esc(g.name || "")}" placeholder="${grp ? "Superset" : "Groupe"} ${letter}" aria-label="Nom du groupe">
         <div class="pe-act"><button data-action="pe-gmove" data-g="${gi}" data-d="-1" aria-label="Monter le groupe" ${gi ? "" : "disabled"}>↑</button><button data-action="pe-gmove" data-g="${gi}" data-d="1" aria-label="Descendre le groupe" ${gi < s.blocks.length - 1 ? "" : "disabled"}>↓</button><button class="${conf ? "danger" : ""}" data-action="pe-gdel" data-g="${gi}" aria-label="Supprimer le groupe">${conf ? "Supprimer ?" : "🗑"}</button></div></div>
       <div class="seg pe-kind" role="group" aria-label="Type de groupe">${kinds.map(([k, l]) => `<button class="${g._kind === k ? "on" : ""}" aria-pressed="${g._kind === k}" data-action="pe-gkind" data-g="${gi}" data-k="${k}">${l}</button>`).join("")}</div>
       <p class="pe-help">${help}</p>
       ${g._kind === "superset" ? `<div class="pe-grid"><div class="field"><span class="lbl">Pause entre les exercices</span>${rs("_between", g._between)}</div><div class="field"><span class="lbl">Pause après le tour</span>${rs("_after", g._after)}</div></div>` : ""}
       ${g._kind === "contraste" ? `<div class="pe-grid"><div class="field"><span class="lbl">Pause après chaque paire</span>${rs("_after", g._after)}</div></div>` : ""}
-      <div class="pe-items">${items}</div>
+      <div class="pe-items">${items}<div class="pe-zone" data-dnd-zone data-g="${gi}">${(g.items || []).length ? "" : "Glisse un exercice ici, ou ajoute-en un."}</div></div>
       <button class="btn small" data-action="pe-xadd" data-g="${gi}">+ Exercice</button>
     </div>`;
   }).join("");
@@ -1379,51 +1627,96 @@ function peSessView(){
   return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="Modifier la séance">${peTop(inBlock ? "Séance · " + (P.b.name || "") : "Modifier la séance", inBlock)}
     <div class="run-body pe-body">
       ${!inBlock ? `<p class="pe-help">Ces changements valent pour ${esc(P.where)}.</p>` : ""}
-      <div class="field"><label for="pe-stitle">Titre</label><input id="pe-stitle" type="text" data-pe="s:title" value="${esc(s.title || "")}"></div>
-      <div class="pe-grid">
-        <div class="field"><label for="pe-skind">Type</label><select id="pe-skind" data-pe="s:kind">${PE_KINDS.map(([k, l]) => `<option value="${k}" ${s.kind === k ? "selected" : ""}>${l}</option>`).join("")}${s.kind && !PE_KINDS.some(([k]) => k === s.kind) ? `<option value="${esc(s.kind)}" selected>${esc(KINDS[s.kind] || s.kind)}</option>` : ""}</select></div>
-        <div class="field"><span class="lbl">Durée</span><div class="ed-s"><button data-action="pe-smin" data-d="-5" aria-label="5 minutes de moins">−</button><b>${s.min ? fmtMin(s.min) : "libre"}</b><button data-action="pe-smin" data-d="5" aria-label="5 minutes de plus">+</button></div></div>
-      </div>
-      <div class="field"><span class="lbl">Émoji</span><div class="pe-emo">${PE_EMOJIS.map(e => `<button class="${sessEmoji(s) === e ? "on" : ""}" data-action="pe-emoji" data-v="${e}" aria-label="Émoji ${e}">${e}</button>`).join("")}</div></div>
-      <div class="pe-flags">
-        <label class="pe-chk"><input type="checkbox" data-pe="s:nerv" ${s.nerv ? "checked" : ""}><span>⚡ Exigeante pour le système nerveux</span></label>
-        <label class="pe-chk"><input type="checkbox" data-pe="s:doms" ${s.doms ? "checked" : ""}><span>🔥 Grosses courbatures</span></label>
-        <label class="pe-chk"><input type="checkbox" data-pe="s:optional" ${s.optional ? "checked" : ""}><span>Optionnelle<small>Ne compte pas dans le suivi.</small></span></label>
-      </div>
-      <div class="field"><label for="pe-snote">Note</label><input id="pe-snote" type="text" data-pe="s:note" value="${esc(s.note || "")}"></div>
-      <div class="between pe-h"><h3>Exercices</h3></div>
-      ${groups || `<div class="muted">Aucun exercice pour l'instant.</div>`}
+      <div class="field"><label for="pe-stitle">Titre</label><input id="pe-stitle" type="text" data-pe="s:title" value="${esc(s.title || "")}" placeholder="ex. Force bas du corps"></div>
+      <div class="field"><span class="lbl">Type de séance</span>${types}</div>
+      ${tips}
+      <div class="between pe-h"><h3>Exercices</h3><span class="muted" style="font-size:12.5px">⋮⋮ pour déplacer</span></div>
+      ${groups || ""}
       <button class="btn" data-action="pe-gadd">+ Nouveau groupe</button>
+      <details class="pe-more" ${P.moreOpen ? "open" : ""}><summary>Réglages de la séance</summary>
+        <div class="pe-grid"><div class="field"><span class="lbl">Durée</span><div class="ed-s"><button data-action="pe-smin" data-d="-5" aria-label="5 minutes de moins">−</button><b>${s.min ? fmtMin(s.min) : "libre"}</b><button data-action="pe-smin" data-d="5" aria-label="5 minutes de plus">+</button></div></div></div>
+        <div class="field"><span class="lbl">Émoji</span><div class="pe-emo">${PE_EMOJIS.map(e => `<button class="${sessEmoji(s) === e ? "on" : ""}" data-action="pe-emoji" data-v="${e}" aria-label="Émoji ${e}">${e}</button>`).join("")}</div></div>
+        <div class="pe-flags">
+          <label class="pe-chk"><input type="checkbox" data-pe="s:nerv" ${s.nerv ? "checked" : ""}><span>⚡ Exigeante pour le système nerveux</span></label>
+          <label class="pe-chk"><input type="checkbox" data-pe="s:doms" ${s.doms ? "checked" : ""}><span>🔥 Grosses courbatures</span></label>
+          <label class="pe-chk"><input type="checkbox" data-pe="s:optional" ${s.optional ? "checked" : ""}><span>Optionnelle<small>Ne compte pas dans le suivi.</small></span></label>
+        </div>
+        <div class="field"><label for="pe-snote">Note</label><input id="pe-snote" type="text" data-pe="s:note" value="${esc(s.note || "")}"></div>
+      </details>
       ${inBlock ? `<div class="pe-danger"><button class="btn small ${conf ? "danger" : "ghost"}" data-action="pe-sdel">${conf ? "Confirmer : retirer cette séance du bloc" : "Retirer cette séance du bloc"}</button></div>` : ""}
     </div>
-    <div class="run-foot"><button class="btn" data-action="${inBlock ? "pe-sback" : "pe-cancel"}">Annuler</button><button class="btn primary big" data-action="pe-ssave">${inBlock ? "OK" : "Enregistrer"}</button></div>
-    <datalist id="pe-lib">${Object.values(exLibrary()).map(it => `<option value="${esc(it.name)}"></option>`).join("")}</datalist></div>`;
+    <div class="run-foot"><button class="btn" data-action="${inBlock ? "pe-sback" : "pe-cancel"}">Annuler</button><button class="btn primary big" data-action="pe-ssave">${inBlock ? "OK" : "Enregistrer"}</button></div></div>`;
 }
-function peItem(g, gi, it, xi){
+/* Une ligne d'exercice : réglages directs (séries, reps, charge, pause), détails repliés, poignée pour glisser. */
+function peRow(g, gi, it, xi, letter){
   const P = S.pe; const k = gi + ":" + xi; const open = P.openX === k; const grp = g._kind !== "simple";
-  const code = grp ? String.fromCharCode(65 + gi) + (xi + 1) : "";
-  const sum = [[typeof it.sets === "number" ? it.sets + " × " + (it.reps || "?") : it.reps || "", it.load ? "@ " + it.load : ""].filter(Boolean).join(" "), !grp && it.rest ? "repos " + it.rest : ""].filter(Boolean).join(" · ");
-  const conf = P.confirm === "x:" + k;
-  if (!open) return `<button class="pe-x" data-action="pe-xopen" data-k="${k}">${code ? `<span class="code">${code}</span>` : ""}<span class="pe-xt"><b>${esc(it.name || "Nouvel exercice")}</b><span class="muted">${esc(sum) || "à compléter"}${it.step ? " · +" + fmtNum(it.step, 1) + " kg/sem." : ""}${it.wave ? " · reps " + esc(it.wave.join("-")) : ""}</span></span><span class="chev" aria-hidden="true"></span></button>`;
-  const restOpts = ["", "30 s", "45 s", "60 s", "90 s", "2 min", "3 min"]; if (it.rest && !restOpts.includes(it.rest)) restOpts.push(it.rest);
-  return `<div class="pe-x open">
-    <div class="pe-xh">${code ? `<span class="code">${code}</span>` : ""}<input type="text" list="pe-lib" data-pe="x:name" data-g="${gi}" data-x="${xi}" value="${esc(it.name || "")}" placeholder="Nom de l'exercice" aria-label="Nom de l'exercice"><button class="x sm" data-action="pe-xopen" data-k="${k}" aria-label="Replier">⌃</button></div>
-    <div class="pe-grid3">
-      <div class="field"><span class="lbl">Séries</span><div class="ed-s"><button data-action="pe-xsets" data-g="${gi}" data-x="${xi}" data-d="-1" aria-label="Une série de moins">−</button><b>${typeof it.sets === "number" ? it.sets : "–"}</b><button data-action="pe-xsets" data-g="${gi}" data-x="${xi}" data-d="1" aria-label="Une série de plus">+</button></div></div>
-      <div class="field"><label>Reps<input type="text" data-pe="x:reps" data-g="${gi}" data-x="${xi}" value="${esc(it.reps || "")}" placeholder="5, 8–10, 40 s…"></label></div>
-    </div>
-    <div class="field"><label>Charge<input type="text" data-pe="x:load" data-g="${gi}" data-x="${xi}" value="${esc(it.load || "")}" placeholder="ex. 72 kg, +16 kg, 10 kg / main, poids de corps"></label></div>
-    ${grp ? "" : `<div class="field"><label>Pause entre les séries<select data-pe="x:rest" data-g="${gi}" data-x="${xi}">${restOpts.map(r => `<option value="${esc(r)}" ${(it.rest || "") === r ? "selected" : ""}>${r || "par défaut (1 min)"}</option>`).join("")}</select></label></div>`}
-    <div class="field"><label>Consigne<input type="text" data-pe="x:cue" data-g="${gi}" data-x="${xi}" value="${esc(it.cue || "")}" placeholder="ex. 2 reps en réserve"></label></div>
-    <details class="pe-prog" ${it.step || it.wave ? "open" : ""}><summary>Progression</summary>
+  const code = grp ? letter + (xi + 1) : ""; const conf = P.confirm === "x:" + k;
+  const st = (f, label, val) => `<div class="pe-st"><span>${label}</span><div class="ed-s sm"><button data-action="pe-xstep" data-g="${gi}" data-x="${xi}" data-f="${f}" data-d="-1" aria-label="${label} : moins">−</button><b>${val}</b><button data-action="pe-xstep" data-g="${gi}" data-x="${xi}" data-f="${f}" data-d="1" aria-label="${label} : plus">+</button></div></div>`;
+  const kg = loadKg(it); const x = exoOf(it.ex || it.id); const img = it.img ? mediaPath(it.img) : exoImg(x);
+  const restOpts = ["", "15 s", "30 s", "45 s", "60 s", "90 s", "2 min", "3 min", "4 min"]; if (it.rest && !restOpts.includes(it.rest)) restOpts.push(it.rest);
+  const ctl = `<div class="pe-ctl">
+      ${typeof it.sets === "number" ? st("sets", "Séries", it.sets) : ""}
+      ${repsEditable(it.reps) ? st("reps", "Reps", esc(String(it.reps).trim())) : `<button class="pe-chip" data-action="pe-xopen" data-k="${k}">${esc(it.reps || "reps ?")}</button>`}
+      ${kg != null ? st("load", "Charge", esc(kgTxt(it, kg))) : `<button class="pe-chip ${it.load ? "" : "ghost"}" data-action="pe-xopen" data-k="${k}">${esc(it.load || "+ charge")}</button>`}
+      ${grp ? "" : `<label class="pe-st"><span>Pause</span><select data-pe="x:rest" data-g="${gi}" data-x="${xi}">${restOpts.map(r => `<option value="${esc(r)}" ${(it.rest || "") === r ? "selected" : ""}>${r || "1 min"}</option>`).join("")}</select></label>`}
+    </div>`;
+  const details = open ? `<div class="pe-det">
+      <div class="field"><label>Nom<input type="text" data-pe="x:name" data-g="${gi}" data-x="${xi}" value="${esc(it.name || "")}"></label></div>
+      <div class="pe-grid"><div class="field"><label>Reps<input type="text" data-pe="x:reps" data-g="${gi}" data-x="${xi}" value="${esc(it.reps || "")}" placeholder="5, 8–10, 40 s, 20 m…"></label></div>
+        <div class="field"><label>Charge<input type="text" data-pe="x:load" data-g="${gi}" data-x="${xi}" value="${esc(it.load || "")}" placeholder="72 kg, +16 kg, poids du corps"></label></div></div>
+      ${it.sets == null ? `<button class="btn small" data-action="pe-xsetsadd" data-g="${gi}" data-x="${xi}">Compter des séries</button>` : ""}
+      <div class="field"><label>Consigne pour cette séance<input type="text" data-pe="x:cue" data-g="${gi}" data-x="${xi}" value="${esc(it.cue || "")}" placeholder="ex. 2 reps en réserve"></label></div>
       <div class="pe-grid">
         <div class="field"><label>Charge chaque semaine<select data-pe="x:step" data-g="${gi}" data-x="${xi}">${PE_STEPS.map(([v, l]) => `<option value="${v}" ${String(it.step || "") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
         <div class="field"><label>Reps semaine par semaine<input type="text" data-pe="x:wave" data-g="${gi}" data-x="${xi}" value="${esc((it.wave || []).join(", "))}" placeholder="ex. 5, 5, 4, 4, 3"></label></div>
       </div>
-      <p class="pe-help">La charge monte seulement si les reps prévues ont été faites. Les reps par semaine remplacent les reps ci-dessus, semaine 1, 2, 3…</p>
-    </details>
-    <div class="pe-xa"><button class="btn small" data-action="pe-xmove" data-g="${gi}" data-x="${xi}" data-d="-1" ${xi ? "" : "disabled"}>↑ Monter</button><button class="btn small" data-action="pe-xmove" data-g="${gi}" data-x="${xi}" data-d="1" ${xi < g.items.length - 1 ? "" : "disabled"}>↓ Descendre</button><button class="btn small ${conf ? "danger" : "ghost"}" data-action="pe-xdel" data-g="${gi}" data-x="${xi}">${conf ? "Confirmer" : "Supprimer"}</button></div>
-  </div>`;
+      <p class="pe-help">La charge monte seulement si les reps prévues ont été faites. Les reps semaine par semaine remplacent les reps ci-dessus (semaine 1, 2, 3…).</p>
+      ${P.hint && P.hint.k === k ? `<p class="pe-hint">${esc(P.hint.t)}</p>` : ""}
+    </div>` : (P.hint && P.hint.k === k ? `<p class="pe-hint">${esc(P.hint.t)}</p>` : "");
+  return `<div class="pe-row ${open ? "open" : ""}" data-dnd-item data-dnd="x" data-g="${gi}" data-x="${xi}">
+    <span class="pe-hdl" data-dnd-handle aria-label="Déplacer ${esc(it.name || "l'exercice")}" title="Glisser pour déplacer">⋮⋮</span>
+    <div class="pe-rm">
+      <div class="pe-rt">${code ? `<span class="code">${code}</span>` : ""}${img ? `<span class="pe-rimg"><img src="${BLANK}" data-mpath="${esc(img)}" alt=""></span>` : ""}<button class="pe-nm" data-action="pe-xopen" data-k="${k}" aria-expanded="${open}">${esc(it.name || "Nouvel exercice")}${it.step ? ` <small>+${fmtNum(it.step, 1)} kg/sem.</small>` : ""}${it.wave ? ` <small>reps ${esc(it.wave.join("-"))}</small>` : ""}</button>
+        <button class="pe-del ${conf ? "on" : ""}" data-action="pe-xdel" data-g="${gi}" data-x="${xi}" aria-label="Retirer ${esc(it.name || "l'exercice")}">${conf ? "Retirer ?" : "✕"}</button></div>
+      ${ctl}${details}
+    </div></div>`;
+}
+/* Choisir un exercice dans la bibliothèque (recherche + tags) ou en créer un. */
+function peXPicker(){
+  const P = S.pe; const q = (P.xq || "").toLowerCase(); const t = P.xtag || ""; const list = exoList();
+  const used = new Set(list.flatMap(x => x.tags || [])); const tags = EXO_TAGS.filter(x => used.has(x)).concat([...used].filter(x => !EXO_TAGS.includes(x)));
+  const T = stype(P.sd.kind); const r = numRange(T.def.reps);
+  const rows = list.map(x => { const hide = (t && !(x.tags || []).includes(t)) || (q && !x.name.toLowerCase().includes(q)); const img = exoImg(x);
+    const p = r && !isTimeOrDist(T.def.reps) ? proposeKg(x.id, r[0], 2.5) : null;
+    return `<button class="exr" data-action="pe-xpick" data-id="${esc(x.id)}" data-n="${esc(x.name.toLowerCase())}" data-t="${esc((x.tags || []).join("|"))}" ${hide ? "hidden" : ""}>
+      <span class="exth">${img ? `<img src="${BLANK}" data-mpath="${esc(img)}" alt="">` : `<span>${esc(x.name.slice(0, 1))}</span>`}</span>
+      <span class="exm"><b>${esc(x.name)}</b><span class="extags">${(x.tags || []).map(z => `<i>${esc(z)}</i>`).join("")}</span></span>
+      ${p ? `<span class="ex1"><small>${esc(T.def.reps)} reps</small>${isWeighted(x.id) ? "+" : ""}${fmtNum(p.kg, 1)} kg</span>` : ""}</button>`; }).join("");
+  return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="Ajouter un exercice"><div class="run-top"><button class="x" data-action="pe-xpickx" aria-label="Retour">‹</button><span class="run-sn">Ajouter un exercice · groupe ${String.fromCharCode(65 + P.xpick.g)}</span></div>
+    <div class="run-body pe-body">
+      <input id="pe-xq" type="search" class="exq" placeholder="Chercher ou créer un exercice" value="${esc(P.xq || "")}" aria-label="Chercher un exercice">
+      <button class="pe-x pe-create" data-action="pe-xcreate" ${q ? "" : "hidden"}><span class="semo">＋</span><span class="pe-xt"><b>Créer « <span id="pe-xqv">${esc(P.xq || "")}</span> »</b><span class="muted">nouvel exercice dans la bibliothèque</span></span></button>
+      <div class="seg extagsel"><button class="${t ? "" : "on"}" data-action="pe-xtag" data-t="">Tous</button>${tags.map(z => `<button class="${t === z ? "on" : ""}" data-action="pe-xtag" data-t="${esc(z)}">${esc(z)}</button>`).join("")}</div>
+      <div class="exlist">${rows}</div>
+    </div></div>`;
+}
+function peXFilter(){
+  const P = S.pe; if (!P) return; const q = (P.xq || "").toLowerCase(); const t = P.xtag || "";
+  app.querySelectorAll(".pe .exr").forEach(r => { r.hidden = !!((q && !r.dataset.n.includes(q)) || (t && !r.dataset.t.split("|").includes(t))); });
+  const c = app.querySelector(".pe-create"); if (c) { c.hidden = !q || exoList().some(x => x.name.toLowerCase() === q); const v = app.querySelector("#pe-xqv"); if (v) v.textContent = P.xq; }
+}
+/* Ajoute l'exercice au groupe avec les valeurs du type de séance et une charge proposée d'après tes données. */
+function peAddExo(id){
+  const P = S.pe; const g = P.sd.blocks[P.xpick.g]; const x = exoOf(id); const T = stype(P.sd.kind);
+  const it = { id: uid("x"), ex: x.id, name: x.name, sets: T.def.sets, reps: T.def.reps };
+  if (x.img) it.img = x.img; if (x.cue) it.cue = x.cue; if (x.link) it.link = x.link;
+  if (T.def.rest && g._kind === "simple") it.rest = T.def.rest; if (T.def.step) it.step = T.def.step;
+  const r = numRange(it.reps); const p = r && !isTimeOrDist(it.reps) ? proposeKg(x.id, r[0], isWeighted(x.id) ? 1 : 2.5) : null;
+  if (p) { it.load = (isWeighted(x.id) ? "+" : "") + fmtNum(p.kg, 2).replace(/ /g, "") + " kg";
+    P.hint = { k: P.xpick.g + ":" + g.items.length, t: "Charge proposée d'après " + (p.src === "ref" ? "« " + ((exoOf(p.refId) || {}).name || "l'exercice proche") + " »" : "tes séries de " + wkLabel(p.wk)) + ", avec 2 reps en réserve. Ajuste avec − / +." }; }
+  else if (T.def.load) it.load = T.def.load;
+  else P.hint = { k: P.xpick.g + ":" + g.items.length, t: "Pas encore de données pour proposer une charge : règle-la avec « + charge »." };
+  g.items.push(it); g._dirty = true; P.xpick = null; P.xq = ""; P.openX = null; P.tips = false;
 }
 function pePicker(){
   const lib = allSessionsLib();
@@ -1505,14 +1798,15 @@ function peField(el, isChange){
   if (scope === "b") { P.b[f] = v; if (f === "start" || f === "bas" || f === "haut") render(); return; }
   if (scope === "P") { P[f] = v; return; }
   const s = P.sd; if (!s) return;
-  if (scope === "s") { s[f] = v; if (f === "kind") { delete s.emoji; render(); } return; }
+  if (scope === "s") { s[f] = v; return; }
   const g = s.blocks[+el.dataset.g]; if (!g) return;
   if (scope === "g") { g[f] = f.startsWith("_") ? +v : v; g._dirty = true; return; }
   const it = g.items[+el.dataset.x]; if (!it) return;
   if (f === "wave") { const w = v.split(/[,;]\s*/).map(x => x.trim()).filter(Boolean); if (w.length) it.wave = w; else delete it.wave; }
   else if (f === "step") { if (v) it.step = +v; else delete it.step; }
+  else if (f === "rest") { if (v) it.rest = v; else delete it.rest; }
   else it[f] = v;
-  if (f === "name" && el.type === "text" && isChange) { const lib = exLibrary()[v.trim().toLowerCase()]; if (lib) { ["img","cue","link","ex","inc"].forEach(k => { if (lib[k] != null && it[k] == null) it[k] = lib[k]; }); if (!it.load && lib.load) it.load = lib.load; if (!it.reps && lib.reps) it.reps = lib.reps; render(); } }
+  if (isChange && (f === "reps" || f === "load")) render();
 }
 function peAction(a, b){
   const P = S.pe;
@@ -1521,35 +1815,80 @@ function peAction(a, b){
   if (a === "pe-sess") { peOpenSession(S.week, b.dataset.sid); return; }
   if (!P) return;
   const s = P.sd; const g = s && b.dataset.g != null ? s.blocks[+b.dataset.g] : null; const xi = b.dataset.x != null ? +b.dataset.x : null;
-  if (a !== "pe-bdel" && a !== "pe-gdel" && a !== "pe-xdel" && a !== "pe-sdel") P.confirm = null;
+  if (!["pe-bdel","pe-gdel","pe-xdel","pe-sdel"].includes(a)) P.confirm = null;
+  if (!["pe-xopen","pe-xstep"].includes(a)) P.hint = null;
   switch (a) {
     case "pe-cancel": peClose(); return;
     case "pe-weeks": P.b.weeks = Math.max(1, Math.min(12, P.b.weeks + +b.dataset.d)); break;
     case "pe-bsave": peSaveBlock(); return;
     case "pe-bdel": if (P.confirm !== "del-block") P.confirm = "del-block"; else { peDeleteBlock(); return; } break;
-    case "pe-smove": { const i = +b.dataset.i, j = i + +b.dataset.d; if (j >= 0 && j < P.sessions.length) [P.sessions[i], P.sessions[j]] = [P.sessions[j], P.sessions[i]]; break; }
-    case "pe-sedit": P.sIdx = +b.dataset.i; P.sd = sessDraft(P.sessions[P.sIdx]); P.openX = null; break;
+    case "pe-sedit": P.sIdx = +b.dataset.i; P.sd = sessDraft(P.sessions[P.sIdx]); P.openX = null; P.tips = false; break;
     case "pe-sadd": P.pick = true; break;
     case "pe-pickx": P.pick = null; break;
     case "pe-pick": { const i = +b.dataset.i; const lib = allSessionsLib(); const src = i >= 0 ? clone(lib[i].s) : { title: "", kind: "force", min: 45, blocks: [{ name: "", items: [] }] };
-      src.id = uid("s"); P.pick = null; P.sIdx = -1; P.sd = sessDraft(src); P.openX = null; break; }
+      src.id = uid("s"); P.pick = null; P.sIdx = -1; P.sd = sessDraft(src); P.openX = null; P.tips = i < 0; if (i < 0) { const T = stype("force"); P.sd.blocks[0]._kind = T.g.kind; P.sd.blocks[0]._between = T.g.between || 0; P.sd.blocks[0]._after = T.g.after || 0; } break; }
     case "pe-sback": P.sd = null; P.sIdx = null; P.openX = null; break;
     case "pe-ssave": peSaveSession(); return;
     case "pe-sdel": if (P.confirm !== "del-sess") P.confirm = "del-sess"; else { if (P.sIdx >= 0) P.sessions.splice(P.sIdx, 1); P.sd = null; P.sIdx = null; P.confirm = null; } break;
-    case "pe-smin": s.min = Math.max(0, (s.min || 0) + +b.dataset.d) || undefined; if (!s.min) delete s.min; break;
-    case "pe-emoji": s.emoji = b.dataset.v; break;
-    case "pe-gadd": s.blocks.push({ name: "", items: [], _kind: "simple", _between: 0, _after: 90, _dirty: true }); break;
+    case "pe-type": s.kind = b.dataset.k; P.tips = true; break;
+    case "pe-tips": P.tips = P.tips === false; break;
+    case "pe-smin": s.min = Math.max(0, (s.min || 0) + +b.dataset.d) || undefined; if (!s.min) delete s.min; P.moreOpen = true; break;
+    case "pe-emoji": s.emoji = b.dataset.v; P.moreOpen = true; break;
+    case "pe-gadd": { const T = stype(s.kind); s.blocks.push({ name: "", items: [], _kind: T.g.kind, _between: T.g.between || 0, _after: T.g.after || 90, _dirty: true }); break; }
     case "pe-gmove": { const i = +b.dataset.g, j = i + +b.dataset.d; if (j >= 0 && j < s.blocks.length) [s.blocks[i], s.blocks[j]] = [s.blocks[j], s.blocks[i]]; P.openX = null; break; }
     case "pe-gdel": { const k = "g:" + b.dataset.g; if (P.confirm !== k) P.confirm = k; else { s.blocks.splice(+b.dataset.g, 1); P.confirm = null; P.openX = null; } break; }
     case "pe-gkind": g._kind = b.dataset.k; g._dirty = true; if (g._kind !== "simple" && !g._after) g._after = 90; if (g._kind === "superset" && g._between == null) g._between = 0; break;
-    case "pe-xadd": g.items.push({ id: uid("x"), name: "", sets: 3, reps: "" }); P.openX = b.dataset.g + ":" + (g.items.length - 1); g._dirty = true; break;
+    case "pe-xadd": P.xpick = { g: +b.dataset.g }; P.xq = ""; P.xtag = ""; break;
+    case "pe-xpickx": P.xpick = null; break;
+    case "pe-xtag": P.xtag = b.dataset.t; break;
+    case "pe-xpick": peAddExo(b.dataset.id); break;
+    case "pe-xcreate": { const name = (P.xq || "").trim(); if (!name) break; let id = slug(name), n = 2; while (S.data.exos[id] || exoList().some(y => y.id === id)) id = slug(name) + "-" + n++;
+      put("exos", id, { name, tags: [], edited: true }); peAddExo(id); toast("« " + name + " » ajouté à la bibliothèque"); break; }
     case "pe-xopen": P.openX = P.openX === b.dataset.k ? null : b.dataset.k; break;
-    case "pe-xsets": { const it = g.items[xi]; it.sets = Math.max(1, Math.min(12, (typeof it.sets === "number" ? it.sets : 1) + +b.dataset.d)); break; }
-    case "pe-xmove": { const j = xi + +b.dataset.d; if (j >= 0 && j < g.items.length) { [g.items[xi], g.items[j]] = [g.items[j], g.items[xi]]; P.openX = b.dataset.g + ":" + j; g._dirty = true; } break; }
+    case "pe-xsetsadd": g.items[xi].sets = 3; break;
+    case "pe-xstep": { const it = g.items[xi]; const d = +b.dataset.d; const f = b.dataset.f;
+      if (f === "sets") it.sets = Math.max(1, Math.min(12, it.sets + d));
+      else if (f === "reps") { it.reps = shiftReps(String(it.reps).trim(), d); if (it.wave) it.wave = it.wave.map(w => shiftReps(w, d)); }
+      else if (f === "load") { const v = loadKg(it); if (v != null) setLoadKg(it, Math.max(0, Math.round((v + d * kgInc(it)) * 100) / 100)); }
+      break; }
     case "pe-xdel": { const k = "x:" + b.dataset.g + ":" + xi; if (P.confirm !== k) P.confirm = k; else { g.items.splice(xi, 1); P.confirm = null; P.openX = null; g._dirty = true; } break; }
   }
   render();
 }
+/* ---------- glisser-déposer (souris et doigt) ----------
+   Poignée [data-dnd-handle] dans une ligne [data-dnd-item data-dnd="x" | "s"]. Pour les exercices, on peut changer de groupe. */
+const DND = { row: null };
+function dndTargets(list){ return [...app.querySelectorAll(`[data-dnd-item][data-dnd="${list}"], ${list === "x" ? "[data-dnd-zone]" : "[data-dnd-none]"}`)]; }
+app.addEventListener("pointerdown", e => {
+  const h = e.target.closest("[data-dnd-handle]"); if (!h || !S.pe) return;
+  const row = h.closest("[data-dnd-item]"); if (!row) return; e.preventDefault();
+  DND.row = row; DND.list = row.dataset.dnd; DND.y0 = e.clientY; DND.drop = null; DND.scroller = row.closest(".run-body"); DND.s0 = DND.scroller ? DND.scroller.scrollTop : 0;
+  row.classList.add("dragging"); try { h.setPointerCapture(e.pointerId); } catch(err) {}
+});
+app.addEventListener("pointermove", e => {
+  if (!DND.row) return; e.preventDefault();
+  const sc = DND.scroller; if (sc) { const r = sc.getBoundingClientRect(); if (e.clientY < r.top + 50) sc.scrollTop -= 8; else if (e.clientY > r.bottom - 50) sc.scrollTop += 8; }
+  DND.row.style.transform = `translateY(${e.clientY - DND.y0 + (sc ? sc.scrollTop - DND.s0 : 0)}px)`;
+  app.querySelectorAll(".drop-before").forEach(x => x.classList.remove("drop-before"));
+  const t = dndTargets(DND.list).filter(x => x !== DND.row).find(x => { const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
+  DND.drop = t || null; if (t) t.classList.add("drop-before");
+});
+function dndEnd(){
+  if (!DND.row) return; const row = DND.row; const t = DND.drop; DND.row = null;
+  row.classList.remove("dragging"); row.style.transform = ""; app.querySelectorAll(".drop-before").forEach(x => x.classList.remove("drop-before"));
+  const P = S.pe; if (!P) return;
+  if (DND.list === "s") {
+    const from = +row.dataset.i; let to = t ? +t.dataset.i : P.sessions.length; if (to > from) to--;
+    if (to !== from) { const [m] = P.sessions.splice(from, 1); P.sessions.splice(to, 0, m); }
+  } else {
+    const s = P.sd; const fg = +row.dataset.g, fx = +row.dataset.x;
+    let tg, tx; if (t && t.hasAttribute("data-dnd-zone")) { tg = +t.dataset.g; tx = s.blocks[tg].items.length; } else if (t) { tg = +t.dataset.g; tx = +t.dataset.x; } else { tg = s.blocks.length - 1; tx = s.blocks[tg].items.length; }
+    if (tg === fg && tx > fx) tx--;
+    if (!(tg === fg && tx === fx)) { const [m] = s.blocks[fg].items.splice(fx, 1); s.blocks[tg].items.splice(tx, 0, m); s.blocks[fg]._dirty = s.blocks[tg]._dirty = true; P.openX = null; P.hint = null; }
+  }
+  render();
+}
+app.addEventListener("pointerup", dndEnd); app.addEventListener("pointercancel", dndEnd);
 
 /* Une étape = une série d'un exercice. Superset : on tourne A1, A2, A1, A2…
    Pauses : celles écrites dans la règle du bloc (entre les deux / après la paire), sinon le repos de l'exercice. */
@@ -1655,7 +1994,7 @@ function runView(){
       <h2 class="st-name">${esc(it.name)}</h2>
       ${step.of > 1 ? `<div class="st-set">Série ${step.set} / ${step.of}</div>` : ""}
       ${it.reps ? `<div class="st-reps">${esc(fmtReps(it.reps))}</div>` : ""}${other}${holdSec(it) ? holdCtl(step) : ""}
-      ${it.cue ? `<p class="st-cue">${esc(it.cue)}</p>` : ""}
+      ${it.cue ? `<p class="st-cue">${esc(it.cue)}</p>` : ""}${(() => { const xo = it.tests ? null : exoOf(it.ex || it.id); return xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""; })()}
       ${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(R.wk + ":" + step.key)}</div>` : ""}
       ${kgCtl}${repsCtl}
     </div>`;
@@ -1679,7 +2018,7 @@ function runView(){
   return `<div class="ov run" role="dialog" aria-modal="true" aria-label="Séance : ${esc(s.title)}">${top}${body}<div class="run-foot">${foot}</div></div>`;
 }
 function ovHtml(){
-  const o = S.ui.ov; if (!o) return ""; if (o.type === "pe") return peView(); if (S.view !== "semaine") return "";
+  const o = S.ui.ov; if (!o) return ""; if (o.type === "pe") return peView(); if (o.type === "exo") return exoSheet(); if (S.view !== "semaine") return "";
   if (o.type === "run") return runView();
   const s = planOf(S.week).sessions.find(x => x.id === o.sid); return s ? showSheet(S.week, s, S.data.logs[S.week] || {}) : "";
 }
@@ -1689,7 +2028,7 @@ function ovOpen(type, sid){
 }
 function ovClose(fromPop){
   const wasRun = S.ui.ov && S.ui.ov.type === "run";
-  S.ui.ov = null; S.ui.edit = null; S.pe = null; S.run = null; clearInterval(RUN.iv); RUN.iv = null;
+  S.ui.ov = null; S.ui.edit = null; S.ui.exoEdit = null; S.pe = null; S.run = null; clearInterval(RUN.iv); RUN.iv = null;
   if (wasRun) { try { RUN.lock && RUN.lock.release(); } catch(e) {} RUN.lock = null; }
   if (!fromPop) { try { if (history.state && history.state.ov) history.back(); } catch(e) {} }
   render();
@@ -1841,7 +2180,7 @@ function strengthIndex(){
       const [sid, iid] = k.split(":"); if (sid.startsWith("v-")) return;
       const it = sid === "hist" ? null : itemOf(wk, sid, iid); if (it && it.unit === "reps") return;
       const ex = a.ex || iid; const reps = parseReps(a.reps) ?? parseReps(it && it.reps); if (reps == null) return;
-      const e1 = (WEIGHTED.has(ex) ? bwAt(wk) + load : load) * (1 + reps / 30);
+      const e1 = (isWeighted(ex) ? bwAt(wk) + load : load) * (1 + reps / 30);
       const track = sid === "s-haut" || HAUT_EX.has(ex) ? "haut" : "bas";
       (perEx[ex] ||= { track, pts:{} }); perEx[ex].pts[wk] = Math.max(perEx[ex].pts[wk] || 0, e1);
     });
@@ -1991,7 +2330,7 @@ function vNutrition(){
 
 /* ---------- views: data ---------- */
 function vData(){
-  const counts = COLS.map(c => `<tr><td>${{config:"Réglages",blocks:"Blocs",phases:"Phases",events:"Événements",weeks:"Semaines programmées",logs:"Journaux de semaine",tests:"Tests",content:"Pages de contenu"}[c]}</td><td class="num">${Object.keys(S.data[c]).length}</td></tr>`).join("");
+  const counts = COLS.map(c => `<tr><td>${{config:"Réglages",blocks:"Blocs",phases:"Phases",events:"Événements",weeks:"Semaines programmées",logs:"Journaux de semaine",tests:"Tests",content:"Pages de contenu",exos:"Exercices"}[c]}</td><td class="num">${Object.keys(S.data[c]).length}</td></tr>`).join("");
   const c = cfg(); const st = syncState(); const prog = S.data.config.prog || {};
   if (S.ui.mediaCount == null && !S.ui.mediaAsked) { S.ui.mediaAsked = true; countMedia(); }
   return `<section><div class="eyebrow">Données</div><h2>Compte & sauvegarde</h2></section>
@@ -2115,6 +2454,7 @@ app.addEventListener("click", async e => {
   else if (a.startsWith("run-")) { runAction(a, b); }
   else if (a.startsWith("ed")) { edAction(a, b); }
   else if (a.startsWith("pe-")) { peAction(a, b); }
+  else if (a.startsWith("exo-")) { exoAction(a, b); }
   else if (a === "pend-take" || a === "pend-keep") { const docs = { ...((S.data.config.progPending || {}).docs || {}) }; const keys = b.dataset.k === "*" ? Object.keys(docs) : [b.dataset.k];
     keys.forEach(k => { const [c, id] = k.split("/"); if (a === "pend-take") { if (docs[k] == null) { if (S.data[c] && S.data[c][id] !== undefined) del(c, id); } else put(c, id, docs[k]); } delete docs[k]; });
     put("config", "progPending", { docs }); toast(a === "pend-take" ? "Version de Claude installée" : "Ta version est gardée"); }
@@ -2192,6 +2532,8 @@ function onField(el){
 app.addEventListener("change", async e => {
   const el = e.target;
   if (el.dataset && el.dataset.pe) { peField(el, true); if (el.matches("select, input[type=checkbox]")) render(); return; }
+  if (el.dataset && el.dataset.exo) { exoField(el); return; }
+  if (el.id === "exo-img") { exoImage(el.files[0]); return; }
   if (el.id === "photo-in") return addPhotos(el.files);
   if (el.id === "media-in") { const f = el.files[0]; if (f) importMediaZip(f); return; }
   if (el.id === "import-in") { const f = el.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); if (!j || !j.data) throw 0; S.ui.importData = j; S.ui.importName = f.name; } catch(err){ toast("Ce fichier n'est pas un export du carnet."); } render(); return; }
@@ -2203,7 +2545,10 @@ app.addEventListener("change", async e => {
 });
 app.addEventListener("input", e => {
   const el = e.target;
-  if (el.dataset && el.dataset.pe) { if (el.matches("input[type=text], textarea")) peField(el, false); return; } if (!el.matches("textarea[data-log], input[data-log], input[data-actual], input[data-photo-cap], input[data-ci], input[data-ctx], input[data-snote], input[data-tfield]")) return;
+  if (el.dataset && el.dataset.pe) { if (el.matches("input[type=text], textarea")) peField(el, false); return; }
+  if (el.dataset && el.dataset.exo) { if (el.matches("input[type=text], input[type=url], textarea")) exoField(el); return; }
+  if (el.id === "exq") { S.ui.exq = el.value; exoFilter(); return; }
+  if (el.id === "pe-xq" && S.pe) { S.pe.xq = el.value; peXFilter(); return; } if (!el.matches("textarea[data-log], input[data-log], input[data-actual], input[data-photo-cap], input[data-ci], input[data-ctx], input[data-snote], input[data-tfield]")) return;
   clearTimeout(debounce[el.id]); debounce[el.id] = setTimeout(() => onField(el), 1500);
 });
 app.addEventListener("toggle", e => { if (e.target && e.target.id === "exdet") { S.ui.exOpen = e.target.open; if (e.target.open) drawCharts(); } }, true);
@@ -2238,7 +2583,7 @@ async function addPhotos(files){
 (function initHash(){
   const h = (location.hash || "").slice(1);
   if (/^s-\d{4}-W\d{2}$/.test(h)) { S.view = "semaine"; S.week = h.slice(2); }
-  else if (["calendrier","semaine","suivi","nutrition","donnees"].includes(h)) S.view = h;
+  else if (["calendrier","semaine","exos","suivi","nutrition","donnees"].includes(h)) S.view = h;
 })();
 document.getElementById("sync").addEventListener("click", () => setView("donnees"));
 document.getElementById("gear").addEventListener("click", () => setView("donnees"));

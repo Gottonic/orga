@@ -1,7 +1,7 @@
 {
- "version": 5,
- "date": "2026-11-08",
- "note": "tests automatiques en début de bloc, charges des accessoires, variantes VO2max",
+ "version": 6,
+ "date": "2026-11-11",
+ "note": "bibliothèque d'exercices",
  "set": {
   "config": {
    "main": {
@@ -2782,6 +2782,470 @@
      "title": "Session de tests",
      "emoji": "📏"
     }
+   }
+  },
+  "exos": {
+   "kipping": {
+    "name": "Kipping swing",
+    "tags": [
+     "Haut du corps",
+     "Parkour",
+     "Max Henry"
+    ],
+    "img": "6170f52426ee0e9a0f9469beadf355fa",
+    "cue": "« Plyo pour les épaules », prépare les lâchés",
+    "tips": "Balancer depuis les épaules et les hanches, bras tendus : c'est la base des lâchés et des sauts de chat."
+   },
+   "tractions": {
+    "name": "Tractions serrées lestées",
+    "tags": [
+     "Haut du corps"
+    ],
+    "cue": "Lourd, 2 reps en réserve",
+    "link": "https://www.youtube.com/results?search_query=weighted+chin+up",
+    "bw": true,
+    "tips": "Bras tendus en bas mais omoplates légèrement actives, menton au-dessus de la barre. Pas de balancier sous le lest."
+   },
+   "iso-catch": {
+    "name": "Pull-up iso catch",
+    "tags": [
+     "Haut du corps",
+     "Plyo",
+     "Max Henry"
+    ],
+    "img": "efa7babbf2e65e2712b4534e6de49e9d",
+    "cue": "Juste après A1 : traction explosive puis maintien. Arrête dès que la vitesse baisse",
+    "tips": "Traction la plus explosive possible, puis tenue 1–2 s en haut. Arrête la série dès que la vitesse baisse."
+   },
+   "dips": {
+    "name": "Dips lestés",
+    "tags": [
+     "Haut du corps"
+    ],
+    "cue": "Lourd, 2 reps en réserve",
+    "link": "https://www.youtube.com/results?search_query=weighted+dips+technique",
+    "bw": true,
+    "tips": "Épaules basses, descends jusqu'à ce que les épaules passent un peu sous les coudes, sans douleur à l'avant de l'épaule."
+   },
+   "pompes-plyo": {
+    "name": "Pompes plyo",
+    "tags": [
+     "Haut du corps",
+     "Plyo",
+     "Max Henry"
+    ],
+    "img": "0c393f354beffb93528330967c7058f4",
+    "cue": "Juste après A3, sur des disques",
+    "tips": "Mains qui décollent du sol, réception souple sur des disques ou au sol. Gainage serré du début à la fin."
+   },
+   "push-press": {
+    "name": "Push press barre",
+    "tags": [
+     "Haut du corps",
+     "Full body",
+     "Max Henry"
+    ],
+    "img": "c5811b7b38246b0413f8624b5b1668aa",
+    "cue": "Vitesse maximale, pour les kongs. Push jerk si la technique est là",
+    "tips": "Petite flexion des jambes puis poussée explosive : ce sont les jambes qui lancent la barre. Verrouille bras tendus au-dessus de la tête."
+   },
+   "pullover": {
+    "name": "Pull-over deux haltères",
+    "tags": [
+     "Haut du corps",
+     "Max Henry"
+    ],
+    "img": "be113c27ba4a6fbcd55ba5d5a7139f2c",
+    "cue": "Épaules en extension complète, la position des lâchés"
+   },
+   "levers-jambes": {
+    "name": "Levers de jambes",
+    "tags": [
+     "Gainage"
+    ],
+    "cue": "Pause 1 s en haut",
+    "link": "https://www.youtube.com/results?search_query=hanging+leg+raise"
+   },
+   "superman": {
+    "name": "Supermans",
+    "tags": [
+     "Gainage"
+    ],
+    "cue": "Iso 2–3 s en haut"
+   },
+   "sprints": {
+    "name": "Sprints courts",
+    "tags": [
+     "Vitesse"
+    ],
+    "cue": "À fond, contact au sol court, buste droit. Arrête dès que tu ralentis. En salle : 4 sauts en longueur + 4 sauts verticaux"
+   },
+   "hops-vite": {
+    "name": "Hops pour la vitesse",
+    "tags": [
+     "Plyo",
+     "Vitesse",
+     "Max Henry"
+    ],
+    "img": "50f28ac70b7b07d263701bbe3ff083bf",
+    "cue": "Garder l'élan, temps de contact court"
+   },
+   "squat": {
+    "name": "Back squat",
+    "tags": [
+     "Bas du corps"
+    ],
+    "cue": "2 reps en réserve. Si la vitesse baisse, garde la charge la semaine suivante",
+    "link": "https://www.youtube.com/results?search_query=back+squat+technique",
+    "tips": "Pieds largeur d'épaules, genoux dans l'axe des pieds. Descends contrôlé jusqu'à ta profondeur sans douleur, remonte vite. Le back squat charge moins le genou que le front ou le Zercher."
+   },
+   "rdl-unilat": {
+    "name": "RDL unilatéral barre",
+    "tags": [
+     "Bas du corps"
+    ],
+    "cue": "Bassin à plat, lourd mais contrôlé",
+    "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+barbell",
+    "ref": {
+     "id": "rdl",
+     "pct": 35
+    },
+    "tips": "Bassin à plat (pas de rotation), jambe libre dans l'alignement du dos. Lent à la descente."
+   },
+   "rdl": {
+    "name": "Soulevé de terre roumain",
+    "tags": [
+     "Bas du corps"
+    ],
+    "cue": "Dos neutre",
+    "link": "https://www.youtube.com/results?search_query=romanian+deadlift+technique",
+    "tips": "Genoux légèrement fléchis, hanches qui reculent, barre collée aux jambes, dos neutre. Descends jusqu'à sentir les ischios tirer, pas plus."
+   },
+   "fente-arriere": {
+    "name": "Fente arrière lourde barre",
+    "tags": [
+     "Bas du corps",
+     "Max Henry"
+    ],
+    "img": "38d5674dc3bba8efa8eef61a660c04eb",
+    "cue": "Un pilier pour les fessiers et la stabilité sur une jambe",
+    "ref": {
+     "id": "squat",
+     "pct": 60
+    }
+   },
+   "step-up": {
+    "name": "Step-up lesté, box à mi-tibia",
+    "tags": [
+     "Bas du corps"
+    ],
+    "cue": "Jamais plus haut que le genou : c'est le dernier quart de l'extension qui compte en précision",
+    "link": "https://www.youtube.com/results?search_query=weighted+step+up",
+    "ref": {
+     "id": "squat",
+     "pct": 30
+    }
+   },
+   "tibial": {
+    "name": "Tibialis raise",
+    "tags": [
+     "Bas du corps"
+    ],
+    "cue": "Difficiles : talons loin du mur, poids sur les pieds",
+    "link": "https://www.youtube.com/results?search_query=tibialis+raise",
+    "tips": "Dos au mur, talons loin du mur ; remonte les pointes de pied au maximum, tempo lent. Protège les tibias et les genoux."
+   },
+   "mollets": {
+    "name": "Mollets unilatéraux lestés",
+    "tags": [
+     "Bas du corps"
+    ],
+    "cue": "Tempo lent",
+    "link": "https://www.youtube.com/results?search_query=single+leg+calf+raise+weighted"
+   },
+   "iso-chaise": {
+    "name": "Chaise contre un mur, sur les talons",
+    "tags": [
+     "Bas du corps",
+     "Isométrie"
+    ]
+   },
+   "iso-fente": {
+    "name": "Fente basse tenue, sur la pointe du pied avant",
+    "tags": [
+     "Bas du corps",
+     "Isométrie"
+    ],
+    "cue": "Talon avant décollé, genou arrière juste au-dessus du sol"
+   },
+   "iso-mollets": {
+    "name": "Mollets tenus sur une jambe, en haut",
+    "tags": [
+     "Bas du corps",
+     "Isométrie"
+    ]
+   },
+   "v-bulgare": {
+    "name": "Fentes bulgares, pied arrière sur une chaise ou un lit",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "cue": "Tempo 3 s à la descente. Trop facile : pause 2 s en bas ou 1,5 rep",
+    "link": "https://www.youtube.com/results?search_query=bulgarian+split+squat+bodyweight"
+   },
+   "v-rdl": {
+    "name": "RDL unilatéral, lent",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "cue": "Sac à dos rempli en main si tu en as un",
+    "link": "https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+bodyweight",
+    "aliases": [
+     "va-rdl"
+    ]
+   },
+   "v-pistol": {
+    "name": "Pistol squat assisté (cadre de porte)",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "link": "https://www.youtube.com/results?search_query=assisted+pistol+squat"
+   },
+   "v-nordic": {
+    "name": "Nordic curl, pieds calés sous un lit ou un canapé",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "cue": "Sinon : pont ischios sur 1 jambe, 3 × 12",
+    "link": "https://www.youtube.com/results?search_query=nordic+curl+at+home"
+   },
+   "v-pompes": {
+    "name": "Pompes pieds surélevés sur une chaise",
+    "tags": [
+     "Haut du corps",
+     "Sans matériel"
+    ],
+    "cue": "Plus dur : pompes archer"
+   },
+   "v-rowing": {
+    "name": "Rowing inversé sous une table solide",
+    "tags": [
+     "Haut du corps",
+     "Sans matériel"
+    ],
+    "cue": "Sinon : tirage à la serviette coincée dans une porte",
+    "link": "https://www.youtube.com/results?search_query=inverted+row+under+table"
+   },
+   "v-dips": {
+    "name": "Dips entre deux chaises",
+    "tags": [
+     "Haut du corps",
+     "Sans matériel"
+    ]
+   },
+   "v-mollets": {
+    "name": "Mollets sur 1 jambe, sur une marche",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "aliases": [
+     "va-mollets"
+    ]
+   },
+   "v-tibial": {
+    "name": "Tibialis raise, dos au mur",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "aliases": [
+     "va-tibial"
+    ]
+   },
+   "pogos": {
+    "name": "Pogos",
+    "tags": [
+     "Plyo",
+     "Max Henry"
+    ],
+    "img": "1965299094cc508e0758c8bec329a0f7",
+    "cue": "Contact court, chevilles raides",
+    "tips": "Petits rebonds sur l'avant du pied, genoux presque tendus, contact au sol le plus court possible.",
+    "aliases": [
+     "v-pogos"
+    ]
+   },
+   "bounds": {
+    "name": "Bounds / switch strides",
+    "tags": [
+     "Plyo",
+     "Max Henry"
+    ],
+    "img": "9ec8a10ebcc7d99f5edef5a4da01dcb7",
+    "cue": "Effort moyen, rythme et posture"
+   },
+   "z2": {
+    "name": "Vélo ou course",
+    "tags": [
+     "Cardio"
+    ],
+    "cue": "Le lendemain d'une grosse séance : Z1 ou marche à la place"
+   },
+   "vo-cotes": {
+    "name": "Montées de côte dures",
+    "tags": [
+     "Cardio"
+    ],
+    "cue": "RPE 8–9 : dur mais régulier, la dernière aussi rapide que la première"
+   },
+   "vo-plat": {
+    "name": "Course dure / trot",
+    "tags": [
+     "Cardio"
+    ],
+    "cue": "Tu peux dire 2–3 mots, pas une phrase"
+   },
+   "tractions-larges": {
+    "name": "Tractions larges pronation lestées",
+    "tags": [
+     "Haut du corps"
+    ],
+    "cue": "Omoplates actives en bas, menton au-dessus",
+    "link": "https://www.youtube.com/results?search_query=weighted+wide+grip+pull+up",
+    "bw": true,
+    "ref": {
+     "id": "tractions",
+     "pct": 95
+    }
+   },
+   "pompes": {
+    "name": "Pompes surélevées lestées",
+    "tags": [
+     "Haut du corps"
+    ],
+    "cue": "Gainage complet, poitrine au contact",
+    "link": "https://www.youtube.com/results?search_query=weighted+deficit+push+ups",
+    "bw": true
+   },
+   "broad": {
+    "name": "Saut en longueur debout",
+    "tags": [
+     "Plyo"
+    ],
+    "cue": "Intention maximale, réception stable",
+    "aliases": [
+     "v-sauts"
+    ]
+   },
+   "vertical": {
+    "name": "Saut vertical",
+    "tags": [
+     "Plyo"
+    ],
+    "cue": "Vise un point haut à toucher de la main : ça aide à sauter à fond"
+   },
+   "fente-bulgare": {
+    "name": "Fente bulgare barre",
+    "tags": [
+     "Bas du corps"
+    ],
+    "link": "https://www.youtube.com/results?search_query=barbell+bulgarian+split+squat",
+    "ref": {
+     "id": "squat",
+     "pct": 50
+    }
+   },
+   "hops": {
+    "name": "Hops, lents puis rapides",
+    "tags": [
+     "Plyo",
+     "Max Henry"
+    ],
+    "img": "50f28ac70b7b07d263701bbe3ff083bf"
+   },
+   "va-sprint": {
+    "name": "Sprints départ debout",
+    "tags": [
+     "Vitesse",
+     "Sans matériel"
+    ],
+    "cue": "À fond, arrête dès que tu ralentis"
+   },
+   "va-pistol": {
+    "name": "Pistol squat (ou shrimp squat)",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "cue": "Descente 3 s. Trop dur : toucher le sol avec le genou arrière",
+    "link": "https://www.youtube.com/results?search_query=shrimp+squat"
+   },
+   "va-pont": {
+    "name": "Pont fessier sur une jambe",
+    "tags": [
+     "Bas du corps",
+     "Sans matériel"
+    ],
+    "cue": "Pause 2 s en haut"
+   },
+   "vb-archer": {
+    "name": "Pompes archer (ou pompes lentes 3 s)",
+    "tags": [
+     "Haut du corps",
+     "Sans matériel"
+    ],
+    "link": "https://www.youtube.com/results?search_query=archer+push+up"
+   },
+   "vb-hollow": {
+    "name": "Hollow body",
+    "tags": [
+     "Gainage",
+     "Sans matériel"
+    ]
+   },
+   "va-triple": {
+    "name": "Triple broad jump",
+    "tags": [
+     "Plyo"
+    ],
+    "cue": "Enchaîner les trois sans perdre de distance"
+   },
+   "vb-fentes": {
+    "name": "Fentes sautées alternées",
+    "tags": [
+     "Plyo",
+     "Sans matériel"
+    ],
+    "cue": "Réception silencieuse"
+   },
+   "vb-hspu": {
+    "name": "Pompes en équilibre au mur (ou pike push-ups)",
+    "tags": [
+     "Haut du corps",
+     "Sans matériel"
+    ],
+    "cue": "Pour la poussée des kongs",
+    "link": "https://www.youtube.com/results?search_query=wall+handstand+push+up+progression"
+   },
+   "vb-ytw": {
+    "name": "Y-T-W allongé sur le ventre",
+    "tags": [
+     "Haut du corps",
+     "Sans matériel"
+    ],
+    "cue": "Pause 2 s, omoplates serrées"
+   },
+   "vb-lateral": {
+    "name": "Gainage latéral",
+    "tags": [
+     "Gainage",
+     "Sans matériel"
+    ]
    }
   }
  },
