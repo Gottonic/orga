@@ -65,6 +65,7 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 @media (min-width:600px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .tile{background:var(--tile);border:0;border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;min-height:64px;min-width:0}
 .tile.pro{background:var(--protile)}
+.tile.inv{background:#F7F0E1}
 .tile:hover{filter:brightness(.97)}
 .tile .n{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .s{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;max-width:100%;overflow:hidden;text-overflow:ellipsis}
@@ -124,6 +125,12 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 .table tr:first-child td{border-top:0}
 .table td.r{text-align:right;font-variant-numeric:tabular-nums}
 .table input{width:120px;text-align:right;height:38px}
+.cpt{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.cpt:first-of-type{border-top:0}
+.cpt.off{opacity:.55}
+.cpt-l,.cpt-r{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cpt-r .input{text-align:right}
+@media (max-width:420px){.cpt{grid-template-columns:1fr}}
 
 /* feuille de saisie */
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(10,12,16,.45);display:flex;align-items:flex-end;justify-content:center}
@@ -216,6 +223,8 @@ function estVir(t){ return t.cat===VIR; }
 function semerCategories(){ ARBRE.forEach(([m,subs],i)=>{ const mid=slug(m); if(!S.cats[mid]) S.cats[mid]={id:mid,nom:m,parent:null,ordre:i}; subs.forEach((s,j)=>{ const id=mid+'.'+slug(s); if(!S.cats[id]) S.cats[id]={id,nom:s,parent:mid,ordre:j}; }); }); }
 
 /* --- comptes et soldes --- */
+function comptesTous(){ return Object.values(S.comptes).sort((a,b)=>(a.ordre||0)-(b.ordre||0)); }
+function groupeDe(c){ return c.groupe||(c.type==='placements'?'invest':c.pro?'pro':'prive'); }
 function comptesTri(){ return Object.values(S.comptes).filter(c=>!c.archive).sort((a,b)=>(a.ordre||0)-(b.ordre||0)); }
 function solde(c){
   if(c.type==='placements'&&c.devise&&c.devise!=='CHF') return c.valeur;
@@ -319,35 +328,35 @@ function render(){
   $view.innerHTML=ui.tab==='accueil'?vAccueil():ui.tab==='ops'?vOps():vReglages();
 }
 function seg(attr,cur,opts,label){ return '<div class="seg" role="group" aria-label="'+label+'">'+opts.map(([k,n])=>'<button data-'+attr+'="'+k+'" aria-pressed="'+(cur===k)+'">'+n+'</button>').join('')+'</div>'; }
-function tuile(c){ const s=solde(c), dev=c.devise&&c.devise!=='CHF'; return '<button class="tile'+(c.pro?' pro':'')+'" data-compte="'+esc(c.id)+'"><span class="n">'+icCompte(c)+esc(c.nom)+'</span><span class="s'+(s<0?' neg':'')+'">'+fmt(s)+(dev?' '+esc(c.devise):'')+'</span></button>'; }
+function tuile(c){ const s=solde(c), dev=c.devise&&c.devise!=='CHF'; return '<button class="tile'+(groupeDe(c)==='pro'?' pro':groupeDe(c)==='invest'?' inv':'')+'" data-compte="'+esc(c.id)+'"><span class="n">'+icCompte(c)+esc(c.nom)+'</span><span class="s'+(s<0?' neg':'')+'">'+fmt(s)+(dev?' '+esc(c.devise):'')+'</span></button>'; }
 function totalCHF(cs){ return r2(cs.filter(c=>!(c.devise&&c.devise!=='CHF')).reduce((a,c)=>a+(solde(c)||0),0)); }
 
+const GROUPES=[['prive','Comptes privés','Total privé'],['pro','Comptes pro','Total pro'],['invest','Investissements','Total investi']];
 function vAccueil(){
   const cs=comptesTri();
   if(!cs.length) return '<div class="card"><h2>Bienvenue</h2><p class="note" style="margin-top:6px">Banque est vide pour l’instant. Charge tes données de départ dans <b>Réglages</b>, puis note tes dépenses avec le bouton +.</p><p style="margin:12px 0 0"><button class="btn sm" data-tab="reglages">Aller aux réglages</button></p></div>';
-  const prives=cs.filter(c=>!c.pro), pros=cs.filter(c=>c.pro);
-  let h=seg('scope',ui.scope,[['prive','Privé'],['pro','Pro'],['tout','Tout']],'Quels comptes afficher');
-  if(ui.scope==='tout') h+='<div class="big"><span class="cap">Total en CHF</span><b>'+fmt(totalCHF(cs))+'</b></div>';
-  if(ui.scope!=='pro'&&prives.length) h+='<section class="sect" aria-labelledby="t-prives"><div class="st"><h2 id="t-prives">Comptes privés</h2></div><div class="tiles">'+prives.map(tuile).join('')+'</div><div class="totrow"><span>Total privé en CHF</span><b>'+fmt(totalCHF(prives))+'</b></div></section>';
-  if(ui.scope!=='prive'&&pros.length) h+='<section class="sect" aria-labelledby="t-pro"><div class="st"><h2 id="t-pro">Compte pro</h2></div><div class="tiles">'+pros.map(tuile).join('')+'</div><div class="totrow"><span>Total pro en CHF</span><b>'+fmt(totalCHF(pros))+'</b></div></section>';
+  const autres=cs.filter(c=>c.devise&&c.devise!=='CHF');
+  let h='<div class="big"><span class="cap">Patrimoine en CHF</span><b>'+fmt(totalCHF(cs))+'</b></div>';
+  if(autres.length) h+='<p class="note" style="margin-top:-12px;text-align:right">+ '+autres.map(c=>fmt(solde(c))+' '+esc(c.devise)+' ('+esc(c.nom)+')').join(', ')+'</p>';
+  GROUPES.forEach(([g,titre,tot])=>{ const L=cs.filter(c=>groupeDe(c)===g); if(!L.length) return;
+    h+='<section class="sect" aria-labelledby="t-'+g+'"><div class="st"><h2 id="t-'+g+'">'+titre+'</h2></div><div class="tiles">'+L.map(tuile).join('')+'</div><div class="totrow"><span>'+tot+' en CHF</span><b>'+fmt(totalCHF(L))+'</b></div></section>'; });
   /* on te doit */
   const dettes=Object.values(S.dettes).filter(d=>!d.reglee), tm=cs.find(c=>c.type==='dette');
-  if(ui.scope!=='pro'&&(dettes.length||(tm&&solde(tm)))){
-    const parP={}; dettes.forEach(d=>{ parP[d.personne]=(parP[d.personne]||0)+(d.sens==='je_dois'?-d.montant:d.montant); });
+  if(dettes.length||(tm&&solde(tm))){
     h+='<section class="card" aria-labelledby="t-dettes"><h2 id="t-dettes">On te doit</h2><div style="margin-top:6px">'+(tm&&solde(tm)?'<div class="dette"><span>'+esc(tm.nom)+' <span class="note">· dépenses communes</span></span><b class="num">'+fmt(solde(tm))+'</b></div>':'')
-      +Object.entries(parP).map(([p,v])=>'<div class="dette"><span>'+esc(p)+'</span><b class="num">'+fmt(v)+'</b></div>').join('')+'</div></section>';
+      +dettes.sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))).map(d=>'<div class="dette"><span>'+esc(d.personne)+'<br><span class="note">'+esc(d.objet||'')+(d.echeance?' · échéance '+esc(d.echeance.split('-').reverse().join('.')):'')+'</span></span><span style="display:flex;align-items:center;gap:8px"><b class="num">'+fmt(d.sens==='je_dois'?-d.montant:d.montant)+'</b><button class="pill" data-regle="'+esc(d.id)+'" aria-label="Marquer comme payé : '+esc(d.objet||d.personne)+'">Payé</button></span></div>').join('')+'</div></section>';
   }
   /* ce mois-ci */
   const m=moisDe(today()); let dep=0, rev=0; const parCat={};
   for(const t of Object.values(S.tx)){ if(t.date.slice(0,7)!==m||estVir(t)) continue;
     for(const l of lignes(t)){ if(!txScope(l.cat)||l.cat===AJU) continue; if(l.montant<0){ dep+=l.montant; const k=maitreDe(l.cat)||'?'; parCat[k]=(parCat[k]||0)+l.montant; } else rev+=l.montant; } }
   const top=Object.entries(parCat).sort((a,b)=>a[1]-b[1]).slice(0,6), max=top.length?-top[0][1]:1;
-  h+='<section class="card" aria-labelledby="t-mois"><h2 id="t-mois" style="text-transform:capitalize">'+esc(mLong(m))+'</h2><div class="kpis"><div><span class="cap">Dépenses</span><div class="v neg">'+fmt(dep)+'</div></div><div><span class="cap">Revenus</span><div class="v pos">'+fmt(rev,true)+'</div></div><div><span class="cap">Net</span><div class="v">'+fmt(r2(dep+rev),true)+'</div></div></div>';
+  h+='<section class="card" aria-labelledby="t-mois"><div class="st"><h2 id="t-mois" style="text-transform:capitalize">'+esc(mLong(m))+'</h2></div><div style="margin-top:10px">'+seg('scope',ui.scope,[['prive','Privé'],['pro','Pro'],['tout','Tout']],'Dépenses privées, pro ou toutes')+'</div><div class="kpis"><div><span class="cap">Dépenses</span><div class="v neg">'+fmt(dep)+'</div></div><div><span class="cap">Revenus</span><div class="v pos">'+fmt(rev,true)+'</div></div><div><span class="cap">Net</span><div class="v">'+fmt(r2(dep+rev),true)+'</div></div></div>';
   h+=top.length?'<div class="bars">'+top.map(([k,v])=>'<div class="bar"><span class="dot" style="background:'+couleur(k)+'">'+svg(icCat(k),15,'#fff',2.2)+'</span><span>'+esc(S.cats[k]?S.cats[k].nom:k)+'</span><span class="num">'+fmt(v)+'</span><div class="track"><div class="fill" style="width:'+Math.max(3,Math.round(-v/max*100))+'%;background:'+couleur(k)+'"></div></div></div>').join('')+'</div>':'<p class="empty">Aucune dépense ce mois-ci.</p>';
   h+='</section>';
-  /* dernières saisies */
-  const der=Object.values(S.tx).filter(t=>t.source!=='miroir'&&t.source!=='feuille'&&(ui.scope==='tout'||lignes(t).some(l=>txScope(l.cat)))).sort((a,b)=>b.date.localeCompare(a.date)||String(b.cree||'').localeCompare(String(a.cree||''))).slice(0,6);
-  h+='<section class="card" aria-labelledby="t-der"><h2 id="t-der">Dernières opérations</h2>'+(der.length?'<ul class="ops" style="margin-top:6px">'+der.map(opLi).join('')+'</ul>':'<p class="empty">Rien pour l’instant.</p>')+'<button class="lien" data-tab="ops">Voir toutes les opérations</button></section>';
+  /* dernières opérations */
+  const der=Object.values(S.tx).filter(t=>t.source!=='miroir'&&t.source!=='feuille').sort((a,b)=>b.date.localeCompare(a.date)||String(b.cree||'').localeCompare(String(a.cree||''))).slice(0,6);
+  h+='<section class="card" aria-labelledby="t-der"><h2 id="t-der">Dernières opérations</h2>'+(der.length?'<ul class="ops" style="margin-top:6px">'+der.map(t=>opLi(t)).join('')+'</ul>':'<p class="empty">Rien pour l’instant.</p>')+'<button class="lien" data-tab="ops">Voir toutes les opérations</button></section>';
   return h;
 }
 function dateCourte(d){ const t=today(); if(d===t) return 'Aujourd’hui'; const y=new Date(Date.now()-864e5); const ys=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); if(d===ys) return 'Hier'; return d.slice(8,10)+'.'+d.slice(5,7)+'.'+(d.slice(0,4)!==t.slice(0,4)?d.slice(2,4):''); }
@@ -378,7 +387,7 @@ function vOps(){
   L.forEach(t=>{ if(estVir(t)&&!ui.fCompte) return; if(t.montant<0) sor+=t.montant; else ent+=t.montant; });
   let h=ui.periode==='tout'?'<div class="nav"><b>Toutes les opérations</b></div>':'<div class="nav"><button class="rond" data-mois="-1" aria-label="Période précédente">'+svg(P.chevL,20)+'</button><b>'+esc(ui.periode==='annee'?ui.mois.slice(0,4):mLong(ui.mois))+'</b><button class="rond" data-mois="1" aria-label="Période suivante">'+svg(P.chevR,20)+'</button></div>';
   h+='<div class="filtres"><select class="sel" id="f-periode" aria-label="Période"><option value="mois"'+(ui.periode==='mois'?' selected':'')+'>Par mois</option><option value="annee"'+(ui.periode==='annee'?' selected':'')+'>Par année</option><option value="tout"'+(ui.periode==='tout'?' selected':'')+'>Tout</option></select>'
-   +'<select class="sel" id="f-compte" aria-label="Compte"><option value="">Tous les comptes</option>'+comptesTri().map(c=>'<option value="'+esc(c.id)+'"'+(ui.fCompte===c.id?' selected':'')+'>'+esc(c.nom)+'</option>').join('')+'</select>'
+   +'<select class="sel" id="f-compte" aria-label="Compte"><option value="">Tous les comptes</option>'+comptesTous().map(c=>'<option value="'+esc(c.id)+'"'+(ui.fCompte===c.id?' selected':'')+'>'+esc(c.nom)+(c.archive?' (masqué)':'')+'</option>').join('')+'</select>'
    +'<select class="sel" id="f-cat" aria-label="Catégorie"><option value="">Toutes les catégories</option>'+maitres().map(m=>'<option value="'+m.id+'"'+(ui.fCat===m.id?' selected':'')+'>'+esc(m.nom)+'</option>'+sousDe(m.id).map(s=>'<option value="'+s.id+'"'+(ui.fCat===s.id?' selected':'')+'>   '+esc(s.nom)+'</option>').join('')).join('')+'</select>'
    +'<select class="sel" id="f-tag" aria-label="Étiquette"><option value="">Toutes les étiquettes</option>'+Object.values(S.tags).sort((a,b)=>a.nom.localeCompare(b.nom)).map(g=>'<option value="'+esc(g.id)+'"'+(ui.fTag===g.id?' selected':'')+'>'+esc(g.nom)+'</option>').join('')+'</select>'
    +'<input class="input wide" id="f-q" type="search" placeholder="Chercher un commerçant, une note…" value="'+esc(ui.q)+'"></div>';
@@ -395,8 +404,12 @@ function vOps(){
 function vReglages(){
   let h='<section class="card"><h2>Compte</h2><p class="note" style="margin-top:6px">Connecté : <b>'+esc(EMAIL)+'</b></p><p class="note">'+esc(document.getElementById('sync').title)+(dirty.size?' ('+dirty.size+' en attente)':'')+'</p><div class="pills" style="margin-top:12px"><button class="btn ghost sm" data-act="synchro">Synchroniser maintenant</button><button class="btn warn sm" data-act="logout">Se déconnecter</button></div></section>';
   h+='<section class="card"><h2>Données de départ</h2><p class="note" style="margin-top:6px">Charge le fichier <b>cash_depart.json</b> (ta remise en ordre 2026). Le recharger ne crée pas de doublons : chaque opération garde son identifiant.</p><p style="margin:12px 0 0"><button class="btn sm" data-act="charger">Choisir le fichier…</button></p><p class="note" id="r-import"></p></section>';
-  const cs=comptesTri();
-  if(cs.length) h+='<section class="card"><h2>Comptes</h2><table class="table" style="margin-top:6px"><tr><td class="cap">Compte</td><td class="cap r">Au départ</td><td class="cap r">Aujourd’hui</td></tr>'+cs.map(c=>'<tr><td><b>'+esc(c.nom)+'</b>'+(c.pro?' <span class="tg">pro</span>':'')+'<br><span class="note">'+esc(TYPES[c.type]||c.type)+(c.date_initiale?' · '+esc(c.date_initiale.split('-').reverse().join('.')):'')+'</span></td><td class="r">'+(c.devise&&c.devise!=='CHF'?'—':'<input class="input" inputmode="decimal" data-solde="'+esc(c.id)+'" value="'+esc(c.solde_initial==null?'':c.solde_initial)+'" aria-label="Solde au départ de '+esc(c.nom)+'">')+'</td><td class="r">'+fmt(solde(c))+(c.devise&&c.devise!=='CHF'?' '+esc(c.devise):'')+'</td></tr>').join('')+'</table></section>';
+  const cs=comptesTous();
+  if(cs.length) h+='<section class="card"><h2>Comptes</h2><p class="note" style="margin-top:6px">Un compte masqué garde son historique, mais disparaît de l’accueil et de la saisie.</p>'+cs.map(c=>{ const dev=c.devise&&c.devise!=='CHF', g=groupeDe(c);
+      return '<div class="cpt'+(c.archive?' off':'')+'"><div class="cpt-l"><input class="input" data-nomc="'+esc(c.id)+'" value="'+esc(c.nom)+'" aria-label="Nom du compte"><select class="sel" data-groupe="'+esc(c.id)+'" aria-label="Groupe de '+esc(c.nom)+'">'+[['prive','Privé'],['pro','Pro'],['invest','Investissement']].map(([k,n])=>'<option value="'+k+'"'+(g===k?' selected':'')+'>'+n+'</option>').join('')+'</select></div>'
+        +'<div class="cpt-r"><span class="note">'+(g==='invest'?'Valeur actuelle':'Solde au départ ('+esc((c.date_initiale||'').split('-').reverse().join('.'))+')')+'</span>'
+        +(g==='invest'?'<input class="input num" inputmode="decimal" data-valeur="'+esc(c.id)+'" value="'+esc(solde(c)==null?'':solde(c))+'" aria-label="Valeur actuelle de '+esc(c.nom)+'">':'<input class="input num" inputmode="decimal" data-solde="'+esc(c.id)+'" value="'+esc(c.solde_initial==null?'':c.solde_initial)+'" aria-label="Solde au départ de '+esc(c.nom)+'">')
+        +'<span class="note">Aujourd’hui : <b>'+fmt(solde(c))+(dev?' '+esc(c.devise):'')+'</b></span><label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" data-archive="'+esc(c.id)+'"'+(c.archive?' checked':'')+'> Masqué</label></div></div>'; }).join('')+'</section>';
   h+='<section class="card"><h2>Sauvegarde</h2><p class="note" style="margin-top:6px">'+Object.keys(S.tx).length+' opérations, '+Object.keys(S.cats).length+' catégories, '+Object.keys(S.tags).length+' étiquettes.</p><p style="margin:12px 0 0"><button class="btn ghost sm" data-act="export">Exporter toutes mes données</button></p></section>';
   return h;
 }
@@ -422,32 +435,47 @@ const TITRES={depense:'Nouvelle dépense',revenu:'Nouveau revenu',virement:'Nouv
 function vSaisie(){
   const d=draft, cs=comptesTri(), m=num(d.montant)||0;
   const coul=!m?'var(--muted)':d.type==='depense'?'var(--neg)':d.type==='revenu'?'var(--pos)':'var(--text)';
+  const fixe=['yuh','bas','miroir'].includes(d.source);
   let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans enregistrer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(d.id?'Modifier':TITRES[d.type])+'</h2></div>';
-  h+=seg('type',d.type,[['depense','Dépense'],['revenu','Revenu'],['virement','Virement']],'Type d’opération');
+  if(!fixe) h+=seg('type',d.type,[['depense','Dépense'],['revenu','Revenu'],['virement','Virement']],'Type d’opération');
   h+='<div class="montant" aria-live="polite"><b style="color:'+coul+'">'+(d.type==='depense'?'−':d.type==='revenu'?'+':'')+esc(d.montant||'0')+'</b><span>CHF</span></div>';
   if(d.orig) h+='<p class="note" style="text-align:center;margin-top:-8px">Montant d’origine : '+esc(d.orig)+'</p>';
-  const choix=cs.filter(c=>d.type==='virement'||c.type!=='placements'||c.id===d.compte);
+  if(fixe) h+='<p class="note" style="text-align:center;margin-top:-6px">'+esc(S.comptes[d.compte]?S.comptes[d.compte].nom:d.compte)+' · '+esc(dLong(d.date))+(d.type==='virement'&&S.comptes[d.vers]?' → '+esc(S.comptes[d.vers].nom):'')+'<br>Ligne de ton relevé : seules la catégorie, les étiquettes et la note se modifient.</p>';
+  const choix=fixe?[]:cs.filter(c=>d.type==='virement'||groupeDe(c)!=='invest'||c.id===d.compte);
+  if(!fixe){
   h+='<div class="field"><span class="lbl">'+(d.type==='virement'?'Depuis':'Compte')+'</span><div class="pills scroll">'+choix.map(c=>'<button class="pill" data-compte-s="'+esc(c.id)+'" aria-pressed="'+(d.compte===c.id)+'">'+(d.compte===c.id?'':icCompte(c))+esc(c.nom)+'</button>').join('')+'</div></div>';
   if(d.type==='virement') h+='<div class="field"><span class="lbl">Vers</span><div class="pills scroll">'+cs.filter(c=>c.id!==d.compte).map(c=>'<button class="pill" data-vers="'+esc(c.id)+'" aria-pressed="'+(d.vers===c.id)+'">'+(d.vers===c.id?'':icCompte(c))+esc(c.nom)+'</button>').join('')+'</div></div>';
-  h+='<div class="pills" style="align-items:center"><label class="pill">'+svg(P.cal,18)+'<input type="date" id="s-date" value="'+esc(d.date)+'" aria-label="Date" style="border:0;background:transparent;padding:0;font-size:14px"></label><span class="note" style="flex:1;min-width:150px">Saisie après coup ? Change la date : l’import Yuh retrouvera la ligne.</span></div>';
+  }
+  if(!fixe) h+='<div class="pills" style="align-items:center"><label class="pill">'+svg(P.cal,18)+'<input type="date" id="s-date" value="'+esc(d.date)+'" aria-label="Date" style="border:0;background:transparent;padding:0;font-size:14px"></label><span class="note" style="flex:1;min-width:150px">Saisie après coup ? Change la date : l’import Yuh retrouvera la ligne.</span></div>';
   if(d.type!=='virement'){
     if(!d.parts){
-      h+='<div class="field"><span class="lbl">Catégorie'+(d.cat?' · <span style="color:var(--text)">'+esc(catChemin(d.cat))+'</span>':'')+'</span><div class="cats" role="group" aria-label="Catégorie">'+maitresPour(d.type).map(mm=>'<button class="cat" data-maitre="'+mm.id+'" aria-pressed="'+(d.maitre===mm.id)+'"><span class="ic" style="background:'+couleur(mm.id)+'">'+svg(icCat(mm.id),22,'#fff')+'</span>'+esc(mm.nom)+'</button>').join('')+'</div>';
+      const fr=frequentes(d.type), voirFr=!d.toutes&&fr.length>=4&&(!d.cat||fr.includes(d.cat));
+      if(voirFr){
+        h+='<div class="field"><div class="st"><span class="lbl">Catégories fréquentes</span><button class="pill dash" data-act="toutescats" style="height:32px">Toutes les catégories</button></div><div class="cats" role="group" aria-label="Catégorie">'+fr.map(id=>'<button class="cat" data-catf="'+id+'" aria-pressed="'+(d.cat===id)+'"><span class="ic" style="background:'+couleur(id)+'">'+svg(icCat(id),22,'#fff')+'</span>'+esc(catNom(id))+'</button>').join('')+'</div></div>';
+      } else {
+      h+='<div class="field"><div class="st"><span class="lbl">Catégorie'+(d.cat?' · <span style="color:var(--text)">'+esc(catChemin(d.cat))+'</span>':'')+'</span>'+(fr.length>=4?'<button class="pill dash" data-act="frequentes" style="height:32px">Fréquentes</button>':'')+'</div><div class="cats" role="group" aria-label="Catégorie">'+maitresPour(d.type).map(mm=>'<button class="cat" data-maitre="'+mm.id+'" aria-pressed="'+(d.maitre===mm.id)+'"><span class="ic" style="background:'+couleur(mm.id)+'">'+svg(icCat(mm.id),22,'#fff')+'</span>'+esc(mm.nom)+'</button>').join('')+'</div>';
       const subs=d.maitre?sousDe(d.maitre):[];
       if(subs.length) h+='<div class="subs pills" role="group" aria-label="Sous-catégorie">'+subs.map(s=>'<button class="pill" data-cat="'+s.id+'" aria-pressed="'+(d.cat===s.id)+'">'+svg(icCat(s.id),16,d.cat===s.id?'#fff':couleur(s.id))+esc(s.nom)+'</button>').join('')+'</div>';
       h+='</div>';
+      }
     } else h+=vParts();
   }
   h+='<div class="pills">'+(d.voirTiers?'':'<button class="pill dash" data-act="voirTiers">+ Bénéficiaire</button>')+(d.voirNote?'':'<button class="pill dash" data-act="voirNote">+ Note</button>')+(d.type!=='virement'&&!d.parts?'<button class="pill dash" data-act="partager">+ Partager</button>':'')+'</div>';
   if(d.voirTiers) h+='<div class="field"><label class="lbl" for="s-tiers">'+(d.type==='revenu'?'De qui':'Où, à qui')+'</label><input class="input" id="s-tiers" list="l-tiers" value="'+esc(d.tiers)+'" autocomplete="off"><datalist id="l-tiers">'+[...new Set(Object.values(S.tx).filter(t=>t.source!=='miroir').map(t=>t.tiers).filter(Boolean))].sort().slice(0,500).map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist></div>';
   if(d.voirNote) h+='<div class="field"><label class="lbl" for="s-note">Note</label><input class="input" id="s-note" value="'+esc(d.note)+'"></div>';
   h+='<div class="field"><span class="lbl">Étiquettes</span><div class="pills">'+Object.values(S.tags).sort((a,b)=>(b.du||'').localeCompare(a.du||'')||a.nom.localeCompare(b.nom)).map(g=>'<button class="pill tagp" data-tag="'+esc(g.id)+'" aria-pressed="'+d.tags.includes(g.id)+'">#'+esc(g.nom)+'</button>').join('')+'<button class="pill dash" data-act="nouveautag">+ Étiquette</button></div></div>';
-  h+='<div class="keys" role="group" aria-label="Clavier du montant">'+['1','2','3','4','5','6','7','8','9','.','0','back'].map(k=>'<button data-key="'+k+'" aria-label="'+(k==='back'?'Effacer le dernier chiffre':k==='.'?'Point décimal':k)+'">'+(k==='back'?svg(P.back,22):k)+'</button>').join('')+'</div>';
+  if(!fixe) h+='<div class="keys" role="group" aria-label="Clavier du montant">'+['1','2','3','4','5','6','7','8','9','.','0','back'].map(k=>'<button data-key="'+k+'" aria-label="'+(k==='back'?'Effacer le dernier chiffre':k==='.'?'Point décimal':k)+'">'+(k==='back'?svg(P.back,22):k)+'</button>').join('')+'</div>';
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
   h+='<button class="btn" data-act="enregistrer">'+svg(P.check,20)+'Enregistrer</button>';
-  if(d.id) h+='<button class="btn warn" data-act="supprimer">Supprimer cette opération</button>';
-  else h+='<p class="note" style="text-align:center">Elle sera vérifiée au prochain import Yuh, même si elle date de plusieurs semaines.</p>';
+  if(d.id&&!fixe) h+='<button class="btn warn" data-act="supprimer">Supprimer cette opération</button>';
+  if(!d.id) h+='<p class="note" style="text-align:center">Elle sera vérifiée au prochain import Yuh, même si elle date de plusieurs semaines.</p>';
   ouvrir(h);
+}
+function frequentes(type){
+  const lim=new Date(Date.now()-120*864e5).toISOString().slice(0,10), n={};
+  for(const t of Object.values(S.tx)){ if(t.date<lim||estVir(t)||t.source==='miroir'||t.source==='feuille') continue;
+    for(const l of lignes(t)){ if(!l.cat||l.cat===AJU||l.cat===VIR||(type==='depense'?l.montant>=0:l.montant<=0)) continue; n[l.cat]=(n[l.cat]||0)+1; } }
+  return Object.entries(n).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]).filter(id=>S.cats[id]);
 }
 function maitresPour(type){ const all=maitres().filter(m=>m.id!=='autres'); const rev=['revenus','pro']; return type==='revenu'?all.filter(m=>rev.includes(m.id)).concat(all.filter(m=>!rev.includes(m.id))):all.filter(m=>m.id!=='revenus').concat(all.filter(m=>m.id==='revenus')); }
 function vParts(){
@@ -463,6 +491,7 @@ function lireChamps(){
   document.querySelectorAll('[data-part-c]').forEach(s=>{ d.parts[+s.dataset.partC].cat=s.value||null; });
 }
 function touche(k){
+  if(['yuh','bas','miroir'].includes(draft.source)) return;
   let a=draft.montant||'';
   if(k==='back') a=a.slice(0,-1);
   else if(k==='.'){ if(!a.includes('.')) a=(a||'0')+'.'; }
@@ -521,6 +550,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.scope){ ui.scope=b.dataset.scope; render(); return; }
   if(b.dataset.compte){ ui.tab='ops'; ui.fCompte=b.dataset.compte; ui.periode='mois'; ui.mois=moisDe(today()); window.scrollTo(0,0); render(); return; }
   if(b.dataset.tx){ editer(b.dataset.tx); return; }
+  if(b.dataset.regle){ const d=S.dettes[b.dataset.regle]; if(d&&confirm('Marquer comme payé : '+(d.objet||d.personne)+' ('+fmt(d.montant)+' CHF) ?')){ d.reglee=true; d.reglee_le=today(); save(); render(); } return; }
   if(b.dataset.mois){ const [y,m]=ui.mois.split('-').map(Number); if(ui.periode==='annee'){ ui.mois=(y+Number(b.dataset.mois))+'-'+String(m).padStart(2,'0'); } else { const d=new Date(y,m-1+Number(b.dataset.mois),1); ui.mois=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); } ui.limite=150; render(); return; }
   if(draft){
     if(b.dataset.key){ touche(b.dataset.key); return; }
@@ -529,6 +559,7 @@ document.addEventListener('click',e=>{
     if(b.dataset.vers){ lireChamps(); draft.vers=b.dataset.vers; vSaisie(); return; }
     if(b.dataset.maitre){ lireChamps(); draft.maitre=b.dataset.maitre; draft.cat=sousDe(draft.maitre).length?(draft.cat&&maitreDe(draft.cat)===draft.maitre?draft.cat:null):draft.maitre; vSaisie(); return; }
     if(b.dataset.cat){ lireChamps(); draft.cat=b.dataset.cat; vSaisie(); return; }
+    if(b.dataset.catf){ lireChamps(); draft.cat=b.dataset.catf; draft.maitre=maitreDe(draft.cat); vSaisie(); return; }
     if(b.dataset.tag){ lireChamps(); const i=draft.tags.indexOf(b.dataset.tag); if(i<0) draft.tags.push(b.dataset.tag); else draft.tags.splice(i,1); vSaisie(); return; }
     if(b.dataset.partX!=null){ lireChamps(); draft.parts.splice(+b.dataset.partX,1); if(!draft.parts.length) draft.parts=null; vSaisie(); return; }
   }
@@ -537,6 +568,8 @@ document.addEventListener('click',e=>{
   else if(a==='fermer') fermer();
   else if(a==='enregistrer') enregistrer();
   else if(a==='supprimer') supprimer();
+  else if(a==='toutescats'){ lireChamps(); draft.toutes=true; vSaisie(); }
+  else if(a==='frequentes'){ lireChamps(); draft.toutes=false; vSaisie(); }
   else if(a==='voirTiers'){ lireChamps(); draft.voirTiers=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-tiers'); if(i) i.focus(); },30); }
   else if(a==='voirNote'){ lireChamps(); draft.voirNote=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-note'); if(i) i.focus(); },30); }
   else if(a==='partager'){ lireChamps(); const m=num(draft.montant)||0; draft.parts=[{montant:m?String(m):'',cat:draft.cat},{montant:'',cat:null}]; vSaisie(); }
@@ -557,6 +590,16 @@ document.addEventListener('change',e=>{
   else if(t.id==='f-cat'){ ui.fCat=t.value; render(); }
   else if(t.id==='f-tag'){ ui.fTag=t.value; if(t.value) ui.periode='tout'; render(); }
   else if(t.dataset.solde){ const c=S.comptes[t.dataset.solde]; if(c){ c.solde_initial=num(t.value); save(); render(); } }
+  else if(t.dataset.nomc){ const c=S.comptes[t.dataset.nomc], v=t.value.trim(); if(c&&v){ c.nom=v; save(); render(); } }
+  else if(t.dataset.groupe){ const c=S.comptes[t.dataset.groupe]; if(c){ c.groupe=t.value; c.pro=t.value==='pro'; save(); render(); } }
+  else if(t.dataset.archive){ const c=S.comptes[t.dataset.archive]; if(c){ c.archive=t.checked; save(); render(); } }
+  else if(t.dataset.valeur){ const c=S.comptes[t.dataset.valeur], v=num(t.value); if(!c||v==null) return;
+    if(c.devise&&c.devise!=='CHF'){ c.valeur=r2(v); c.valeur_le=today(); }
+    else { const ecart=r2(v-solde(c)); if(Math.abs(ecart)>=0.005){ const id=uid(); S.tx[id]={id,date:today(),compte:c.id,montant:ecart,tiers:'Variation de valeur',cat:AJU,tags:[],note:'Valeur mise à jour : '+fmt(v)+' CHF',parts:null,autre:null,lien:null,source:'saisie',cree:new Date().toISOString()}; } }
+    save(); render(); }
+  else if(t.id==='s-tiers'&&draft&&!draft.cat&&!draft.parts){ lireChamps(); const q=draft.tiers.trim().toLowerCase(); if(!q) return;
+    const ex=Object.values(S.tx).filter(x=>!estVir(x)&&x.source!=='miroir'&&x.cat&&(x.tiers||'').toLowerCase()===q&&(draft.type==='depense'?x.montant<0:x.montant>0)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    if(ex){ draft.cat=ex.cat; draft.maitre=maitreDe(ex.cat); vSaisie(); } }
   else if(t.dataset.partC!=null||t.dataset.partM!=null){ lireChamps(); vSaisie(); }
 });
 document.addEventListener('input',e=>{ if(e.target.id==='f-q'){ ui.q=e.target.value; const pos=e.target.selectionStart; render(); const i=document.getElementById('f-q'); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(x){} } } });
