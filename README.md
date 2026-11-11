@@ -4,7 +4,7 @@ Mes apps perso, réunies derrière un menu à tuiles. Une seule app à installer
 
 - Accueil : https://gottonic.github.io/orga/
 - **Établi** — mes projets, semaine par semaine : https://gottonic.github.io/orga/etabli/
-- **Cash** — mes finances (en construction) : https://gottonic.github.io/orga/cash/
+- **Banque** — mes comptes et mes dépenses (ex-« Cash ») : https://gottonic.github.io/orga/banque/
 - **Forge** — mon entraînement parkour (ex-« Carnet ») : https://gottonic.github.io/orga/forge/
 
 Toutes les apps partagent la même base Supabase et la même connexion : on se connecte une fois.
@@ -17,10 +17,10 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 |---|---|
 | `/` | accueil ORGA (`index.html`), `manifest.webmanifest`, `sw.js` (hors ligne pour toutes les apps), icônes |
 | `etabli/` | l'app Établi |
-| `cash/` | l'app Cash |
+| `banque/` | l'app Banque (`cash/` redirige vers elle) |
 | `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |
 | `commun/` | ce que les apps partagent : `supabase.js`, polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Cash), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`) |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
@@ -29,7 +29,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 
 ### 1. Les bases de données
 Supabase → ton projet → **SQL Editor** → **New query** → coller `supabase/schema.sql` → **Run**
-(déjà fait pour Établi). Puis une nouvelle requête avec `supabase/cash.sql` → **Run**.
+(déjà fait pour Établi). Puis une nouvelle requête avec `supabase/cash.sql` → **Run** : le résultat doit être « cash_rows prête ».
 
 ### 2. Ton compte
 Supabase → **Authentication** → **Users** → **Add user** → **Create new user** :

@@ -1,7 +1,7 @@
 {
   "name": "ORGA",
   "short_name": "ORGA",
-  "description": "Mes apps : Établi, Cash, Forge.",
+  "description": "Mes apps : Établi, Banque, Forge.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
@@ -39,8 +39,8 @@
       ]
     },
     {
-      "name": "Cash",
-      "url": "cash/"
+      "name": "Banque",
+      "url": "banque/"
     },
     {
       "name": "Forge",

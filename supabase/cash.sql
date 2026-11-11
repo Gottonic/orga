@@ -1,4 +1,4 @@
--- Cash : base de données. À coller une fois dans Supabase > SQL Editor > New query, puis « Run ».
+-- Banque (dossier banque/, anciennement « Cash ») : base de données. À coller une fois dans Supabase > SQL Editor > New query, puis « Run ».
 -- (À côté de la table d'Établi : rien n'est touché de ce côté-là.)
 
 -- Une table, comme Établi : chaque compte, catégorie, tag, transaction, règle, budget… est une ligne.
@@ -44,6 +44,9 @@ create policy "cash docs : lire"     on storage.objects for select to authentica
 create policy "cash docs : ajouter"  on storage.objects for insert to authenticated with check (bucket_id = 'cash-documents' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "cash docs : modifier" on storage.objects for update to authenticated using (bucket_id = 'cash-documents' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "cash docs : effacer"  on storage.objects for delete to authenticated using (bucket_id = 'cash-documents' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Supabase relit la liste des tables (sinon l'app peut répondre « Could not find the table »).
+notify pgrst, 'reload schema';
 
 -- Vérification : doit afficher « cash_rows prête ».
 select 'cash_rows prête' as resultat where exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'cash_rows');

@@ -39,7 +39,8 @@ main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-rig
 .tuile .nom{font-weight:700;font-size:1.1rem}
 .tuile .desc{color:var(--muted);font-size:.9rem;margin-top:-6px}
 .tuile .etat{margin-top:auto;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
-.tuile.cash .logo{background:var(--hl);color:var(--ink)}
+@font-face{font-family:"Bricolage Grotesque";font-weight:700;font-style:normal;font-display:swap;src:url(commun/fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
+.tuile.banque .logo{background:#F0B54A;color:#1A1406;border-radius:14px;font-family:"Bricolage Grotesque",var(--body)}
 p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
 </style>
 </head>
@@ -52,10 +53,10 @@ p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
       <span class="nom">Établi</span>
       <span class="desc">Mes projets, semaine par semaine</span>
     </a></li>
-    <li><a class="tuile cash" href="cash/">
-      <span class="logo" aria-hidden="true">C</span>
-      <span class="nom">Cash</span>
-      <span class="desc">Mes finances, compte par compte</span>
+    <li><a class="tuile banque" href="banque/">
+      <span class="logo" aria-hidden="true">B</span>
+      <span class="nom">Banque</span>
+      <span class="desc">Mes comptes et mes dépenses</span>
     </a></li>
     <li><a class="tuile" href="forge/">
       <span class="logo"><img src="forge/icons/icon-192.png" alt=""></span>
@@ -63,7 +64,7 @@ p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
       <span class="desc">Mon entraînement parkour</span>
     </a></li>
   </ul>
-  <p class="pied">Une seule app à installer : les autres s'ouvrent depuis ces tuiles.</p>
+  <p class="pied">Une seule app à installer : les autres s'ouvrent depuis ces tuiles, chacune avec son propre style.</p>
 </main>
 <script>
 (function(){

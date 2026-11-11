@@ -1,6 +1,6 @@
-/* ORGA : un seul service worker pour l'accueil et toutes les apps (Établi, Cash, Forge…).
+/* ORGA : un seul service worker pour l'accueil et toutes les apps (Établi, Banque, Forge…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-11-4';
+const VERSION = 'orga-2026-11-11-5';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -8,7 +8,8 @@ const SHELL = [
   'commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2', 'commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2',
   'commun/fonts/jetbrains-mono-latin-400-normal.woff2', 'commun/fonts/jetbrains-mono-latin-600-normal.woff2',
   'etabli/', 'etabli/icons/icon-192.png',
-  'cash/',
+  'banque/',
+  'commun/fonts/bricolage-grotesque-latin-600-normal.woff2', 'commun/fonts/bricolage-grotesque-latin-700-normal.woff2',
   'forge/', 'forge/icons/icon-192.png', 'forge/icons/apple-touch-icon.png',
   'forge/fonts/bricolage-grotesque-latin-600-normal.woff2',
   'forge/fonts/bricolage-grotesque-latin-700-normal.woff2',
