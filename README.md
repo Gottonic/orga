@@ -19,8 +19,8 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `etabli/` | l'app Établi |
 | `banque/` | l'app Banque (`cash/` redirige vers elle) |
 | `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |
-| `commun/` | ce que les apps partagent : `supabase.js`, polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`) |
+| `commun/` | ce que les apps partagent : `supabase.js`, `ampoule.js` (bugs et idées), polices |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `idees.sql` (l'ampoule 💡, pour toutes les apps) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
@@ -30,6 +30,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 ### 1. Les bases de données
 Supabase → ton projet → **SQL Editor** → **New query** → coller `supabase/schema.sql` → **Run**
 (déjà fait pour Établi). Puis une nouvelle requête avec `supabase/cash.sql` → **Run** : le résultat doit être « cash_rows prête ».
+Puis `supabase/idees.sql` → **Run** : le résultat doit être « idees prête ».
 
 ### 2. Ton compte
 Supabase → **Authentication** → **Users** → **Add user** → **Create new user** :
@@ -49,6 +50,17 @@ branche `main`, dossier `/ (root)` → **Save**.
   Dans Firefox : un onglet épinglé.
 
 Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
+
+## L'ampoule 💡 (toutes les apps)
+
+- Dans chaque app et sur l'accueil, le bouton 💡 ouvre « Bugs et idées », comme dans l'app Gamins de Talus :
+  choisir 🐞 Bug ou 💡 Idée, écrire le titre, « + » (détails facultatifs). Cocher = fait, la ligne quitte la liste.
+- Chaque app a sa propre liste. Sur l'accueil : la liste d'ORGA (menu, liens entre apps…) et « Toutes les apps ».
+- « Copier pour Claude » copie la liste en texte, à coller dans la conversation de l'app.
+- On peut noter hors ligne : l'envoi se fait dès que le réseau revient.
+- Données : table `idees` (une ligne par idée, colonne `app`), même connexion que les apps.
+- Pour l'ajouter à une nouvelle app : `<script src="../commun/ampoule.js" data-app="nom" data-avant="#bouton"></script>`
+  (voir les explications en haut de `commun/ampoule.js`), puis ajouter son nom et son style dans `APPS` et `THEMES`.
 
 ## Bon à savoir (Établi)
 

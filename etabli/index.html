@@ -45,6 +45,8 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .top h1{font-size:1.05rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .top .sub{font-family:var(--mono);font-size:.78rem;opacity:.75}
 .top .btns{display:flex;gap:5px;flex:none}
+.top .amp{border:0;background:transparent;padding:0 2px;font-size:.95rem;line-height:1;cursor:pointer;align-self:center}
+@media (max-width:430px){.top .brand{gap:6px}.top .btns{gap:4px}.topbtn{padding:5px 6px}}
 .top .orga{align-self:center;display:inline-flex;color:var(--band-ink);padding:4px 4px 4px 0;margin-right:2px;opacity:.9}
 .topbtn{border:1px solid rgba(255,255,255,.55);background:transparent;color:var(--band-ink);padding:5px 8px;font-size:.8rem;font-weight:700;white-space:nowrap}
 .topbtn.plus{background:var(--band-ink);color:var(--band);border-color:var(--band-ink)}
@@ -1580,5 +1582,6 @@ applyMode();
 startApp();
 })();
 </script>
+<script src="../commun/ampoule.js" data-app="etabli" data-apres="#sync" data-classe="amp"></script>
 </body>
 </html>
