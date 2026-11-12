@@ -613,6 +613,8 @@ body.ov-open{overflow:hidden}
 .alert p{margin:0;font-size:14px}
 .bravo .fq-c{gap:5px}
 .bravo .fq-c button{min-width:40px;height:44px}
+.st-aim{font-size:14px;font-weight:600;color:var(--mint-ink);background:var(--mint-soft);border-radius:8px;padding:4px 10px;align-self:flex-start}
+.sh-prog{font-size:12px;color:var(--accent-ink)}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -757,10 +759,27 @@ const cutSets = n => Math.max(1, Math.round(n * 0.55));
 const fwdMods = () => ((S.data.config.mods || {}).list || []);
 const byFrom = (x, y) => x.from < y.from ? -1 : x.from > y.from ? 1 : (x.at || 0) - (y.at || 0);
 const shiftReps = (t, d) => d ? String(t).replace(/\d+/g, n => String(Math.max(1, +n + d))) : t;
-function resolveItem(s, it, idx, dl, fmods, wmods){
+/* Mode de progression d'un exercice, réglé automatiquement par le type de séance (sauf choix explicite it.prog) :
+   - linéaire : la charge monte chaque semaine si les reps prévues ont été faites (force, partie lourde d'un contraste) ;
+   - double : on ajoute des reps à charge égale ; quand le haut de la fourchette passe sur toutes les séries, la charge monte
+     et on repart en bas de la fourchette (hypertrophie) ;
+   - stable : la charge ne bouge pas toute seule ; on progresse en vitesse et en qualité (puissance, vitesse, plyo, maintien). */
+const PROG = { lineaire:"Linéaire", double:"Double progression", stable:"Vitesse / maintien" };
+function autoProg(kind, gKind, i){
+  if (kind === "hypertrophie") return "double";
+  if (kind === "force") return "lineaire";
+  if (kind === "puissance") return gKind === "contraste" && i % 2 === 0 ? "lineaire" : "stable";
+  if (kind === "contraste") return i === 0 ? "lineaire" : "stable";
+  if (["vitesse","plyo","parkour","mobilite","endurance","intervalles","test"].includes(kind)) return "stable";
+  return null;
+}
+const progOf = it => it.prog || it._prog || (it.step ? "lineaire" : "stable");
+const progStep = it => it.step || kgInc(it);
+function resolveItem(s, it, idx, dl, fmods, wmods, gKind, i){
   const key = s.id + ":" + it.id; const fm = fmods.filter(m => m.key === key).sort(byFrom); const wm = wmods[key];
-  if (!fm.length && !wm && !(it.wave && idx >= 0) && !dl) return it;
-  const x = { ...it }; let delta = 0, fixed = false;
+  const _prog = it.prog || autoProg(s.kind, gKind, i) || (it.step ? "lineaire" : "stable");
+  if (!fm.length && !wm && !(it.wave && idx >= 0) && !dl) return { ...it, _prog };
+  const x = { ...it, _prog }; let delta = 0, fixed = false;
   for (const m of fm) {
     if (m.sets != null) x.sets = m.sets;
     if (m.reps != null) { x.reps = m.reps; fixed = true; delta = 0; }
@@ -774,15 +793,13 @@ function resolveItem(s, it, idx, dl, fmods, wmods){
   return x;
 }
 function resolveWeek(ss, w, b, fromTpl){
-  if (!w) return ss;
+  if (!w) return ss.map(s => ({ ...s, blocks: (s.blocks || []).map(bl => ({ ...bl, items: (bl.items || []).map((it, i) => ({ ...it, _prog: it.prog || autoProg(s.kind, bl.kind, i) || (it.step ? "lineaire" : "stable") })) })) }));
   const idx = b ? blockWeeks(b).indexOf(w.id) : -1; const dl = !!(fromTpl && b && b.deload === w.id);
   const wmods = (S.data.logs[w.id] && S.data.logs[w.id].mods) || {};
   const fmods = b ? fwdMods().filter(m => m.block === b.id && m.from <= w.id) : [];
-  const anyWave = idx >= 0 && ss.some(s => (s.blocks || []).some(bl => (bl.items || []).some(it => it.wave)));
-  if (!dl && !anyWave && !fmods.length && !Object.keys(wmods).length) return ss;
   return ss.map(s => ({ ...s, title: dl && s.title && !/décharge/i.test(s.title) ? s.title + " (décharge)" : s.title,
     blocks: (s.blocks || []).map(bl => {
-      const items = (bl.items || []).map(it => resolveItem(s, it, idx, dl, fmods, wmods));
+      const items = (bl.items || []).map((it, i) => resolveItem(s, it, idx, dl, fmods, wmods, bl.kind, i));
       const changed = items.some(x => x.mod);
       const rounds = changed && typeof bl.rounds === "number" ? Math.max(1, ...items.filter(x => !x.off && typeof x.sets === "number").map(x => x.sets))
         : dl && typeof bl.rounds === "number" ? cutSets(bl.rounds) : bl.rounds;
@@ -797,25 +814,33 @@ function resolveWeek(ss, w, b, fromTpl){
 function loadPlan(wk, s, it){
   const lr = /kg/i.test(it.load || "") ? numRange(it.load) : null; if (!lr) return null;
   const w = weekById(wk); const b = w && blockOf(w); const key = s.id + ":" + it.id; const r2 = v => Math.round(v * 100) / 100;
+  const mode = progOf(it); const dl = isDeload(w); const cur = numRange(it.reps);
   const wm = S.data.logs[wk] && S.data.logs[wk].mods && S.data.logs[wk].mods[key];
-  if (wm && wm.load != null) return { base: wm.load, from: wk, up: 0, missed: false, src: "mod" };
+  if (wm && wm.load != null) return { base: wm.load, from: wk, up: 0, missed: false, src: "mod", mode };
   const fm = b ? fwdMods().filter(m => m.block === b.id && m.key === key && m.load != null && m.from <= wk).sort(byFrom).pop() : null;
-  if (fm && fm.from === wk) return { base: fm.load, from: wk, up: 0, missed: false, src: "mod" };
+  if (fm && fm.from === wk) return { base: fm.load, from: wk, up: 0, missed: false, src: "mod", mode };
   let last = null;
   if (b) for (const id of blockWeeks(b).filter(x => x < wk).reverse()) {
     const a = S.data.logs[id] && S.data.logs[id].actual && S.data.logs[id].actual[key];
     const v = a && numOrNull(a.load); if (v != null) { last = { id, v, a }; break; }
   }
-  const step = it.step && !isDeload(w) ? it.step : 0;
-  if (fm && (!last || fm.from > last.id)) return { base: r2(fm.load + step), from: fm.from, up: step, missed: false, src: "mod" };
+  const step = mode === "lineaire" && !dl ? progStep(it) : 0;
+  if (fm && (!last || fm.from > last.id)) return { base: r2(fm.load + step), from: fm.from, up: step, missed: false, src: "mod", mode };
   if (last) {
-    const pit = itemOf(last.id, s.id, it.id); const need = pit ? numRange(pit.reps) : null; const got = numOrNull(last.a.reps);
-    const missed = !!(need && got != null && got < need[0]); const up = missed ? 0 : step;
-    return { base: r2(last.v + up), from: last.id, up, missed, src: "log" };
+    const pit = itemOf(last.id, s.id, it.id); const need = pit ? numRange(pit.reps) : null;
+    const sets = (last.a.done || []).filter(x => x && x.r != null).map(x => x.r); const reps = sets.length ? sets : [numOrNull(last.a.reps)].filter(x => x != null);
+    const got = reps.length ? Math.min(...reps) : null;
+    if (mode === "double") {
+      const top = !!(need && reps.length && reps.every(r => r >= need[1])) && !dl; const up = top ? progStep(it) : 0;
+      const aim = cur ? (top || dl ? cur[0] : Math.min(Math.max(got != null ? got + 1 : cur[0], cur[0]), cur[1])) : null;
+      return { base: r2(last.v + up), from: last.id, up, missed: false, src: "log", mode, aim, top: !!top };
+    }
+    const missed = !!(need && got != null && got < need[0]); const up = mode === "lineaire" && !missed ? step : 0;
+    return { base: r2(last.v + up), from: last.id, up, missed, src: "log", mode };
   }
   const est = b ? estFromHistory(wk, b, it) : null;
-  if (est) return est;
-  return { base: lr[0], from: null, up: 0, missed: false, src: "prog" };
+  if (est) return { ...est, mode, aim: mode === "double" && cur ? cur[0] : undefined };
+  return { base: lr[0], from: null, up: 0, missed: false, src: "prog", mode, aim: mode === "double" && cur ? cur[0] : undefined };
 }
 /* Nouveau bloc sans séance notée : estFromHistory (bibliothèque d'exercices) part de ce que tu as vraiment soulevé
    (ou d'un exercice proche), pour le bas de la fourchette de reps du bloc, avec 2 reps en réserve. */
@@ -1251,6 +1276,12 @@ function sessRow(wk, s, log, hint){
       <button class="btn donebtn" aria-pressed="${st.done ? "true" : "false"}" data-action="toggle-done" data-sid="${esc(s.id)}">${st.done ? "Fait ✓" : "Fait"}</button>
     </div></article>`;
 }
+function progTxt(wk, s, it){
+  const m = progOf(it); const lp = loadPlan(wk, s, it);
+  if (m === "double") return "↗ Double progression" + (lp && lp.aim ? " · vise " + lp.aim + " reps" : "");
+  if (m === "lineaire") return "↗ +" + fmtNum(progStep(it), 1) + " kg par semaine si les reps sont faites";
+  return "= Charge stable : progresse en vitesse et en qualité";
+}
 function rxOf(wk, s, it){
   const lp = it.load && it.unit !== "reps" && !it.tests ? loadPlan(wk, s, it) : null;
   const ld = lp && lp.src !== "prog" ? "≈ " + kgTxt(it, lp.base) : it.load;
@@ -1286,7 +1317,7 @@ function showSheet(wk, s, log){
         return `<div class="sh-it ${big ? "zoomed" : ""}">${ip ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(ip)}" alt="${esc(it.name)}"></button>` : ""}
           <div class="sh-tx">${nm}
           ${it.tests ? "" : `<div class="sh-rx">${esc(rxOf(wk, s, it)) || "—"}${it.rest ? ` · repos ${esc(it.rest)}` : ""}</div>`}
-          ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }).join("")}
+          ${hasKg(it) ? `<div class="sh-prog">${esc(progTxt(wk, s, it))}</div>` : ""}${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }).join("")}
     </div>`;
   }).join("");
   const w = weekById(wk); const b = w && blockOf(w);
@@ -1588,6 +1619,7 @@ function sessClean(d){
     }
     if (g._next != null) g.restNext = g._next;
     items.forEach(it => {
+      delete it._prog; delete it.mod;
       if (!it.id) it.id = uid("x"); if (!it.ex) it.ex = slug(it.name);
       if (it.wave && !it.wave.length) delete it.wave; if (!it.step) delete it.step;
       if (g._kind !== "simple") delete it.rest;
@@ -1630,7 +1662,7 @@ function peOpenSession(wk, sid){
   S.ui.edit = null;
   const sd = sessDraft(s); const lp = {};
   /* la charge affichée est celle prévue cette semaine (progression comprise) */
-  (sd.blocks || []).forEach(g => (g.items || []).forEach(it => { if (!hasKg(it)) return; const p = loadPlan(wk, { id: sd.id }, it); if (p) { lp[it.id] = { kg: p.base, text: it.load }; setLoadKg(it, p.base); } }));
+  (sd.blocks || []).forEach(g => (g.items || []).forEach(it => { if (!hasKg(it)) return; const p = loadPlan(wk, { id: sd.id }, itemOf(wk, sd.id, it.id) || it); if (p) { lp[it.id] = { kg: p.base, text: it.load }; setLoadKg(it, p.base); } }));
   const r = src.col === "series" ? S.data.series[src.id] : null;
   S.pe = { mode: "sess", src, wk, sd, lp, sIdx: null, openX: null, pick: null, confirm: null, tips: false,
     rep: r ? { every: r.every || 0, until: r.until || r.from } : null,
@@ -1688,15 +1720,15 @@ function peBlockView(){
 /* Types de séance : conseils affichés dans l'éditeur et valeurs de départ des nouveaux exercices et groupes. */
 const STYPES = [
   { k:"hypertrophie", l:"Hypertrophie", e:"🏋️", def:{ sets:3, reps:"8–12", rest:"90 s", step:2.5 }, g:{ kind:"superset", between:60, after:90 },
-    tips:["6 à 12 reps (jusqu'à 15–20 pour les petits muscles), 3 à 4 séries.","Finir à 1–2 reps de l'échec ; monter la charge quand le haut de la fourchette passe sur toutes les séries.","60 à 90 s de pause ; supersets antagonistes (tirage + poussée) pour gagner du temps.","Polyarticulaires d'abord, isolation à la fin, amplitude complète."] },
+    tips:["6 à 12 reps (jusqu'à 15–20 pour les petits muscles), 3 à 4 séries.","Finir à 1–2 reps de l'échec ; monter la charge quand le haut de la fourchette passe sur toutes les séries.","60 à 90 s de pause ; supersets antagonistes (tirage + poussée) pour gagner du temps.","Polyarticulaires d'abord, isolation à la fin, amplitude complète.","Progression auto : double progression (des reps en plus, puis la charge)."] },
   { k:"force", l:"Force", e:"🏋️", def:{ sets:4, reps:"5", rest:"2 min", step:2.5 }, g:{ kind:"superset", between:120, after:120 },
-    tips:["3 à 6 reps, 3 à 5 séries, autour de 85–90 % du max.","Garder 1–2 reps en réserve : la vitesse doit rester propre.","2 à 4 min par exercice ; en superset antagoniste, environ 2 min entre chaque.","Le lourd bilatéral d'abord, l'unilatéral ensuite ; +2,5 kg par semaine si tout passe."] },
+    tips:["3 à 6 reps, 3 à 5 séries, autour de 85–90 % du max.","Garder 1–2 reps en réserve : la vitesse doit rester propre.","2 à 4 min par exercice ; en superset antagoniste, environ 2 min entre chaque.","Le lourd bilatéral d'abord, l'unilatéral ensuite ; +2,5 kg par semaine si tout passe.","Progression auto : linéaire, la charge monte chaque semaine si les reps sont faites ; les reps peuvent descendre (5, 5, 4, 4, 3)."] },
   { k:"puissance", l:"Puissance", e:"💥", def:{ sets:4, reps:"3", rest:"2 min" }, g:{ kind:"contraste", between:0, after:120 },
-    tips:["30–60 % du max ou poids du corps, intention de vitesse maximale.","3 à 5 reps : arrête dès que la vitesse baisse.","Récupération complète, 2 à 3 min.","Contraste : un exercice lourd (2–3 reps) juste avant un geste explosif du même schéma (groupe Contraste)."] },
+    tips:["30–60 % du max ou poids du corps, intention de vitesse maximale.","3 à 5 reps : arrête dès que la vitesse baisse.","Récupération complète, 2 à 3 min.","Contraste : un exercice lourd (2–3 reps) juste avant un geste explosif du même schéma (groupe Contraste).","Progression auto : charge stable sur les gestes explosifs, linéaire sur l'exercice lourd de chaque paire."] },
   { k:"contraste", l:"French contrast", e:"🔄", def:{ sets:3, reps:"3", rest:"3 min" }, g:{ kind:"superset", between:15, after:180 },
-    tips:["4 exercices enchaînés sur le même schéma : lourd (80–90 %, 2–3 reps) → plyo (3–5) → lesté léger (20–30 %, 3–5) → assisté ou accéléré (3–5).","Un groupe Superset : 10–20 s entre les exercices, 3–4 min après le tour, 3 à 4 tours.","Très nerveux : frais, en début de séance, à 48 h d'une autre séance intense."] },
+    tips:["4 exercices enchaînés sur le même schéma : lourd (80–90 %, 2–3 reps) → plyo (3–5) → lesté léger (20–30 %, 3–5) → assisté ou accéléré (3–5).","Un groupe Superset : 10–20 s entre les exercices, 3–4 min après le tour, 3 à 4 tours.","Très nerveux : frais, en début de séance, à 48 h d'une autre séance intense.","Progression auto : linéaire sur le premier exercice (lourd), stable sur les autres."] },
   { k:"vitesse", l:"Vitesse", e:"🚀", def:{ sets:5, reps:"10–20 m", rest:"2 min" }, g:{ kind:"simple" },
-    tips:["Efforts courts (sprints, runs de 10–20 s) à 100 %.","Récupération de 1:8 à 1:15 (run de 15 s → 2 à 4 min).","4 à 6 répétitions ; arrête dès que la qualité baisse.","Toujours en début de séance, frais, après un bon échauffement."] },
+    tips:["Efforts courts (sprints, runs de 10–20 s) à 100 %.","Récupération de 1:8 à 1:15 (run de 15 s → 2 à 4 min).","4 à 6 répétitions ; arrête dès que la qualité baisse.","Toujours en début de séance, frais, après un bon échauffement.","Progression auto : charge stable, on progresse en vitesse."] },
   { k:"plyo", l:"Plyo", e:"🦘", def:{ sets:3, reps:"5", rest:"60 s" }, g:{ kind:"simple" },
     tips:["Intense : peu de contacts (20–40), récupération complète, intention maximale.","Légère : beaucoup de contacts à effort moyen, pour les tendons et le rythme.","Réceptions silencieuses et stables ; arrête dès qu'elles se dégradent."] },
   { k:"parkour", l:"Parkour", e:"👟", def:{ sets:5, reps:"5" }, g:{ kind:"simple" },
@@ -1801,17 +1833,21 @@ function peRow(g, gi, it, xi, letter){
       ${it.sets == null ? `<button class="btn small" data-action="pe-xsetsadd" data-g="${gi}" data-x="${xi}">Compter des séries</button>` : ""}
       ${grp ? "" : `<div class="field"><label>Pause entre les séries de cet exercice<select data-pe="x:rest" data-g="${gi}" data-x="${xi}">${restOpts.map(r => `<option value="${esc(r)}" ${(it.rest || "") === r ? "selected" : ""}>${r || "comme le groupe (" + restTxt(g._set) + ")"}</option>`).join("")}</select></label></div>`}
       <div class="field"><label>Consigne pour cette séance<input type="text" data-pe="x:cue" data-g="${gi}" data-x="${xi}" value="${esc(it.cue || "")}" placeholder="ex. 2 reps en réserve"></label></div>
+      <div class="field"><label>Mode de progression<select data-pe="x:prog" data-g="${gi}" data-x="${xi}">${(() => { const a = autoProg(P.sd.kind, g._kind === "simple" ? undefined : g._kind, xi) || (it.step ? "lineaire" : "stable");
+        return `<option value="" ${it.prog ? "" : "selected"}>Auto : ${PROG[a]}</option>` + Object.entries(PROG).map(([k, l]) => `<option value="${k}" ${it.prog === k ? "selected" : ""}>${l}</option>`).join(""); })()}</select></label></div>
+      <p class="pe-help">Linéaire : la charge monte chaque semaine si les reps sont faites. Double : des reps en plus à charge égale, puis la charge monte quand le haut de la fourchette passe partout. Vitesse / maintien : la charge ne bouge pas toute seule.</p>
       <div class="pe-grid">
-        <div class="field"><label>Charge chaque semaine<select data-pe="x:step" data-g="${gi}" data-x="${xi}">${PE_STEPS.map(([v, l]) => `<option value="${v}" ${String(it.step || "") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
+        <div class="field"><label>Hausse de charge<select data-pe="x:step" data-g="${gi}" data-x="${xi}">${PE_STEPS.map(([v, l]) => `<option value="${v}" ${String(it.step || "") === v ? "selected" : ""}>${v ? l : "standard (" + fmtNum(kgInc(it), 1) + " kg)"}</option>`).join("")}</select></label></div>
         <div class="field"><label>Reps semaine par semaine<input type="text" data-pe="x:wave" data-g="${gi}" data-x="${xi}" value="${esc((it.wave || []).join(", "))}" placeholder="ex. 5, 5, 4, 4, 3"></label></div>
       </div>
-      <p class="pe-help">La charge monte seulement si les reps prévues ont été faites. Les reps semaine par semaine remplacent les reps ci-dessus (semaine 1, 2, 3…).</p>
+      <p class="pe-help">Les reps semaine par semaine remplacent les reps ci-dessus (semaine 1, 2, 3…), par exemple 5, 5, 4, 4, 3 en force.</p>
       ${P.hint && P.hint.k === k ? `<p class="pe-hint">${esc(P.hint.t)}</p>` : ""}
     </div>` : (P.hint && P.hint.k === k ? `<p class="pe-hint">${esc(P.hint.t)}</p>` : "");
   return `<div class="pe-row ${open ? "open" : ""}" data-dnd-item data-dnd="x" data-g="${gi}" data-x="${xi}">
     <span class="pe-hdl" data-dnd-handle aria-label="Déplacer ${esc(it.name || "l'exercice")}" title="Glisser pour déplacer">⋮⋮</span>
     <div class="pe-rm">
-      <div class="pe-rt">${code ? `<span class="code">${code}</span>` : ""}${img ? `<span class="pe-rimg"><img src="${BLANK}" data-mpath="${esc(img)}" alt=""></span>` : ""}<button class="pe-nm" data-action="pe-xopen" data-k="${k}" aria-expanded="${open}">${esc(it.name || "Nouvel exercice")}${it.step ? ` <small>+${fmtNum(it.step, 1)} kg/sem.</small>` : ""}${it.wave ? ` <small>reps ${esc(it.wave.join("-"))}</small>` : ""}</button>
+      <div class="pe-rt">${code ? `<span class="code">${code}</span>` : ""}${img ? `<span class="pe-rimg"><img src="${BLANK}" data-mpath="${esc(img)}" alt=""></span>` : ""}<button class="pe-nm" data-action="pe-xopen" data-k="${k}" aria-expanded="${open}">${esc(it.name || "Nouvel exercice")}${(() => { if (loadKg(it) == null) return ""; const a = it.prog || autoProg(P.sd.kind, g._kind === "simple" ? undefined : g._kind, xi) || (it.step ? "lineaire" : "stable");
+        return a === "lineaire" ? ` <small>↗ +${fmtNum(progStep(it), 1)} kg/sem.</small>` : a === "double" ? ` <small>↗ double</small>` : ` <small>= stable</small>`; })()}${it.wave ? ` <small>reps ${esc(it.wave.join("-"))}</small>` : ""}</button>
         <button class="pe-del ${conf ? "on" : ""}" data-action="pe-xdel" data-g="${gi}" data-x="${xi}" aria-label="Retirer ${esc(it.name || "l'exercice")}">${conf ? "Retirer ?" : "✕"}</button></div>
       ${ctl}${details}
     </div></div>`;
@@ -1972,6 +2008,7 @@ function peField(el, isChange){
   const it = g.items[+el.dataset.x]; if (!it) return;
   if (f === "wave") { const w = v.split(/[,;]\s*/).map(x => x.trim()).filter(Boolean); if (w.length) it.wave = w; else delete it.wave; }
   else if (f === "step") { if (v) it.step = +v; else delete it.step; }
+  else if (f === "prog") { if (v) it.prog = v; else delete it.prog; render(); return; }
   else if (f === "rest") { if (v) it.rest = v; else delete it.rest; }
   else it[f] = v;
   if (isChange && (f === "reps" || f === "load")) render();
@@ -2128,7 +2165,9 @@ function stepReps(step, log){
   const rr = repsRange(step.it); if (!rr || !loggable(step.it)) return null; const k = step.key + "#" + step.set;
   if (S.run.reps[k] != null) return S.run.reps[k];
   const d = ((log.actual && log.actual[step.key]) || {}).done || [];
-  return d[step.set-1] && d[step.set-1].r != null ? d[step.set-1].r : rr[1];
+  if (d[step.set-1] && d[step.set-1].r != null) return d[step.set-1].r;
+  const lp = hasKg(step.it) ? loadPlan(S.run.wk, { id: S.run.sid }, step.it) : null;
+  return lp && lp.mode === "double" && lp.aim ? lp.aim : rr[1];
 }
 function fmtReps(t){
   const s = String(t || "").trim(); if (!s) return "";
@@ -2175,7 +2214,8 @@ function runView(){
       <div class="st-blk">${step.code ? `<span class="code">${step.code}</span>` : ""}<span>${esc(step.bname)}</span></div>
       <h2 class="st-name">${esc(it.name)}</h2>
       ${step.of > 1 ? `<div class="st-set">Série ${step.set} / ${step.of}</div>` : ""}
-      ${it.reps ? `<div class="st-reps">${esc(fmtReps(it.reps))}</div>` : ""}${other}${holdSec(it) ? holdCtl(step) : ""}
+      ${it.reps ? `<div class="st-reps">${esc(fmtReps(it.reps))}</div>` : ""}${other}${(() => { const lp = hasKg(it) ? loadPlan(R.wk, { id: R.sid }, it) : null;
+        return lp && lp.mode === "double" && lp.aim ? `<div class="st-aim">${lp.top ? "Tu avais tout fait : charge montée, repars à " + lp.aim + " reps" : "Vise " + lp.aim + " reps à cette charge"}</div>` : ""; })()}${holdSec(it) ? holdCtl(step) : ""}
       ${it.cue ? `<p class="st-cue">${esc(it.cue)}</p>` : ""}${(() => { const xo = it.tests ? null : exoOf(it.ex || it.id); return xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""; })()}
       ${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(R.wk + ":" + step.key)}</div>` : ""}
       ${kgCtl}${repsCtl}

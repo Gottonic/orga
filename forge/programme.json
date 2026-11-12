@@ -1,7 +1,7 @@
 {
- "version": 6,
- "date": "2026-11-11",
- "note": "bibliothèque d'exercices",
+ "version": 7,
+ "date": "2026-11-12",
+ "note": "tibialis : charge notée",
  "set": {
   "config": {
    "main": {
@@ -959,7 +959,6 @@
            "name": "Tibialis raise",
            "reps": "12–15",
            "sets": 2,
-           "unit": "reps",
            "inc": 1
           }
          ],
