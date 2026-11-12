@@ -175,6 +175,7 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 .hist{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:8px}
 .hist>span{display:flex;flex-direction:column;align-items:center;background:var(--tile);border-radius:10px;padding:6px 2px;font-size:13px}
 .hist>span.neg b{color:var(--neg)}
+.rel{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:14px}
 .dsec{margin-top:10px}
 .dsec>.st{padding-bottom:4px}
 .dette-b{border:0;background:transparent;padding:0;text-align:left;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;color:inherit;font-size:15px}
@@ -267,7 +268,7 @@ button.rk-row:hover{background:#F6F7F9}
 <button class="fab" data-act="saisie" aria-label="Nouvelle saisie"><svg class="i" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-titre"></div></div>
 <input type="file" id="fichier" accept=".json,application/json" hidden>
-<input type="file" id="f-yuh" accept=".csv,text/csv,text/comma-separated-values" hidden>
+<input type="file" id="f-yuh" accept=".csv,.xlsx,text/csv,text/comma-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 <script src="../commun/supabase.js"></script>
 <script>
 'use strict';
@@ -613,11 +614,15 @@ function enregistrer(){
   }
   S.regl.dernierCompte=d.compte; save(); fermer(); render();
 }
+function supprimerTx(t){
+  const o=estVir(t)&&t.lien&&S.tx[t.lien];
+  if(o){ if(['yuh','bas'].includes(o.source)){ o.cat=null; o.autre=null; o.lien=null; } else delete S.tx[o.id]; }
+  delete S.tx[t.id];
+}
 function supprimer(){
   const t=S.tx[draft.id]; if(!t) return;
   if(!confirm('Supprimer cette opération'+(estVir(t)?' (et l’autre côté du virement)':'')+' ?')) return;
-  if(t.lien&&S.tx[t.lien]&&estVir(t)) delete S.tx[t.lien];
-  delete S.tx[t.id]; save(); fermer(); render();
+  supprimerTx(t); save(); fermer(); render();
 }
 
 /* =============================== Données de départ =============================== */
@@ -677,7 +682,7 @@ function yuhLire(txt){
 }
 const MOI=['gottofrey nicolas','nicolas gottofrey'];
 function estMoi(n){ return MOI.includes(String(n||'').toLowerCase().replace(/\s+/g,' ').trim()); }
-function estPersonne(n){ return /^[A-ZÀ-Ý][a-zà-ÿ'’-]+(\s+[A-ZÀ-Ý][a-zà-ÿ'’-]+){1,3}$/.test(String(n||'').trim()); }
+function estPersonne(n){ return /^[A-ZÀ-Ý][a-zà-ÿ'’-]+(\s+[A-ZÀ-Ý][a-zà-ÿ'’-]+){1,3}$/.test(String(n||'').replace(/,/g,' ').replace(/\s+/g,' ').trim()); }
 /* Une ligne Yuh → un mouvement (montant en CHF, éventuel virement interne, catégorie si la règle est sûre) */
 function yuhMouvements(rows){
   const fx=[], M=[], vus={};
@@ -685,7 +690,7 @@ function yuhMouvements(rows){
     if(t==='REWARD_RECEIVED'||t==='INVEST_RECURRING_ORDER_REJECTED') return;
     if(t==='BANK_AUTO_ORDER_EXECUTED'||t==='BANK_ORDER_EXECUTED'){ fx.push(r); return; }
     const base=[r.date,t,r.nom,r.deb,r.cdeb,r.cre,r.ccre].join('|'); vus[base]=(vus[base]||0)+1;
-    const m={ref:base+'#'+vus[base],date:r.date,montant:null,devise:'CHF',tiers:'',canal:'',lieu:r.lieu||'',vers:null,cat:null};
+    const m={src:'yuh',compte:'yuh',ref:base+'#'+vus[base],date:r.date,montant:null,devise:'CHF',tiers:'',canal:'',lieu:r.lieu||'',vers:null,cat:null};
     if(t==='CARD_TRANSACTION_OUT'){ m.montant=r.deb; m.devise=r.cdeb; m.tiers=r.dest||r.nom; m.canal='carte';
       if(m.tiers.toUpperCase()==='ATM'){ m.canal='atm'; m.vers='especes'; } else if(cle(m.tiers)==='coinbase'){ m.canal='crypto'; m.vers='crypto'; } }
     else if(t==='CARD_TRANSACTION_IN'){ m.montant=r.cre; m.devise=r.ccre; m.tiers=r.nom; m.canal='carte'; }
@@ -715,57 +720,138 @@ function yuhMouvements(rows){
   return M;
 }
 function cleMontant(orig,montant){ if(orig){ const p=String(orig).trim().split(/\s+/), v=parseFloat(p[0]); if(!isNaN(v)&&p[1]) return v.toFixed(2)+p[1]; } return Number(montant).toFixed(2)+'CHF'; }
-/* Prépare l'import : doublons, saisies retrouvées, virements. Rien n'est écrit avant « Importer ». */
-function preparerImport(txt,nomFichier){
-  const rows=yuhLire(txt), M=yuhMouvements(rows);
-  const exist=Object.values(S.tx).filter(t=>t.compte==='yuh'&&t.source==='yuh');
+/* ---------- BAS : export Excel (ou CSV) de l'e-banking ---------- */
+async function lireXlsx(buf){
+  const u8=new Uint8Array(buf), dv=new DataView(buf); let e=u8.length-22;
+  while(e>=0&&dv.getUint32(e,true)!==0x06054b50) e--; if(e<0) throw new Error('fichier Excel illisible.');
+  const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const F={}, dec=new TextDecoder();
+  for(let i=0;i<n;i++){ if(dv.getUint32(p,true)!==0x02014b50) break; const nl=dv.getUint16(p+28,true), xl=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true);
+    F[dec.decode(u8.subarray(p+46,p+46+nl))]={meth:dv.getUint16(p+10,true),taille:dv.getUint32(p+20,true),off:dv.getUint32(p+42,true)}; p+=46+nl+xl+cl; }
+  async function lire(nom){ const f=F[nom]; if(!f) return null; const d=f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true), data=u8.subarray(d,d+f.taille);
+    if(f.meth===0) return dec.decode(data);
+    if(typeof DecompressionStream==='undefined') throw new Error('ce navigateur ne sait pas ouvrir les fichiers Excel. Mets-le à jour, ou exporte en CSV.');
+    return dec.decode(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer()); }
+  const X=s=>new DOMParser().parseFromString(s,'application/xml'), ss=[];
+  const sst=await lire('xl/sharedStrings.xml'); if(sst) [...X(sst).getElementsByTagName('si')].forEach(si=>ss.push([...si.getElementsByTagName('t')].map(t=>t.textContent).join('')));
+  const feuille=Object.keys(F).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort((a,b)=>parseInt(a.match(/\d+/)[0])-parseInt(b.match(/\d+/)[0]))[0];
+  if(!feuille) throw new Error('aucune feuille dans ce fichier Excel.');
+  const col=r=>{ let c=0; for(const ch of r.replace(/\d+/g,'')) c=c*26+ch.charCodeAt(0)-64; return c-1; };
+  return [...X(await lire(feuille)).getElementsByTagName('row')].map(row=>{ const out=[];
+    [...row.getElementsByTagName('c')].forEach(c=>{ const t=c.getAttribute('t'), v=c.getElementsByTagName('v')[0], r=c.getAttribute('r');
+      let val=t==='s'?ss[+(v&&v.textContent)]:t==='inlineStr'?[...c.getElementsByTagName('t')].map(x=>x.textContent).join(''):v?v.textContent:'';
+      if(!t||t==='n'){ const x=parseFloat(val); if(val!==''&&!isNaN(x)) val=x; }
+      out[r?col(r):out.length]=val; });
+    return out; });
+}
+function basDate(v){ if(typeof v==='number'){ const d=new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5); return d.toISOString().slice(0,10); }
+  const m=String(v||'').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/); return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):null; }
+function basLignes(rows){
+  const hi=rows.findIndex(r=>r&&r.some(x=>/texte comptable/i.test(String(x||'')))); if(hi<0) throw new Error('ce n’est pas un export BAS (colonne « Texte comptable » introuvable).');
+  const H=rows[hi].map(x=>String(x||'').trim().toLowerCase()), ix=t=>H.findIndex(h=>h.startsWith(t));
+  const I={compta:ix('date de compt'),valeur:ix('date valeur'),ordre:ix('numéro de l'),compte:ix('compte'),texte:ix('texte comptable'),credit:ix('crédit'),debit:ix('débit')};
+  if(I.texte<0||I.compta<0) throw new Error('colonnes BAS introuvables.');
+  const nb=x=>{ if(typeof x==='number') return x; const v=parseFloat(String(x||'').replace(/[’'\s]/g,'').replace(',','.')); return isNaN(v)?null:v; };
+  return rows.slice(hi+1).filter(r=>r&&basDate(r[I.compta])).map(r=>({compta:basDate(r[I.compta]),valeur:basDate(r[I.valeur])||basDate(r[I.compta]),ordre:String(r[I.ordre]||'').trim(),
+    compte:/7sur7|courant|priv/i.test(String(r[I.compte]||''))?'bas-cc':'bas-epargne',texte:String(r[I.texte]||''),montant:nb(r[I.credit])!=null&&r[I.credit]!==''?nb(r[I.credit]):-Math.abs(nb(r[I.debit])||0)}));
+}
+function basMouvements(L){
+  const vus={};
+  return L.map(r=>{ const lignes=r.texte.split(/\r?\n/), pr=(lignes[0]||'').trim(), objet=((lignes.find(l=>/^Objet du paiement:/.test(l))||'').replace(/^Objet du paiement:\s*/,'')).trim();
+    let canal='autre', tiers=pr, date=r.valeur, vers=null, note=objet, k;
+    if((k=pr.match(/^Achats carte de débit (\d\d\.\d\d\.\d{4}) [\d:]+ (.*?)(?: Numéro de carte.*)?$/))){ canal='carte'; tiers=k[2]; date=basDate(k[1]); }
+    else if(/^Bancomat/i.test(pr)){ canal='atm'; tiers='Retrait au bancomat'; vers='especes'; }
+    else if((k=pr.match(/^(Débit|Crédit) TWINT (.*)$/))){ canal='twint'; tiers=k[2].replace(/\s*(\+41\d+)?\s*0400\d+$/,'').replace(/,\s*$/,''); }
+    else if(/^Bonification TWINT Acquiring/.test(pr)){ canal='acquiring'; tiers='TWINT Acquiring (encaissements)'; const g=objet.match(/Payout (\d{4})(\d\d)(\d\d) Gross: ([\d.]+) Fees: -?([\d.]+)/); note=g?'Ventes TWINT du '+g[3]+'.'+g[2]+'.'+g[1]+' : brut '+g[4]+', frais '+g[5]:objet; }
+    else if((k=pr.match(/^Bonification (\d\d\.\d\d\.\d{4}) [\d:]+ (.*)$/))){ canal='carte'; tiers=k[2]; }
+    else if((k=pr.match(/^Bonification (.*)$/))){ canal='virement'; tiers=k[1]; }
+    else if((k=pr.match(/^Débit e-banking (.*)$/))){ canal='virement'; tiers=k[1]; }
+    else if((k=pr.match(/^Ordre permanent (.*)$/))){ canal='ordre'; tiers=k[1]; }
+    else if(/^Taxe annuelle/i.test(pr)){ canal='frais'; tiers='Taxe annuelle carte BAS'; }
+    tiers=tiers.replace(/\s*Numéro de carte.*$/,'').replace(/\s+/g,' ').replace(/^[ ,]+|[ ,]+$/g,'');
+    if(['virement','ordre'].includes(canal)&&estMoi(tiers)) canal='moi';
+    const base=r.ordre||[r.compta,r.compte,r.montant,pr].join('|'); vus[base]=(vus[base]||0)+1;
+    return {src:'bas',compte:r.compte,ref:'bas|'+base+(vus[base]>1?'#'+vus[base]:''),date:date||r.valeur,compta:r.compta,chf:r2(r.montant),orig:null,tiers,banque:tiers,canal,lieu:'',vers,cat:null,note}; });
+}
+/* ---------- Préparer un relevé (Yuh ou BAS) : doublons, saisies retrouvées, virements. Rien n'est écrit avant « Importer ». ---------- */
+const NONCONF=['saisie','ajout','miroir'];
+function preparerReleve(M,meta){
+  const src=meta.src, dates=M.map(m=>m.date).sort(), total=M.length;
+  let avant=0; M=M.filter(m=>{ const c=S.comptes[m.compte], d0=c&&c.date_initiale; if(!c||(d0&&m.date<d0&&(!m.compta||m.compta<d0))){ avant++; return false; } return true; });
+  const comptes=[...new Set(M.map(m=>m.compte))], gardees=M.map(m=>m.date).sort(); if(gardees.length){ dates.length=0; dates.push(...gardees); }
+  const exist=Object.values(S.tx).filter(t=>comptes.includes(t.compte)&&t.source===src);
   const parRef=new Map(); exist.forEach(t=>{ if(t.ref) parRef.set(t.ref,t); });
   const pris=new Set(), restants=[];
-  M.forEach(m=>{ const t=parRef.get(m.ref); if(t&&!pris.has(t.id)){ pris.add(t.id); } else restants.push(m); });
-  const pool={}; exist.forEach(t=>{ if(pris.has(t.id)) return; const k=t.date+'|'+cleMontant(t.orig,t.montant); (pool[k]=pool[k]||[]).push(t); });
+  M.forEach(m=>{ const t=parRef.get(m.ref); if(t&&!pris.has(t.id)) pris.add(t.id); else restants.push(m); });
+  const pool={}; exist.forEach(t=>{ if(pris.has(t.id)) return; const k=t.compte+'|'+t.date+'|'+cleMontant(t.orig,t.montant); (pool[k]=pool[k]||[]).push(t); });
   const nouveaux=[]; let doublons=M.length-restants.length;
-  restants.forEach(m=>{ const L=pool[m.date+'|'+cleMontant(m.orig,m.chf)];
+  restants.forEach(m=>{ const L=pool[m.compte+'|'+m.date+'|'+cleMontant(m.orig,m.chf)];
     if(L&&L.length){ const c=cle(m.tiers); let i=L.findIndex(t=>cle(t.banque_nom||t.tiers)===c); if(i<0) i=0; L.splice(i,1); doublons++; }
     else nouveaux.push(m); });
-  /* saisies faites à la main sur Yuh, à relier à leur ligne de relevé */
-  const saisies=Object.values(S.tx).filter(t=>t.compte==='yuh'&&t.source==='saisie'&&!t.sans_banque);
+  /* BAS : un virement entre tes deux comptes BAS apparaît des deux côtés du relevé ; sinon « Nicolas Gottofrey » = virement avec Yuh */
+  if(src==='bas'){ const moi=nouveaux.filter(m=>m.canal==='moi');
+    moi.forEach(m=>{ if(m.paire) return; const o=moi.find(x=>x!==m&&!x.paire&&x.compte!==m.compte&&Math.abs(x.chf+m.chf)<0.005&&Math.abs(jours(x.date,m.date))<=3); if(o){ m.paire=o; o.paire=m; m.vers=o.compte; o.vers=m.compte; } });
+    moi.forEach(m=>{ if(!m.paire) m.vers=S.comptes.yuh?'yuh':null; }); }
+  /* saisies (à la main, ajoutées, ou virements créés par l'autre relevé) à relier à leur ligne */
+  const saisies=Object.values(S.tx).filter(t=>NONCONF.includes(t.source)&&!t.sans_banque&&comptes.includes(t.compte));
   const relier=nouveaux.filter(m=>!['regle','placement','objectif'].includes(m.canal));
-  const egal=(t,m)=>Math.sign(t.montant)===Math.sign(m.chf)&&(m.orig?Math.abs(t.montant-m.chf)<=Math.max(0.5,Math.abs(m.chf)*0.04):Math.abs(t.montant-m.chf)<0.005);
+  const egal=(t,m)=>{ if(Math.sign(t.montant)!==Math.sign(m.chf)) return false;
+    if(!(m.orig?Math.abs(t.montant-m.chf)<=Math.max(0.5,Math.abs(m.chf)*0.04):Math.abs(t.montant-m.chf)<0.005)) return false;
+    if(m.canal==='moi'){ if(!estVir(t)) return false; if(m.paire) return t.compte===m.compte&&t.autre===m.paire.compte; return src==='yuh'?String(t.autre||'').startsWith('bas')&&t.compte===m.compte:t.autre==='yuh'; }
+    if(t.compte!==m.compte) return false;
+    return estVir(t)?!!m.vers&&t.autre===m.vers:!m.vers; };
   const paires=[];
   /* à 3 jours près ; au-delà, seulement si le nom saisi colle (ou est vide) et que le montant est unique des deux côtés : 10 jours, ou 60 jours pour un montant « non rond » */
   relier.forEach(m=>saisies.forEach(t=>{ if(!egal(t,m)) return; const d=Math.abs(jours(m.date,t.date));
     const unique=()=>saisies.filter(x=>egal(x,m)).length===1&&relier.filter(x=>egal(t,x)).length===1, rond=Math.round(Math.abs(t.montant)*100)%500===0;
-    const mots=x=>cle(x).split(' ').filter(w=>w.length>=3), mt=mots(t.tiers), nom=!t.tiers||!mt.length||mots(m.banque).some(w=>mt.includes(w))||mt.some(w=>cle(m.banque).includes(w));
+    const mots=x=>cle(x).split(' ').filter(w=>w.length>=3), mt=mots(t.tiers), nom=t.source==='miroir'||!t.tiers||!mt.length||mots(m.banque).some(w=>mt.includes(w))||mt.some(w=>cle(m.banque).includes(w));
     let sc=null; if(d<=3) sc=d+(m.orig?0.5:0); else if(nom&&d<=10&&unique()) sc=20+d; else if(nom&&d<=60&&!rond&&unique()) sc=50+d;
     if(sc!=null) paires.push([sc,m,t]); }));
-  paires.sort((a,b)=>a[0]-b[0]); const mPris=new Set(), tPris=new Set(), liens=[];
+  paires.sort((a,b)=>a[0]-b[0]); const mPris=new Set(), tPris=new Set(); let liens=[];
   paires.forEach(([sc,m,t])=>{ if(mPris.has(m)||tPris.has(t.id)) return; mPris.add(m); tPris.add(t.id); m.lien=t.id; m.saisieId=t.id; liens.push(m); });
-  const dates=rows.map(r=>r.date).sort();
-  return {fichier:nomFichier||'',du:dates[0],au:dates[dates.length-1],lignes:rows.length,mouvements:M.length,doublons,nouveaux,liens};
+  /* un virement BAS ↔ BAS dont un seul côté retrouve sa saisie : on repart de zéro pour les deux */
+  nouveaux.forEach(m=>{ if(m.paire&&!!m.lien!==!!m.paire.lien){ [m,m.paire].forEach(x=>{ x.lien=null; x.saisieId=null; }); } });
+  liens=liens.filter(m=>m.lien);
+  if(src==='yuh') nouveaux.forEach(m=>{ if(m.canal==='moi'&&m.lien){ const t=S.tx[m.lien]; if(t) m.vers=t.autre; } });
+  return {src,fichier:meta.fichier||'',du:dates[0],au:dates[dates.length-1],lignes:meta.lignes||total,mouvements:total,avant,doublons,nouveaux,liens};
+}
+async function preparerFichier(f){
+  const buf=await f.arrayBuffer(), u8=new Uint8Array(buf);
+  if(u8[0]===0x50&&u8[1]===0x4b){ const L=basLignes(await lireXlsx(buf)); return preparerReleve(basMouvements(L),{src:'bas',fichier:f.name,lignes:L.length}); }
+  const txt=new TextDecoder().decode(buf), tete=txt.slice(0,2000);
+  if(/texte comptable/i.test(tete)){ const sep=(tete.split('\n')[0].match(/;/g)||[]).length>=(tete.split('\n')[0].match(/,/g)||[]).length?';':','; const L=basLignes(lireCSV(txt,sep)); return preparerReleve(basMouvements(L),{src:'bas',fichier:f.name,lignes:L.length}); }
+  const rows=yuhLire(txt); return preparerReleve(yuhMouvements(rows),{src:'yuh',fichier:f.name,lignes:rows.length});
 }
 function appliquerImport(I){
-  const now=new Date().toISOString(); let n=0;
+  const src=I.src, now=new Date().toISOString(), ids=new Map(); let n=0;
+  const idDe=m=>{ if(ids.has(m)) return ids.get(m); let id=(src==='bas'?'s':'y')+hash(m.ref); while(S.tx[id]&&S.tx[id].ref!==m.ref) id+='x'; ids.set(m,id); return id; };
   I.nouveaux.forEach(m=>{
-    if(m.lien&&S.tx[m.lien]){ const t=S.tx[m.lien], avant={date:t.date,montant:t.montant,tiers:t.tiers||''};
-      Object.assign(t,{date:m.date,montant:m.chf,source:'yuh',ref:m.ref,banque_nom:m.banque,orig:m.orig,lieu:m.lieu,canal:m.canal,saisie:avant,rapproche:today()});
-      if(!t.tiers) t.tiers=m.tiers;
+    if(m.lien&&S.tx[m.lien]){ const t=S.tx[m.lien], avant={date:t.date,montant:t.montant,tiers:t.tiers||'',compte:t.compte};
+      if(t.compte!==m.compte){ const o=t.lien&&S.tx[t.lien]; t.compte=m.compte; if(o) o.autre=m.compte; }
+      Object.assign(t,{date:m.date,montant:m.chf,source:src,ref:m.ref,banque_nom:m.banque,orig:m.orig||null,lieu:m.lieu||'',canal:m.canal,saisie:avant,rapproche:today()});
+      if(!t.tiers||t.source==='miroir') t.tiers=t.tiers||m.tiers; if(!t.note&&m.note) t.note=m.note;
       if(t.parts&&t.parts.length){ const s=r2(t.parts.reduce((a,p)=>a+p.montant,0)), e=r2(m.chf-s); if(Math.abs(e)>=0.005) t.parts[t.parts.length-1].montant=r2(t.parts[t.parts.length-1].montant+e); }
-      if(estVir(t)&&t.lien&&S.tx[t.lien]){ S.tx[t.lien].montant=-m.chf; S.tx[t.lien].date=m.date; }
+      const o=estVir(t)&&t.lien&&S.tx[t.lien]; if(o&&!['yuh','bas'].includes(o.source)){ o.montant=-m.chf; o.date=m.date; }
       n++; return; }
-    let id='y'+hash(m.ref); while(S.tx[id]&&S.tx[id].ref!==m.ref) id+='x';
-    const t={id,date:m.date,compte:'yuh',montant:m.chf,tiers:m.tiers,banque_nom:m.banque,cat:m.cat||null,tags:tagsActifs(m.date),note:'',parts:null,autre:null,lien:null,source:'yuh',ref:m.ref,orig:m.orig,lieu:m.lieu,canal:m.canal,cree:now};
-    if(m.vers&&S.comptes[m.vers]){ const mid=id+'m'; t.cat=VIR; t.autre=m.vers; t.lien=mid;
-      S.tx[mid]={id:mid,date:m.date,compte:m.vers,montant:-m.chf,tiers:m.tiers,cat:VIR,autre:'yuh',lien:id,tags:[],note:'',parts:null,source:'miroir',cree:now}; }
+    const id=idDe(m);
+    const t={id,date:m.date,compte:m.compte,montant:m.chf,tiers:m.tiers,banque_nom:m.banque,cat:m.cat||null,tags:tagsActifs(m.date),note:m.note||'',parts:null,autre:null,lien:null,source:src,ref:m.ref,orig:m.orig||null,lieu:m.lieu||'',canal:m.canal,cree:now};
+    if(m.paire){ t.cat=VIR; t.autre=m.paire.compte; t.lien=idDe(m.paire); }
+    else if(m.vers&&S.comptes[m.vers]){ const mid=id+'m'; t.cat=VIR; t.autre=m.vers; t.lien=mid;
+      S.tx[mid]={id:mid,date:m.date,compte:m.vers,montant:-m.chf,tiers:m.tiers,cat:VIR,autre:m.compte,lien:id,tags:[],note:'',parts:null,source:'miroir',cree:now}; }
     S.tx[id]=t; n++; });
-  const bas=I.nouveaux.find(m=>m.canal==='moi'&&m.vers); if(bas) S.regl.yuhBas=bas.vers;
-  S.regl.yuhImport={le:today(),du:I.du,au:I.au,n};
+  if(src==='yuh'){ const bas=I.nouveaux.find(m=>m.canal==='moi'&&m.vers&&!m.lien); if(bas) S.regl.yuhBas=bas.vers; }
+  S.regl[src+'Import']={le:today(),du:I.du,au:I.au,n};
   save(); return n;
 }
-/* Ce qui reste à faire après les imports */
-function dernierYuh(){ if(S.regl.yuhImport&&S.regl.yuhImport.au) return S.regl.yuhImport.au; let d=''; for(const t of Object.values(S.tx)) if(t.source==='yuh'&&t.date>d) d=t.date; return d; }
-function aClasser(){ return Object.values(S.tx).filter(t=>t.source==='yuh'&&!t.cat&&!(t.parts&&t.parts.length)).sort((a,b)=>b.date.localeCompare(a.date)); }
-function orphelines(){ const au=dernierYuh(); if(!au) return []; const lim=new Date(Date.parse(au+'T12:00')-2*864e5).toISOString().slice(0,10);
-  return Object.values(S.tx).filter(t=>t.compte==='yuh'&&t.source==='saisie'&&!t.sans_banque&&t.date<=lim).sort((a,b)=>b.date.localeCompare(a.date)); }
+/* ---------- Ce qui reste à faire après les imports ---------- */
+const BANQUES=[['yuh','Yuh',7],['bas','BAS',35]];
+function comptesDe(src){ return src==='yuh'?['yuh']:Object.keys(S.comptes).filter(id=>id.startsWith('bas')); }
+function dernier(src){ const r=S.regl[src+'Import']; let d=r&&r.au||''; for(const t of Object.values(S.tx)) if(t.source===src&&t.date>d) d=t.date; return d; }
+function dernierYuh(){ return dernier('yuh'); }
+function aClasser(){ return Object.values(S.tx).filter(t=>(t.source==='yuh'||t.source==='bas')&&!t.cat&&!(t.parts&&t.parts.length)).sort((a,b)=>b.date.localeCompare(a.date)); }
+function orphelines(){ const R=[];
+  BANQUES.forEach(([src])=>{ const au=dernier(src); if(!au) return; const lim=isoD(new Date(Date.parse(au+'T12:00')-2*864e5)), cs=comptesDe(src);
+    Object.values(S.tx).forEach(t=>{ if(cs.includes(t.compte)&&NONCONF.includes(t.source)&&!t.sans_banque&&t.date<=lim) R.push(t); }); });
+  return R.sort((a,b)=>b.date.localeCompare(a.date)); }
 function historique(){ const H={};
   for(const t of Object.values(S.tx)){ if(!t.cat||t.cat===VIR||t.cat===AJU||(t.parts&&t.parts.length)||t.source==='miroir'||t.source==='feuille'||!S.cats[t.cat]) continue;
     const c=cle(t.banque_nom||t.tiers); if(!c) continue; const k=(t.montant<0?'-':'+')+c; (H[k]=H[k]||[]).push(t); }
@@ -785,31 +871,35 @@ let imp=null;
 function vImport(){
   const I=imp, N=I.nouveaux, virs=N.filter(m=>!m.lien&&m.vers), regle=N.filter(m=>!m.lien&&!m.vers&&m.cat), moi=N.filter(m=>m.canal==='moi'&&!m.lien);
   const H=historique(), libres=N.filter(m=>!m.lien&&!m.vers&&!m.cat), props=libres.filter(m=>{ const p=proposer({banque_nom:m.banque,tiers:m.tiers,montant:m.chf,canal:m.canal},H); return p&&p.sure; }).length;
-  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans importer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Relevé Yuh</h2></div>';
+  const BQ=I.src==='bas'?'BAS':'Yuh', paires=N.filter(m=>m.paire&&!m.lien), versYuh=I.src==='bas'?N.filter(m=>m.canal==='moi'&&!m.paire&&!m.lien):[];
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans importer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Relevé '+BQ+'</h2></div>';
   h+='<section class="card"><p class="note">'+esc(I.fichier)+'</p><p style="margin:4px 0 0">Du <b>'+esc(dCourte(I.du))+'</b> au <b>'+esc(dCourte(I.au))+'</b></p>'
+    +(I.avant?'<p class="note">'+I.avant+' ligne'+(I.avant>1?'s':'')+' d’avant le 1er janvier 2026 ignorée'+(I.avant>1?'s':'')+' (tes soldes de départ en tiennent déjà compte).</p>':'')
     +'<div class="kpis" style="margin-bottom:0"><div><span class="cap">Nouvelles</span><div class="v">'+N.length+'</div></div><div><span class="cap">Déjà là</span><div class="v">'+I.doublons+'</div></div><div><span class="cap">À classer</span><div class="v">'+libres.length+'</div></div></div>'
     +(libres.length?'<p class="note" style="margin-top:8px">'+(props?props+' avec une catégorie proposée d’après ton historique. ':'')+'Tu les classeras juste après.</p>':'')+'</section>';
   if(!N.length) return ouvrir(h+'<p class="note" style="text-align:center">Rien de nouveau : tout ce relevé est déjà dans Banque.</p><button class="btn ghost" data-act="fermer">Fermer</button>');
-  if(I.liens.length) h+='<section class="card"><h2>Retrouvées dans tes saisies</h2><p class="note" style="margin-top:4px">La ligne du relevé garde ta catégorie, tes étiquettes et ta note.</p><ul class="ops" style="margin-top:6px">'+I.liens.map((m,i)=>{ const t=S.tx[m.saisieId]; const on=!!m.lien;
-      return '<li class="rapi"><div class="rapi-t"><b>'+esc(m.tiers)+'</b><span class="num'+(m.chf<0?' neg':' pos')+'">'+fmt(m.chf,true)+'</span></div><div class="note">'+esc(dCourte(m.date))+(t?' ↔ '+(on?'ta saisie':'pas reliée à ta saisie')+' « '+esc(estVir(t)?'Virement':catNom(t.cat))+(t.tiers?' · '+esc(t.tiers):'')+' » du '+esc(dCourte(t.date))+' ('+fmt(t.montant,true)+')':'')+'</div>'
+  if(I.liens.length) h+='<section class="card"><h2>Retrouvées dans tes saisies</h2><p class="note" style="margin-top:4px">La ligne du relevé garde ta catégorie, tes étiquettes et ta note.</p><ul class="ops" style="margin-top:6px">'+I.liens.map((m,i)=>{ const t=S.tx[m.saisieId]; const on=!!m.lien, quoi=t&&t.source==='miroir'?'le virement noté à l’import '+(I.src==='bas'?'Yuh':'BAS'):'ta saisie';
+      return '<li class="rapi"><div class="rapi-t"><b>'+esc(m.tiers)+'</b><span class="num'+(m.chf<0?' neg':' pos')+'">'+fmt(m.chf,true)+'</span></div><div class="note">'+esc(dCourte(m.date))+(S.comptes[m.compte]&&I.src==='bas'?' · '+esc(S.comptes[m.compte].nom):'')+(t?' ↔ '+(on?quoi:'pas relié à '+quoi)+' « '+esc(estVir(t)?'Virement':catNom(t.cat))+(t.tiers?' · '+esc(t.tiers):'')+' » du '+esc(dCourte(t.date))+' ('+fmt(t.montant,true)+')':'')+'</div>'
         +'<button class="pill" data-delier="'+i+'" aria-pressed="'+!on+'" style="height:34px;margin-top:6px">'+(on?'Délier':'Relier')+'</button></li>'; }).join('')+'</ul></section>';
-  if(moi.length){ const bas=comptesTous().filter(c=>c.id.startsWith('bas')||(c.type!=='placements'&&c.id!=='yuh'&&c.type!=='dette'&&c.type!=='especes'));
+  if(moi.length&&I.src==='yuh'){ const bas=comptesTous().filter(c=>c.id.startsWith('bas')||(c.type!=='placements'&&c.id!=='yuh'&&c.type!=='dette'&&c.type!=='especes'));
     h+='<section class="card"><h2>Virements avec ta BAS</h2><p class="note" style="margin-top:4px">Les transferts « Gottofrey Nicolas » : de quel compte ?</p>'+moi.map(m=>{ const i=N.indexOf(m);
       return '<div class="rapi"><div class="rapi-t"><span>'+esc(dCourte(m.date))+'</span><span class="num'+(m.chf<0?' neg':' pos')+'">'+fmt(m.chf,true)+'</span></div><select class="sel" data-impvers="'+i+'" aria-label="Compte du virement du '+esc(dCourte(m.date))+'">'+bas.map(c=>'<option value="'+esc(c.id)+'"'+(m.vers===c.id?' selected':'')+'>'+esc(c.nom)+'</option>').join('')+'<option value=""'+(!m.vers?' selected':'')+'>Pas un virement (à classer)</option></select></div>'; }).join('')+'</section>'; }
   const auto=[];
   const cpt=(L,f)=>L.filter(f).length;
-  if(virs.length){ const p=cpt(virs,m=>m.canal==='placement'), o=cpt(virs,m=>m.canal==='objectif'), e=cpt(virs,m=>m.canal==='atm'), c=cpt(virs,m=>m.canal==='crypto');
+  if(virs.length){ const p=cpt(virs,m=>m.canal==='placement'&&!m.paire), o=cpt(virs,m=>m.canal==='objectif'), e=cpt(virs,m=>m.canal==='atm'), c=cpt(virs,m=>m.canal==='crypto');
     if(p) auto.push(p+' achat'+(p>1?'s':'')+' ou vente'+(p>1?'s':'')+' de placements'); if(o) auto.push(o+' mouvement'+(o>1?'s':'')+' de projets Yuh'); if(e) auto.push(e+' retrait'+(e>1?'s':'')+' au bancomat'); if(c) auto.push(c+' achat'+(c>1?'s':'')+' de crypto'); }
   if(regle.length) auto.push(regle.length+' dividende'+(regle.length>1?'s':'')+' ou bonus Yuh');
+  if(paires.length) auto.push(paires.length/2+' virement'+(paires.length>2?'s':'')+' entre tes comptes BAS');
+  if(versYuh.length) auto.push(versYuh.length+' virement'+(versYuh.length>1?'s':'')+' avec Yuh');
   const masques=[...new Set(virs.map(m=>m.vers).filter(id=>S.comptes[id]&&S.comptes[id].archive))].map(id=>S.comptes[id].nom);
   if(auto.length) h+='<section class="card"><h2>Reconnues tout seul</h2><p class="note" style="margin-top:4px">'+esc(auto.join(', '))+'.</p>'+(masques.length?'<p class="note" style="margin-top:6px">Une partie va sur <b>'+esc(masques.join(', '))+'</b>, que tu as masqué : ce montant ne compte plus dans ton patrimoine tant qu’il reste masqué (Réglages › Comptes).</p>':'')+'</section>';
   h+='<button class="btn" data-act="importok">'+svg(P.check,20)+'Importer '+N.length+' ligne'+(N.length>1?'s':'')+'</button>';
   ouvrir(h);
 }
 function vRappro(){
-  const L=aClasser(), O=orphelines(), H=historique(), au=dernierYuh(), retard=au&&jours(today(),au)>7;
-  let h='<div class="nav"><button class="rond" data-tab="accueil" aria-label="Retour à l’accueil">'+svg(P.chevL,20)+'</button><b>Relevé Yuh</b><button class="btn sm" data-act="importyuh" style="width:auto">Importer</button></div>';
-  h+='<p class="note">'+(au?'Relevé importé jusqu’au <b>'+esc(dCourte(au))+'</b>'+(S.regl.yuhImport?' · import fait '+esc(ilYa(S.regl.yuhImport.le)):'')+'.':'Aucun relevé importé.')+(retard?' Exporte ton relevé en CSV depuis l’app Yuh, puis importe-le ici.':'')+'</p>';
+  const L=aClasser(), O=orphelines(), H=historique();
+  let h='<div class="nav"><button class="rond" data-tab="accueil" aria-label="Retour à l’accueil">'+svg(P.chevL,20)+'</button><b>Relevés</b><button class="btn sm" data-act="importyuh" style="width:auto">Importer</button></div>';
+  h+='<p class="note">'+BANQUES.map(([src,nom])=>{ const au=dernier(src), r=S.regl[src+'Import']; return '<b>'+nom+'</b> : '+(au?'jusqu’au '+esc(dCourte(au))+(r?' (import fait '+esc(ilYa(r.le))+')':''):'rien d’importé'); }).join(' · ')+'.<br>Yuh : relevé CSV depuis l’app. BAS : export Excel (ou CSV) des mouvements depuis l’e-banking, les deux comptes ensemble.</p>';
   const props=L.map(t=>{ const dm=detteQuiColle(t); return [t,dm?{dette:dm,sure:true}:twintPersonne(t)?null:proposer(t,H)]; }), sures=props.filter(([t,p])=>p&&p.sure);
   h+='<section class="card" aria-labelledby="t-acl"><div class="st"><h2 id="t-acl">À classer'+(L.length?' ('+L.length+')':'')+'</h2>'+(sures.length>1?'<button class="btn sm" data-act="toutvalider" style="width:auto">'+svg(P.check,18)+'Tout valider ('+sures.length+')</button>':'')+'</div>';
   if(!L.length) h+='<p class="empty">Tout est classé.</p>';
@@ -819,20 +909,21 @@ function vRappro(){
       if(p&&p.dette){ const D0=S.dettes[p.dette[0]]; a='<button class="prop" data-reglet="'+esc(t.id)+'" data-rids="'+esc(p.dette.join(','))+'">'+svg(P.check,16)+'Règle '+(p.dette.length>1?'les '+p.dette.length+' dettes de '+esc(D0.personne):'« '+esc(D0.objet||D0.personne)+' »')+'</button>'; }
       else if(p) a='<button class="prop'+(p.sure?'':' doute')+'" data-prop="'+esc(t.id)+'" data-pcat="'+esc(p.cat)+'" aria-label="Classer '+esc(t.tiers)+' dans '+esc(catChemin(p.cat))+'">'+svg(P.check,16)+esc(catNom(p.cat))+(p.sure?'':' ?')+'</button>'+(p.sure?'':'<span class="note">'+p.n+' fois sur '+p.tot+'</span>');
       else if(tw) a='<span class="note">Twint entre personnes : à toi de dire'+(av?' (la dernière fois : '+esc(catNom(av.avant.cat))+')':'')+'.</span>';
-      return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic vide">'+svg(t.canal==='twint'?P.people:t.montant>0?P.down:P.card,22)+'</span><span class="mid"><span class="ti">'+esc(t.tiers||'?')+'</span><span class="sub">'+esc(dCourte(t.date))+(t.lieu?' · '+esc(t.lieu):'')+(t.orig?' · '+esc(t.orig):'')+'</span></span><span class="end"><span class="mt '+(t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span></span></button>'+(a?'<div class="rapa">'+a+'</div>':'')+'</li>'; }).join('')+'</ul>'
+      return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic vide">'+svg(t.canal==='twint'?P.people:t.montant>0?P.down:P.card,22)+'</span><span class="mid"><span class="ti">'+esc(t.tiers||'?')+'</span><span class="sub">'+(t.source==='bas'?esc(S.comptes[t.compte]?S.comptes[t.compte].nom:'BAS')+' · ':'')+esc(dCourte(t.date))+(t.lieu?' · '+esc(t.lieu):'')+(t.note&&t.canal==='acquiring'?' · '+esc(t.note):'')+(t.orig?' · '+esc(t.orig):'')+'</span></span><span class="end"><span class="mt '+(t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span></span></button>'+(a?'<div class="rapa">'+a+'</div>':'')+'</li>'; }).join('')+'</ul>'
     +(L.length>ui.limite?'<button class="btn ghost" data-act="plus">Afficher plus ('+(L.length-ui.limite)+')</button>':'');
   h+='</section>';
-  if(O.length) h+='<section class="card" aria-labelledby="t-orph"><h2 id="t-orph">Saisies pas retrouvées dans le relevé</h2><p class="note" style="margin-top:4px">Notées sur Yuh, mais aucune ligne du relevé ne leur correspond. Mauvais compte (touche pour corriger), doublon (supprime), ou vraiment hors relevé (garde).</p><ul class="rapl">'+O.map(t=>'<li>'+opLi(t).replace(/^<li>|<\/li>$/g,'')+'<div class="rapa"><button class="pill" data-orphx="'+esc(t.id)+'" style="height:34px">Supprimer</button><button class="pill" data-orphok="'+esc(t.id)+'" style="height:34px">Garder</button></div></li>').join('')+'</ul></section>';
+  if(O.length) h+='<section class="card" aria-labelledby="t-orph"><h2 id="t-orph">Saisies pas retrouvées dans le relevé</h2><p class="note" style="margin-top:4px">Notées sur Yuh ou la BAS, mais aucune ligne du relevé ne leur correspond. Mauvais compte (touche pour corriger), doublon (supprime), ou vraiment hors relevé (garde).</p><ul class="rapl">'+O.map(t=>'<li>'+opLi(t).replace(/^<li>|<\/li>$/g,'')+'<div class="rapa"><button class="pill" data-orphx="'+esc(t.id)+'" style="height:34px">Supprimer</button><button class="pill" data-orphok="'+esc(t.id)+'" style="height:34px">Garder</button></div></li>').join('')+'</ul></section>';
   return h;
 }
 function carteYuh(){
-  const n=aClasser().length, o=orphelines().length, au=dernierYuh(), retard=!au||jours(today(),au)>7;
-  if(!au&&!Object.keys(S.tx).length) return '';
-  let h='<section class="card'+(n||o||retard?' rappel':'')+'" aria-labelledby="t-yuh"><div class="st"><h2 id="t-yuh">Relevé Yuh</h2>'+(au?'<span class="note">jusqu’au '+esc(dCourte(au))+'</span>':'')+'</div>';
-  const L=[]; if(retard) L.push(au?'Dernier relevé '+ilYa(au)+' : c’est le moment d’importer le nouveau.':'Importe ton premier relevé Yuh.');
-  if(n) L.push('<b>'+n+'</b> opération'+(n>1?'s':'')+' à classer.'); if(o) L.push('<b>'+o+'</b> saisie'+(o>1?'s':'')+' pas retrouvée'+(o>1?'s':'')+' dans le relevé.');
-  if(!L.length) L.push('Tout est à jour.');
-  h+='<p class="note" style="margin-top:4px">'+L.join(' ')+'</p><div class="pills" style="margin-top:10px"><button class="btn sm" data-act="importyuh" style="width:auto">Importer le relevé</button>'+(n||o?'<button class="btn ghost sm" data-tab="rappro" style="width:auto">Classer</button>':'')+'</div></section>';
+  const n=aClasser().length, o=orphelines().length;
+  if(!Object.keys(S.tx).length) return '';
+  const etat=BANQUES.map(([src,nom,max])=>{ const au=dernier(src); return {nom,au,retard:!au||jours(today(),au)>max}; });
+  let h='<section class="card'+(n||o||etat.some(e=>e.retard)?' rappel':'')+'" aria-labelledby="t-yuh"><div class="st"><h2 id="t-yuh">Relevés</h2></div>';
+  h+='<div class="rel">'+etat.map(e=>'<span><b>'+e.nom+'</b> '+(e.au?'jusqu’au '+esc(dCourte(e.au)):'rien d’importé')+(e.retard&&e.au?' · <span class="vite">à importer</span>':'')+'</span>').join('')+'</div>';
+  const L=[]; if(n) L.push('<b>'+n+'</b> opération'+(n>1?'s':'')+' à classer.'); if(o) L.push('<b>'+o+'</b> saisie'+(o>1?'s':'')+' pas retrouvée'+(o>1?'s':'')+' dans le relevé.');
+  if(L.length) h+='<p class="note" style="margin-top:6px">'+L.join(' ')+'</p>';
+  h+='<div class="pills" style="margin-top:10px"><button class="btn sm" data-act="importyuh" style="width:auto">Importer un relevé</button>'+(n||o?'<button class="btn ghost sm" data-tab="rappro" style="width:auto">Classer</button>':'')+'</div></section>';
   return h;
 }
 
@@ -1249,7 +1340,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.voircat||b.dataset.voirtag){ Object.assign(ui,{tab:'ops',fCompte:'',fCat:b.dataset.voircat||'',fTag:b.dataset.voirtag||'',q:'',limite:150});
     if(ui.sPer==='annee'&&!b.dataset.voirtag){ ui.periode='annee'; ui.mois=ui.sAn+'-01'; } else ui.periode='tout'; window.scrollTo(0,0); render(); return; }
   if(b.dataset.prop){ const t=S.tx[b.dataset.prop]; if(t&&S.cats[b.dataset.pcat]){ t.cat=b.dataset.pcat; save(); render(); } return; }
-  if(b.dataset.orphx){ const t=S.tx[b.dataset.orphx]; if(t&&confirm('Supprimer ta saisie « '+(t.tiers||catNom(t.cat))+' » ('+fmt(t.montant,true)+') du '+dCourte(t.date)+' ?')){ if(t.lien&&S.tx[t.lien]&&estVir(t)) delete S.tx[t.lien]; delete S.tx[t.id]; save(); render(); } return; }
+  if(b.dataset.orphx){ const t=S.tx[b.dataset.orphx]; if(t&&confirm('Supprimer ta saisie « '+(t.tiers||catNom(t.cat))+' » ('+fmt(t.montant,true)+') du '+dCourte(t.date)+' ?')){ supprimerTx(t); save(); render(); } return; }
   if(b.dataset.orphok){ const t=S.tx[b.dataset.orphok]; if(t){ t.sans_banque=true; save(); render(); } return; }
   if(b.dataset.scope){ ui.scope=b.dataset.scope; render(); return; }
   if(b.dataset.compte){ ui.tab='ops'; ui.fCompte=b.dataset.compte; ui.periode='mois'; ui.mois=moisDe(today()); window.scrollTo(0,0); render(); return; }
@@ -1357,7 +1448,7 @@ document.addEventListener('keydown',e=>{
 $scrim.addEventListener('click',e=>{ if(e.target===$scrim) fermer(); });
 document.getElementById('f-yuh').addEventListener('change',async e=>{
   const f=e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ imp=preparerImport(await f.text(),f.name); draft=null; vImport(); }
+  try{ imp=await preparerFichier(f); draft=null; vImport(); }
   catch(err){ imp=null; alert('Impossible de lire ce relevé : '+(err.message||err)); }
 });
 document.getElementById('fichier').addEventListener('change',async e=>{
