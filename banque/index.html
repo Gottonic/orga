@@ -151,6 +151,12 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 .lbl{font-size:13px;font-weight:700;color:var(--muted)}
 .field{display:flex;flex-direction:column;gap:6px}
 
+.dsec{margin-top:10px}
+.dsec>.st{padding-bottom:4px}
+.dette-b{border:0;background:transparent;padding:0;text-align:left;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;color:inherit;font-size:15px}
+.dette-b .note{font-size:13px}
+.dette.off{opacity:.75}
+.retard{color:var(--neg);font-weight:700}
 .rapl{list-style:none;margin:6px 0 0;padding:0}
 .rapl>li{border-top:1px solid var(--line);padding-bottom:8px}
 .rapl>li:first-child{border-top:0}
@@ -402,12 +408,7 @@ function vAccueil(){
   GROUPES.forEach(([g,titre,tot])=>{ const L=cs.filter(c=>groupeDe(c)===g); if(!L.length) return;
     h+='<section class="sect" aria-labelledby="t-'+g+'"><div class="st"><h2 id="t-'+g+'">'+titre+'</h2></div><div class="tiles">'+L.map(tuile).join('')+'</div><div class="totrow"><span>'+tot+' en CHF</span><b>'+fmt(totalCHF(L))+'</b></div></section>'; });
   h+=carteYuh();
-  /* on te doit */
-  const dettes=Object.values(S.dettes).filter(d=>!d.reglee), tm=cs.find(c=>c.type==='dette');
-  if(dettes.length||(tm&&solde(tm))){
-    h+='<section class="card" aria-labelledby="t-dettes"><h2 id="t-dettes">On te doit</h2><div style="margin-top:6px">'+(tm&&solde(tm)?'<div class="dette"><span>'+esc(tm.nom)+' <span class="note">· dépenses communes</span></span><b class="num">'+fmt(solde(tm))+'</b></div>':'')
-      +dettes.sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))).map(d=>'<div class="dette"><span>'+esc(d.personne)+'<br><span class="note">'+esc(d.objet||'')+(d.echeance?' · échéance '+esc(d.echeance.split('-').reverse().join('.')):'')+'</span></span><span style="display:flex;align-items:center;gap:8px"><b class="num">'+fmt(d.sens==='je_dois'?-d.montant:d.montant)+'</b><button class="pill" data-regle="'+esc(d.id)+'" aria-label="Marquer comme payé : '+esc(d.objet||d.personne)+'">Payé</button></span></div>').join('')+'</div></section>';
-  }
+  h+=carteDettes(cs);
   /* ce mois-ci */
   const m=moisDe(today()); let dep=0, rev=0; const parCat={};
   for(const t of Object.values(S.tx)){ if(t.date.slice(0,7)!==m||estVir(t)) continue;
@@ -480,7 +481,7 @@ function vReglages(){
 /* =============================== Saisie =============================== */
 let draft=null, sheetErr='';
 function ouvrir(html){ const sc=$sheet.scrollTop; $sheet.innerHTML=html; $scrim.hidden=false; document.body.style.overflow='hidden'; $sheet.scrollTop=sc; }
-function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; document.body.style.overflow=''; }
+function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; document.body.style.overflow=''; }
 function dernierCompte(){ return (S.regl.dernierCompte&&S.comptes[S.regl.dernierCompte])?S.regl.dernierCompte:(comptesTri()[0]||{}).id; }
 function nouvelleSaisie(){
   if(!comptesTri().length){ ouvrir('<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Saisie</h2></div><p class="note">Commence par charger tes données de départ (Réglages) : c’est là que tes comptes sont créés.</p>'); return; }
@@ -604,7 +605,7 @@ function importer(D){
   let n=0;
   D.transactions.forEach(t=>{ S.tx[t.id]={id:t.id,date:t.date,compte:t.compte,montant:t.montant,tiers:t.tiers||'',cat:catId(t.cat),tags:t.tags||[],note:t.note||'',
     parts:t.parts?t.parts.map(p=>({montant:p.montant,cat:catId(p.cat),note:p.note||''})):null,autre:t.autre_compte||null,lien:t.lien||null,source:t.source||'import',orig:t.devise_origine||null,cree:D.cree||null}; n++; });
-  (D.a_recevoir||[]).forEach((a,i)=>{ const id='depart-'+i; S.dettes[id]=Object.assign({},S.dettes[id]||{}, {id,personne:a.tiers,objet:a.objet,montant:a.montant,sens:a.sens||'on_me_doit',date:a.date_facture||null,echeance:a.echeance||null,cat:catId(a.cat),reglee:false}); });
+  (D.a_recevoir||[]).forEach((a,i)=>{ const id='depart-'+i; if(!S.dettes[id]) S.dettes[id]=Object.assign({}, {id,personne:a.tiers,objet:a.objet,montant:a.montant,sens:a.sens||'on_me_doit',date:a.date_facture||null,echeance:a.echeance||null,cat:catId(a.cat),reglee:false}); });
   semerCategories(); save(); return n;
 }
 
@@ -783,13 +784,14 @@ function vRappro(){
   const L=aClasser(), O=orphelines(), H=historique(), au=dernierYuh(), retard=au&&jours(today(),au)>7;
   let h='<div class="nav"><button class="rond" data-tab="accueil" aria-label="Retour à l’accueil">'+svg(P.chevL,20)+'</button><b>Relevé Yuh</b><button class="btn sm" data-act="importyuh" style="width:auto">Importer</button></div>';
   h+='<p class="note">'+(au?'Relevé importé jusqu’au <b>'+esc(dCourte(au))+'</b>'+(S.regl.yuhImport?' · import fait '+esc(ilYa(S.regl.yuhImport.le)):'')+'.':'Aucun relevé importé.')+(retard?' Exporte ton relevé en CSV depuis l’app Yuh, puis importe-le ici.':'')+'</p>';
-  const props=L.map(t=>[t,twintPersonne(t)?null:proposer(t,H)]), sures=props.filter(([t,p])=>p&&p.sure);
+  const props=L.map(t=>{ const dm=detteQuiColle(t); return [t,dm?{dette:dm,sure:true}:twintPersonne(t)?null:proposer(t,H)]; }), sures=props.filter(([t,p])=>p&&p.sure);
   h+='<section class="card" aria-labelledby="t-acl"><div class="st"><h2 id="t-acl">À classer'+(L.length?' ('+L.length+')':'')+'</h2>'+(sures.length>1?'<button class="btn sm" data-act="toutvalider" style="width:auto">'+svg(P.check,18)+'Tout valider ('+sures.length+')</button>':'')+'</div>';
   if(!L.length) h+='<p class="empty">Tout est classé.</p>';
   else h+='<p class="note" style="margin-top:4px">Touche une ligne pour choisir sa catégorie'+(sures.length?', ou valide la proposition':'')+'.</p><ul class="rapl">'+props.slice(0,ui.limite).map(([t,p])=>{
       const tw=twintPersonne(t), av=tw?proposer(t,H):null;
       let a='';
-      if(p) a='<button class="prop'+(p.sure?'':' doute')+'" data-prop="'+esc(t.id)+'" data-pcat="'+esc(p.cat)+'" aria-label="Classer '+esc(t.tiers)+' dans '+esc(catChemin(p.cat))+'">'+svg(P.check,16)+esc(catNom(p.cat))+(p.sure?'':' ?')+'</button>'+(p.sure?'':'<span class="note">'+p.n+' fois sur '+p.tot+'</span>');
+      if(p&&p.dette){ const D0=S.dettes[p.dette[0]]; a='<button class="prop" data-reglet="'+esc(t.id)+'" data-rids="'+esc(p.dette.join(','))+'">'+svg(P.check,16)+'Règle '+(p.dette.length>1?'les '+p.dette.length+' dettes de '+esc(D0.personne):'« '+esc(D0.objet||D0.personne)+' »')+'</button>'; }
+      else if(p) a='<button class="prop'+(p.sure?'':' doute')+'" data-prop="'+esc(t.id)+'" data-pcat="'+esc(p.cat)+'" aria-label="Classer '+esc(t.tiers)+' dans '+esc(catChemin(p.cat))+'">'+svg(P.check,16)+esc(catNom(p.cat))+(p.sure?'':' ?')+'</button>'+(p.sure?'':'<span class="note">'+p.n+' fois sur '+p.tot+'</span>');
       else if(tw) a='<span class="note">Twint entre personnes : à toi de dire'+(av?' (la dernière fois : '+esc(catNom(av.avant.cat))+')':'')+'.</span>';
       return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic vide">'+svg(t.canal==='twint'?P.people:t.montant>0?P.down:P.card,22)+'</span><span class="mid"><span class="ti">'+esc(t.tiers||'?')+'</span><span class="sub">'+esc(dCourte(t.date))+(t.lieu?' · '+esc(t.lieu):'')+(t.orig?' · '+esc(t.orig):'')+'</span></span><span class="end"><span class="mt '+(t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span></span></button>'+(a?'<div class="rapa">'+a+'</div>':'')+'</li>'; }).join('')+'</ul>'
     +(L.length>ui.limite?'<button class="btn ghost" data-act="plus">Afficher plus ('+(L.length-ui.limite)+')</button>':'');
@@ -957,6 +959,108 @@ document.addEventListener('focusout',()=>cacherTip());
 addEventListener('scroll',()=>{ if($tip.hidden) return; const a=document.activeElement; if(a&&a.dataset&&a.dataset.tip&&a.matches(':focus-visible')) tipFocus(a); else cacherTip(); },{passive:true});
 let rsz=null; addEventListener('resize',()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{ if(ui.tab==='stats'&&booted&&!draft) render(); },200); });
 
+/* =============================== Dettes =============================== */
+function dettesOuvertes(){ return Object.values(S.dettes).filter(d=>!d.reglee&&d.montant>0.004); }
+function signeDette(d){ return d.sens==='je_dois'?-1:1; }
+function dDate(d){ return d?d.split('-').reverse().join('.'):''; }
+function optsCats(sel,vide){ return '<option value="">'+esc(vide||'—')+'</option>'+maitres().filter(m=>m.id!=='autres').map(m=>{ const ss=sousDe(m.id); return '<optgroup label="'+esc(m.nom)+'">'+(ss.length?ss:[m]).map(s=>'<option value="'+s.id+'"'+(sel===s.id?' selected':'')+'>'+esc(s.nom)+'</option>').join('')+'</optgroup>'; }).join(''); }
+/* Une opération règle une ou plusieurs dettes : elle prend leur catégorie (partagée si elles diffèrent) */
+function reglerAvec(t,ids){
+  const L=ids.map(id=>S.dettes[id]).filter(d=>d&&!d.reglee); if(!t||!L.length) return;
+  let reste=Math.abs(t.montant); const P2=[];
+  L.forEach(d=>{ const part=r2(Math.min(reste,d.montant)); if(part<=0) return; reste=r2(reste-part); P2.push([d,part]);
+    d.paiements=(d.paiements||[]).concat([{tx:t.id,montant:part,date:t.date}]); if(d.montant_initial==null) d.montant_initial=d.montant;
+    d.montant=r2(d.montant-part); if(d.montant<0.005){ d.montant=0; d.reglee=true; d.reglee_le=t.date; } });
+  if(!P2.length) return;
+  t.dette=P2.map(x=>x[0].id);
+  if(!t.cat&&!(t.parts&&t.parts.length)){ const sg=t.montant<0?-1:1, def=sg>0?'revenus.remboursements':null, cats=P2.map(([d])=>d.cat||def);
+    if(new Set(cats).size===1) t.cat=cats[0];
+    else if(cats.every(Boolean)){ t.parts=P2.map(([d,m],i)=>({montant:sg*m,cat:cats[i]})); if(reste>0) t.parts[t.parts.length-1].montant=r2(t.parts[t.parts.length-1].montant+sg*reste); } }
+}
+function rouvrir(D){ (D.paiements||[]).forEach(p=>{ D.montant=r2(D.montant+p.montant); const t=p.tx&&S.tx[p.tx]; if(t&&t.dette){ t.dette=t.dette.filter(x=>x!==D.id); if(!t.dette.length) delete t.dette; } });
+  D.paiements=[]; D.reglee=false; D.reglee_le=null; if(D.montant<0.005&&D.montant_initial) D.montant=D.montant_initial; }
+/* Annuler : la dette redevient ouverte, l'opération garde sa catégorie */
+function delierPaiement(d,txid){
+  const p=(d.paiements||[]).find(x=>x.tx===txid); if(!p) return;
+  d.paiements=d.paiements.filter(x=>x!==p); d.montant=r2(d.montant+p.montant); d.reglee=false; d.reglee_le=null;
+  const t=S.tx[txid]; if(t&&t.dette){ t.dette=t.dette.filter(x=>x!==d.id); if(!t.dette.length) delete t.dette; }
+}
+/* Pour une opération : la dette (ou le groupe de dettes d'une même personne) dont le montant tombe juste */
+function detteQuiColle(t){
+  if(estVir(t)||t.dette) return null; const sg=t.montant<0?-1:1, m=Math.abs(t.montant), L=dettesOuvertes().filter(d=>signeDette(d)===sg&&(!d.date||t.date>=isoD(new Date(Date.parse(d.date+'T12:00')-7*864e5))));
+  const un=L.filter(d=>Math.abs(d.montant-m)<0.005); if(un.length===1) return [un[0].id];
+  if(un.length>1){ const c=cle(t.banque_nom||t.tiers), bon=un.filter(d=>cle(d.personne)===c); return bon.length===1?[bon[0].id]:null; }
+  const parP={}; L.forEach(d=>{ (parP[d.personne]=parP[d.personne]||[]).push(d); });
+  const g=Object.values(parP).filter(G=>G.length>1&&Math.abs(G.reduce((x,d)=>x+d.montant,0)-m)<0.005);
+  return g.length===1?g[0].map(d=>d.id):null;
+}
+function candidatsPaiement(d){
+  const sg=signeDette(d), depuis=d.date?isoD(new Date(Date.parse(d.date+'T12:00')-7*864e5)):'0000', memes=dettesOuvertes().filter(x=>x.personne===d.personne&&signeDette(x)===sg);
+  const tot=memes.reduce((x,y)=>x+y.montant,0), c=cle(d.personne);
+  return Object.values(S.tx).filter(t=>!estVir(t)&&!t.dette&&t.source!=='miroir'&&t.source!=='feuille'&&Math.sign(t.montant)===sg&&t.date>=depuis)
+    .map(t=>{ const m=Math.abs(t.montant), exact=Math.abs(m-d.montant)<0.005, groupe=memes.length>1&&Math.abs(m-tot)<0.005, nom=c&&cle(t.banque_nom||t.tiers)===c;
+      return {t,groupe,score:(exact?100:groupe?90:0)+(nom?50:0)+(!t.cat?5:0)}; })
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score||b.t.date.localeCompare(a.t.date)).slice(0,8);
+}
+let dd=null;
+function nouvelleDette(){ dd={id:null,sens:'on_me_doit',montant:'',personne:'',objet:'',date:today(),echeance:'',cat:''}; sheetErr=''; vDette(); }
+function ouvrirDette(id,payer){ const d=S.dettes[id]; if(!d) return; dd={id,sens:d.sens||'on_me_doit',montant:String(d.montant),personne:d.personne||'',objet:d.objet||'',date:d.date||'',echeance:d.echeance||'',cat:d.cat||'',payer:!!payer}; sheetErr=''; vDette(); }
+function lireDette(){ const g=id=>document.getElementById(id); if(!dd) return; ['montant','personne','objet','date','echeance','cat'].forEach(k=>{ if(g('d-'+k)) dd[k]=g('d-'+k).value; }); }
+function vDette(){
+  const d=dd, D=d.id?S.dettes[d.id]:null;
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(d.payer?'Payée avec quelle opération ?':d.id?'Dette':'Nouvelle dette')+'</h2></div>';
+  if(d.payer&&D){
+    const C=candidatsPaiement(D);
+    h+='<section class="card"><p style="margin:0"><b>'+esc(D.personne)+'</b> · '+esc(D.objet||'')+'</p><p class="note">'+(D.sens==='je_dois'?'Tu dois ':'On te doit ')+'<b>'+fmt(D.montant)+' CHF</b>'+(D.date?' depuis le '+esc(dDate(D.date)):'')+'.</p></section>';
+    h+=C.length?'<section class="card"><h2>Choisis le paiement</h2><p class="note" style="margin-top:4px">'+(D.sens==='je_dois'?'Les sorties':'Les entrées')+' qui collent le mieux. L’opération prend la catégorie de la dette si elle n’en a pas.</p><ul class="ops" style="margin-top:6px">'+C.map(({t,groupe})=>'<li><button class="op" data-payeavec="'+esc(t.id)+'"'+(groupe?' data-groupe="1"':'')+'><span class="ic vide">'+svg(t.montant>0?P.down:P.card,22)+'</span><span class="mid"><span class="ti">'+esc(t.tiers||catNom(t.cat))+'</span><span class="sub">'+esc(dDate(t.date))+' · '+esc(S.comptes[t.compte]?S.comptes[t.compte].nom:'')+(t.cat?' · '+esc(catNom(t.cat)):'')+(groupe?' · règle toutes ses dettes':'')+(Math.abs(Math.abs(t.montant)-D.montant)>=0.005&&!groupe&&Math.abs(t.montant)<D.montant?' · paiement partiel':'')+'</span></span><span class="end"><span class="mt '+(t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span></span></button></li>').join('')+'</ul></section>'
+      :'<p class="note" style="text-align:center">Aucune opération ne colle encore. Si le paiement arrive par Yuh, il sera proposé au prochain import.</p>';
+    h+='<button class="btn ghost" data-act="payesans">Payée sans opération (espèces, compensé…)</button><button class="btn ghost" data-act="paieretour">Retour</button>';
+    return ouvrir(h);
+  }
+  if(D&&D.reglee){
+    h+='<section class="card"><p style="margin:0"><b>'+esc(D.personne)+'</b> · '+esc(D.objet||'')+'</p><p class="note">'+(D.sens==='je_dois'?'Tu devais ':'On te devait ')+'<b>'+fmt(D.montant_initial!=null?D.montant_initial:D.montant)+' CHF</b>. Payée le '+esc(dDate(D.reglee_le))+'.</p></section>';
+    if(D.paiements&&D.paiements.length) h+='<section class="card"><h2>Paiements</h2>'+D.paiements.map(p=>{ const t=p.tx&&S.tx[p.tx]; return '<div class="dette"><span>'+esc(dDate(p.date))+' · '+esc(p.tx?(t?(t.tiers||catNom(t.cat)):'opération supprimée'):'sans opération')+'</span><b class="num">'+fmt(p.montant)+'</b></div>'; }).join('')+'</section>';
+    return ouvrir(h+'<button class="btn ghost" data-act="detterouvrir">Remettre en cours</button><button class="btn warn" data-act="dettesuppr">Supprimer cette dette</button>');
+  }
+  h+=seg('dsens',d.sens,[['on_me_doit','On me doit'],['je_dois','Je dois']],'Sens de la dette');
+  h+='<div class="field"><label class="lbl" for="d-montant">Montant (CHF)</label><input class="input num" id="d-montant" inputmode="decimal" value="'+esc(d.montant)+'" style="font-size:22px;height:52px"></div>';
+  const gens=[...new Set(Object.values(S.dettes).map(x=>x.personne).concat(Object.values(S.tx).filter(t=>t.canal==='twint'||t.canal==='virement').map(t=>t.tiers)).filter(Boolean))].sort();
+  h+='<div class="field"><label class="lbl" for="d-personne">'+(d.sens==='je_dois'?'À qui':'Qui')+'</label><input class="input" id="d-personne" list="l-gens" value="'+esc(d.personne)+'" autocomplete="off"><datalist id="l-gens">'+gens.slice(0,400).map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist></div>';
+  h+='<div class="field"><label class="lbl" for="d-objet">Pour quoi</label><input class="input" id="d-objet" value="'+esc(d.objet)+'" placeholder="Facture, avance, part d’un achat…"></div>';
+  h+='<div class="filtres"><div class="field"><label class="lbl" for="d-date">Depuis le</label><input class="input" type="date" id="d-date" value="'+esc(d.date)+'"></div><div class="field"><label class="lbl" for="d-echeance">Échéance</label><input class="input" type="date" id="d-echeance" value="'+esc(d.echeance)+'"></div></div>';
+  h+='<div class="field"><label class="lbl" for="d-cat">Catégorie du paiement</label><select class="sel" id="d-cat">'+optsCats(d.cat,d.sens==='je_dois'?'À choisir au paiement':'Remboursements (par défaut)')+'</select><p class="note">Le paiement, quand il arrivera, sera classé ici. Pour une facture : la catégorie de l’activité (ex. Pro › Parkour).</p></div>';
+  if(D&&D.paiements&&D.paiements.length) h+='<section class="card"><h2>Déjà payé</h2>'+D.paiements.map(p=>{ const t=p.tx&&S.tx[p.tx]; return '<div class="dette"><span>'+esc(dDate(p.date))+' · '+esc(p.tx?(t?(t.tiers||catNom(t.cat)):'opération supprimée'):'sans opération')+'</span><span style="display:flex;align-items:center;gap:8px"><b class="num">'+fmt(p.montant)+'</b>'+(p.tx?'<button class="pill" data-delierp="'+esc(p.tx)+'" style="height:34px">Délier</button>':'')+'</span></div>'; }).join('')+(D.montant_initial!=null?'<p class="note">Montant de départ : '+fmt(D.montant_initial)+' CHF. Le montant ci-dessus est ce qui reste.</p>':'')+'</section>';
+  if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
+  h+='<button class="btn" data-act="dettesave">'+svg(P.check,20)+'Enregistrer</button>';
+  if(D&&!D.reglee) h+='<button class="btn ghost" data-act="dettepayer">Marquer comme payée…</button>';
+  if(D) h+='<button class="btn warn" data-act="dettesuppr">Supprimer cette dette</button>';
+  ouvrir(h);
+}
+function enregistrerDette(){
+  lireDette(); const d=dd, m=num(d.montant), p=(d.personne||'').trim();
+  if(!m||m<=0){ sheetErr='Indique un montant.'; vDette(); return; }
+  if(!p){ sheetErr='Indique la personne ou l’organisme.'; vDette(); return; }
+  const id=d.id||'d'+uid(), old=S.dettes[id]||{};
+  S.dettes[id]=Object.assign({},old,{id,sens:d.sens,montant:r2(m),personne:p,objet:(d.objet||'').trim(),date:d.date||null,echeance:d.echeance||null,cat:d.cat||null,reglee:false,cree:old.cree||new Date().toISOString()});
+  save(); fermer(); render();
+}
+function carteDettes(cs){
+  const L=dettesOuvertes(), tm=cs.find(c=>c.type==='dette'), tms=tm?solde(tm):0, td=today();
+  const moi=L.filter(d=>d.sens!=='je_dois').sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))), dois=L.filter(d=>d.sens==='je_dois').sort((x,y)=>String(x.echeance||x.date||'').localeCompare(String(y.echeance||y.date||'')));
+  const ligne=d=>{ const retard=d.echeance&&d.echeance<td;
+    return '<div class="dette"><button class="dette-b" data-dette="'+esc(d.id)+'"><span>'+esc(d.personne)+'</span><span class="note">'+esc(d.objet||'')+(d.echeance?' · <span'+(retard?' class="retard"':'')+'>'+(retard?'en retard depuis le ':'échéance ')+esc(dDate(d.echeance))+'</span>':'')+(d.montant_initial!=null?' · reste sur '+fmt(d.montant_initial):'')+'</span></button><span style="display:flex;align-items:center;gap:8px"><b class="num">'+fmt(d.montant)+'</b><button class="pill" data-payer="'+esc(d.id)+'" aria-label="Marquer comme payée : '+esc(d.objet||d.personne)+'">Payé</button></span></div>'; };
+  const tot=a=>fmt(r2(a.reduce((x,d)=>x+d.montant,0)));
+  let h='<section class="card" aria-labelledby="t-dettes"><div class="st"><h2 id="t-dettes">Dettes</h2><button class="pill dash" data-act="nouvelledette" style="height:34px">+ Ajouter</button></div>';
+  if(moi.length||(tm&&tms>0.004)) h+='<div class="dsec"><div class="st"><span class="cap">On te doit</span><b class="num pos">'+fmt(r2(moi.reduce((x,d)=>x+d.montant,0)+(tms>0?tms:0)))+'</b></div>'+(tm&&tms>0.004?'<div class="dette"><button class="dette-b" data-compte="'+esc(tm.id)+'"><span>'+esc(tm.nom)+'</span><span class="note">dépenses communes</span></button><b class="num">'+fmt(tms)+'</b></div>':'')+moi.map(ligne).join('')+'</div>';
+  if(dois.length||(tm&&tms<-0.004)) h+='<div class="dsec"><div class="st"><span class="cap">Tu dois</span><b class="num neg">'+fmt(-r2(dois.reduce((x,d)=>x+d.montant,0)+(tms<0?-tms:0)))+'</b></div>'+(tm&&tms<-0.004?'<div class="dette"><button class="dette-b" data-compte="'+esc(tm.id)+'"><span>'+esc(tm.nom)+'</span><span class="note">dépenses communes</span></button><b class="num">'+fmt(-tms)+'</b></div>':'')+dois.map(ligne).join('')+'</div>';
+  if(!moi.length&&!dois.length&&!(tm&&Math.abs(tms)>0.004)) h+='<p class="empty">Personne ne te doit rien, et tu ne dois rien.</p>';
+  const regl=Object.values(S.dettes).filter(d=>d.reglee).sort((a,b)=>String(b.reglee_le||'').localeCompare(String(a.reglee_le||'')));
+  if(regl.length){ h+='<button class="lien" data-act="voirreglees">'+(ui.dReglees?'Masquer':'Voir')+' les dettes réglées ('+regl.length+')</button>';
+    if(ui.dReglees) h+='<div class="dsec">'+regl.slice(0,30).map(d=>'<div class="dette off"><button class="dette-b" data-dette="'+esc(d.id)+'"><span>'+esc(d.personne)+'</span><span class="note">'+esc(d.objet||'')+' · payée le '+esc(dDate(d.reglee_le))+'</span></button><b class="num">'+fmt(d.montant_initial!=null?d.montant_initial:d.montant)+'</b></div>').join('')+'</div>'; }
+  return h+'</section>';
+}
+
 /* =============================== Événements =============================== */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button,[data-tab]'); if(!b) return;
@@ -974,7 +1078,12 @@ document.addEventListener('click',e=>{
   if(b.dataset.scope){ ui.scope=b.dataset.scope; render(); return; }
   if(b.dataset.compte){ ui.tab='ops'; ui.fCompte=b.dataset.compte; ui.periode='mois'; ui.mois=moisDe(today()); window.scrollTo(0,0); render(); return; }
   if(b.dataset.tx){ editer(b.dataset.tx); return; }
-  if(b.dataset.regle){ const d=S.dettes[b.dataset.regle]; if(d&&confirm('Marquer comme payé : '+(d.objet||d.personne)+' ('+fmt(d.montant)+' CHF) ?')){ d.reglee=true; d.reglee_le=today(); save(); render(); } return; }
+  if(b.dataset.dette){ ouvrirDette(b.dataset.dette); return; }
+  if(b.dataset.payer){ ouvrirDette(b.dataset.payer,true); return; }
+  if(b.dataset.dsens&&dd){ lireDette(); dd.sens=b.dataset.dsens; vDette(); return; }
+  if(b.dataset.payeavec&&dd){ const D=S.dettes[dd.id], t=S.tx[b.dataset.payeavec]; if(D&&t){ const ids=b.dataset.groupe?dettesOuvertes().filter(x=>x.personne===D.personne&&signeDette(x)===signeDette(D)).map(x=>x.id):[D.id]; reglerAvec(t,ids); save(); fermer(); render(); } return; }
+  if(b.dataset.delierp&&dd){ const D=S.dettes[dd.id]; if(D){ delierPaiement(D,b.dataset.delierp); save(); ouvrirDette(D.id); render(); } return; }
+  if(b.dataset.reglet){ const t=S.tx[b.dataset.reglet]; if(t){ reglerAvec(t,b.dataset.rids.split(',')); save(); render(); } return; }
   if(b.dataset.mois){ const [y,m]=ui.mois.split('-').map(Number); if(ui.periode==='annee'){ ui.mois=(y+Number(b.dataset.mois))+'-'+String(m).padStart(2,'0'); } else { const d=new Date(y,m-1+Number(b.dataset.mois),1); ui.mois=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); } ui.limite=150; render(); return; }
   if(draft){
     if(b.dataset.key){ touche(b.dataset.key); return; }
@@ -997,7 +1106,15 @@ document.addEventListener('click',e=>{
   else if(a==='pasvir'){ lireChamps(); draft.type=draft.signe>0?'revenu':'depense'; draft.vers=null; draft.cat=null; draft.maitre=null; vSaisie(); }
   else if(a==='importyuh') document.getElementById('f-yuh').click();
   else if(a==='importok'){ if(!imp) return; const n=appliquerImport(imp); fermer(); if(aClasser().length||orphelines().length) ui.tab='rappro'; ui.limite=150; window.scrollTo(0,0); render(); setTimeout(()=>alert(n+' ligne'+(n>1?'s':'')+' du relevé importée'+(n>1?'s':'')+'.'),50); }
-  else if(a==='toutvalider'){ const H=historique(); let n=0; aClasser().forEach(t=>{ const p=twintPersonne(t)?null:proposer(t,H); if(p&&p.sure&&S.cats[p.cat]){ t.cat=p.cat; n++; } }); if(n){ save(); render(); } }
+  else if(a==='toutvalider'){ const H=historique(); let n=0; aClasser().forEach(t=>{ const dm=detteQuiColle(t); if(dm){ reglerAvec(t,dm); n++; return; } const p=twintPersonne(t)?null:proposer(t,H); if(p&&p.sure&&S.cats[p.cat]){ t.cat=p.cat; n++; } }); if(n){ save(); render(); } }
+  else if(a==='nouvelledette') nouvelleDette();
+  else if(a==='dettesave') enregistrerDette();
+  else if(a==='dettepayer'){ lireDette(); dd.payer=true; vDette(); }
+  else if(a==='paieretour'){ dd.payer=false; vDette(); }
+  else if(a==='payesans'){ const D=dd&&S.dettes[dd.id]; if(D&&confirm('Marquer « '+(D.objet||D.personne)+' » comme payée, sans opération liée ?')){ if(D.montant_initial==null) D.montant_initial=D.montant; D.paiements=(D.paiements||[]).concat([{tx:null,montant:D.montant,date:today()}]); D.montant=0; D.reglee=true; D.reglee_le=today(); save(); fermer(); render(); } }
+  else if(a==='detterouvrir'){ const D=dd&&S.dettes[dd.id]; if(D){ rouvrir(D); save(); ouvrirDette(D.id); render(); } }
+  else if(a==='dettesuppr'){ const D=dd&&S.dettes[dd.id]; if(D&&confirm('Supprimer la dette « '+(D.objet||D.personne)+' » ?')){ (D.paiements||[]).forEach(p=>{ const t=p.tx&&S.tx[p.tx]; if(t&&t.dette){ t.dette=t.dette.filter(x=>x!==D.id); if(!t.dette.length) delete t.dette; } }); delete S.dettes[D.id]; save(); fermer(); render(); } }
+  else if(a==='voirreglees'){ ui.dReglees=!ui.dReglees; render(); }
   else if(a==='frequentes'){ lireChamps(); draft.toutes=false; vSaisie(); }
   else if(a==='voirTiers'){ lireChamps(); draft.voirTiers=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-tiers'); if(i) i.focus(); },30); }
   else if(a==='voirNote'){ lireChamps(); draft.voirNote=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-note'); if(i) i.focus(); },30); }
@@ -1034,7 +1151,9 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{ if(e.target.id==='f-q'){ ui.q=e.target.value; const pos=e.target.selectionStart; render(); const i=document.getElementById('f-q'); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(x){} } } });
 document.addEventListener('keydown',e=>{
-  if($scrim.hidden||!draft) return;
+  if($scrim.hidden) return;
+  if(e.key==='Escape'&&!draft){ e.preventDefault(); fermer(); return; }
+  if(!draft) return;
   const champ=/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
   if(e.key==='Escape'){ e.preventDefault(); fermer(); return; }
   if(e.key==='Enter'&&(!champ||e.target.type!=='date')){ e.preventDefault(); enregistrer(); return; }
