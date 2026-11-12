@@ -986,8 +986,16 @@ function applyProgramme(p){
   const pend = { ...((S.data.config.progPending || {}).docs || {}) }; const before = canon(pend);
   for (const [c, docs] of Object.entries(p.set || {})) if (COLS.includes(c)) for (const [id, doc] of Object.entries(docs)) {
     const cur = S.data[c][id]; const k = c + "/" + id;
-    if (cur && cur.edited) { pend[k] = doc; continue; }
-    put(c, id, doc); delete pend[k];
+    const stamp = d => c === "blocks" && d.template ? { ...d, _tpl: canon(d.template) } : d;
+    if (cur && cur.edited) {
+      /* Bloc modifié dans l'app (dates, nom…) mais dont les séances n'ont pas été touchées : on installe quand même
+         les séances de Claude, en gardant tes dates. Sinon, la version de Claude attend dans Données. */
+      const untouched = c === "blocks" && doc.template && (!cur.template || !(cur.template.sessions || []).length || cur._tpl === canon(cur.template));
+      if (untouched) { put(c, id, { ...cur, template: doc.template, _tpl: canon(doc.template), goal: cur.goal || doc.goal }); delete pend[k]; }
+      else pend[k] = doc;
+      continue;
+    }
+    put(c, id, stamp(doc)); delete pend[k];
   }
   for (const [c, ids] of Object.entries(p.del || {})) for (const id of ids) if (S.data[c] && S.data[c][id] !== undefined) {
     if (S.data[c][id].edited) { pend[c + "/" + id] = null; continue; } del(c, id);
