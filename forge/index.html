@@ -1017,7 +1017,9 @@ function render(){
   setSync();
   if (!S.week) S.week = currentWeekId();
   const views = { calendrier: vCalendar, semaine: vWeek, exos: vExos, suivi: vStats, nutrition: vNutrition, donnees: vData };
+  const sk = {}; app.querySelectorAll("[data-sk]").forEach(el => { sk[el.dataset.sk] = el.scrollTop; });
   app.innerHTML = (views[S.view] || vCalendar)() + ovHtml();
+  app.querySelectorAll("[data-sk]").forEach(el => { if (sk[el.dataset.sk]) el.scrollTop = sk[el.dataset.sk]; });
   document.body.classList.toggle("ov-open", !!(S.ui.ov && (S.view === "semaine" || S.ui.ov.type === "pe" || S.ui.ov.type === "exo")));
   drawCharts(); hydrateMedia();
 }
@@ -1200,7 +1202,7 @@ function feelSheet(){
   const st = ((S.data.logs[S.week] || {}).sessions || {})[s.id] || {};
   return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="fl-t"><div class="scrim" data-action="ov-close"></div>
     <div class="sheet"><div class="sh-head"><div><span class="eyebrow">Séance faite ✓</span><h2 id="fl-t"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div><button class="x" data-action="ov-close" aria-label="Fermer">✕</button></div>
-      <div class="sh-body feelbody"><p class="muted" style="margin:0">Comment c'était ? Ça sert au suivi et aux alertes.</p>${feelForm(s.id, st)}
+      <div class="sh-body feelbody" data-sk="feel"><p class="muted" style="margin:0">Comment c'était ? Ça sert au suivi et aux alertes.</p>${feelForm(s.id, st)}
         <div class="field"><label for="fl-note">Note (facultatif)</label><input id="fl-note" type="text" data-snote="${esc(s.id)}" value="${esc(st.note || "")}"></div></div>
       <div class="sh-foot two"><button class="btn" data-action="ov-close">Passer</button><button class="btn primary big" data-action="ov-close">Enregistrer</button></div></div></div>`;
 }
@@ -1332,7 +1334,7 @@ function showSheet(wk, s, log){
   return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="sh-title"><div class="scrim" data-action="${E ? "ed-cancel" : "ov-close"}"></div>
     <div class="sheet"><div class="sh-head"><div>${E ? `<span class="eyebrow">Modifier · ${wkLabel(wk)}</span>` : `<div class="row">${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>`}<h2 id="sh-title"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div>
       <div class="row" style="flex-wrap:nowrap">${E ? "" : `<button class="btn small" data-action="pe-sess" data-sid="${esc(s.id)}">Modifier</button>`}<button class="x" data-action="${E ? "ed-cancel" : "ov-close"}" aria-label="${E ? "Annuler les modifications" : "Fermer"}">✕</button></div></div>
-      <div class="sh-body">${s.note && !E ? `<p class="sh-note">${esc(s.note)}</p>` : ""}${E ? `<div class="pe-link"><span>Ajouter, retirer ou réorganiser des exercices, changer les supersets :</span><button class="btn small" data-action="pe-sess" data-sid="${esc(s.id)}">Modifier les exercices</button></div>` : ""}${body}</div>${foot}${ask}</div></div>`;
+      <div class="sh-body" data-sk="sh-${esc(s.id)}">${s.note && !E ? `<p class="sh-note">${esc(s.note)}</p>` : ""}${E ? `<div class="pe-link"><span>Ajouter, retirer ou réorganiser des exercices, changer les supersets :</span><button class="btn small" data-action="pe-sess" data-sid="${esc(s.id)}">Modifier les exercices</button></div>` : ""}${body}</div>${foot}${ask}</div></div>`;
 }
 /* ---------- modifier une séance ---------- */
 const repsEditable = t => /^\s*\d+(\s*[–-]\s*\d+)?(\s*\/\s*jambe)?\s*$/.test(String(t || ""));
@@ -1527,7 +1529,7 @@ function exoSheet(){
   return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="exo-t"><div class="scrim" data-action="${E ? "exo-cancel" : "ov-close"}"></div>
     <div class="sheet"><div class="sh-head"><div>${E ? `<span class="eyebrow">${E.isNew ? "Nouvel exercice" : "Modifier"}</span>` : ""}<h2 id="exo-t">${esc(E ? (E.d.name || "Nouvel exercice") : x.name)}</h2></div>
       <div class="row" style="flex-wrap:nowrap">${E ? "" : `<button class="btn small" data-action="exo-edit">Modifier</button>`}<button class="x" data-action="${E ? "exo-cancel" : "ov-close"}" aria-label="Fermer">✕</button></div></div>
-      <div class="sh-body exbody">${body}</div>
+      <div class="sh-body exbody" data-sk="exo">${body}</div>
       ${E ? `<div class="sh-foot two"><button class="btn" data-action="exo-cancel">Annuler</button><button class="btn primary big" data-action="exo-save">Enregistrer</button></div>` : ""}</div></div>`;
 }
 function exoAction(a, b){
@@ -1694,7 +1696,7 @@ function peBlockView(){
       <div class="pe-act"><button class="primary" data-action="pe-sedit" data-i="${i}">Modifier</button></div></div>`).join("");
   const conf = P.confirm === "del-block";
   return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="${P.blockId ? "Modifier le bloc" : "Nouveau bloc"}">${peTop(P.blockId ? "Modifier le bloc" : "Nouveau bloc")}
-    <div class="run-body pe-body">
+    <div class="run-body pe-body" data-sk="pe-b">
       ${P.copiedFrom ? `<p class="pe-help">Séances copiées de ${esc(P.copiedFrom)} : ajuste-les ou retire celles qui ne servent plus.</p>` : ""}
       <div class="field"><label for="pe-name">Nom</label><input id="pe-name" type="text" data-pe="b:name" value="${esc(b.name)}"></div>
       <div class="pe-grid">
@@ -1791,7 +1793,7 @@ function peSessView(){
       : `<div class="pe-danger"><button class="btn small ghost" data-action="pe-rdel" data-v="all">Supprimer cette séance</button></div>` : "";
   const head = inBlock ? "Séance · " + (P.b.name || "") : P.mode === "series" ? "Nouvelle séance · " + wkLabel(P.wk) : "Modifier la séance · " + wkLabel(P.wk);
   return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="Modifier la séance">${peTop(head, inBlock)}
-    <div class="run-body pe-body">
+    <div class="run-body pe-body" data-sk="pe-s-${P.sIdx ?? "w"}">
       ${P.src && P.src.col === "weeks" ? `<p class="pe-help">Ces changements valent pour ${esc(P.where)}.</p>` : P.src && P.src.col === "content" ? `<p class="pe-help">Ces changements valent pour ${esc(P.where)}.</p>` : ""}
       <div class="field"><label for="pe-stitle">Titre</label><input id="pe-stitle" type="text" data-pe="s:title" value="${esc(s.title || "")}" placeholder="ex. Force bas du corps"></div>
       <div class="field"><span class="lbl">Type de séance</span>${types}</div>
@@ -1864,7 +1866,7 @@ function peXPicker(){
       <span class="exm"><b>${esc(x.name)}</b><span class="extags">${(x.tags || []).map(z => `<i>${esc(z)}</i>`).join("")}</span></span>
       ${p ? `<span class="ex1"><small>${esc(T.def.reps)} reps</small>${isWeighted(x.id) ? "+" : ""}${fmtNum(p.kg, 1)} kg</span>` : ""}</button>`; }).join("");
   return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="Ajouter un exercice"><div class="run-top"><button class="x" data-action="pe-xpickx" aria-label="Retour">‹</button><span class="run-sn">Ajouter un exercice · groupe ${String.fromCharCode(65 + P.xpick.g)}</span></div>
-    <div class="run-body pe-body">
+    <div class="run-body pe-body" data-sk="pe-x">
       <input id="pe-xq" type="search" class="exq" placeholder="Chercher ou créer un exercice" value="${esc(P.xq || "")}" aria-label="Chercher un exercice">
       <button class="pe-x pe-create" data-action="pe-xcreate" ${q ? "" : "hidden"}><span class="semo">＋</span><span class="pe-xt"><b>Créer « <span id="pe-xqv">${esc(P.xq || "")}</span> »</b><span class="muted">nouvel exercice dans la bibliothèque</span></span></button>
       <div class="seg extagsel"><button class="${t ? "" : "on"}" data-action="pe-xtag" data-t="">Tous</button>${tags.map(z => `<button class="${t === z ? "on" : ""}" data-action="pe-xtag" data-t="${esc(z)}">${esc(z)}</button>`).join("")}</div>
@@ -1892,7 +1894,7 @@ function peAddExo(id){
 function pePicker(){
   const lib = allSessionsLib();
   return `<div class="ov run pe" role="dialog" aria-modal="true" aria-label="Ajouter une séance">${`<div class="run-top"><button class="x" data-action="pe-pickx" aria-label="Retour">‹</button><span class="run-sn">Ajouter une séance</span></div>`}
-    <div class="run-body pe-body">
+    <div class="run-body pe-body" data-sk="pe-p">
       <button class="pe-x" data-action="pe-pick" data-i="-1"><span class="semo">＋</span><span class="pe-xt"><b>Séance vide</b><span class="muted">à construire de zéro</span></span></button>
       <h3 class="pe-h">Copier une séance existante</h3>
       ${lib.map((x, i) => `<button class="pe-x" data-action="pe-pick" data-i="${i}"><span class="semo">${sessEmoji(x.s)}</span><span class="pe-xt"><b>${esc(x.s.title)}</b><span class="muted">${esc(x.from)}${x.s.min ? " · ≈ " + fmtMin(x.s.min) : ""}</span></span></button>`).join("")}
@@ -2210,7 +2212,7 @@ function runView(){
     const kgCtl = kg != null ? `<div class="st-ctl"><span class="fq-l">Charge</span><div class="st-kg"><button data-action="run-kg" data-d="${-inc}" aria-label="Moins ${fmtNum(inc,1)} kg">−</button><b>${kgTxt(it, kg)}</b><button data-action="run-kg" data-d="${inc}" aria-label="Plus ${fmtNum(inc,1)} kg">+</button></div></div>` : "";
     const repsCtl = reps != null ? `<div class="st-ctl"><span class="fq-l">Reps faites</span><div class="fq-c">${Array.from({ length: rr[1] + 2 - Math.max(1, rr[0] - 3) + 1 }, (_, j) => Math.max(1, rr[0] - 3) + j).map(v => `<button class="${v === reps ? "on" : ""} ${v >= rr[0] && v <= rr[1] ? "pl" : ""}" aria-pressed="${v === reps}" data-action="run-reps" data-v="${v}">${v}</button>`).join("")}</div></div>` : "";
     const other = !hasKg(it) && it.load && !it.tests ? `<div class="st-load">${esc(it.load)}</div>` : "";
-    body = `<div class="run-body">
+    body = `<div class="run-body" data-sk="run-${R.i}">
       <div class="st-blk">${step.code ? `<span class="code">${step.code}</span>` : ""}<span>${esc(step.bname)}</span></div>
       <h2 class="st-name">${esc(it.name)}</h2>
       ${step.of > 1 ? `<div class="st-set">Série ${step.set} / ${step.of}</div>` : ""}
@@ -2232,7 +2234,7 @@ function runView(){
     foot = `<button class="btn" data-action="run-plus">+15 s</button><button class="btn primary big" data-action="run-next">Passer la pause</button>`;
   } else {
     const fin = (log.sessions && log.sessions[s.id]) || {};
-    body = `<div class="run-body mid bravo"><div class="bv-ic" aria-hidden="true">🎉</div><h2 class="run-h">Bravo !</h2><p class="bv-t">${esc(s.title)}</p>
+    body = `<div class="run-body mid bravo" data-sk="bravo"><div class="bv-ic" aria-hidden="true">🎉</div><h2 class="run-h">Bravo !</h2><p class="bv-t">${esc(s.title)}</p>
       <p class="muted">${[fin.nSets ? fin.nSets + " série" + (fin.nSets > 1 ? "s" : "") : "", fin.dur ? fmtMin(Math.max(1, fin.dur)) : ""].filter(Boolean).join(" · ")}</p>
       ${feelForm(s.id, fin)}
       <div class="field bv-note"><label for="bv-note">Note (facultatif)</label><input id="bv-note" type="text" data-snote="${esc(s.id)}" value="${esc(fin.note || "")}"></div></div>`;
