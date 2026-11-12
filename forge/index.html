@@ -615,6 +615,13 @@ body.ov-open{overflow:hidden}
 .bravo .fq-c button{min-width:40px;height:44px}
 .st-aim{font-size:14px;font-weight:600;color:var(--mint-ink);background:var(--mint-soft);border-radius:8px;padding:4px 10px;align-self:flex-start}
 .sh-prog{font-size:12px;color:var(--accent-ink)}
+.pair{border:1.5px solid var(--accent-pastel);border-left:4px solid var(--accent);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:color-mix(in oklab,var(--accent-soft) 45%,transparent)}
+.pair-h{font-size:12px;font-weight:700;color:var(--accent-ink);display:flex;gap:8px;align-items:baseline}
+.pair-h span{font-weight:500;color:var(--ink-3)}
+.pair-link{font-size:12px;font-weight:600;color:var(--accent);padding-left:4px}
+.pair-pause{font-size:12.5px;color:var(--ink-2);text-align:center;padding:2px 0}
+.pe-items .pair{padding:6px}
+.st-chain{font-size:14px;color:var(--accent-ink);background:var(--accent-soft);border-radius:8px;padding:5px 10px;align-self:flex-start}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -1177,7 +1184,7 @@ function vWeek(){
   ${plan.review ? `<section class="panel"><h3>Bilan de la semaine</h3><div class="review">${esc(plan.review)}</div></section>` : ""}`;
 }
 const ctxChips = () => "";
-const SS_KINDS = { superset:"Superset", alternance:"Alternance", contraste:"Contraste alterné" };
+const SS_KINDS = { superset:"Superset", alternance:"Alternance", contraste:"Contraste par paires" };
 const EXTRA_TYPES = { haut:"Haut du corps", bas:"Bas du corps", plyo:"Plyo", endurance:"Endurance", parkour:"Parkour", tricking:"Tricking", grimpe:"Grimpe", autre:"Autre" };
 function extrasPanel(log){
   const ex = log.extra || {};
@@ -1302,6 +1309,17 @@ function doneLine(a){
   return "";
 }
 const kindLabel = b => SS_KINDS[b.kind] ? SS_KINDS[b.kind] + (b.name ? " · " + b.name : "") : (b.name || "");
+/* Groupe « contraste » : les exercices vont par paires (le lourd puis l'explosif, enchaînés), puis une pause. */
+function pairWrap(parts, seq, kind){
+  if (kind !== "contraste" || parts.length < 2) return parts.join("");
+  let out = "";
+  for (let i = 0; i < parts.length; i += 2) {
+    const a = parts[i], b = parts[i + 1]; const r = seq[b != null ? i + 1 : i];
+    out += `<div class="pair"><div class="pair-h">Paire ${i / 2 + 1}<span>lourd → explosif</span></div>${a}${b != null ? `<div class="pair-link">↓ enchaîné, sans pause</div>${b}` : ""}</div>`;
+    if (r) out += `<div class="pair-pause">⏸ ${restTxt(r)} de pause${i + 2 < parts.length ? "" : ", puis tour suivant"}</div>`;
+  }
+  return out;
+}
 function showSheet(wk, s, log){
   const E = null;
   let L = 0;
@@ -1312,14 +1330,14 @@ function showSheet(wk, s, log){
     return `<div class="sh-b">
       <div class="sh-bh">${grp ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}${altIdx > 0 ? `<span class="tag">ou</span>` : alt.length > 1 ? `<span class="tag">au choix</span>` : ""}<b>${esc(kindLabel(b))}</b>${b.rounds && !E ? `<span class="tag">${b.rounds} tours</span>` : ""}</div>
       ${(b.rule || b.note) && !E ? `<p class="sh-rule">${esc(b.rule || b.note)}</p>` : ""}
-      ${items.map(({ it, i }) => { const code = grp ? (all.length > 1 ? letter + (i+1) : letter) : ""; const key = s.id + ":" + it.id;
+      ${pairWrap(items.map(({ it, i }) => { const code = grp ? (all.length > 1 ? letter + (i+1) : letter) : ""; const key = s.id + ":" + it.id;
         const nm = `<div class="sh-nm">${code ? `<span class="code">${code}</span>` : ""}<span>${esc(it.name)}</span>${it.mod && !E ? `<span class="tag mod">modifié</span>` : ""}</div>`;
         if (E) return edItem(E, key, it, nm);
         const zk = wk + ":show:" + key; const big = S.ui.zoom === zk; const xo = it.tests ? null : exoOf(it.ex || it.id); const ip = it.img ? mediaPath(it.img) : exoImg(xo);
         return `<div class="sh-it ${big ? "zoomed" : ""}">${ip ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(ip)}" alt="${esc(it.name)}"></button>` : ""}
           <div class="sh-tx">${nm}
           ${it.tests ? "" : `<div class="sh-rx">${esc(rxOf(wk, s, it)) || "—"}${it.rest ? ` · repos ${esc(it.rest)}` : ""}</div>`}
-          ${hasKg(it) ? `<div class="sh-prog">${esc(progTxt(wk, s, it))}</div>` : ""}${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }).join("")}
+          ${hasKg(it) ? `<div class="sh-prog">${esc(progTxt(wk, s, it))}</div>` : ""}${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }), restSeq(b), b.kind)}
     </div>`;
   }).join("");
   const w = weekById(wk); const b = w && blockOf(w);
@@ -1757,7 +1775,7 @@ function peSessView(){
     ${tipsOpen ? `<ul>${T.tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul><p>Nouveaux exercices : ${T.def.sets} × ${esc(T.def.reps)}${T.def.rest ? ", pause " + esc(T.def.rest) : ""}${T.def.step ? ", +" + fmtNum(T.def.step, 1) + " kg par semaine" : ""}.</p>` : ""}</div>` : "";
   let L = 0;
   const groups = (s.blocks || []).map((g, gi) => {
-    const grp = g._kind !== "simple"; const letter = String.fromCharCode(65 + gi);
+    const grp = g._kind !== "simple"; const letter = grp ? String.fromCharCode(65 + L++) : "";
     const kinds = [["simple","Simple"],["superset","Superset"],["contraste","Contraste"]];
     const rs = (f, v) => `<select data-pe="g:${f}" data-g="${gi}">${PE_RESTS.map(n => `<option value="${n}" ${n === (v || 0) ? "selected" : ""}>${restTxt(n)}</option>`).join("")}</select>`;
     const help = g._kind === "superset" ? "Les exercices alternent : " + letter + "1, " + letter + "2, " + letter + "1…" : g._kind === "contraste" ? "Par paires : lourd puis explosif enchaînés, pause, paire suivante." : "Toutes les séries d'un exercice, puis le suivant.";
@@ -1765,9 +1783,10 @@ function peSessView(){
     const pz = (label, f, v) => `<div class="field"><span class="lbl">${label}</span>${rs(f, v)}</div>`;
     const pauses = `<div class="pe-pauses">${g._kind === "simple" ? pz("Entre les séries", "_set", g._set) : g._kind === "superset" ? pz("Entre les exercices", "_between", g._between) + pz("Après chaque tour", "_after", g._after) : pz("Après chaque paire", "_after", g._after)}${last ? "" : pz("Avant le groupe suivant", "_next", g._next)}</div>`;
     const conf = P.confirm === "g:" + gi;
-    const items = (g.items || []).map((it, xi) => peRow(g, gi, it, xi, letter)).join("");
+    const rows = (g.items || []).map((it, xi) => peRow(g, gi, it, xi, letter));
+    const items = pairWrap(rows, rows.map((_, xi) => xi % 2 ? (g._after || 0) : 0), g._kind);
     return `<div class="pe-g">
-      <div class="pe-gh"><span class="ssl" aria-hidden="true">${letter}</span><input type="text" class="pe-gname" data-pe="g:name" data-g="${gi}" value="${esc(g.name || "")}" placeholder="${grp ? "Superset" : "Groupe"} ${letter}" aria-label="Nom du groupe">
+      <div class="pe-gh">${letter ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}<input type="text" class="pe-gname" data-pe="g:name" data-g="${gi}" value="${esc(g.name || "")}" placeholder="${g._kind === "contraste" ? "Contraste " + letter : grp ? "Superset " + letter : "Groupe simple"}" aria-label="Nom du groupe">
         <div class="pe-act"><button data-action="pe-gmove" data-g="${gi}" data-d="-1" aria-label="Monter le groupe" ${gi ? "" : "disabled"}>↑</button><button data-action="pe-gmove" data-g="${gi}" data-d="1" aria-label="Descendre le groupe" ${gi < s.blocks.length - 1 ? "" : "disabled"}>↓</button><button class="${conf ? "danger" : ""}" data-action="pe-gdel" data-g="${gi}" aria-label="Supprimer le groupe">${conf ? "Supprimer ?" : "🗑"}</button></div></div>
       <div class="seg pe-kind" role="group" aria-label="Type de groupe">${kinds.map(([k, l]) => `<button class="${g._kind === k ? "on" : ""}" aria-pressed="${g._kind === k}" data-action="pe-gkind" data-g="${gi}" data-k="${k}">${l}</button>`).join("")}</div>
       <p class="pe-help">${help}</p>
@@ -2218,6 +2237,7 @@ function runView(){
       ${step.of > 1 ? `<div class="st-set">Série ${step.set} / ${step.of}</div>` : ""}
       ${it.reps ? `<div class="st-reps">${esc(fmtReps(it.reps))}</div>` : ""}${other}${(() => { const lp = hasKg(it) ? loadPlan(R.wk, { id: R.sid }, it) : null;
         return lp && lp.mode === "double" && lp.aim ? `<div class="st-aim">${lp.top ? "Tu avais tout fait : charge montée, repars à " + lp.aim + " reps" : "Vise " + lp.aim + " reps à cette charge"}</div>` : ""; })()}${holdSec(it) ? holdCtl(step) : ""}
+      ${step.rest === 0 && steps[R.i + 1] ? `<div class="st-chain">Puis enchaîne directement : ${steps[R.i + 1].code ? `<b>${steps[R.i + 1].code}</b> ` : ""}${esc(steps[R.i + 1].it.name)}</div>` : ""}
       ${it.cue ? `<p class="st-cue">${esc(it.cue)}</p>` : ""}${(() => { const xo = it.tests ? null : exoOf(it.ex || it.id); return xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""; })()}
       ${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(R.wk + ":" + step.key)}</div>` : ""}
       ${kgCtl}${repsCtl}
