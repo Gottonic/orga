@@ -622,6 +622,28 @@ body.ov-open{overflow:hidden}
 .pair-pause{font-size:12.5px;color:var(--ink-2);text-align:center;padding:2px 0}
 .pe-items .pair{padding:6px}
 .st-chain{font-size:14px;color:var(--accent-ink);background:var(--accent-soft);border-radius:8px;padding:5px 10px;align-self:flex-start}
+/* pauses et aperçu */
+.pz{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);margin:2px 0}
+.pz::before,.pz::after{content:"";flex:1;border-top:1px dashed var(--line)}
+.pz span{background:var(--surface-2);border-radius:99px;padding:2px 10px;white-space:nowrap;font-weight:600}
+.pz.chain span{background:var(--accent-soft);color:var(--accent-ink)}
+.pz.round span{background:var(--surface-2);color:var(--ink-2)}
+.pz.next{margin:6px 0}
+.pz.next span{background:var(--sun-soft);color:var(--ink)}
+.sh-body .pz.next{margin:2px 0}
+.sh-b{gap:8px}
+.sh-b.grp{background:color-mix(in oklab,var(--surface-2) 40%,transparent);border:1px solid var(--line);border-radius:14px;padding:10px;margin:2px 0;border-bottom:1px solid var(--line)}
+.sh-flow{display:flex;flex-direction:column;gap:6px}
+.sh-flow .sh-it{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px}
+.tag.tours{background:var(--accent-soft);color:var(--accent-ink)}
+.rxs{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.rxc{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.rxc.main{background:var(--ink);color:var(--surface);font-weight:700;font-family:var(--f-mono)}
+.rxc.kg{background:var(--accent-pastel);color:var(--accent-ink);font-weight:700;font-family:var(--f-mono)}
+.rxc.ps{background:var(--surface-2)}
+.rxc.pg{background:var(--mint-soft);color:var(--mint-ink)}
+.pair .pz{margin:0}
+.pair .sh-it{background:var(--surface)}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -1309,36 +1331,67 @@ function doneLine(a){
   return "";
 }
 const kindLabel = b => SS_KINDS[b.kind] ? SS_KINDS[b.kind] + (b.name ? " · " + b.name : "") : (b.name || "");
+/* Pauses telles que la séance guidée les fera (voir runSteps). */
+function groupFlow(b){
+  const items = b.items || []; const n = items.length;
+  if (SS_KINDS[b.kind]) { const seq = restSeq(b); const after = seq[n - 1] || 0;
+    return { kind: b.kind === "contraste" ? "contraste" : "superset", trans: items.map((_, i) => seq[i] || 0), after, next: b.restNext != null ? b.restNext : after }; }
+  const trans = items.map(it => b.restSet != null ? (restSec(it.rest) || b.restSet) : restSec(it.rest));
+  return { kind: "simple", setRest: items.map(it => restSec(it.rest) || (b.restSet != null ? b.restSet : 60)), trans, next: b.restNext != null ? b.restNext : trans[n - 1] || 0 };
+}
+/* Un séparateur de pause : « ⏸ 1 min 30 … » ou « ↓ enchaîné » quand il n'y a pas de pause. */
+const pz = (sec, label, cls) => `<div class="pz ${sec ? "" : "chain"} ${cls || ""}" role="note"><span>${sec ? "Pause " + restTxt(sec) + (label ? " " + label : "") : "↓ enchaîné" + (label && cls === "next" ? " avec la suite" : "")}</span></div>`;
 /* Groupe « contraste » : les exercices vont par paires (le lourd puis l'explosif, enchaînés), puis une pause. */
 function pairWrap(parts, seq, kind){
   if (kind !== "contraste" || parts.length < 2) return parts.join("");
   let out = "";
   for (let i = 0; i < parts.length; i += 2) {
     const a = parts[i], b = parts[i + 1]; const r = seq[b != null ? i + 1 : i];
-    out += `<div class="pair"><div class="pair-h">Paire ${i / 2 + 1}<span>lourd → explosif</span></div>${a}${b != null ? `<div class="pair-link">↓ enchaîné, sans pause</div>${b}` : ""}</div>`;
-    if (r) out += `<div class="pair-pause">⏸ ${restTxt(r)} de pause${i + 2 < parts.length ? "" : ", puis tour suivant"}</div>`;
+    out += `<div class="pair"><div class="pair-h">Paire ${i / 2 + 1}<span>lourd → explosif</span></div>${a}${b != null ? pz(0) + b : ""}</div>`;
+    out += pz(r, i + 2 < parts.length ? "puis paire suivante" : "puis tour suivant", "round");
   }
   return out;
+}
+/* Assemble les exercices d'un groupe avec leurs pauses. */
+function flowJoin(parts, f, kind, rounds){
+  if (kind === "contraste") return pairWrap(parts, f.trans, "contraste");
+  if (kind === "superset") return parts.map((p, i) => p + (i < parts.length - 1 ? pz(f.trans[i]) : "")).join("") + (parts.length && rounds > 1 ? pz(f.after, "puis tour suivant", "round") : "");
+  return parts.map((p, i) => p + (i < parts.length - 1 ? pz(f.trans[i]) : "")).join("");
+}
+/* Une ligne d'aperçu : séries × reps, charge, pause entre séries, progression, sous forme de pastilles. */
+function shChips(wk, s, it, setRest){
+  const lp = hasKg(it) ? loadPlan(wk, s, it) : null; const out = [];
+  const sr = it.sets && it.reps ? it.sets + " × " + it.reps : it.reps || (typeof it.sets === "number" ? it.sets + " séries" : "");
+  if (sr) out.push(`<span class="rxc main">${esc(sr)}</span>`);
+  if (lp) out.push(`<span class="rxc kg">${esc(kgTxt(it, lp.base))}</span>`); else if (it.load) out.push(`<span class="rxc">${esc(it.load)}</span>`);
+  if (setRest && typeof it.sets === "number" && it.sets > 1) out.push(`<span class="rxc ps">${restTxt(setRest)} entre séries</span>`);
+  if (lp) { const m = progOf(it); out.push(`<span class="rxc pg">${m === "double" ? "↗ " + (lp.aim ? "vise " + lp.aim + " reps" : "reps puis charge") : m === "lineaire" ? "↗ +" + fmtNum(progStep(it), 1) + " kg/sem." : "= charge stable"}</span>`); }
+  return out.length ? `<div class="rxs">${out.join("")}</div>` : "";
 }
 function showSheet(wk, s, log){
   const E = null;
   let L = 0;
-  const body = (s.blocks || []).map(b => {
+  const vis = (s.blocks || []).filter(b => (b.items || []).some(it => !it.off));
+  const body = vis.map((b, bi) => {
     const grp = SS_KINDS[b.kind]; const all = b.items || []; const letter = grp && all.length ? String.fromCharCode(65 + L++) : "";
-    const items = all.map((it, i) => ({ it, i })).filter(x => E || !x.it.off); if (!items.length) return "";
+    const items = all.map((it, i) => ({ it, i })).filter(x => !x.it.off);
     const alt = b.choice ? (choiceGroups(s)[b.choice] || []) : []; const altIdx = alt.indexOf(b.name);
-    return `<div class="sh-b">
-      <div class="sh-bh">${grp ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}${altIdx > 0 ? `<span class="tag">ou</span>` : alt.length > 1 ? `<span class="tag">au choix</span>` : ""}<b>${esc(kindLabel(b))}</b>${b.rounds && !E ? `<span class="tag">${b.rounds} tours</span>` : ""}</div>
-      ${(b.rule || b.note) && !E ? `<p class="sh-rule">${esc(b.rule || b.note)}</p>` : ""}
-      ${pairWrap(items.map(({ it, i }) => { const code = grp ? (all.length > 1 ? letter + (i+1) : letter) : ""; const key = s.id + ":" + it.id;
-        const nm = `<div class="sh-nm">${code ? `<span class="code">${code}</span>` : ""}<span>${esc(it.name)}</span>${it.mod && !E ? `<span class="tag mod">modifié</span>` : ""}</div>`;
-        if (E) return edItem(E, key, it, nm);
-        const zk = wk + ":show:" + key; const big = S.ui.zoom === zk; const xo = it.tests ? null : exoOf(it.ex || it.id); const ip = it.img ? mediaPath(it.img) : exoImg(xo);
-        return `<div class="sh-it ${big ? "zoomed" : ""}">${ip ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(ip)}" alt="${esc(it.name)}"></button>` : ""}
-          <div class="sh-tx">${nm}
-          ${it.tests ? "" : `<div class="sh-rx">${esc(rxOf(wk, s, it)) || "—"}${it.rest ? ` · repos ${esc(it.rest)}` : ""}</div>`}
-          ${hasKg(it) ? `<div class="sh-prog">${esc(progTxt(wk, s, it))}</div>` : ""}${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; }), restSeq(b), b.kind)}
+    const f = groupFlow(b);
+    const parts = items.map(({ it, i }) => { const code = grp ? (all.length > 1 ? letter + (i+1) : letter) : ""; const key = s.id + ":" + it.id;
+      const zk = wk + ":show:" + key; const big = S.ui.zoom === zk; const xo = it.tests ? null : exoOf(it.ex || it.id); const ip = it.img ? mediaPath(it.img) : exoImg(xo);
+      return `<div class="sh-it ${big ? "zoomed" : ""}">${ip ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(ip)}" alt="${esc(it.name)}"></button>` : ""}
+        <div class="sh-tx"><div class="sh-nm">${code ? `<span class="code">${code}</span>` : ""}<span>${esc(it.name)}</span>${it.mod ? `<span class="tag mod">modifié</span>` : ""}</div>
+        ${it.tests ? "" : shChips(wk, s, it, f.kind === "simple" ? f.setRest[i] : 0)}
+        ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; });
+    const kindTag = f.kind === "superset" ? "Superset" : f.kind === "contraste" ? "Contraste par paires" : "";
+    const title = b.name && (!grp || b.name !== kindLabel(b)) ? b.name : kindTag || "Exercices";
+    const card = `<div class="sh-b ${grp ? "grp" : ""}">
+      <div class="sh-bh">${grp ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}${altIdx > 0 ? `<span class="tag">ou</span>` : alt.length > 1 ? `<span class="tag">au choix</span>` : ""}<b>${esc(title)}</b>${kindTag && title !== kindTag ? `<span class="tag">${kindTag}</span>` : ""}${grp && b.rounds > 1 ? `<span class="tag tours">× ${b.rounds} tours</span>` : ""}</div>
+      ${b.note ? `<p class="sh-rule">${esc(b.note)}</p>` : ""}
+      <div class="sh-flow">${flowJoin(parts, f, f.kind, b.rounds || 1)}</div>
     </div>`;
+    const nb = vis[bi + 1]; const sameChoice = nb && b.choice && nb.choice === b.choice;
+    return card + (nb && !sameChoice ? pz(f.next, "avant la suite", "next") : "");
   }).join("");
   const w = weekById(wk); const b = w && blockOf(w);
   const ask = E && E.ask ? `<div class="ask" role="alertdialog" aria-labelledby="ask-t"><div class="ask-card">
@@ -1780,11 +1833,13 @@ function peSessView(){
     const rs = (f, v) => `<select data-pe="g:${f}" data-g="${gi}">${PE_RESTS.map(n => `<option value="${n}" ${n === (v || 0) ? "selected" : ""}>${restTxt(n)}</option>`).join("")}</select>`;
     const help = g._kind === "superset" ? "Les exercices alternent : " + letter + "1, " + letter + "2, " + letter + "1…" : g._kind === "contraste" ? "Par paires : lourd puis explosif enchaînés, pause, paire suivante." : "Toutes les séries d'un exercice, puis le suivant.";
     const last = gi === s.blocks.length - 1;
-    const pz = (label, f, v) => `<div class="field"><span class="lbl">${label}</span>${rs(f, v)}</div>`;
-    const pauses = `<div class="pe-pauses">${g._kind === "simple" ? pz("Entre les séries", "_set", g._set) : g._kind === "superset" ? pz("Entre les exercices", "_between", g._between) + pz("Après chaque tour", "_after", g._after) : pz("Après chaque paire", "_after", g._after)}${last ? "" : pz("Avant le groupe suivant", "_next", g._next)}</div>`;
+    const pfield = (label, f, v) => `<div class="field"><span class="lbl">${label}</span>${rs(f, v)}</div>`;
+    const pauses = `<div class="pe-pauses">${g._kind === "simple" ? pfield("Entre les séries", "_set", g._set) : g._kind === "superset" ? pfield("Entre les exercices", "_between", g._between) + pfield("Après chaque tour", "_after", g._after) : pfield("Après chaque paire", "_after", g._after)}${last ? "" : pfield("Avant le groupe suivant", "_next", g._next)}</div>`;
     const conf = P.confirm === "g:" + gi;
     const rows = (g.items || []).map((it, xi) => peRow(g, gi, it, xi, letter));
-    const items = pairWrap(rows, rows.map((_, xi) => xi % 2 ? (g._after || 0) : 0), g._kind);
+    const items = g._kind === "contraste" ? pairWrap(rows, rows.map((_, xi) => xi % 2 ? (g._after || 0) : 0), "contraste")
+      : g._kind === "superset" ? rows.map((r, xi) => r + (xi < rows.length - 1 ? pz(g._between || 0) : "")).join("") + (rows.length ? pz(g._after || 0, "puis tour suivant", "round") : "")
+      : rows.map((r, xi) => r + (xi < rows.length - 1 ? pz(restSec((g.items[xi] || {}).rest) || g._set || 0) : "")).join("");
     return `<div class="pe-g">
       <div class="pe-gh">${letter ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}<input type="text" class="pe-gname" data-pe="g:name" data-g="${gi}" value="${esc(g.name || "")}" placeholder="${g._kind === "contraste" ? "Contraste " + letter : grp ? "Superset " + letter : "Groupe simple"}" aria-label="Nom du groupe">
         <div class="pe-act"><button data-action="pe-gmove" data-g="${gi}" data-d="-1" aria-label="Monter le groupe" ${gi ? "" : "disabled"}>↑</button><button data-action="pe-gmove" data-g="${gi}" data-d="1" aria-label="Descendre le groupe" ${gi < s.blocks.length - 1 ? "" : "disabled"}>↓</button><button class="${conf ? "danger" : ""}" data-action="pe-gdel" data-g="${gi}" aria-label="Supprimer le groupe">${conf ? "Supprimer ?" : "🗑"}</button></div></div>
@@ -1794,7 +1849,7 @@ function peSessView(){
       <div class="pe-items">${items}<div class="pe-zone" data-dnd-zone data-g="${gi}">${(g.items || []).length ? "" : "Glisse un exercice ici, ou ajoute-en un."}</div></div>
       <button class="btn small" data-action="pe-xadd" data-g="${gi}">+ Exercice</button>
     </div>`;
-  }).join("");
+  }).map((html, gi, arr) => html + (gi < arr.length - 1 ? pz(s.blocks[gi]._next != null ? s.blocks[gi]._next : 0, "avant la suite", "next") : "")).join("");
   const conf = P.confirm === "del-sess";
   const isSeries = P.mode === "series" || (P.src && P.src.col === "series");
   const repTxt = n => n ? (n === 1 ? "Chaque semaine" : "Toutes les " + n + " sem.") : "Une fois";
@@ -1868,7 +1923,7 @@ function peRow(g, gi, it, xi, letter){
     <span class="pe-hdl" data-dnd-handle aria-label="Déplacer ${esc(it.name || "l'exercice")}" title="Glisser pour déplacer">⋮⋮</span>
     <div class="pe-rm">
       <div class="pe-rt">${code ? `<span class="code">${code}</span>` : ""}${img ? `<span class="pe-rimg"><img src="${BLANK}" data-mpath="${esc(img)}" alt=""></span>` : ""}<button class="pe-nm" data-action="pe-xopen" data-k="${k}" aria-expanded="${open}">${esc(it.name || "Nouvel exercice")}${(() => { if (loadKg(it) == null) return ""; const a = it.prog || autoProg(P.sd.kind, g._kind === "simple" ? undefined : g._kind, xi) || (it.step ? "lineaire" : "stable");
-        return a === "lineaire" ? ` <small>↗ +${fmtNum(progStep(it), 1)} kg/sem.</small>` : a === "double" ? ` <small>↗ double</small>` : ` <small>= stable</small>`; })()}${it.wave ? ` <small>reps ${esc(it.wave.join("-"))}</small>` : ""}</button>
+        return a === "lineaire" ? ` <small>↗ +${fmtNum(progStep(it), 1)} kg/sem.</small>` : a === "double" ? ` <small>↗ double</small>` : ` <small>= stable</small>`; })()}${it.wave ? ` <small>reps ${esc(it.wave.map(w => String(w).replace(/\s*\/\s*jambe/, "")).join("-"))}</small>` : ""}</button>
         <button class="pe-del ${conf ? "on" : ""}" data-action="pe-xdel" data-g="${gi}" data-x="${xi}" aria-label="Retirer ${esc(it.name || "l'exercice")}">${conf ? "Retirer ?" : "✕"}</button></div>
       ${ctl}${details}
     </div></div>`;
