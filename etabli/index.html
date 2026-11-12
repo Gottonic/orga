@@ -593,8 +593,8 @@ body.kbd .oh .ot .ot-t .kb{position:static;margin-left:4px}
 <div id="login" class="login" hidden><form class="lbox" id="loginForm"><h1>Établi</h1><p>Connecte-toi pour retrouver tes projets sur tous tes appareils.</p><label for="l-mail">Adresse e-mail</label><input class="input" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="input" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit" id="l-go">Se connecter</button><p class="lerr" id="l-err" hidden></p></form></div>
 <header class="oh" style="--oh-bg:#3C3C3C;--oh-ink:#FFFFFF;--oh-acc:#3C3C3C"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Établi</h1><span class="oh-sub" id="sub"></span><button class="sync" id="sync" data-sync data-act="account" aria-label="Synchronisation et compte">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" type="button" data-act="account" aria-label="Réglages et compte"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 <nav class="ot" aria-label="Vues">
-  <button class="tab ot-t" data-view="projets">Projets</button>
   <button class="tab ot-t" data-view="planning">Planning</button>
+  <button class="tab ot-t" data-view="projets">Projets</button>
   <button class="tab ot-t" data-view="vrac">En vrac<span class="badge" id="vbadge" hidden></span></button>
   <button class="ot-t" data-act="summary">Récap</button>
 </nav></header>
@@ -745,8 +745,8 @@ function money(id){let dep=0,rec=0; S.entries.forEach(e=>{if(e.pid!==id)return; 
 const folderPath=p=>p.closed?'~/Projets/_Archives/'+p.closed.slice(0,4)+'/'+p.folder:'~/Projets/'+p.folder;
 const tagPv=()=>'--pc:var(--cell);--pt:var(--ink)';
 
-const VIEWS=['projets','planning','vrac'];
-const ui={view:'projets',wk:CUR,filter:'ouverts',sort:'prio',tag:null,tagSel:[],taskAdmin:false,kind:'h',pid:null,amount:'',note:'',date:null,planMore:0,planStart:null};
+const VIEWS=['planning','projets','vrac'];
+const ui={view:'planning',wk:CUR,filter:'ouverts',sort:'prio',tag:null,tagSel:[],taskAdmin:false,kind:'h',pid:null,amount:'',note:'',date:null,planMore:0,planStart:null};
 try{const h=(location.hash||'').slice(1); if(VIEWS.includes(h)) ui.view=h;}catch(e){}
 
 const $view=document.getElementById('view');
@@ -1481,12 +1481,12 @@ document.addEventListener('submit',e=>{e.preventDefault(); const f=e.target.data
 /* Mode mini et clavier physique */
 const TINY=(()=>{ const w=Math.min(screen.width||9999,screen.height||9999), h=Math.max(screen.width||0,screen.height||0); return (w<=480&&h<=640)||/DumberOS/i.test(navigator.userAgent||'')&&w<=480; })();
 let MINI=(()=>{ try{ const o=localStorage.getItem('etabli-mini2'); if(o!==null) return o==='1'; }catch(e){} return TINY; })();
-function applyMode(){document.body.classList.toggle('minimode',MINI); if(MINI) ui.view='mini'; if(!MINI&&ui.view==='mini') ui.view='projets'; if(MINI||/DumberOS/i.test(navigator.userAgent||'')) document.body.classList.add('kbd');}
+function applyMode(){document.body.classList.toggle('minimode',MINI); if(MINI) ui.view='mini'; if(!MINI&&ui.view==='mini') ui.view='planning'; if(MINI||/DumberOS/i.test(navigator.userAgent||'')) document.body.classList.add('kbd');}
 function setMini(v){MINI=v; try{localStorage.setItem('etabli-mini2',v?'1':'0');}catch(e){} applyMode(); window.scrollTo(0,0); render(); toast(v?'Mode mini':'Mode complet');}
 const kbdOn=()=>document.body.classList.contains('kbd');
 function addBadges(){ if(!kbdOn()) return;
   const put=(el,l,end)=>{ if(!el||[...el.children].some(c=>c.classList.contains('kb'))) return; const s=document.createElement('span'); s.className='kb'; s.textContent=l; end?el.appendChild(s):el.insertBefore(s,el.firstChild); };
-  [['projets','7'],['planning','8'],['vrac','9']].forEach(([v,l])=>put(document.querySelector('.tab[data-view='+v+']'),l,true));
+  [['planning','7'],['projets','8'],['vrac','9']].forEach(([v,l])=>put(document.querySelector('.tab[data-view='+v+']'),l,true));
   put(document.querySelector('.ot-t[data-act=summary]'),'#',true); put(document.getElementById('fab'),'*');
   put(document.querySelector('.wknav [data-d="-1"]'),'4'); put(document.querySelector('.wknav [data-d="1"]'),'6',true);
   document.querySelectorAll('.slots > .slot:not(.free) .band').forEach((b,i)=>put(b,String(i+1)));
