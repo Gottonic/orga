@@ -1,7 +1,7 @@
 {
   "name": "ORGA",
   "short_name": "ORGA",
-  "description": "Mes apps : Établi, Banque, Forge.",
+  "description": "Mes apps : Établi, Banque, Forge, Marché.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
@@ -56,6 +56,17 @@
       "icons": [
         {
           "src": "forge/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Marché",
+      "url": "marche/",
+      "icons": [
+        {
+          "src": "marche/icons/icon-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }

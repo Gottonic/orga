@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Marché</title>
+<meta name="theme-color" content="#2E6B4E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Caveat";font-weight:700;font-style:normal;font-display:swap;src:url(fonts/caveat-latin-700-normal.woff2) format("woff2")}
+/* Marché : un étal de marché — papier kraft, auvents rayés, ardoise à la craie (titres en Caveat), vert épicerie */
+:root{
+  color-scheme:light;
+  --bg:#F5EEDF; --card:#FFFCF5; --creme:#FFF8EA; --line:#E6DBC6; --line2:#CDBE9F; --text:#24211B; --muted:#6F6656;
+  --vert:#2E6B4E; --vert2:#1F4D37; --vertpale:#E2EEE4; --tomate:#C8462C; --tomatepale:#FBE4DC; --moutpale:#FBEFCF; --neutre:#8A8170;
+  --shadow:0 1px 0 rgba(80,60,20,.06),0 2px 6px rgba(80,60,20,.09);
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif; --craie:"Caveat","Atkinson Hyperlegible",cursive;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg) radial-gradient(rgba(120,90,40,.055) 1px,transparent 1.2px) 0 0/7px 7px;color:var(--text);font:16px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:default;opacity:.35}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--vert);outline-offset:2px}
+svg.i{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+
+main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-right,0px)) calc(116px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.titre{margin:4px 0 -8px;font:700 2.1rem/1 var(--craie)}
+.sous-titre{margin:0;color:var(--muted);font-size:.92rem}
+.cap{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:-8px}
+.alerte{background:var(--tomatepale);color:#7A2414;border-radius:12px;padding:12px 14px;font-size:.92rem}
+.alerte b{display:block}
+
+/* « Je suis chez » : un bouton par magasin, avec le nombre d'articles qu'on peut y trouver */
+.ici{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:2px 14px 4px}
+.ici::-webkit-scrollbar{display:none}
+.ici button{flex:none;height:40px;padding:0 8px 0 14px;border:1.5px solid var(--line2);border-radius:99px;background:var(--card);font-weight:700;font-size:.95rem;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.ici button .n{min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:var(--bg);display:inline-grid;place-items:center;font-size:.82rem;font-variant-numeric:tabular-nums}
+.ici button.vide{color:var(--muted);border-color:var(--line)}
+.ici button[aria-pressed="true"]{background:var(--vert);border-color:var(--vert);color:#fff}
+.ici button[aria-pressed="true"] .n{background:rgba(255,255,255,.22)}
+
+/* ajout rapide */
+.qa{display:flex;gap:8px}
+.qa input{flex:1;min-width:0;height:50px;padding:0 14px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card);font-size:1.02rem}
+.qa input:focus{outline:none;border-color:var(--vert);box-shadow:0 0 0 3px var(--vertpale)}
+.qa button{flex:none;width:50px;height:50px;border:0;border-radius:12px;background:var(--vert);color:#fff;display:grid;place-items:center}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
+.sg{border:1.5px solid var(--line2);background:var(--creme);border-radius:99px;padding:7px 12px;font-weight:700;font-size:.92rem;text-align:left}
+.sg small{font-weight:400;color:var(--muted);margin-left:4px}
+.sg.deja{opacity:.65;cursor:default}
+
+/* un étal = un magasin, avec son auvent rayé de la couleur de son type */
+.etal{--c:var(--neutre);background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.aw{display:block;height:12px;position:relative;z-index:1;background:repeating-linear-gradient(90deg,var(--c) 0 22px,var(--creme) 22px 44px)}
+.aw::after{content:"";position:absolute;left:0;right:0;top:12px;height:8px;
+  background:radial-gradient(circle at 11px 0,var(--c) 8px,transparent 8.6px) 0 0/44px 8px repeat-x,radial-gradient(circle at 11px 0,#EFE4CC 8px,transparent 8.6px) 22px 0/44px 8px repeat-x}
+.st-in{display:flex;align-items:baseline;gap:8px;padding:10px 14px 0}
+.st-in h2{margin:0;font:700 1.7rem/1.35 var(--craie);display:flex;align-items:baseline;gap:7px;min-width:0;flex:none;max-width:70%}
+.st-in h2 .em{font:1.05rem/1 system-ui,sans-serif}
+.st-in h2 .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:.12em .22em 0 0}
+.st-sous{flex:1;min-width:0;font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-n{flex:none;font-weight:700;font-size:.85rem;color:var(--c);font-variant-numeric:tabular-nums}
+.rows{display:flex;flex-direction:column;padding:0 2px 4px}
+.art{display:flex;align-items:center;min-height:54px;border-top:1px dashed var(--line)}
+.art:first-child{border-top:0}
+.ck{flex:none;width:52px;height:54px;border:0;background:transparent;display:grid;place-items:center;padding:0}
+.ck::before{content:"";grid-area:1/1;width:26px;height:26px;border:2px solid var(--line2);border-radius:50%;background:#fff;transition:background .12s}
+.ck svg{grid-area:1/1;width:15px;height:15px;stroke:#fff;stroke-width:3.2;opacity:0}
+.art.pris .ck::before{background:var(--vert);border-color:var(--vert)}
+.art.pris .ck svg{opacity:1}
+.txt{flex:1;min-width:0;border:0;background:transparent;text-align:left;padding:9px 10px 9px 0;display:flex;flex-direction:column;gap:2px;min-height:54px;justify-content:center}
+.txt.pad{padding-left:14px}
+.l1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.nom{font-weight:700;font-size:1.03rem;overflow-wrap:anywhere}
+.qte{font-size:.8rem;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--moutpale);color:#6E4B00;white-space:nowrap}
+.meta{font-size:.83rem;color:var(--muted)}
+.meta .v{color:var(--vert);font-weight:700}
+.meta .t{color:var(--tomate);font-weight:700}
+.art.pris .nom{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
+.bt-fini,.bt-on,.bt-re{flex:none;margin-right:10px;height:38px;padding:0 14px;border-radius:99px;font-weight:700;font-size:.92rem;white-space:nowrap}
+.bt-fini{border:1.5px solid var(--tomate);color:var(--tomate);background:#fff}
+.bt-fini:active{background:var(--tomatepale)}
+.bt-on{border:0;background:var(--vertpale);color:var(--vert2)}
+.bt-re{border:1.5px solid var(--line2);background:var(--creme)}
+.panier .st-in{padding-top:12px;align-items:center}
+.ranger{flex:none;height:38px;padding:0 16px;border:0;border-radius:99px;background:var(--vert);color:#fff;font-weight:700}
+.note-bas{margin:0;padding:2px 14px 12px;font-size:.8rem;color:var(--muted)}
+details.etal>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:14px;font-weight:700}
+details.etal>summary::-webkit-details-marker{display:none}
+details.etal>summary::after{content:"▾";margin-left:auto;color:var(--muted)}
+details.etal[open]>summary::after{content:"▴"}
+.cherche{width:100%;height:46px;padding:0 14px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card)}
+.cherche:focus{outline:none;border-color:var(--vert)}
+
+.vide{text-align:center;padding:26px 16px 10px;color:var(--muted)}
+.vide .gros{display:block;font:700 2rem/1.1 var(--craie);color:var(--text);margin-bottom:6px}
+.vide .btn2{margin-top:14px}
+.btn{height:50px;border:0;border-radius:12px;background:var(--vert);color:#fff;font-weight:700;font-size:1.02rem;padding:0 18px}
+.btn2{min-height:46px;padding:8px 16px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card);font-weight:700}
+.btn-sup{height:46px;border:0;border-radius:12px;background:transparent;color:var(--tomate);font-weight:700}
+.btn-sup.conf{background:var(--tomatepale)}
+.lien{border:0;background:none;padding:0;color:var(--vert);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+
+/* magasins */
+.mag{--c:var(--neutre);display:flex;align-items:stretch;background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.mag::before{content:"";flex:none;width:10px;background:repeating-linear-gradient(180deg,var(--c) 0 12px,var(--creme) 12px 24px)}
+.mag .txt{padding:10px 8px 10px 12px}
+.mag-nom{font:700 1.55rem/1.3 var(--craie)}
+.ord{display:flex;flex-direction:column;justify-content:center;padding-right:4px}
+.ord button{width:42px;height:34px;border:0;background:transparent;font-size:1.1rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:38px;border:1.5px solid var(--line2);background:var(--card);border-radius:99px;padding:6px 12px;font-weight:700;font-size:.92rem;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--vert);border-color:var(--vert);color:#fff}
+.chip .o{min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.25);display:inline-grid;place-items:center;font-size:.75rem}
+.chip.sw-c{width:38px;padding:0;justify-content:center;border-color:transparent}
+.chip.sw-c.on{outline:3px solid var(--text);outline-offset:2px}
+.typ{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:0;padding:10px 14px;text-align:left;width:100%}
+.typ .pas{flex:none;width:28px;height:28px;border-radius:7px;background:repeating-linear-gradient(90deg,var(--c) 0 7px,var(--creme) 7px 14px)}
+.typ .em{font-size:1.2rem}
+.typ b{flex:1}
+.typ span.meta{flex:none}
+.liste-v{display:flex;flex-direction:column;gap:8px}
+
+/* fenêtre (feuille) */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(30,25,15,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet>*{flex-shrink:0}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:92%;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:18px 18px 0 0;display:flex;flex-direction:column;gap:8px;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(28px);opacity:.5}}
+@media (min-width:600px){.scrim{align-items:center}.sheet{border-radius:18px}}
+.sh{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:8px;padding:14px 0 4px}
+.sh h2{flex:1;margin:0;font:700 2rem/1 var(--craie)}
+.x{width:44px;height:44px;border:0;background:transparent;border-radius:50%;font-size:1.15rem;color:var(--muted)}
+.x:hover{background:var(--line)}
+.lab{font-size:.86rem;font-weight:700;color:var(--muted);margin-top:8px}
+.lab .opt{font-weight:400}
+.in{width:100%;height:48px;padding:0 12px;border:1.5px solid var(--line2);border-radius:10px;background:var(--card);font-size:1rem}
+.in:focus{outline:none;border-color:var(--vert);box-shadow:0 0 0 3px var(--vertpale)}
+.aide{margin:0;font-size:.86rem;color:var(--muted)}
+.sw{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:8px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);cursor:pointer}
+.sw input{width:24px;height:24px;margin:0;accent-color:var(--vert);flex:none}
+.sw span{display:flex;flex-direction:column}
+.sw small{color:var(--muted);font-size:.86rem}
+.row-in{display:flex;align-items:center;gap:8px;font-size:.92rem;color:var(--muted)}
+.row-in .in{flex:1}
+.in-n{width:84px;flex:none!important;text-align:center}
+.ligne-r{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.95rem}
+.ligne-r span:first-child{color:var(--muted)}
+
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:26;width:60px;height:60px;border:0;border-radius:18px;background:var(--vert);color:#fff;display:grid;place-items:center;box-shadow:0 6px 16px rgba(31,77,55,.38)}
+@media (min-width:800px){.fab{right:calc(50% - 380px + 16px)}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom,0px));z-index:50;width:max-content;max-width:calc(100% - 28px);background:#24211B;color:#fff;border-radius:12px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);font-size:.95rem}
+.toast span{padding:6px 0}
+.toast button{border:0;background:transparent;color:#A8DDB9;font-weight:700;padding:8px 10px;white-space:nowrap}
+
+.login{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:0 16px}
+.lbox{width:100%;max-width:380px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:8px}
+.lbox .logo{width:56px;height:56px;display:block}
+.lbox h1{margin:4px 0 0;font:700 2.4rem/1 var(--craie)}
+.lbox p{margin:0 0 6px;color:var(--muted);font-size:.92rem}
+.lbox label{font-size:.86rem;font-weight:700;color:var(--muted);margin-top:4px}
+.lbox .btn{margin-top:10px}
+.err{color:var(--tomate);margin:4px 0 0!important}
+</style>
+<link rel="stylesheet" href="../commun/cadre.css">
+</head>
+<body>
+<div id="login" class="login" hidden><form class="lbox" id="loginForm"><img class="logo" src="icons/icon-192.png" alt=""><h1>Marché</h1><p>Connecte-toi avec ton compte ORGA.</p><label for="l-mail">Adresse e-mail</label><input class="in" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="in" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit">Se connecter</button><p class="err" id="l-err" hidden></p></form></div>
+<header class="oh" style="--oh-bg:#2E6B4E;--oh-ink:#FFFFFF;--oh-acc:#2E6B4E"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Marché</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+<nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="liste">Liste</button><button class="ot-t" data-tab="basiques">Basiques</button><button class="ot-t" data-tab="magasins">Magasins</button></nav></header>
+<main id="view" aria-live="polite"></main>
+<button class="fab" id="fab" data-act="plus" aria-label="Ajouter un article"><svg class="i" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-titre"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="../commun/supabase.js"></script>
+<script>
+'use strict';
+/* =============================== Réglages fixes =============================== */
+const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC', TABLE='marche_rows';
+/* une ligne par objet : m: magasin, y: type de magasin, a: article, s: réglages */
+const KIND={m:'magasin',y:'type',a:'article',s:'reglage'};
+const NEUTRE='#8A8170';
+const COULEURS=['#2E6B4E','#C8462C','#C9932B','#6E8B2F','#2F7EA6','#8A5A2B','#6A5ACD','#B4487A','#7A776C'];
+const TYPES0=[['supermarche','Supermarché','🛒','#2E6B4E'],['brico','Brico','🔨','#C8462C'],['jardin','Jardin','🌱','#6E8B2F'],['pharmacie','Pharmacie','💊','#2F7EA6'],
+  ['boulangerie','Boulangerie','🥖','#C9932B'],['ferme','Ferme & marché','🥕','#8A5A2B'],['en-ligne','En ligne','📦','#6A5ACD']];
+const SUGG=[['Migros',['supermarche']],['Coop',['supermarche']],['Lidl',['supermarche']],['Aldi',['supermarche']],['Denner',['supermarche']],
+  ['Landi',['brico','jardin']],['Jumbo',['brico','jardin']],['Hornbach',['brico','jardin']],['OBI',['brico','jardin']],['Bauhaus',['brico']],
+  ['Pharmacie',['pharmacie']],['Boulangerie',['boulangerie']],['Galaxus',['en-ligne']]];
+const RYTHMES=[[0,'Quand c’est fini'],[7,'1 semaine'],[14,'2 semaines'],[30,'1 mois'],[60,'2 mois'],[90,'3 mois']];
+const PANIER_H=12; /* le panier se range tout seul après 12 h */
+const CHECK='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const PLUS='<svg class="i" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+
+let S={mags:{},types:{},arts:{},regl:{}};
+let sb=null, UID=null, EMAIL='', prev={}, dirty=new Set(), lastPull=null, pushing=false, pushTimer=null, syncErr='', booted=false;
+const ui={tab:lsGet('marche-tab')||'liste', ici:lsGet('marche-ici')||'', q:'', bq:''};
+if(!['liste','basiques','magasins'].includes(ui.tab)) ui.tab='liste';
+let ed=null; /* ce qui est ouvert dans la fenêtre */
+const CK=()=>'marche-cache-'+UID;
+const $view=document.getElementById('view'), $scrim=document.getElementById('scrim'), $sheet=document.getElementById('sheet'), $toast=document.getElementById('toast'), $fab=document.getElementById('fab');
+
+/* =============================== Petits outils =============================== */
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ if(v==null||v==='') localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
+function ymd(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
+function today(){ return ymd(new Date()); }
+function jourDe(iso){ return iso?ymd(new Date(iso)):null; }
+function plusJours(d,n){ const x=new Date(d+'T12:00'); x.setDate(x.getDate()+n); return ymd(x); }
+function ecart(a,b){ return Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5); }
+function fJour(d){ return new Date(d+'T12:00').toLocaleDateString('fr-CH',{day:'numeric',month:'short'}); }
+function ilYa(d){ const n=ecart(d,today()); if(n<=0) return 'aujourd’hui'; if(n===1) return 'hier'; if(n<15) return 'il y a '+n+' j'; return 'le '+fJour(d); }
+function dansJ(n){ if(n<=0) return 'aujourd’hui'; if(n===1) return 'demain'; return 'dans '+n+' j'; }
+function rythmeTxt(n){ if(n===7) return 'toutes les semaines'; if(n===30) return 'tous les mois'; if(n%30===0) return 'tous les '+n/30+' mois'; if(n%7===0) return 'toutes les '+n/7+' semaines'; return 'tous les '+n+' jours'; }
+function norm(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/\s+/g,' '); }
+function slug(s){ return norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function pl(n,un,plusieurs){ return n+' '+(n>1?(plusieurs||un+'s'):un); }
+function nowIso(){ return new Date().toISOString(); }
+
+/* =============================== Données =============================== */
+function mags(){ return Object.values(S.mags).sort((a,b)=>(a.ordre||0)-(b.ordre||0)||a.nom.localeCompare(b.nom,'fr')); }
+function types(){ return Object.values(S.types).sort((a,b)=>(a.ordre||0)-(b.ordre||0)||a.nom.localeCompare(b.nom,'fr')); }
+function arts(){ return Object.values(S.arts); }
+function refOk(r){ return typeof r==='string'&&(r.startsWith('m:')?!!S.mags[r.slice(2)]:r.startsWith('y:')?!!S.types[r.slice(2)]:false); }
+function ouDe(a){ return (a.ou||[]).filter(refOk); }
+function prim(a){ return ouDe(a)[0]||''; }
+function typeCouleur(id){ const t=S.types[id]; return t&&t.couleur||NEUTRE; }
+function typesDeMag(m){ return (m&&m.types||[]).filter(t=>S.types[t]); }
+function refCouleur(r){ if(!r) return NEUTRE; if(r[0]==='m'){ const t=typesDeMag(S.mags[r.slice(2)]); return t.length?typeCouleur(t[0]):'#2E6B4E'; } return typeCouleur(r.slice(2)); }
+function refEmoji(r){ if(!r) return '🧺'; if(r[0]==='m'){ const t=typesDeMag(S.mags[r.slice(2)]); return t.length?S.types[t[0]].emoji||'🏪':'🏪'; } const t=S.types[r.slice(2)]; return t&&t.emoji||'🏷️'; }
+function refNom(r,court){ if(!r) return 'N’importe où'; if(r[0]==='m'){ const m=S.mags[r.slice(2)]; return m?m.nom:'?'; } const t=S.types[r.slice(2)]; return t?(court?t.nom+' (tous)':t.nom):'?'; }
+/* l'article se trouve-t-il dans ce magasin ? (chez lui, ou n'importe quel magasin de son type, ou n'importe où) */
+function dispo(a,mid){ const ou=ouDe(a); if(!ou.length) return true; const m=S.mags[mid]; if(!m) return false; const ts=typesDeMag(m); return ou.some(r=>r==='m:'+mid||(r[0]==='y'&&ts.includes(r.slice(2)))); }
+function derniere(a){ const l=(a.achats||[]).slice().sort(); return l.length?l[l.length-1]:null; }
+/* un basique avec un rythme revient sur la liste « rythme » jours après le dernier achat (ou depuis qu'on l'a retiré) */
+function prochain(a){ const base=[derniere(a),a.depuis].filter(Boolean).sort().pop()||jourDe(a.cree)||today(); return plusJours(base,a.rythme); }
+function rythmeObserve(a){ const l=[...new Set(a.achats||[])].sort(); if(l.length<3) return null; const j=Math.max(1,Math.round(ecart(l[0],l[l.length-1])/(l.length-1))); return {j,n:l.length}; }
+function triNom(a,b){ return a.nom.localeCompare(b.nom,'fr',{sensitivity:'base'}); }
+/* range les articles par étal : par magasin (dans l'ordre choisi), puis par type, puis « n'importe où » */
+function grouper(list,ici){
+  const G=new Map(), add=(r,a)=>{ if(!G.has(r)) G.set(r,[]); G.get(r).push(a); };
+  const mi=ici&&S.mags[ici], tsIci=typesDeMag(mi);
+  for(const a of list){
+    if(mi){ const ou=ouDe(a); let r=''; if(ou.includes('m:'+ici)) r='m:'+ici; else { const t=ou.find(x=>x[0]==='y'&&tsIci.includes(x.slice(2))); if(t) r=t; } add(r,a); }
+    else add(prim(a),a);
+  }
+  return [...mags().map(m=>'m:'+m.id),...types().map(t=>'y:'+t.id),''].filter(r=>G.has(r)).map(r=>({ref:r,items:G.get(r).sort(triNom)}));
+}
+function semer(){ TYPES0.forEach(([id,nom,emoji,couleur],i)=>{ if(!S.types[id]) S.types[id]={id,nom,emoji,couleur,ordre:i}; }); }
+function ranger1(a){ const d=jourDe(a.panier)||today(); a.achats=[...new Set([...(a.achats||[]),d])].sort().slice(-24); a.liste=false; a.panier=null; a.auto=false; a.depuis=d; }
+function surListe(a){ a.liste=true; a.panier=null; a.auto=false; a.ajoute=nowIso(); }
+/* entretien : range le panier oublié, remet sur la liste les basiques dont le rythme est échu */
+function entretien(){
+  if(!booted) return; let ch=false; const now=Date.now(), t=today();
+  for(const a of arts()){
+    if(a.liste&&a.panier){ if(now-new Date(a.panier).getTime()>PANIER_H*36e5){ ranger1(a); ch=true; } }
+    else if(a.basique&&a.rythme>0&&!a.liste&&prochain(a)<=t){ a.liste=true; a.auto=true; a.panier=null; a.ajoute=nowIso(); ch=true; }
+  }
+  if(ch){ save(); render(); }
+}
+
+/* =============================== Synchro (même principe que Banque) =============================== */
+function canon(v){ if(Array.isArray(v)) return '['+v.map(x=>canon(x===undefined?null:x)).join(',')+']'; if(v&&typeof v==='object') return '{'+Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}'; return JSON.stringify(v===undefined?null:v); }
+function rowsOf(st){ const r={};
+  for(const m of Object.values(st.mags)) r['m:'+m.id]=m; for(const t of Object.values(st.types)) r['y:'+t.id]=t; for(const a of Object.values(st.arts)) r['a:'+a.id]=a;
+  if(Object.keys(st.regl).length) r['s:reglages']=st.regl; return r; }
+function fromRows(map){ const st={mags:{},types:{},arts:{},regl:{}};
+  for(const k in map){ let d; try{ d=JSON.parse(map[k]); }catch(e){ continue; } if(!d) continue; const p=k[0];
+    if(p==='m') st.mags[d.id]=d; else if(p==='y') st.types[d.id]=d; else if(p==='a') st.arts[d.id]=d; else if(k==='s:reglages') st.regl=d; }
+  return st; }
+function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull})); }catch(e){} }
+function save(){ if(!UID) return; const cur=rowsOf(S); let ch=false;
+  for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ prev[k]=v; dirty.add(k); ch=true; } }
+  for(const k in prev){ if(!(k in cur)){ delete prev[k]; dirty.add(k); ch=true; } }
+  if(ch){ persist(); schedulePush(); setSync(); } }
+function schedulePush(d){ clearTimeout(pushTimer); pushTimer=setTimeout(push,d==null?900:d); }
+async function push(){
+  if(!sb||!UID||pushing||!dirty.size){ setSync(); return; }
+  if(!navigator.onLine){ setSync(); return; }
+  pushing=true; setSync('sending');
+  const keys=[...dirty].slice(0,250), sent={};
+  const rows=keys.map(k=>{ sent[k]=prev[k]; const kind=KIND[k[0]]||'reglage'; return (k in prev)?{user_id:UID,key:k,kind,data:JSON.parse(prev[k]),deleted:false}:{user_id:UID,key:k,kind,data:null,deleted:true}; });
+  try{
+    const {error}=await sb.from(TABLE).upsert(rows,{onConflict:'user_id,key'}); if(error) throw error;
+    keys.forEach(k=>{ if(prev[k]===sent[k]) dirty.delete(k); });
+    persist(); const avait=syncErr; syncErr=''; pushing=false; setSync(); if(avait) render();
+    if(dirty.size) schedulePush(200);
+  }catch(e){ pushing=false; const avait=syncErr; syncErr=(e&&e.message)||String(e); setSync(); if(!avait) render(); schedulePush(15000); }
+}
+async function pull(full){
+  if(!sb||!UID) return false;
+  if(!navigator.onLine){ setSync(); return false; }
+  try{
+    const since=full?null:lastPull; let changed=false, maxTs=lastPull, from=0;
+    for(;;){
+      let q=sb.from(TABLE).select('key,data,deleted,updated_at').order('updated_at',{ascending:true}).range(from,from+999);
+      if(since) q=q.gte('updated_at',since);
+      const {data,error}=await q; if(error) throw error;
+      data.forEach(r=>{ if(!maxTs||r.updated_at>maxTs) maxTs=r.updated_at; if(dirty.has(r.key)) return;
+        if(r.deleted||r.data==null){ if(r.key in prev){ delete prev[r.key]; changed=true; } }
+        else { const v=canon(r.data); if(prev[r.key]!==v){ prev[r.key]=v; changed=true; } } });
+      if(data.length<1000) break; from+=1000;
+    }
+    lastPull=maxTs; persist();
+    const avait=syncErr; syncErr='';
+    if(changed){ S=fromRows(prev); render(); } else if(avait) render();
+    setSync(); return true;
+  }catch(e){ const avait=syncErr; syncErr=(e&&e.message)||String(e); setSync(); if(!avait) render(); return false; }
+}
+function etatSync(){
+  if(!navigator.onLine) return ['hors ligne'+(dirty.size?' · '+dirty.size:''),'Hors ligne : les changements partiront au retour du réseau'];
+  if(syncErr) return ['⚠'+(dirty.size?' '+dirty.size:''),'Problème de synchro : '+syncErr];
+  if(pushing||dirty.size) return ['↻'+(dirty.size?' '+dirty.size:''),'Envoi en cours'];
+  return ['✓','Tout est enregistré'];
+}
+function setSync(){ const el=document.getElementById('sync'); const [txt,tip]=etatSync(); el.textContent=txt; el.title=tip; el.setAttribute('aria-label','Synchro : '+tip); }
+function tableManque(){ return !!syncErr&&/marche_rows|could not find the table|does not exist|schema cache/i.test(syncErr); }
+
+/* =============================== Affichage =============================== */
+function render(){
+  document.querySelectorAll('.ot-t').forEach(b=>{ if(b.dataset.tab===ui.tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  $fab.setAttribute('aria-label',ui.tab==='magasins'?'Ajouter un magasin':ui.tab==='basiques'?'Ajouter un basique':'Ajouter un article');
+  if(!booted){ $view.innerHTML=''; return; }
+  if(ui.ici&&!S.mags[ui.ici]){ ui.ici=''; lsSet('marche-ici',''); }
+  /* garde le champ en cours de saisie (le clavier reste ouvert) */
+  const ae=document.activeElement, fid=ae&&ae.id&&$view.contains(ae)?ae.id:null; let sel=null; try{ if(fid) sel=[ae.selectionStart,ae.selectionEnd]; }catch(e){}
+  $view.innerHTML=ui.tab==='basiques'?vBasiques():ui.tab==='magasins'?vMagasins():vListe();
+  if(fid){ const el=document.getElementById(fid); if(el){ el.focus({preventScroll:true}); try{ if(sel) el.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
+  if(ui.tab==='liste') majSugg();
+}
+function alerteTable(){ return tableManque()?'<div class="alerte"><b>La base de Marché n’est pas encore prête.</b>Lance « supabase/marche.sql » dans Supabase (SQL Editor). En attendant, tout reste enregistré sur cet appareil.</div>':''; }
+function section(g,rows,extra){
+  const sous=!g.ref?'pas de magasin précis':g.ref[0]==='y'?'n’importe quel magasin de ce type':typesDeMag(S.mags[g.ref.slice(2)]).map(t=>S.types[t].nom).join(' · ');
+  return `<section class="etal" style="--c:${refCouleur(g.ref)}"><span class="aw" aria-hidden="true"></span><div class="st-in"><h2><span class="em" aria-hidden="true">${refEmoji(g.ref)}</span><span class="tx">${esc(refNom(g.ref))}</span></h2><span class="st-sous">${esc(sous)}</span><span class="st-n">${extra==null?g.items.length:extra}</span></div><div class="rows">${rows}</div></section>`;
+}
+function rowListe(a,ref){
+  const autres=ouDe(a).filter(r=>r!==ref), meta=[];
+  if(a.note) meta.push(esc(a.note));
+  if(a.basique) meta.push('<span class="v">basique</span>'+(a.auto?' · revenu avec le rythme':''));
+  if(autres.length) meta.push('aussi : '+autres.map(r=>esc(refNom(r,true))).join(', '));
+  return `<div class="art${a.panier?' pris':''}"><button class="ck" data-act="cocher" data-id="${a.id}" role="checkbox" aria-checked="${!!a.panier}" aria-label="${esc(a.nom)} : ${a.panier?'dans le panier':'à acheter'}">${CHECK}</button><button class="txt" data-act="art" data-id="${a.id}"><span class="l1"><span class="nom">${esc(a.nom)}</span>${a.qte?`<span class="qte">${esc(a.qte)}</span>`:''}</span>${meta.length?`<span class="meta">${meta.join(' · ')}</span>`:''}</button></div>`;
+}
+function vListe(){
+  const tous=arts(), act=tous.filter(a=>a.liste&&!a.panier), pris=tous.filter(a=>a.liste&&a.panier).sort((a,b)=>b.panier.localeCompare(a.panier)), ms=mags();
+  const mi=ui.ici&&S.mags[ui.ici];
+  let h=alerteTable();
+  if(ms.length){
+    h+=`<div class="cap" id="ici-lab">Je suis chez</div><div class="ici" role="group" aria-labelledby="ici-lab"><button data-act="ici" data-id="" aria-pressed="${!mi}">Tout <span class="n">${act.length}</span></button>`+
+      ms.map(m=>{ const n=act.filter(a=>dispo(a,m.id)).length; return `<button data-act="ici" data-id="${m.id}" aria-pressed="${ui.ici===m.id}" class="${n?'':'vide'}">${esc(m.nom)} <span class="n">${n}</span></button>`; }).join('')+'</div>';
+  }
+  h+=`<form class="qa" id="qa-form" autocomplete="off"><input id="qa" type="text" placeholder="${mi?'Ajouter chez '+esc(mi.nom)+'…':'Ajouter un article…'}" value="${esc(ui.q)}" enterkeyhint="done" autocapitalize="sentences" aria-label="Ajouter un article"><button type="submit" aria-label="Ajouter">${PLUS}</button></form><div class="sugg" id="qa-sugg" hidden></div>`;
+  const vis=mi?act.filter(a=>dispo(a,ui.ici)):act;
+  if(vis.length) h+=grouper(vis,mi?ui.ici:'').map(g=>section(g,g.items.map(a=>rowListe(a,g.ref)).join(''))).join('');
+  else if(act.length&&mi) h+=`<div class="vide"><span class="gros">Rien à acheter ici</span>Rien sur ta liste ne se trouve chez ${esc(mi.nom)}.</div>`;
+  else if(pris.length) h+=`<div class="vide"><span class="gros">Tout est dans le panier 👏</span>Range-le quand tu rentres : les basiques retournent dans leur réserve.</div>`;
+  else { const nb=tous.filter(a=>a.basique).length;
+    h+=`<div class="vide"><span class="gros">Rien à acheter 🌿</span>${ms.length?'Écris un article juste au-dessus, ou touche +.':'Commence par tes magasins : la liste sera rangée par étal.'}<br>${!ms.length?'<button class="btn2" data-tab-go="magasins">Ajouter mes magasins</button>':nb?'<button class="btn2" data-tab-go="basiques">Passer en revue mes basiques</button>':''}</div>`; }
+  if(mi&&vis.length<act.length) h+=`<button class="btn2" data-act="ici" data-id="">${pl(act.length-vis.length,'article')} pour d’autres magasins · tout voir</button>`;
+  if(pris.length) h+=`<section class="etal panier"><div class="st-in"><h2><span class="em" aria-hidden="true">🧺</span><span class="tx">Dans le panier</span></h2><span class="st-sous">${pl(pris.length,'article')}</span><button class="ranger" data-act="ranger">Ranger</button></div><div class="rows">${pris.map(a=>rowListe(a,prim(a))).join('')}</div><p class="note-bas">Toucher un article le remet sur la liste. Le panier se range tout seul après ${PANIER_H} h.</p></section>`;
+  if(vis.length) h+=`<button class="btn2" data-act="partager">Envoyer la liste${mi?' de '+esc(mi.nom):''}</button>`;
+  return h;
+}
+function majSugg(){
+  const el=document.getElementById('qa-sugg'); if(!el) return; const q=norm(ui.q);
+  if(q.length<2){ el.innerHTML=''; el.hidden=true; return; }
+  const c=arts().filter(a=>norm(a.nom).includes(q)).sort((a,b)=>(norm(b.nom).startsWith(q)-norm(a.nom).startsWith(q))||((b.achats||[]).length-(a.achats||[]).length)||triNom(a,b)).slice(0,6);
+  el.innerHTML=c.map(a=>a.liste&&!a.panier?`<span class="sg deja">${esc(a.nom)}<small>déjà sur la liste</small></span>`:`<button type="button" class="sg" data-act="remettre" data-id="${a.id}">${esc(a.nom)}<small>${esc(refNom(prim(a),true))}${a.basique?' · basique':''}</small></button>`).join('');
+  el.hidden=!c.length;
+}
+function rowBasique(a){
+  let st, btn;
+  if(a.liste){ st=a.panier?'<span class="v">dans le panier</span>':'<span class="v">sur la liste</span>'+(a.auto?' · revenu avec le rythme':''); btn=`<button class="bt-on" data-act="defini" data-id="${a.id}" aria-label="${esc(a.nom)} : retirer de la liste">✓ Sur la liste</button>`; }
+  else { const d=derniere(a); st='en stock'+(d?' · acheté '+ilYa(d):''); if(a.rythme>0) st+=' · <span title="'+rythmeTxt(a.rythme)+'">↻ revient '+dansJ(ecart(today(),prochain(a)))+'</span>'; btn=`<button class="bt-fini" data-act="fini" data-id="${a.id}" aria-label="${esc(a.nom)} : c’est fini, à racheter">Fini</button>`; }
+  const ry=a.liste&&a.rythme>0&&!a.auto?' · ↻ '+rythmeTxt(a.rythme):'';
+  return `<div class="art"><button class="txt pad" data-act="art" data-id="${a.id}"><span class="l1"><span class="nom">${esc(a.nom)}</span>${a.qte?`<span class="qte">${esc(a.qte)}</span>`:''}</span><span class="meta">${st}${ry}</span></button>${btn}</div>`;
+}
+function vBasiques(){
+  const bs=arts().filter(a=>a.basique), q=norm(ui.bq), vis=q?bs.filter(a=>norm(a.nom).includes(q)):bs;
+  const nl=bs.filter(a=>a.liste).length;
+  let h=alerteTable()+`<h2 class="titre">Basiques</h2><p class="sous-titre">Ce que tu rachètes chaque fois que c’est fini. Touche « Fini » : l’article retourne sur la liste.</p>`;
+  if(!bs.length) h+=`<div class="vide"><span class="gros">Pas encore de basiques</span>Huile, café, papier toilette, vis de 4×40… Touche + pour en ajouter, ou coche « Basique » sur un article de ta liste.</div>`;
+  else {
+    h+=`<p class="sous-titre"><b>${bs.length-nl}</b> en réserve · <b>${nl}</b> sur la liste</p>`;
+    if(bs.length>8) h+=`<input class="cherche" id="bq" type="search" placeholder="Chercher un basique…" value="${esc(ui.bq)}" aria-label="Chercher un basique">`;
+    const gs=grouper(vis,'');
+    h+=gs.length?gs.map(g=>section(g,g.items.map(rowBasique).join(''))).join(''):'<div class="vide">Aucun basique ne correspond.</div>';
+  }
+  const autres=arts().filter(a=>!a.basique&&!a.liste&&(!q||norm(a.nom).includes(q))).sort((a,b)=>(derniere(b)||'').localeCompare(derniere(a)||'')||triNom(a,b));
+  if(autres.length) h+=`<details class="etal"><summary>Autres articles déjà achetés · ${autres.length}</summary><div class="rows">${autres.slice(0,200).map(a=>{ const d=derniere(a);
+    return `<div class="art"><button class="txt pad" data-act="art" data-id="${a.id}"><span class="l1"><span class="nom">${esc(a.nom)}</span></span><span class="meta">${esc(refNom(prim(a),true))}${d?' · acheté '+ilYa(d):''}</span></button><button class="bt-re" data-act="remettre" data-id="${a.id}">Remettre</button></div>`; }).join('')}</div></details>`;
+  return h;
+}
+function vMagasins(){
+  const ms=mags(), act=arts().filter(a=>a.liste&&!a.panier);
+  let h=alerteTable()+`<h2 class="titre">Magasins</h2><p class="sous-titre">Ta liste suit cet ordre : mets en premier celui où tu vas le plus.</p>`;
+  h+=ms.length?'<div class="liste-v">'+ms.map((m,i)=>{ const ts=typesDeMag(m), n=act.filter(a=>dispo(a,m.id)).length;
+    return `<div class="mag" style="--c:${refCouleur('m:'+m.id)}"><button class="txt" data-act="mag" data-id="${m.id}"><span class="mag-nom">${esc(m.nom)}</span><span class="meta">${ts.length?ts.map(t=>esc(S.types[t].emoji+' '+S.types[t].nom)).join(' · '):'sans type'}${n?' · <span class="v">'+pl(n,'article')+' à acheter</span>':''}${m.note?' · '+esc(m.note):''}</span></button><div class="ord"><button data-act="mag-haut" data-id="${m.id}" aria-label="Monter ${esc(m.nom)}" ${i===0?'disabled':''}>↑</button><button data-act="mag-bas" data-id="${m.id}" aria-label="Descendre ${esc(m.nom)}" ${i===ms.length-1?'disabled':''}>↓</button></div></div>`; }).join('')+'</div>'
+    :`<div class="vide"><span class="gros">Aucun magasin</span>Touche ceux où tu vas, juste en dessous, ou ajoute le tien.</div>`;
+  h+=`<button class="btn2" data-act="mag-new">+ Ajouter un magasin</button>`;
+  const noms=new Set(ms.map(m=>norm(m.nom))), sug=SUGG.filter(([n])=>!noms.has(norm(n)));
+  if(sug.length) h+=`<div class="cap">Ajout rapide</div><div class="chips">${sug.map(([n])=>`<button class="chip" data-act="mag-sugg" data-nom="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>`;
+  const ts=types();
+  h+=`<h2 class="titre" style="margin-top:14px">Types de magasins</h2><p class="sous-titre">Un article rangé dans « Supermarché (tous) » apparaît dans chaque supermarché. La couleur donne celle de l’auvent.</p>`;
+  h+='<div class="liste-v">'+ts.map(t=>{ const n=ms.filter(m=>typesDeMag(m).includes(t.id)).length;
+    return `<button class="typ" style="--c:${t.couleur||NEUTRE}" data-act="type" data-id="${t.id}"><span class="pas" aria-hidden="true"></span><span class="em" aria-hidden="true">${esc(t.emoji||'🏷️')}</span><b>${esc(t.nom)}</b><span class="meta">${n?pl(n,'magasin'):'—'}</span></button>`; }).join('')+'</div>';
+  h+=`<button class="btn2" data-act="type-new">+ Nouveau type</button>`;
+  return h;
+}
+
+/* =============================== Fenêtres =============================== */
+function tete(t){ return `<div class="sh"><h2 id="sh-titre">${esc(t)}</h2><button class="x" data-act="fermer" aria-label="Fermer">✕</button></div>`; }
+function ouvrir(focus){ $scrim.hidden=false; document.body.style.overflow='hidden'; if(focus){ const el=document.getElementById(focus); if(el) setTimeout(()=>el.focus(),60); } }
+function fermer(){ $scrim.hidden=true; document.body.style.overflow=''; ed=null; $sheet.innerHTML=''; }
+const val=id=>{ const el=document.getElementById(id); return el?el.value:''; };
+
+/* --- article --- */
+function ouvrirArt(id,o){ o=o||{}; const a=id?S.arts[id]:null;
+  ed={k:'art',id:id||null,conf:false,d:a?JSON.parse(JSON.stringify(a)):{nom:o.nom||'',qte:'',note:'',ou:ui.tab==='liste'&&ui.ici&&S.mags[ui.ici]?['m:'+ui.ici]:[],basique:!!o.basique,rythme:0,liste:!o.basique,achats:[]}};
+  ed.d.ou=ouDe(ed.d); ed.d.rythme=ed.d.rythme||0; vArt(); ouvrir(id?null:'e-nom'); }
+function lireArt(){ if(!ed||ed.k!=='art') return; const d=ed.d, g=id=>document.getElementById(id);
+  if(g('e-nom')) d.nom=g('e-nom').value; if(g('e-qte')) d.qte=g('e-qte').value; if(g('e-note')) d.note=g('e-note').value;
+  if(g('e-bas')) d.basique=g('e-bas').checked; if(g('e-liste')) d.liste=g('e-liste').checked;
+  if(g('e-ry')&&g('e-ry').value!==''){ const n=parseInt(g('e-ry').value,10); if(n>=0&&n<=730) d.rythme=n; } }
+function chipOu(ref,label){ const i=ed.d.ou.indexOf(ref); return `<button type="button" class="chip${i>=0?' on':''}" data-act="ou" data-ref="${ref}" aria-pressed="${i>=0}">${esc(label)}${i>=0&&ed.d.ou.length>1?`<span class="o">${i+1}</span>`:''}</button>`; }
+function vArt(){
+  const d=ed.d, nouv=!ed.id, ms=mags(), ts=types(), obs=rythmeObserve(d), perso=d.rythme&&!RYTHMES.some(r=>r[0]===d.rythme);
+  $sheet.innerHTML=tete(nouv?(d.basique?'Nouveau basique':'Nouvel article'):d.nom||'Article')+
+  `<label class="lab" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" autocomplete="off" autocapitalize="sentences" placeholder="ex. huile d’olive">
+  <label class="lab" for="e-qte">Quantité <span class="opt">· facultatif</span></label><input class="in" id="e-qte" value="${esc(d.qte)}" autocomplete="off" placeholder="ex. 2, 1 kg, un grand paquet">
+  <div class="lab">Où l’acheter ?</div>
+  ${ms.length?`<div class="chips">${ms.map(m=>chipOu('m:'+m.id,m.nom)).join('')}</div>`:'<p class="aide">Pas encore de magasins : ajoute-les dans l’onglet Magasins.</p>'}
+  ${ts.length?`<div class="chips">${ts.map(t=>chipOu('y:'+t.id,(t.emoji?t.emoji+' ':'')+t.nom+' (tous)')).join('')}</div>`:''}
+  <p class="aide">${!d.ou.length?'Rien de choisi : n’importe où, il apparaît dans tous les magasins.':d.ou.length>1?'Il apparaît partout où il se trouve ; le n° 1 décide de son étal dans « Tout ».':'« (tous) » = n’importe quel magasin de ce type.'}</p>
+  <label class="lab" for="e-note">Note <span class="opt">· facultatif</span></label><input class="in" id="e-note" value="${esc(d.note)}" autocomplete="off" placeholder="ex. la marque bio, rayon du fond">
+  <label class="sw"><input type="checkbox" id="e-bas" ${d.basique?'checked':''}><span><b>Basique</b><small>Je le rachète chaque fois que c’est fini</small></span></label>
+  ${d.basique?`<div class="lab">Revient tout seul sur la liste</div><div class="chips">${RYTHMES.map(([n,l])=>`<button type="button" class="chip${!perso&&(d.rythme||0)===n?' on':''}" data-act="rythme" data-n="${n}">${n?'après '+l:l}</button>`).join('')}</div>
+    <div class="row-in"><span>ou tous les</span><input class="in in-n" id="e-ry" type="number" min="1" max="730" inputmode="numeric" value="${perso?d.rythme:''}" aria-label="Rythme en jours"><span>jours</span></div>
+    ${obs?`<p class="aide">Tu l’achètes en moyenne tous les ${obs.j} jours (${obs.n} achats).${obs.j!==d.rythme?` <button type="button" class="lien" data-act="rythme" data-n="${obs.j}">Prendre ce rythme</button>`:''}</p>`:''}`:''}
+  <label class="sw"><input type="checkbox" id="e-liste" ${d.liste?'checked':''}><span><b>À acheter</b><small>${d.basique?'Sur la liste maintenant (sinon : en réserve)':'Sur la liste de courses'}</small></span></label>
+  ${!nouv&&(d.achats||[]).length?`<p class="aide">Acheté ${pl(new Set(d.achats).size,'fois','fois')} · dernier achat ${ilYa(derniere(d))}</p>`:''}
+  <button class="btn" data-act="sauver-art">Enregistrer</button>
+  ${!nouv?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-art">${ed.conf?'Toucher encore pour supprimer':'Supprimer l’article'}</button>`:''}`;
+}
+function sauverArt(){
+  lireArt(); const d=ed.d; d.nom=d.nom.trim().replace(/\s+/g,' ');
+  if(!d.nom){ const el=document.getElementById('e-nom'); if(el) el.focus(); return; }
+  let a=ed.id?S.arts[ed.id]:arts().find(x=>norm(x.nom)===norm(d.nom)); const now=nowIso();
+  if(!a){ a={id:uid(),cree:now,achats:[]}; S.arts[a.id]=a; }
+  const avant=!!a.liste;
+  Object.assign(a,{nom:d.nom,qte:(d.qte||'').trim(),note:(d.note||'').trim(),ou:d.ou.filter(refOk),basique:!!d.basique,rythme:d.basique?(d.rythme||0):0});
+  if(d.liste&&!avant) surListe(a);
+  else if(!d.liste&&avant){ a.liste=false; a.panier=null; a.auto=false; a.depuis=today(); }
+  if(!a.liste&&!a.depuis) a.depuis=today();
+  save(); fermer(); render();
+}
+
+/* --- magasin --- */
+function ouvrirMag(id){ const m=id?S.mags[id]:null;
+  ed={k:'mag',id:id||null,conf:false,d:m?{nom:m.nom,types:typesDeMag(m),note:m.note||''}:{nom:'',types:[],note:''}}; vMag(); ouvrir(id?null:'e-nom'); }
+function lireMag(){ if(!ed||ed.k!=='mag') return; if(document.getElementById('e-nom')){ ed.d.nom=val('e-nom'); ed.d.note=val('e-note'); } }
+function vMag(){
+  const d=ed.d, nouv=!ed.id, n=nouv?0:arts().filter(a=>(a.ou||[]).includes('m:'+ed.id)).length;
+  $sheet.innerHTML=tete(nouv?'Nouveau magasin':'Magasin')+
+  `<label class="lab" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" autocomplete="off" autocapitalize="words" placeholder="ex. Migros Marly">
+  <div class="lab">Type de magasin</div><div class="chips">${types().map(t=>`<button type="button" class="chip${d.types.includes(t.id)?' on':''}" data-act="mtype" data-id="${t.id}" aria-pressed="${d.types.includes(t.id)}">${esc((t.emoji?t.emoji+' ':'')+t.nom)}</button>`).join('')}</div>
+  <div class="row-in"><input class="in" id="e-ntype" autocomplete="off" placeholder="Autre type, ex. Quincaillerie"><button type="button" class="btn2" data-act="mtype-add">Ajouter</button></div>
+  <p class="aide">Les articles « Supermarché (tous) » apparaîtront dans chaque magasin de type Supermarché.</p>
+  <label class="lab" for="e-note">Note <span class="opt">· facultatif</span></label><input class="in" id="e-note" value="${esc(d.note)}" autocomplete="off" placeholder="ex. fermé le lundi">
+  <button class="btn" data-act="sauver-mag">Enregistrer</button>
+  ${!nouv?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-mag">${ed.conf?(n?'Toucher encore : '+pl(n,'article')+' n’y seront plus rattachés':'Toucher encore pour supprimer'):'Supprimer le magasin'}</button>`:''}`;
+}
+function nouveauType(nom){ nom=String(nom||'').trim(); if(!nom) return null;
+  const ex=types().find(t=>norm(t.nom)===norm(nom)); if(ex) return ex.id;
+  let id=slug(nom)||uid(); if(S.types[id]) id+='-'+uid().slice(-4);
+  const ts=types(); S.types[id]={id,nom,emoji:'🏷️',couleur:COULEURS[ts.length%COULEURS.length],ordre:ts.length?Math.max(...ts.map(t=>t.ordre||0))+1:0}; save(); return id; }
+function sauverMag(){
+  lireMag(); const d=ed.d; d.nom=d.nom.trim(); if(!d.nom){ document.getElementById('e-nom').focus(); return; }
+  let m=ed.id&&S.mags[ed.id];
+  if(!m){ const ms=mags(); m={id:uid(),ordre:ms.length?Math.max(...ms.map(x=>x.ordre||0))+1:0}; S.mags[m.id]=m; }
+  Object.assign(m,{nom:d.nom,types:d.types.filter(t=>S.types[t]),note:d.note.trim()});
+  save(); fermer(); render();
+}
+function ajouterSugg(nom){ const s=SUGG.find(x=>x[0]===nom); if(!s) return; const ms=mags();
+  const m={id:uid(),nom:s[0],types:s[1].filter(t=>S.types[t]),note:'',ordre:ms.length?Math.max(...ms.map(x=>x.ordre||0))+1:0}; S.mags[m.id]=m; save(); render(); toast(m.nom+' ajouté'); }
+function bouger(id,dir){ const ms=mags(), i=ms.findIndex(m=>m.id===id), j=i+dir; if(i<0||j<0||j>=ms.length) return;
+  [ms[i],ms[j]]=[ms[j],ms[i]]; ms.forEach((m,k)=>{ m.ordre=k; }); save(); render(); }
+
+/* --- type de magasin --- */
+function ouvrirType(id){ const t=id?S.types[id]:null;
+  ed={k:'type',id:id||null,conf:false,d:t?{nom:t.nom,emoji:t.emoji||'',couleur:t.couleur||NEUTRE}:{nom:'',emoji:'🏷️',couleur:COULEURS[types().length%COULEURS.length]}}; vType(); ouvrir(id?null:'e-nom'); }
+function lireType(){ if(!ed||ed.k!=='type') return; if(document.getElementById('e-nom')){ ed.d.nom=val('e-nom'); ed.d.emoji=val('e-emo').trim(); } }
+function vType(){
+  const d=ed.d, nouv=!ed.id, nm=nouv?0:mags().filter(m=>typesDeMag(m).includes(ed.id)).length, na=nouv?0:arts().filter(a=>(a.ou||[]).includes('y:'+ed.id)).length;
+  $sheet.innerHTML=tete(nouv?'Nouveau type':'Type de magasin')+
+  `<label class="lab" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" autocomplete="off" placeholder="ex. Quincaillerie">
+  <label class="lab" for="e-emo">Émoji</label><input class="in in-n" id="e-emo" value="${esc(d.emoji)}" autocomplete="off" maxlength="8">
+  <div class="lab">Couleur de l’auvent</div><div class="chips">${COULEURS.map(c=>`<button type="button" class="chip sw-c${d.couleur===c?' on':''}" style="background:repeating-linear-gradient(90deg,${c} 0 9px,#FFF8EA 9px 18px)" data-act="tcoul" data-c="${c}" aria-label="Couleur ${c}" aria-pressed="${d.couleur===c}"></button>`).join('')}</div>
+  <button class="btn" data-act="sauver-type">Enregistrer</button>
+  ${!nouv?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-type">${ed.conf?(nm||na?'Toucher encore : retiré de '+[nm?pl(nm,'magasin'):'',na?pl(na,'article'):''].filter(Boolean).join(' et '):'Toucher encore pour supprimer'):'Supprimer ce type'}</button>`:''}`;
+}
+function sauverType(){
+  lireType(); const d=ed.d; d.nom=d.nom.trim(); if(!d.nom){ document.getElementById('e-nom').focus(); return; }
+  let t=ed.id&&S.types[ed.id];
+  if(!t){ const id=nouveauType(d.nom); t=S.types[id]; }
+  Object.assign(t,{nom:d.nom,emoji:d.emoji||'🏷️',couleur:d.couleur}); save(); fermer(); render();
+}
+
+/* --- réglages --- */
+function vReglages(){
+  ed={k:'regl'}; const [txt,tip]=etatSync(), A=arts();
+  $sheet.innerHTML=tete('Réglages')+
+  `<div class="ligne-r"><span>Compte</span><b>${esc(EMAIL||'—')}</b></div>
+  <div class="ligne-r"><span>Synchro</span><b>${esc(txt)} ${esc(tip)}</b></div>
+  <div class="ligne-r"><span>Contenu</span><b>${pl(mags().length,'magasin')} · ${pl(A.length,'article')} · ${pl(A.filter(a=>a.basique).length,'basique')}</b></div>
+  ${tableManque()?'<div class="alerte"><b>La table « marche_rows » manque dans Supabase.</b>SQL Editor → New query → coller « supabase/marche.sql » → Run. Le résultat doit être « marche_rows prête ».</div>':''}
+  <button class="btn2" data-act="synchro">Synchroniser maintenant</button>
+  <button class="btn2" data-act="export">Exporter tout (fichier)</button>
+  <button class="btn-sup" data-act="logout">Se déconnecter</button>`;
+  ouvrir();
+}
+
+/* =============================== Actions =============================== */
+let toastT=null, toastFn=null;
+function toast(msg,act,fn){ $toast.innerHTML=`<span>${esc(msg)}</span>${act?`<button data-act="toast">${esc(act)}</button>`:''}`; $toast.hidden=false; toastFn=fn||null; clearTimeout(toastT); toastT=setTimeout(()=>{ $toast.hidden=true; toastFn=null; },act?6000:2600); }
+function cacherToast(){ $toast.hidden=true; toastFn=null; clearTimeout(toastT); }
+function snap(list){ return list.map(a=>JSON.stringify(a)); }
+function restaurer(s){ s.forEach(j=>{ const a=JSON.parse(j); S.arts[a.id]=a; }); save(); render(); }
+function ajoutRapide(){
+  const nom=(ui.q||'').trim().replace(/\s+/g,' '); if(!nom) return;
+  const ex=arts().find(a=>norm(a.nom)===norm(nom)); ui.q='';
+  if(ex){ if(ex.liste&&!ex.panier){ render(); toast('« '+ex.nom+' » est déjà sur la liste'); return; } surListe(ex); save(); render(); toast('« '+ex.nom+' » remis sur la liste','Modifier',()=>ouvrirArt(ex.id)); return; }
+  const mi=ui.ici&&S.mags[ui.ici], a={id:uid(),nom,qte:'',note:'',ou:mi?['m:'+mi.id]:[],basique:false,rythme:0,achats:[],cree:nowIso()};
+  surListe(a); S.arts[a.id]=a; save(); render();
+  toast(mi?'Ajouté chez '+mi.nom:'Ajouté · n’importe où','Modifier',()=>ouvrirArt(a.id));
+}
+function rangerTout(){ const pris=arts().filter(a=>a.liste&&a.panier); if(!pris.length) return; const s=snap(pris);
+  pris.forEach(ranger1); save(); render(); toast(pl(pris.length,'article')+' rangé'+(pris.length>1?'s':''),'Annuler',()=>restaurer(s)); }
+function texteListe(){
+  const mi=ui.ici&&S.mags[ui.ici], act=arts().filter(a=>a.liste&&!a.panier&&(!mi||dispo(a,mi.id)));
+  return ('🧺 Courses'+(mi?' · '+mi.nom:'')+'\n'+grouper(act,mi?mi.id:'').map(g=>'\n'+refNom(g.ref)+'\n'+g.items.map(a=>'– '+a.nom+(a.qte?' ('+a.qte+')':'')+(a.note?' · '+a.note:'')).join('\n')).join('\n')).trim();
+}
+async function partager(){ const t=texteListe();
+  if(navigator.share){ try{ await navigator.share({text:t}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(t); toast('Liste copiée'); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Liste copiée'); }catch(x){ toast('Copie impossible'); } ta.remove(); } }
+function exporter(){ const blob=new Blob([JSON.stringify({app:'marche',exporte:nowIso(),donnees:rowsOf(S)},null,1)],{type:'application/json'});
+  const u=URL.createObjectURL(blob), l=document.createElement('a'); l.href=u; l.download='marche-sauvegarde-'+today()+'.json'; document.body.appendChild(l); l.click(); l.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000); }
+
+document.addEventListener('click',e=>{
+  const go=e.target.closest('[data-tab-go]'); if(go){ ui.tab=go.dataset.tabGo; lsSet('marche-tab',ui.tab); render(); scrollTo(0,0); return; }
+  const b=e.target.closest('[data-tab],[data-act]'); if(!b) return;
+  if(b.dataset.tab&&b.closest('.ot')){ ui.tab=b.dataset.tab; lsSet('marche-tab',ui.tab); render(); scrollTo(0,0); return; }
+  const act=b.dataset.act, id=b.dataset.id; if(!act) return;
+  if(act!=='toast'&&act!=='plus') cacherToast();
+  switch(act){
+    case 'toast': { const f=toastFn; cacherToast(); if(f) f(); break; }
+    case 'plus': if(ui.tab==='magasins') ouvrirMag(null); else ouvrirArt(null,{basique:ui.tab==='basiques'}); break;
+    case 'fermer': fermer(); break;
+    case 'reglages': vReglages(); break;
+    case 'ici': ui.ici=id||''; lsSet('marche-ici',ui.ici); render(); break;
+    case 'cocher': { const a=S.arts[id]; if(!a) break; a.panier=a.panier?null:nowIso(); save(); render(); break; }
+    case 'ranger': rangerTout(); break;
+    case 'art': ouvrirArt(id); break;
+    case 'remettre': { const a=S.arts[id]; if(!a) break; surListe(a); ui.q=''; save(); render(); toast('« '+a.nom+' » est sur la liste'); if(ui.tab==='liste'){ const q=document.getElementById('qa'); if(q) q.focus(); } break; }
+    case 'fini': { const a=S.arts[id]; if(!a) break; const s=snap([a]); surListe(a); save(); render(); toast('« '+a.nom+' » ajouté à la liste','Annuler',()=>restaurer(s)); break; }
+    case 'defini': { const a=S.arts[id]; if(!a) break; const s=snap([a]); a.liste=false; a.panier=null; a.auto=false; a.depuis=today(); save(); render(); toast('« '+a.nom+' » retiré de la liste','Annuler',()=>restaurer(s)); break; }
+    case 'partager': partager(); break;
+    case 'ou': { lireArt(); const r=b.dataset.ref, ou=ed.d.ou, i=ou.indexOf(r); if(i>=0) ou.splice(i,1); else ou.push(r); vArt(); break; }
+    case 'rythme': lireArt(); ed.d.rythme=+b.dataset.n||0; { const el=document.getElementById('e-ry'); if(el) el.value=''; } vArt(); break;
+    case 'sauver-art': sauverArt(); break;
+    case 'sup-art': { if(!ed.conf){ ed.conf=true; lireArt(); vArt(); break; } const a=S.arts[ed.id], s=snap([a]); delete S.arts[ed.id]; save(); fermer(); render(); toast('« '+a.nom+' » supprimé','Annuler',()=>restaurer(s)); break; }
+    case 'mag': ouvrirMag(id); break;
+    case 'mag-new': ouvrirMag(null); break;
+    case 'mag-sugg': ajouterSugg(b.dataset.nom); break;
+    case 'mag-haut': bouger(id,-1); break;
+    case 'mag-bas': bouger(id,1); break;
+    case 'mtype': { lireMag(); const t=ed.d.types, i=t.indexOf(id); if(i>=0) t.splice(i,1); else t.push(id); vMag(); break; }
+    case 'mtype-add': { lireMag(); const nid=nouveauType(val('e-ntype')); if(nid&&!ed.d.types.includes(nid)) ed.d.types.push(nid); vMag(); break; }
+    case 'sauver-mag': sauverMag(); break;
+    case 'sup-mag': { if(!ed.conf){ ed.conf=true; lireMag(); vMag(); break; } const mid=ed.id, nom=S.mags[mid].nom; delete S.mags[mid];
+      arts().forEach(a=>{ if((a.ou||[]).includes('m:'+mid)) a.ou=a.ou.filter(r=>r!=='m:'+mid); }); if(ui.ici===mid){ ui.ici=''; lsSet('marche-ici',''); }
+      save(); fermer(); render(); toast(nom+' supprimé'); break; }
+    case 'type': ouvrirType(id); break;
+    case 'type-new': ouvrirType(null); break;
+    case 'tcoul': lireType(); ed.d.couleur=b.dataset.c; vType(); break;
+    case 'sauver-type': sauverType(); break;
+    case 'sup-type': { if(!ed.conf){ ed.conf=true; lireType(); vType(); break; } const tid=ed.id, nom=S.types[tid].nom; delete S.types[tid];
+      mags().forEach(m=>{ if((m.types||[]).includes(tid)) m.types=m.types.filter(x=>x!==tid); });
+      arts().forEach(a=>{ if((a.ou||[]).includes('y:'+tid)) a.ou=a.ou.filter(r=>r!=='y:'+tid); });
+      save(); fermer(); render(); toast('Type « '+nom+' » supprimé'); break; }
+    case 'synchro': syncErr=''; setSync(); pull().then(()=>push()).then(()=>{ if(ed&&ed.k==='regl') vReglages(); }); break;
+    case 'export': exporter(); break;
+    case 'logout': if(!confirm('Te déconnecter ?'+(dirty.size?' '+pl(dirty.size,'changement')+' ne sont pas encore envoyés.':''))) return;
+      try{ localStorage.removeItem(CK()); }catch(err){} UID=null; sb.auth.signOut().finally(()=>location.reload()); break;
+  }
+});
+document.addEventListener('submit',e=>{ if(e.target.id==='qa-form'){ e.preventDefault(); const i=document.getElementById('qa'); if(i) ui.q=i.value; ajoutRapide(); } });
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='qa'){ ui.q=t.value; majSugg(); }
+  else if(t.id==='bq'){ ui.bq=t.value; render(); }
+  else if(t.id==='e-ry'&&ed&&ed.k==='art'){ const n=parseInt(t.value,10); ed.d.rythme=n>0&&n<=730?n:0; $sheet.querySelectorAll('[data-act="rythme"]').forEach(c=>c.classList.toggle('on',t.value===''&&+c.dataset.n===ed.d.rythme)); }
+});
+document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
+  if(t.id==='e-bas'&&ed.k==='art'){ lireArt(); if(ed.d.basique&&!ed.id&&ui.tab!=='liste') ed.d.liste=false; vArt(); }
+});
+document.addEventListener('keydown',e=>{
+  if($scrim.hidden) return;
+  if(e.key==='Escape'){ e.preventDefault(); fermer(); return; }
+  if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&ed){
+    e.preventDefault();
+    if(e.target.id==='e-ntype'){ $sheet.querySelector('[data-act="mtype-add"]').click(); return; }
+    const s=$sheet.querySelector('.btn[data-act^="sauver"]'); if(s) s.click(); }
+});
+$scrim.addEventListener('click',e=>{ if(e.target===$scrim) fermer(); });
+
+/* =============================== Démarrage =============================== */
+function showLogin(msg){ booted=false; document.getElementById('login').hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; try{ document.getElementById('l-mail').focus(); }catch(e){} }
+async function enter(user){
+  UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
+  let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
+  if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
+  S=fromRows(prev); booted=true; render(); setSync();
+  await pull(!c);
+  if(!Object.keys(S.types).length){ semer(); save(); render(); }
+  entretien(); push();
+}
+document.getElementById('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); const mail=document.getElementById('l-mail').value.trim(), pass=document.getElementById('l-pass').value;
+  try{ const {data,error}=await sb.auth.signInWithPassword({email:mail,password:pass}); if(error) throw error; await enter(data.user); }
+  catch(err){ showLogin('Connexion impossible : '+((err&&err.message)||err)); }
+});
+async function start(){
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('../sw.js',{scope:'../'}); }catch(e){} }
+  if(!window.supabase||!window.supabase.createClient){ $view.innerHTML='<div class="vide">Impossible de charger l’app. Recharge la page.</div>'; return; }
+  try{ if(!localStorage.getItem('orga-auth')&&localStorage.getItem('etabli-auth')) localStorage.setItem('orga-auth',localStorage.getItem('etabli-auth')); }catch(e){}
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'orga-auth'}});
+  let session=null; try{ session=(await sb.auth.getSession()).data.session; }catch(e){}
+  if(session&&session.user) await enter(session.user); else showLogin();
+  sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT'&&UID){ UID=null; showLogin(); } });
+  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); });
+  addEventListener('offline',()=>setSync());
+  document.addEventListener('visibilitychange',()=>{ if(!UID) return; if(document.visibilityState==='visible'){ entretien(); pull().then(()=>push()); } else push(); });
+  setInterval(()=>{ if(UID&&document.visibilityState==='visible'){ entretien(); pull(); } },60000);
+}
+render(); start();
+</script>
+<script src="../commun/ampoule.js" data-app="marche"></script>
+</body>
+</html>

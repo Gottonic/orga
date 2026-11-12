@@ -1,6 +1,6 @@
-/* ORGA : un seul service worker pour l'accueil et toutes les apps (Établi, Banque, Forge…).
+/* ORGA : un seul service worker pour l'accueil et toutes les apps (Établi, Banque, Forge, Marché…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-12-6';
+const VERSION = 'orga-2026-11-12-7';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -19,7 +19,9 @@ const SHELL = [
   'forge/fonts/figtree-latin-600-normal.woff2',
   'forge/fonts/figtree-latin-700-normal.woff2',
   'forge/fonts/jetbrains-mono-latin-400-normal.woff2',
-  'forge/fonts/jetbrains-mono-latin-500-normal.woff2'
+  'forge/fonts/jetbrains-mono-latin-500-normal.woff2',
+  'marche/', 'marche/icons/icon-192.png', 'marche/icons/apple-touch-icon.png',
+  'marche/fonts/caveat-latin-700-normal.woff2'
 ];
 /* une page = une adresse ; « dossier/ » et « dossier/index.html » sont la même page */
 const cle = url => { const p = new URL(url, self.location).pathname; return p.endsWith('/') ? p + 'index.html' : p; };

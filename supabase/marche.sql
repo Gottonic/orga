@@ -1,0 +1,38 @@
+-- Marché (dossier marche/) : la liste de courses. À coller une fois dans Supabase > SQL Editor > New query, puis « Run ».
+-- (À côté des tables d'Établi, Banque et Forge : rien n'est touché de ce côté-là.)
+
+-- Une table, comme les autres apps : chaque magasin, type de magasin, article… est une ligne.
+-- « kind » dit ce que c'est ; « data » contient le détail. L'app garde tout en mémoire et marche hors ligne.
+create table if not exists public.marche_rows (
+  user_id    uuid        not null default auth.uid() references auth.users(id) on delete cascade,
+  key        text        not null,
+  kind       text        not null check (kind in ('magasin','type','article','reglage')),
+  data       jsonb,
+  deleted    boolean     not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+create index if not exists marche_rows_user_updated on public.marche_rows (user_id, updated_at);
+
+-- L'heure de modification est toujours celle du serveur.
+create or replace function public.marche_rows_touch() returns trigger language plpgsql as $$
+begin new.updated_at := now(); return new; end $$;
+drop trigger if exists marche_rows_touch on public.marche_rows;
+create trigger marche_rows_touch before insert or update on public.marche_rows for each row execute function public.marche_rows_touch();
+
+-- Chacun ne voit et ne modifie que ses propres lignes (on n'efface jamais : « deleted » passe à vrai).
+alter table public.marche_rows enable row level security;
+drop policy if exists "marche : lire ses lignes" on public.marche_rows;
+drop policy if exists "marche : ajouter ses lignes" on public.marche_rows;
+drop policy if exists "marche : modifier ses lignes" on public.marche_rows;
+create policy "marche : lire ses lignes"     on public.marche_rows for select to authenticated using (auth.uid() = user_id);
+create policy "marche : ajouter ses lignes"  on public.marche_rows for insert to authenticated with check (auth.uid() = user_id);
+create policy "marche : modifier ses lignes" on public.marche_rows for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+revoke all on public.marche_rows from anon;
+grant select, insert, update on public.marche_rows to authenticated;
+
+-- Supabase relit la liste des tables (sinon l'app peut répondre « Could not find the table »).
+notify pgrst, 'reload schema';
+
+-- Vérification : doit afficher « marche_rows prête ».
+select 'marche_rows prête' as resultat where exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'marche_rows');
