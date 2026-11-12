@@ -85,6 +85,9 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 .ic{position:relative;width:44px;height:44px;border-radius:22px;display:grid;place-items:center;color:#fff;flex:none}
 .op .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .op .ti{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op .ti:has(.tt){display:flex;align-items:center;min-width:0}
+.op .ti .tt{flex:0 1 auto;min-width:3ch;overflow:hidden;text-overflow:ellipsis}
+.op .ti .tg{flex:0 0 auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .op .sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .op .end{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
 .op .mt{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
@@ -478,7 +481,7 @@ function opLi(t,sansDate){
   const sous=vir?((t.montant<0?'vers ':'depuis ')+autre):((t.tiers?t.tiers+' · ':'')+(parts?t.parts.map(p=>catNom(p.cat)).join(' + '):(S.comptes[t.compte]?S.comptes[t.compte].nom:'')));
   const tags=(t.tags||[]).map(g=>'<span class="tg">'+esc(S.tags[g]?S.tags[g].nom:g)+'</span>').join('');
   const col=vir?'#9CA3AF':parts?'#6B7280':couleur(t.cat), d=vir?P.swap:parts?P.split:icCat(t.cat);
-  return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic" style="background:'+col+'">'+svg(d,22,'#fff')+'</span><span class="mid"><span class="ti">'+esc(titre)+tags+'</span><span class="sub">'+esc(sous)+'</span></span><span class="end"><span class="mt '+(vir?'':t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span><span class="ac">'+(sansDate?esc(S.comptes[t.compte]?S.comptes[t.compte].nom:''):esc(dateCourte(t.date)))+'</span></span></button></li>';
+  return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic" style="background:'+col+'">'+svg(d,22,'#fff')+'</span><span class="mid"><span class="ti"><span class="tt">'+esc(titre)+'</span>'+tags+'</span><span class="sub">'+esc(sous)+'</span></span><span class="end"><span class="mt '+(vir?'':t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span><span class="ac">'+(sansDate?esc(S.comptes[t.compte]?S.comptes[t.compte].nom:''):esc(dateCourte(t.date)))+'</span></span></button></li>';
 }
 
 function filtreTx(){
