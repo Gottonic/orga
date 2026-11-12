@@ -179,6 +179,10 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 .hist>span{display:flex;flex-direction:column;align-items:center;background:var(--tile);border-radius:10px;padding:6px 2px;font-size:13px}
 .hist>span.neg b{color:var(--neg)}
 .rel{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:14px}
+input[type=checkbox]{accent-color:var(--acc)}
+.exl .chk{padding:7px 0;align-items:flex-start}
+.exl .chk input{margin-top:1px;flex:none}
+.exl .cap{display:block;margin-top:10px}
 .dsec{margin-top:10px}
 .dsec>.st{padding-bottom:4px}
 .dette-b{border:0;background:transparent;padding:0;text-align:left;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;color:inherit;font-size:15px}
@@ -504,7 +508,8 @@ function vReglages(){
         +(g==='invest'?'<input class="input num" inputmode="decimal" data-valeur="'+esc(c.id)+'" value="'+esc(solde(c)==null?'':solde(c))+'" aria-label="Valeur actuelle de '+esc(c.nom)+'">':'<input class="input num" inputmode="decimal" data-solde="'+esc(c.id)+'" value="'+esc(c.solde_initial==null?'':c.solde_initial)+'" aria-label="Solde au départ de '+esc(c.nom)+'">')
         +'<span class="note">Aujourd’hui : <b>'+fmt(solde(c))+(dev?' '+esc(c.devise):'')+'</b></span><label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" data-archive="'+esc(c.id)+'"'+(c.archive?' checked':'')+'> Masqué</label></div></div>'; }).join('')+'</section>';
   h+='<section class="card"><h2>Organisation</h2><p class="note" style="margin-top:6px">Renommer, ajouter, fusionner ou masquer.</p><div class="pills" style="margin-top:12px"><button class="btn ghost sm" data-tab="cats" style="width:auto">Catégories</button><button class="btn ghost sm" data-tab="tags" style="width:auto">Étiquettes</button></div></section>';
-  h+='<section class="card"><h2>Sauvegarde</h2><p class="note" style="margin-top:6px">'+Object.keys(S.tx).length+' opérations, '+Object.keys(S.cats).length+' catégories, '+Object.keys(S.tags).length+' étiquettes.</p><p style="margin:12px 0 0"><button class="btn ghost sm" data-act="export">Exporter toutes mes données</button></p></section>';
+  h+='<section class="card"><h2>Export</h2><p class="note" style="margin-top:6px">Pour une analyse détaillée par une IA, ou dans un tableur : tu choisis la période, les comptes et ce qu’il faut inclure.</p><p style="margin:12px 0 0"><button class="btn sm" data-act="exporter" style="width:auto">Préparer un export</button></p></section>';
+  h+='<section class="card"><h2>Sauvegarde</h2><p class="note" style="margin-top:6px">'+Object.keys(S.tx).length+' opérations, '+Object.keys(S.cats).length+' catégories, '+Object.keys(S.tags).length+' étiquettes.</p><p style="margin:12px 0 0"><button class="btn ghost sm" data-act="export">Télécharger une sauvegarde complète</button></p></section>';
   return h;
 }
 
@@ -512,7 +517,7 @@ function vReglages(){
 let draft=null, sheetErr='';
 function okBtn(act){ return '<button class="okb" data-act="'+act+'">'+svg(P.check,16,null,2.6)+'Enregistrer</button>'; }
 function ouvrir(html){ const sc=$sheet.scrollTop; $sheet.innerHTML=html; $scrim.hidden=false; document.body.style.overflow='hidden'; $sheet.scrollTop=sc; }
-function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; ec=null; et=null; eb=null; document.body.style.overflow=''; }
+function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; ec=null; et=null; eb=null; ex=null; document.body.style.overflow=''; }
 function dernierCompte(){ return (S.regl.dernierCompte&&S.comptes[S.regl.dernierCompte])?S.regl.dernierCompte:(comptesTri()[0]||{}).id; }
 function nouvelleSaisie(){
   if(!comptesTri().length){ ouvrir('<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Saisie</h2></div><p class="note">Commence par charger tes données de départ (Réglages) : c’est là que tes comptes sont créés.</p>'); return; }
@@ -1052,6 +1057,7 @@ function vStats(){
     if(ui.sTab.tag) h+=tableau(['Étiquette','Coût net'],tg.map(([g,v])=>['#'+esc(S.tags[g].nom),fmt(v)]));
     else h+='<div class="rk">'+tg.map(([g,v])=>'<button class="rk-row nodot" data-voirtag="'+esc(g)+'"><span class="rk-n">#'+esc(S.tags[g].nom)+'</span><span class="rk-v">'+fmt(v)+'</span><span class="rk-b"><i style="width:'+Math.max(v>0?1:0,Math.max(0,v)/tmx*100)+'%;background:'+SERIE.pat+'"></i></span></button>').join('')+'</div>';
     h+='</section>'; }
+  h+='<button class="btn ghost" data-act="exporter">Exporter pour une analyse…</button>';
   return h;
 }
 /* bulle d'information (survol, toucher, clavier) — textes insérés avec textContent */
@@ -1322,6 +1328,105 @@ function enregistrerBudget(){
   save(); fermer(); render();
 }
 
+/* =============================== Export =============================== */
+let ex=null, exMsg='', exErr=false;
+const EXDEF={format:'md',per:'annee',du:'',au:'',scope:'tout',comptes:null,ops:true,resume:true,soldes:true,listes:true,dettes:true,budgets:true,virements:false,notes:true,tiers:true,anonyme:false,lieux:true,orig:true};
+function ouvrirExport(){ let o=null; try{ o=JSON.parse(localStorage.getItem('banque-export')||'null'); }catch(e){}
+  ex=Object.assign({},EXDEF,o||{}); const ids=comptesTous().map(c=>c.id); ex.comptes=(ex.comptes||ids).filter(id=>S.comptes[id]); if(!ex.comptes.length) ex.comptes=ids; exMsg=''; vExport(); }
+function lireExport(){ if(!ex) return; const g=id=>document.getElementById(id);
+  document.querySelectorAll('[data-exo]').forEach(i=>{ ex[i.dataset.exo]=i.checked; });
+  const cs=[...document.querySelectorAll('[data-exc]')]; if(cs.length) ex.comptes=cs.filter(i=>i.checked).map(i=>i.dataset.exc);
+  if(g('x-du')) ex.du=g('x-du').value; if(g('x-au')) ex.au=g('x-au').value; }
+function bornesExport(o){ const t=today();
+  if(o.per==='annee') return [t.slice(0,4)+'-01-01',t];
+  if(o.per==='12m'){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-11); return [isoD(d),t]; }
+  if(o.per==='perso') return [o.du||'2000-01-01',o.au||t];
+  let m=t; for(const x of Object.values(S.tx)) if(x.date<m) m=x.date; return [m,t]; }
+function csvCel(v){ v=v==null?'':String(v); return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function mdCel(v){ return String(v==null?'':v).replace(/\|/g,'/').replace(/\n/g,' '); }
+function mdTable(h,rows){ return '| '+h.map(mdCel).join(' | ')+' |\n|'+h.map((x,i)=>i?' ---: |':' --- |').join('')+'\n'+rows.map(r=>'| '+r.map(mdCel).join(' | ')+' |').join('\n')+'\n'; }
+function n2(x){ return (Math.round(x*100)/100).toFixed(2); }
+function soldeAu(c,d){ if(c.devise&&c.devise!=='CHF') return null; let s=c.solde_initial||0; for(const t of Object.values(S.tx)) if(t.compte===c.id&&t.date<=d) s+=t.montant; return r2(s); }
+function genererExport(o){
+  const [a,b]=bornesExport(o), cs=new Set(o.comptes), pers={}, debiteurs=new Set(Object.values(S.dettes).map(d=>d.personne)); let np=0;
+  const anonyme=(nom,t)=>{ if(!o.anonyme||!nom) return nom; if(estMoi(nom)) return 'moi'; const p=debiteurs.has(nom)||(t&&['twint','virement','moi'].includes(t.canal)&&estPersonne(nom))||(t&&t.source==='feuille');
+    if(!p) return nom; if(!pers[nom]) pers[nom]='Personne '+(++np); return pers[nom]; };
+  const cn=id=>S.comptes[id]?S.comptes[id].nom:id||'', grp=id=>{ const c=S.comptes[id]; return c?{prive:'privé',pro:'pro',invest:'investissement'}[groupeDe(c)]:''; };
+  const R=[];
+  Object.values(S.tx).sort((x,y)=>x.date.localeCompare(y.date)||String(x.id).localeCompare(String(y.id))).forEach(t=>{
+    if(t.date<a||t.date>b||!cs.has(t.compte)) return; const vir=estVir(t); if(vir&&!o.virements) return;
+    const L=lignes(t);
+    L.forEach((l,i)=>{ const s=sensLigne(l), pro=vir?groupeDe(S.comptes[t.compte]||{})==='pro':estPro(l.cat);
+      if(o.scope!=='tout'&&(o.scope==='pro')!==pro) return;
+      const type=vir?'virement':l.cat===AJU?'ajustement':!l.cat?'à classer':s==='rev'?'revenu':s==='dep'?(l.montant>0?'remboursement':'dépense'):'autre';
+      const m=maitreDe(l.cat), cat=l.cat&&!vir&&S.cats[m]?S.cats[m].nom:'', sous=l.cat&&!vir&&l.cat!==m&&S.cats[l.cat]?S.cats[l.cat].nom:'';
+      R.push({id:t.id,part:L.length>1?(i+1)+'/'+L.length:'',date:t.date,compte:cn(t.compte),groupe:grp(t.compte),type,s,montant:l.montant,cat,catId:l.cat,maitre:m,sous,pro,
+        tags:(t.tags||[]).map(g=>S.tags[g]?S.tags[g].nom:g),tagIds:t.tags||[],tiers:anonyme(t.tiers,t)||'',note:(i===0||!t.parts?t.note:(t.parts[i]&&t.parts[i].note))||'',lieu:t.lieu||'',orig:t.orig||'',vers:vir?cn(t.autre):''}); }); });
+  const cols=[['date','date'],['compte','compte'],['groupe_compte','groupe'],['type','type'],['montant_chf',r=>n2(r.montant)],['categorie','cat'],['sous_categorie','sous'],['pro',r=>r.pro?'oui':'non'],['etiquettes',r=>r.tags.join(' | ')]];
+  if(o.tiers) cols.push(['commercant_ou_personne','tiers']); if(o.notes) cols.push(['note','note']); if(o.lieux) cols.push(['lieu','lieu']); if(o.orig) cols.push(['montant_devise_origine','orig']);
+  if(o.virements) cols.push(['vers_ou_depuis_compte','vers']); cols.push(['partage','part'],['id_operation','id']);
+  const csv=cols.map(c=>c[0]).join(';')+'\n'+R.map(r=>cols.map(([k,f])=>csvCel(typeof f==='function'?f(r):r[f])).join(';')).join('\n')+'\n';
+  const fic='banque-export-'+a+'-au-'+b;
+  if(o.format==='csv') return {texte:'﻿'+csv,nom:fic+'.csv',type:'text/csv;charset=utf-8',lignes:R.length};
+  /* --- texte pour une IA : contexte, résumés, puis toutes les opérations --- */
+  const D=r=>dCourte(r), periode='du '+D(a)+' au '+D(b), comptesSel=o.comptes.map(cn);
+  let md='# Export Banque — '+periode+'\n\nGénéré le '+D(today())+'. Montants en CHF. Négatif = argent qui sort, positif = argent qui rentre.\n\n';
+  md+='## Comment lire ces données\n\n'
+    +'- **Comptes** : '+comptesTous().map(c=>c.nom+' ('+grp(c.id)+(c.devise&&c.devise!=='CHF'?', '+c.devise:'')+(c.archive?', masqué':'')+')').join(', ')+'. Les comptes pro servent à l’activité d’indépendant.\n'
+    +'- **Catégorie** = à quoi sert l’argent. **Étiquette** = le contexte (voyage, projet, événement) ; une opération peut en avoir plusieurs.\n'
+    +'- **Type** : dépense ; remboursement (argent qui revient dans une catégorie de dépense, il réduit cette dépense) ; revenu ; virement (entre mes propres comptes : ni dépense ni revenu) ; ajustement (correction de solde ou variation de valeur d’un placement) ; à classer (pas encore de catégorie).\n'
+    +'- **Pro** : la catégorie « Pro » a une sous-catégorie par activité ('+sousDe('pro').map(c=>c.nom).join(', ')+'). Sa colonne « pro » vaut oui même si l’opération passe par un compte privé.\n'
+    +'- **Partage** : une opération répartie sur plusieurs catégories donne une ligne par part (même id_operation, « 1/2 », « 2/2 »).\n'
+    +'- **Filtres de cet export** : '+periode+' ; '+(o.scope==='tout'?'privé et pro':o.scope==='pro'?'pro seulement':'privé seulement')+' ; comptes : '+comptesSel.join(', ')+' ; virements entre mes comptes '+(o.virements?'inclus':'exclus')+(o.anonyme?' ; noms de personnes remplacés par « Personne 1, 2… » (les notes ne sont pas modifiées)':'')+'.\n\n';
+  const sansVir=R.filter(r=>r.type!=='virement'&&r.type!=='ajustement'&&r.type!=='à classer'), dep=sansVir.filter(r=>r.s==='dep'), rev=sansVir.filter(r=>r.s==='rev');
+  const tDep=-dep.reduce((x,r)=>x+r.montant,0), tRev=rev.reduce((x,r)=>x+r.montant,0);
+  md+='## En bref\n\n- Dépenses (nettes des remboursements) : '+n2(tDep)+'\n- Revenus : '+n2(tRev)+'\n- Solde (revenus − dépenses) : '+n2(tRev-tDep)+'\n- Opérations : '+new Set(R.map(r=>r.id)).size+' ('+R.length+' lignes)'+(R.some(r=>r.type==='à classer')?', dont '+R.filter(r=>r.type==='à classer').length+' à classer':'')+'\n\n';
+  if(o.soldes){ const avant=isoD(new Date(Date.parse(a+'T12:00')-864e5)), L=o.comptes.map(id=>S.comptes[id]).filter(Boolean);
+    md+='## Soldes des comptes\n\n'+mdTable(['Compte','Groupe','Solde au '+D(avant),'Solde au '+D(b),'Variation'],L.map(c=>{ const x=soldeAu(c,avant), y=soldeAu(c,b);
+      return x==null?[c.nom,grp(c.id),'—',(c.valeur!=null?n2(c.valeur)+' '+c.devise+' (valeur actuelle)':'—'),'—']:[c.nom,grp(c.id),n2(x),n2(y),n2(y-x)]; }))+'\n';
+    const mois=moisEntre(a,b), chf=L.filter(c=>!(c.devise&&c.devise!=='CHF'));
+    if(mois.length>1) md+='### Solde en fin de mois\n\n'+mdTable(['Mois'].concat(chf.map(c=>c.nom),['Total CHF']),mois.map(m=>{ const d=finMois(m)<b?finMois(m):b, v=chf.map(c=>soldeAu(c,d)); return [m].concat(v.map(n2),[n2(v.reduce((x,y)=>x+y,0))]); }))+'\n'; }
+  if(o.resume&&sansVir.length){ const mois=moisEntre(a,b), M=[...new Set(dep.map(r=>r.maitre).filter(Boolean))].sort((x,y)=>((S.cats[x]||{}).ordre||0)-((S.cats[y]||{}).ordre||0));
+    const som=(L,f)=>L.filter(f).reduce((x,r)=>x+r.montant,0);
+    md+='## Dépenses par mois et par catégorie\n\nDépenses nettes (positives = dépensé).\n\n'+mdTable(['Mois'].concat(M.map(m=>S.cats[m]?S.cats[m].nom:m),['Total dépenses','Revenus','Solde']),mois.map(mo=>{ const x=dep.filter(r=>r.date.startsWith(mo)), y=rev.filter(r=>r.date.startsWith(mo)), td=-som(x,()=>true), tr=som(y,()=>true);
+      return [mo].concat(M.map(m=>n2(-som(x,r=>r.maitre===m))),[n2(td),n2(tr),n2(tr-td)]); }))+'\n';
+    const parSous={}; dep.forEach(r=>{ const k=r.catId||'?'; parSous[k]=(parSous[k]||0)-r.montant; });
+    md+='## Total par catégorie et sous-catégorie\n\n'+mdTable(['Catégorie','Sous-catégorie','Dépensé','Part'],Object.entries(parSous).sort((x,y)=>y[1]-x[1]).map(([k,v])=>{ const m=maitreDe(k); return [S.cats[m]?S.cats[m].nom:'?',k!==m&&S.cats[k]?S.cats[k].nom:'—',n2(v),tDep?Math.round(v/tDep*100)+' %':'']; }))+'\n';
+    const parRev={}; rev.forEach(r=>{ const k=r.catId||'?'; parRev[k]=(parRev[k]||0)+r.montant; });
+    if(rev.length) md+='## Revenus par catégorie\n\n'+mdTable(['Catégorie','Sous-catégorie','Montant'],Object.entries(parRev).sort((x,y)=>y[1]-x[1]).map(([k,v])=>{ const m=maitreDe(k); return [S.cats[m]?S.cats[m].nom:'?',k!==m&&S.cats[k]?S.cats[k].nom:'—',n2(v)]; }))+'\n';
+    const pros=sousDe('pro').map(c=>[c.nom,som(sansVir,r=>r.catId===c.id&&r.montant>0),-som(sansVir,r=>r.catId===c.id&&r.montant<0)]).filter(x=>x[1]||x[2]);
+    if(pros.length) md+='## Activités pro\n\n'+mdTable(['Activité','Entrées','Sorties','Net'],pros.map(([n,e,s])=>[n,n2(e),n2(s),n2(e-s)]))+'\n';
+    const parTag={}; sansVir.forEach(r=>r.tagIds.forEach(g=>{ parTag[g]=(parTag[g]||0)-r.montant; }));
+    if(Object.keys(parTag).length) md+='## Étiquettes : coût net sur la période\n\n'+mdTable(['Étiquette','Genre','Dates','Coût net'],Object.entries(parTag).sort((x,y)=>y[1]-x[1]).map(([g,v])=>{ const G=S.tags[g]||{}; return ['#'+(G.nom||g),genreNom(G.genre),G.du?D(G.du)+(G.au&&G.au!==G.du?' → '+D(G.au):''):'',n2(v)]; }))+'\n'; }
+  if(o.budgets){ const B=Object.values(S.budgets).filter(x=>!x.archive); if(B.length) md+='## Budgets (état au '+D(today())+')\n\n'+mdTable(['Budget','Période','Montant','Dépensé','Reste'],B.map(x=>{ const E=etatBudget(x); return [nomBudget(x),libPeriode(x),n2(x.montant),n2(E.dep),n2(E.reste)]; }))+'\n'; }
+  if(o.dettes){ const L=Object.values(S.dettes).filter(d=>!d.reglee||(d.reglee_le&&d.reglee_le>=a)); if(L.length) md+='## Dettes\n\n'+mdTable(['Sens','Personne','Objet','Depuis','Échéance','Montant restant','État'],L.map(d=>[d.sens==='je_dois'?'je dois':'on me doit',anonyme(d.personne),d.objet||'',D(d.date),D(d.echeance),n2(d.montant),d.reglee?'payée le '+D(d.reglee_le):'en cours']))+'\n'; }
+  if(o.listes){ md+='## Catégories\n\n'+maitres().map(m=>'- '+m.nom+(sousDe(m.id).length?' : '+sousDe(m.id).map(s=>s.nom).join(', '):'')).join('\n')+'\n\n';
+    const T=Object.values(S.tags).filter(g=>!g.archive); if(T.length) md+='## Étiquettes\n\n'+T.map(g=>'- #'+g.nom+(g.genre?' ('+genreNom(g.genre)+(g.du?', '+D(g.du)+(g.au&&g.au!==g.du?' → '+D(g.au):''):'')+')':'')).join('\n')+'\n\n'; }
+  if(o.ops) md+='## Toutes les opérations\n\nUne ligne par opération (ou par part d’une opération partagée), séparateur « ; ».\n\n```csv\n'+csv+'```\n';
+  return {texte:md,nom:fic+'.md',type:'text/markdown;charset=utf-8',lignes:R.length};
+}
+function vExport(){
+  const o=ex, X=genererExport(o), [a,b]=bornesExport(o), ko=Math.max(1,Math.round(new Blob([X.texte]).size/1024));
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Export</h2><button class="okb" data-act="exportdl">'+svg(P.down,16,null,2.6)+'Télécharger</button></div>';
+  h+='<div class="field"><span class="lbl">Format</span>'+seg('exf',o.format,[['md','Pour une IA (texte)'],['csv','Tableur (CSV)']],'Format')+'<p class="note">'+(o.format==='md'?'Un seul fichier texte : explications, résumés par mois et par catégorie, soldes, puis toutes les opérations. À joindre ou coller dans une conversation avec une IA.':'Seulement les opérations, une par ligne, à ouvrir dans un tableur.')+'</p></div>';
+  h+='<div class="field"><span class="lbl">Période</span>'+seg('exper',o.per,[['annee','Année'],['12m','12 mois'],['tout','Tout'],['perso','Dates']],'Période')+(o.per==='perso'?'<div class="filtres"><div class="field"><label class="lbl" for="x-du">Du</label><input class="input" type="date" id="x-du" value="'+esc(o.du)+'"></div><div class="field"><label class="lbl" for="x-au">Au</label><input class="input" type="date" id="x-au" value="'+esc(o.au)+'"></div></div>':'<p class="note">Du '+esc(dCourte(a))+' au '+esc(dCourte(b))+'.</p>')+'</div>';
+  h+='<div class="field"><span class="lbl">Opérations</span>'+seg('exscope',o.scope,[['prive','Privées'],['pro','Pro'],['tout','Toutes']],'Privé ou pro')+'</div>';
+  const cb=(k,t,sous)=>'<label class="chk"><input type="checkbox" data-exo="'+k+'"'+(o[k]?' checked':'')+'> <span>'+t+(sous?'<br><span class="note">'+sous+'</span>':'')+'</span></label>';
+  h+='<section class="card exl"><h2>Comptes</h2>'+GROUPES.map(([g,titre])=>{ const L=comptesTous().filter(c=>groupeDe(c)===g); return L.length?'<span class="cap">'+titre+'</span>'+L.map(c=>'<label class="chk"><input type="checkbox" data-exc="'+esc(c.id)+'"'+(o.comptes.includes(c.id)?' checked':'')+'> '+esc(c.nom)+(c.archive?' <span class="note">(masqué)</span>':'')+'</label>').join(''):''; }).join('')+'</section>';
+  if(o.format==='md') h+='<section class="card exl"><h2>Contenu</h2>'+cb('resume','Résumés','dépenses par mois et par catégorie, revenus, activités pro, étiquettes')+cb('soldes','Soldes des comptes','au début, à la fin et à chaque fin de mois')+cb('budgets','Budgets')+cb('dettes','Dettes','en cours et payées pendant la période')+cb('listes','Liste des catégories et étiquettes')+cb('ops','Toutes les opérations','le détail, ligne par ligne')+'</section>';
+  h+='<section class="card exl"><h2>Détail des opérations</h2>'+cb('virements','Virements entre mes comptes','utile pour suivre l’argent d’un compte à l’autre ; sinon seulement dépenses et revenus')+cb('tiers','Commerçants et personnes')+cb('anonyme','Remplacer les noms de personnes par « Personne 1, 2… »','Twint et virements entre personnes, dettes. Les notes ne changent pas.')+cb('notes','Notes')+cb('lieux','Lieux','localité des paiements Yuh')+cb('orig','Montants en devise d’origine','pour les paiements en euros…')+'</section>';
+  h+='<p class="note" style="text-align:center">'+X.lignes+' ligne'+(X.lignes>1?'s':'')+' d’opérations · environ '+ko+' ko</p>';
+  if(exMsg) h+='<p class="'+(exErr?'err':'note')+'" style="text-align:center;font-weight:700'+(exErr?'':';color:var(--pos)')+'" role="status">'+esc(exMsg)+'</p>';
+  h+='<button class="btn ghost" data-act="exportcopie">Copier le texte</button>';
+  ouvrir(h);
+}
+function memoExport(){ try{ localStorage.setItem('banque-export',JSON.stringify(Object.assign({},ex,{du:ex.du,au:ex.au}))); }catch(e){} }
+function telechargerExport(){ lireExport(); if(!ex.comptes.length){ exMsg='Coche au moins un compte.'; exErr=true; vExport(); return; }
+  const X=genererExport(ex); memoExport(); const u=URL.createObjectURL(new Blob([X.texte],{type:X.type})), l=document.createElement('a'); l.href=u; l.download=X.nom; document.body.appendChild(l); l.click(); l.remove(); setTimeout(()=>URL.revokeObjectURL(u),3000);
+  exMsg='Fichier « '+X.nom+' » téléchargé.'; exErr=false; vExport(); }
+async function copierExport(){ lireExport(); const X=genererExport(ex); memoExport();
+  try{ await navigator.clipboard.writeText(X.texte); exMsg='Copié : colle-le dans ta conversation.'; exErr=false; }catch(e){ exMsg='La copie n’a pas marché ici : utilise « Télécharger ».'; exErr=true; } vExport(); }
+
 /* =============================== Événements =============================== */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button,[data-tab]'); if(!b) return;
@@ -1346,6 +1451,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.ebud){ const B=S.budgets[b.dataset.ebud]; if(B){ eb={id:B.id,cible:B.cible,ref:B.ref,montant:String(B.montant),periode:B.periode,du:B.du||'',au:B.au||''}; sheetErr=''; vBudget(); } return; }
   if(b.dataset.bcible&&eb){ lireBudget(); if(eb.cible!==b.dataset.bcible){ eb.cible=b.dataset.bcible; eb.ref=''; eb.periode=eb.cible==='tag'?'total':'mois'; } vBudget(); return; }
   if(b.dataset.bper&&eb){ lireBudget(); eb.periode=b.dataset.bper; vBudget(); return; }
+  if(ex&&(b.dataset.exf||b.dataset.exper||b.dataset.exscope)){ lireExport(); if(b.dataset.exf) ex.format=b.dataset.exf; if(b.dataset.exper) ex.per=b.dataset.exper; if(b.dataset.exscope) ex.scope=b.dataset.exscope; exMsg=''; vExport(); return; }
   if(b.dataset.dette){ ouvrirDette(b.dataset.dette); return; }
   if(b.dataset.payer){ ouvrirDette(b.dataset.payer,true); return; }
   if(b.dataset.dsens&&dd){ lireDette(); dd.sens=b.dataset.dsens; vDette(); return; }
@@ -1375,6 +1481,9 @@ document.addEventListener('click',e=>{
   else if(a==='importok'){ if(!imp) return; const n=appliquerImport(imp); fermer(); if(aClasser().length||orphelines().length) ui.tab='rappro'; ui.limite=150; window.scrollTo(0,0); render(); setTimeout(()=>alert(n+' ligne'+(n>1?'s':'')+' du relevé importée'+(n>1?'s':'')+'.'),50); }
   else if(a==='toutvalider'){ const H=historique(); let n=0; aClasser().forEach(t=>{ const dm=detteQuiColle(t); if(dm){ reglerAvec(t,dm); n++; return; } const p=twintPersonne(t)?null:proposer(t,H); if(p&&p.sure&&S.cats[p.cat]){ t.cat=p.cat; n++; } }); if(n){ save(); render(); } }
   else if(a==='nouvelledette') nouvelleDette();
+  else if(a==='exporter') ouvrirExport();
+  else if(a==='exportdl') telechargerExport();
+  else if(a==='exportcopie') copierExport();
   else if(a==='catsave') enregistrerCat();
   else if(a==='catsuppr'){ const C=ec&&S.cats[ec.id]; if(C&&confirm('Supprimer « '+catChemin(C.id)+' » ?')){ delete S.cats[C.id]; save(); fermer(); render(); } }
   else if(a==='ntag'){ et={id:null,nom:'',genre:'voyage',du:'',au:'',actif:false,archive:false}; sheetErr=''; vTag(); }
@@ -1411,6 +1520,7 @@ document.addEventListener('change',e=>{
   else if(t.id==='f-cat'){ ui.fCat=t.value; render(); }
   else if(t.id==='f-tag'){ ui.fTag=t.value; if(t.value) ui.periode='tout'; render(); }
   else if(eb&&(t.id==='b-ref'||t.id==='b-du'||t.id==='b-au')){ lireBudget(); vBudget(); }
+  else if(ex&&(t.dataset.exo||t.dataset.exc||t.id==='x-du'||t.id==='x-au')){ lireExport(); exMsg=''; vExport(); }
   else if(t.dataset.impvers!=null&&imp){ const m=imp.nouveaux[+t.dataset.impvers]; if(m){ m.vers=t.value||null; vImport(); } }
   else if(t.dataset.solde){ const c=S.comptes[t.dataset.solde]; if(c){ c.solde_initial=num(t.value); save(); render(); } }
   else if(t.dataset.nomc){ const c=S.comptes[t.dataset.nomc], v=t.value.trim(); if(c&&v){ c.nom=v; save(); render(); } }
