@@ -9,7 +9,10 @@
 
    Données : table Supabase « idees » (une ligne par idée, colonne « app »), même connexion que les apps
    (clé « orga-auth »). Copie locale « orga-idees » : on peut noter hors ligne, l'envoi se fait dès que possible.
-   Une idée : { titre, type: 'bug' | 'idee', details, cree, fait?, faitLe? } — cochée = faite, elle quitte la liste. */
+   Une idée : { titre, type: 'bug' | 'idee', details, cree, fait?, faitLe?, captures?: [{ id, w, h, path? }] }
+   — cochée = faite, elle quitte la liste.
+   Captures d'écran : collées (Ctrl+V), glissées ou choisies, réduites à 1600 px (WebP), gardées sur l'appareil
+   (cache « idees-media ») puis envoyées dans le dossier privé « idees » de Supabase (<utilisateur>/<id>.webp). */
 (function () {
   'use strict';
   const ME = document.currentScript;
@@ -33,17 +36,78 @@
 
   /* ---------- copie locale (partagée par toutes les apps : même origine) ---------- */
   function load() {
-    try { const x = JSON.parse(localStorage.getItem(LS) || 'null'); if (x && x.rows) return { rows: x.rows, dirty: new Set(x.dirty || []), last: x.last || null }; } catch (e) {}
-    return { rows: {}, dirty: new Set(), last: null };
+    try { const x = JSON.parse(localStorage.getItem(LS) || 'null'); if (x && x.rows) return { rows: x.rows, dirty: new Set(x.dirty || []), last: x.last || null, effacer: x.effacer || [] }; } catch (e) {}
+    return { rows: {}, dirty: new Set(), last: null, effacer: [] };
   }
-  function save(S) { try { localStorage.setItem(LS, JSON.stringify({ rows: S.rows, dirty: [...S.dirty], last: S.last })); } catch (e) {} }
+  function save(S) { try { localStorage.setItem(LS, JSON.stringify({ rows: S.rows, dirty: [...S.dirty], last: S.last, effacer: S.effacer || [] })); } catch (e) {} }
   function modifier(key, fn) { const S = load(); const r = S.rows[key] || { app: APP, data: {}, deleted: false }; fn(r); S.rows[key] = r; S.dirty.add(key); save(S); }
   const liste = (app) => { const S = load(); return Object.entries(S.rows).filter(([, r]) => !r.deleted && r.data && (!app || r.app === app))
     .map(([key, r]) => Object.assign({ key, app: r.app }, r.data)).sort((a, b) => String(b.cree || '').localeCompare(String(a.cree || ''))); };
+  const capsAttente = (S) => Object.values(S.rows).some((r) => !r.deleted && r.data && (r.data.captures || []).some((c) => !c.path));
+  const aFaire = () => { const S = load(); return S.dirty.size || S.effacer.length || capsAttente(S); };
   const nouvelleCle = () => 'idee:' + APP + ':' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+  /* ---------- captures d'écran ---------- */
+  const BUCKET = 'idees', MEDIA = 'idees-media', MAXCAP = 6, MAXPX = 1600;
+  const cleLocale = (id) => new URL('__idees/' + id, ME.src).href;
+  const enMemoire = new Map(), urls = new Map();
+  async function preparer(file) {
+    let src = null;
+    try { src = await createImageBitmap(file); } catch (e) {
+      src = await new Promise((ok, ko) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ko; im.src = URL.createObjectURL(file); });
+    }
+    const w0 = src.width || src.naturalWidth, h0 = src.height || src.naturalHeight, k = Math.min(1, MAXPX / Math.max(w0, h0));
+    const w = Math.max(1, Math.round(w0 * k)), h = Math.max(1, Math.round(h0 * k));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'); g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, w, h); g.drawImage(src, 0, 0, w, h);
+    let blob = await new Promise((ok) => cv.toBlob(ok, 'image/webp', 0.82));
+    if (!blob || blob.type !== 'image/webp') blob = await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.85));
+    return { blob, w, h };
+  }
+  async function garderLocal(id, blob) { enMemoire.set(id, blob); try { const c = await caches.open(MEDIA); await c.put(cleLocale(id), new Response(blob, { headers: { 'content-type': blob.type } })); } catch (e) {} }
+  async function lireLocal(id) {
+    if (enMemoire.has(id)) return enMemoire.get(id);
+    try { const c = await caches.open(MEDIA); const r = await c.match(cleLocale(id)); return r ? await r.blob() : null; } catch (e) { return null; }
+  }
+  async function oublierLocal(id) {
+    enMemoire.delete(id); try { const c = await caches.open(MEDIA); await c.delete(cleLocale(id)); } catch (e) {}
+    const u = urls.get(id); if (u) { URL.revokeObjectURL(u); urls.delete(id); }
+  }
+  /* retire des captures : l'image part de l'appareil, et de Supabase si elle y était déjà */
+  function oublierCaptures(S, caps) { (caps || []).forEach((c) => { oublierLocal(c.id); if (c.path && !S.effacer.includes(c.path)) S.effacer.push(c.path); }); }
+  async function urlDe(cap) {
+    if (urls.has(cap.id)) return urls.get(cap.id);
+    let b = await lireLocal(cap.id);
+    if (!b && cap.path && navigator.onLine) {
+      const c = await connecte();
+      if (c) { try { const { data } = await c.storage.from(BUCKET).download(cap.path); if (data) { b = data; garderLocal(cap.id, data); } } catch (e) {} }
+    }
+    if (!b) return null;
+    const u = URL.createObjectURL(b); urls.set(cap.id, u); return u;
+  }
+  async function envoyerCaptures(c) {
+    const S0 = load();
+    if (S0.effacer.length) {
+      const lot = S0.effacer.slice(0, 100); const { error } = await c.storage.from(BUCKET).remove(lot);
+      if (!error) { const S = load(); S.effacer = S.effacer.filter((x) => !lot.includes(x)); save(S); }
+    }
+    if (!capsAttente(S0)) return;
+    const { data } = await c.auth.getSession(); const uid = data && data.session && data.session.user.id; if (!uid) return;
+    for (const [key, r] of Object.entries(S0.rows)) {
+      if (r.deleted || !r.data) continue;
+      for (const cap of r.data.captures || []) {
+        if (cap.path) continue;
+        const b = await lireLocal(cap.id); if (!b) continue;
+        const path = uid + '/' + cap.id + (b.type === 'image/webp' ? '.webp' : b.type === 'image/png' ? '.png' : '.jpg');
+        const { error } = await c.storage.from(BUCKET).upload(path, b, { contentType: b.type, upsert: true });
+        if (error) throw Object.assign(new Error(String(error.message || error.error || 'envoi')), { capture: true });
+        modifier(key, (rr) => { (rr.data.captures || []).forEach((x) => { if (x.id === cap.id) x.path = path; }); });
+      }
+    }
+  }
+
   /* ---------- synchro avec Supabase ---------- */
-  let sb = null, etat = '', chargement = null;
+  let sb = null, etat = '', etatCap = '', chargement = null;
   function lib() {
     if (window.supabase && window.supabase.createClient) return Promise.resolve(true);
     if (!chargement) chargement = new Promise((ok) => { const s = document.createElement('script'); s.src = new URL('supabase.js', ME.src).href; s.onload = () => ok(true); s.onerror = () => ok(false); document.head.appendChild(s); });
@@ -80,7 +144,10 @@
       try {
         if (!navigator.onLine) { etat = 'horsligne'; return; }
         const c = await connecte(); if (!c) { etat = 'login'; return; }
-        await envoyer(c); await recevoir(c); etat = load().dirty.size ? 'attente' : 'ok';
+        await envoyer(c); await recevoir(c);
+        try { await envoyerCaptures(c); if (load().dirty.size) await envoyer(c); etatCap = ''; }
+        catch (e) { etatCap = /bucket|not found|404/i.test(String(e && e.message)) ? 'dossier' : navigator.onLine ? 'erreur' : 'horsligne'; }
+        etat = etatCap || (aFaire() ? 'attente' : 'ok');
       } catch (e) {
         const m = String((e && (e.message || e.code)) || e);
         etat = /idees|PGRST205|42P01|schema cache/i.test(m) ? 'table' : navigator.onLine ? 'erreur' : 'horsligne';
@@ -88,12 +155,13 @@
     })();
     return enCours;
   }
-  addEventListener('online', () => { if (load().dirty.size) sync(); });
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ouvert) sync(); else if (document.visibilityState === 'hidden' && load().dirty.size) sync(); });
+  addEventListener('online', () => { if (aFaire()) sync(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ouvert) sync(); else if (document.visibilityState === 'hidden' && aFaire()) sync(); });
 
   /* ---------- fenêtre ---------- */
   let host = null, root = null, ouvert = false, bouton = null;
-  const V = { type: 'idee', faites: false, edit: null, tout: false };
+  const V = { type: 'idee', faites: false, edit: null, tout: false, attente: [] };
+  const fin = () => matchMedia('(pointer:fine)').matches;
   const CSS = `:host{all:initial}
 *{box-sizing:border-box;margin:0}
 .scrim{position:fixed;inset:0;z-index:2147483000;background:rgba(15,15,15,.38);display:flex;align-items:flex-end;justify-content:center;
@@ -137,15 +205,30 @@ details[open] summary{margin-bottom:6px}
 .champ>span{font-size:.85rem;color:var(--m)}
 .fin{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .fin .danger{margin-right:auto}
+.caps{display:flex;gap:8px;flex-wrap:wrap}
+.caps:empty{display:none}
+.cap{position:relative;width:76px;height:76px;flex:none;border:1px solid var(--l);border-radius:calc(var(--r) * .4);overflow:hidden;background:var(--c)}
+.cap button.voir{display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:zoom-in}
+.cap img{width:100%;height:100%;object-fit:cover;display:block}
+.cap .retirer{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:12px;border:0;background:rgba(0,0,0,.62);color:#fff;font-size:13px;line-height:24px;padding:0}
+.joindre{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem;color:var(--m)}
+.joindre label{color:var(--m);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:4px 0}
+.joindre input{display:none}
+.sheet.depot{outline:3px dashed var(--i);outline-offset:-8px}
+.zoom{position:fixed;inset:0;z-index:3;background:rgba(10,10,10,.9);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.zoom img{max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+.zoom[hidden]{display:none}
 :focus-visible{outline:2px solid var(--i);outline-offset:2px}`;
 
-  const ETATS = { ok: '✓ Enregistré', attente: '↻ En attente d\'envoi', horsligne: 'Hors ligne : envoi dès le retour du réseau', login: 'Pas connecté : ouvre une app pour te connecter', table: 'La table « idees » manque : lance supabase/idees.sql', erreur: '⚠ Envoi impossible pour l\'instant' };
+  const ETATS = { ok: '✓ Enregistré', attente: '↻ En attente d\'envoi', horsligne: 'Hors ligne : envoi dès le retour du réseau', login: 'Pas connecté : ouvre une app pour te connecter', table: 'La table « idees » manque : lance supabase/orga.sql', dossier: 'Captures gardées sur l\'appareil : le dossier « idees » manque, lance supabase/orga.sql', erreur: '⚠ Envoi impossible pour l\'instant' };
+  const capHtml = (c) => `<span class="cap"><button type="button" class="voir" data-act="zoom" data-id="${esc(c.id)}" aria-label="Voir la capture"><img data-cap="${esc(c.id)}" alt=""></button><button type="button" class="retirer" data-act="capRetirer" data-id="${esc(c.id)}" aria-label="Retirer la capture">✕</button></span>`;
+  const joindreHtml = (n) => n >= MAXCAP ? '' : `<div class="joindre"><label>📎 Joindre une capture<input type="file" accept="image/*" multiple data-fichier></label>${fin() ? '<span>ou colle-la ici (Ctrl+V)</span>' : ''}</div>`;
   const typeDe = (x) => TYPES.find((t) => t[0] === x.type) || TYPES[1];
   const fmt = (iso) => { try { return new Date(iso).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' }); } catch (e) { return ''; } };
   function ligne(x) {
     const t = typeDe(x);
     return `<div class="ligne${x.fait ? ' fait' : ''}"><input type="checkbox" data-fait="${esc(x.key)}"${x.fait ? ' checked' : ''} aria-label="Fait : ${esc(x.titre)}">
-      <button type="button" class="t" data-voir="${esc(x.key)}"><span>${t[1]} ${esc(x.titre)}</span><small>${fmt(x.cree)}${x.details ? ' · 📝' : ''}</small></button></div>`;
+      <button type="button" class="t" data-voir="${esc(x.key)}"><span>${t[1]} ${esc(x.titre)}</span><small>${fmt(x.cree)}${x.details ? ' · 📝' : ''}${(x.captures || []).length ? ' · 📷 ' + x.captures.length : ''}</small></button></div>`;
   }
   function vueListe() {
     const tout = APP === 'orga' && V.tout;
@@ -160,7 +243,8 @@ details[open] summary{margin-bottom:6px}
       ${APP === 'orga' ? `<div class="seg"><button type="button" class="chip${!V.tout ? ' on' : ''}" data-act="vue" data-tout="0">ORGA</button><button type="button" class="chip${V.tout ? ' on' : ''}" data-act="vue" data-tout="1">Toutes les apps</button></div>` : ''}
       ${tout ? '' : `<form class="ajout-form" data-form="ajout"><div class="chips">${TYPES.map(([k, e, n]) => `<button type="button" class="chip${V.type === k ? ' on' : ''}" data-act="type" data-k="${k}">${e} ${n}</button>`).join('')}</div>
         <div class="ajout" style="margin-top:8px"><input type="text" name="titre" id="titre" placeholder="${V.type === 'bug' ? 'Ce qui ne marche pas…' : 'Ton idée, une nouvelle fonction…'}" autocomplete="off" enterkeyhint="done" aria-label="Titre"><button class="plus" type="submit" aria-label="Ajouter">+</button></div>
-        <details style="margin-top:8px"><summary>+ Détails</summary><textarea name="details" rows="3" placeholder="Détails (facultatif)"></textarea></details></form>`}
+        <div class="caps" style="margin-top:8px">${V.attente.map(capHtml).join('')}</div>${joindreHtml(V.attente.length)}
+        <details style="margin-top:4px"><summary>+ Détails</summary><textarea name="details" rows="3" placeholder="Détails (facultatif)"></textarea></details></form>`}
       ${corps}
       <div class="pied"><span class="etat">${esc(ETATS[etat] || '')}</span><span style="display:flex;gap:14px">${ouv.length ? `<button type="button" class="lien" data-act="copier">Copier pour Claude</button>` : ''}${faites.length ? `<button type="button" class="lien" data-act="faites">${V.faites ? 'Cacher' : 'Voir'} les faites (${faites.length})</button>` : ''}</span></div>
       ${V.faites && faites.length ? `<div class="liste">${faites.slice(0, 60).map(ligne).join('')}</div>` : ''}`;
@@ -171,17 +255,57 @@ details[open] summary{margin-bottom:6px}
         <label class="champ"><span>Titre</span><input type="text" name="titre" value="${esc(x.titre)}" required></label>
         <div class="champ"><span>Type</span><div class="chips">${TYPES.map(([k, e, n]) => `<button type="button" class="chip${(x.type || 'idee') === k ? ' on' : ''}" data-act="typeEdit" data-k="${k}">${e} ${n}</button>`).join('')}</div></div>
         <label class="champ"><span>Détails</span><textarea name="details" rows="6">${esc(x.details || '')}</textarea></label>
+        <div class="champ"><span>Captures</span><div class="caps">${(x.captures || []).map(capHtml).join('')}</div>${joindreHtml((x.captures || []).length)}</div>
         <div class="fin"><button type="button" class="btn danger" data-act="suppr">Supprimer</button><button type="button" class="btn" data-act="liste">‹ Liste</button><button type="submit" class="btn prim">Enregistrer</button></div>
       </form>`;
   }
-  function dessiner(garderSaisie) {
+  /* redessine la fenêtre en gardant ce qui est en train d'être écrit (sauf « vider », après un ajout) */
+  function dessiner(vider) {
     if (!root) return;
     const sheet = root.querySelector('.sheet'); if (!sheet) return;
-    const t = root.getElementById('titre'), saisie = garderSaisie && t ? t.value : null;
+    const f0 = sheet.querySelector('form'), act = root.activeElement;
+    const garde = f0 && !vider ? { form: f0.dataset.form, cle: V.edit && V.edit.key, titre: f0.titre ? f0.titre.value : null, details: f0.details ? f0.details.value : null,
+      ouvert: !!(f0.querySelector('details') && f0.querySelector('details').open), focus: act && act.name } : null;
     const x = V.edit ? liste(null).find((y) => y.key === V.edit.key) : null;
     if (V.edit && !x) V.edit = null;
     sheet.innerHTML = V.edit ? vueEdit(Object.assign({}, x, { type: V.edit.type || x.type })) : vueListe();
-    const n = root.getElementById('titre'); if (n && saisie != null) { n.value = saisie; n.focus(); }
+    const f = sheet.querySelector('form');
+    if (garde && f && f.dataset.form === garde.form && (V.edit && V.edit.key) === garde.cle) {
+      if (f.titre && garde.titre != null) f.titre.value = garde.titre;
+      if (f.details && garde.details != null) f.details.value = garde.details;
+      const d = f.querySelector('details'); if (d && garde.ouvert) d.open = true;
+      if (garde.focus && f[garde.focus]) { try { f[garde.focus].focus({ preventScroll: true }); } catch (e) {} }
+    }
+    remplirImages();
+  }
+  function capsVisibles() { const x = V.edit ? liste(null).find((y) => y.key === V.edit.key) : null; return (x ? x.captures || [] : V.attente); }
+  async function remplirImages() {
+    const caps = capsVisibles();
+    for (const img of root.querySelectorAll('img[data-cap]')) {
+      const cap = caps.find((c) => c.id === img.dataset.cap); if (!cap) continue;
+      const u = await urlDe(cap); if (u && img.isConnected) img.src = u; else if (img.isConnected) img.alt = cap.path ? 'Capture (à charger)' : 'Capture';
+    }
+  }
+  /* ajoute des images : à l'idée ouverte, ou au formulaire d'ajout */
+  async function joindre(files) {
+    const imgs = [...(files || [])].filter((f) => /^image\//.test(f.type)); if (!imgs.length) return false;
+    const cle = V.edit && V.edit.key, deja = capsVisibles().length, place = Math.max(0, MAXCAP - deja);
+    if (!place) { toast(MAXCAP + ' captures au plus par idée.'); return true; }
+    toast('Préparation de la capture…');
+    const caps = [];
+    for (const f of imgs.slice(0, place)) {
+      try { const { blob, w, h } = await preparer(f); const id = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); await garderLocal(id, blob); caps.push({ id, w, h }); } catch (e) {}
+    }
+    if (!caps.length) { toast('Image illisible.'); return true; }
+    if (cle) { modifier(cle, (r) => { r.data = Object.assign({}, r.data, { captures: (r.data.captures || []).concat(caps) }); }); etat = 'attente'; sync(); }
+    else V.attente = V.attente.concat(caps);
+    dessiner(); toast(caps.length > 1 ? caps.length + ' captures jointes.' : 'Capture jointe.');
+    return true;
+  }
+  function zoom(id) {
+    const cap = capsVisibles().find((c) => c.id === id); if (!cap) return;
+    const z = root.querySelector('.zoom'); const img = z.querySelector('img'); img.removeAttribute('src');
+    urlDe(cap).then((u) => { if (u) img.src = u; }); z.hidden = false;
   }
   function ouvrir() {
     if (!host) {
@@ -194,28 +318,46 @@ details[open] summary{margin-bottom:6px}
         e.stopImmediatePropagation(); if (ev === 'keydown' && e.key === 'Escape') fermer();
       }, true));
       root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche);
+      /* coller une capture (Ctrl+V), ou la glisser sur la fenêtre */
+      addEventListener('paste', (e) => {
+        if (!ouvert || !e.clipboardData) return;
+        const fs = [...(e.clipboardData.items || [])].filter((i) => i.kind === 'file' && /^image\//.test(i.type)).map((i) => i.getAsFile()).filter(Boolean);
+        if (fs.length) { e.preventDefault(); joindre(fs); }
+      }, true);
+      const surFichiers = (e) => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+      root.addEventListener('dragover', (e) => { if (!surFichiers(e)) return; e.preventDefault(); const s = root.querySelector('.sheet'); if (s) s.classList.add('depot'); });
+      root.addEventListener('dragleave', (e) => { const s = root.querySelector('.sheet'); if (s && !s.contains(e.relatedTarget)) s.classList.remove('depot'); });
+      root.addEventListener('drop', (e) => { if (!surFichiers(e)) return; e.preventDefault(); const s = root.querySelector('.sheet'); if (s) s.classList.remove('depot'); joindre(e.dataTransfer.files); });
     }
-    root.innerHTML = `<style>${CSS}</style><div class="scrim" data-act="fond"><div class="sheet" role="dialog" aria-modal="true" aria-label="Bugs et idées"></div></div>`;
+    root.innerHTML = `<style>${CSS}</style><div class="scrim" data-act="fond"><div class="sheet" role="dialog" aria-modal="true" aria-label="Bugs et idées"></div><div class="zoom" data-act="dezoom" hidden><img alt="Capture"></div></div>`;
     ouvert = true; V.edit = null; host.hidden = false;
     document.documentElement.style.overflow = 'hidden';
-    if (!etat) etat = load().dirty.size ? 'attente' : '';
+    if (!etat) etat = aFaire() ? 'attente' : '';
     dessiner(); sync();
     if (matchMedia('(pointer:fine)').matches) { const n = root.getElementById('titre'); if (n) n.focus(); }
   }
-  function fermer() { if (!host) return; ouvert = false; host.hidden = true; root.innerHTML = ''; document.documentElement.style.overflow = ''; if (bouton) bouton.focus(); }
+  function fermer() { if (!host) return; ouvert = false; host.hidden = true; root.innerHTML = ''; urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear(); document.documentElement.style.overflow = ''; if (bouton) bouton.focus(); }
   function toast(msg) { const e = root.querySelector('.etat'); if (e) e.textContent = msg; }
   function clic(e) {
     const el = e.target.closest('[data-act],[data-voir]'); if (!el) return;
     if (el.dataset.voir) { V.edit = { key: el.dataset.voir }; dessiner(); return; }
     const a = el.dataset.act;
     if (a === 'fond') { if (e.target === el) fermer(); return; }
+    if (a === 'dezoom') { el.hidden = true; return; }
+    if (a === 'zoom') { zoom(el.dataset.id); return; }
+    if (a === 'capRetirer') {
+      const id = el.dataset.id;
+      if (V.edit) { const S = load(); const r = S.rows[V.edit.key]; if (r && r.data) { oublierCaptures(S, (r.data.captures || []).filter((c) => c.id === id)); r.data = Object.assign({}, r.data, { captures: (r.data.captures || []).filter((c) => c.id !== id) }); S.dirty.add(V.edit.key); save(S); etat = 'attente'; sync(); } }
+      else { V.attente = V.attente.filter((c) => c.id !== id); oublierLocal(id); }
+      dessiner(); return;
+    }
     if (a === 'fermer') fermer();
     else if (a === 'type') { V.type = el.dataset.k; dessiner(true); }
     else if (a === 'vue') { V.tout = el.dataset.tout === '1'; dessiner(); }
     else if (a === 'faites') { V.faites = !V.faites; dessiner(); }
     else if (a === 'liste') { V.edit = null; dessiner(); }
-    else if (a === 'typeEdit') { const f = root.querySelector('form[data-form=edit]'); const ti = f.titre.value, de = f.details.value; V.edit.type = el.dataset.k; dessiner(); const g = root.querySelector('form[data-form=edit]'); g.titre.value = ti; g.details.value = de; }
-    else if (a === 'suppr') { if (!confirmer(el)) return; modifier(V.edit.key, (r) => { r.deleted = true; }); V.edit = null; dessiner(); sync(); }
+    else if (a === 'typeEdit') { V.edit.type = el.dataset.k; dessiner(); }
+    else if (a === 'suppr') { if (!confirmer(el)) return; const S = load(); const r = S.rows[V.edit.key]; if (r) { oublierCaptures(S, r.data && r.data.captures); r.deleted = true; S.dirty.add(V.edit.key); save(S); } V.edit = null; dessiner(); sync(); }
     else if (a === 'copier') copier();
   }
   /* pas de fenêtre du navigateur : on demande de toucher une deuxième fois */
@@ -224,8 +366,9 @@ details[open] summary{margin-bottom:6px}
     e.preventDefault(); const f = e.target;
     if (f.dataset.form === 'ajout') {
       const titre = String(f.titre.value || '').trim(); if (!titre) { f.titre.focus(); return; }
-      modifier(nouvelleCle(), (r) => { r.app = APP; r.data = { titre, type: V.type, details: String((f.details && f.details.value) || '').trim(), cree: new Date().toISOString() }; });
-      etat = 'attente'; dessiner(); toast(V.type === 'bug' ? 'Bug noté. Merci !' : 'Idée notée. Merci !');
+      const caps = V.attente.map(({ id, w, h }) => ({ id, w, h })); V.attente = [];
+      modifier(nouvelleCle(), (r) => { r.app = APP; r.data = Object.assign({ titre, type: V.type, details: String((f.details && f.details.value) || '').trim(), cree: new Date().toISOString() }, caps.length ? { captures: caps } : {}); });
+      etat = 'attente'; dessiner(true); toast(V.type === 'bug' ? 'Bug noté. Merci !' : 'Idée notée. Merci !');
       const n = root.getElementById('titre'); if (n) n.focus(); sync();
     } else if (f.dataset.form === 'edit') {
       const titre = String(f.titre.value || '').trim(); if (!titre) return;
@@ -234,6 +377,7 @@ details[open] summary{margin-bottom:6px}
     }
   }
   function coche(e) {
+    if (e.target.dataset && e.target.dataset.fichier != null) { const fs = [...e.target.files]; e.target.value = ''; joindre(fs); return; }
     const k = e.target.dataset && e.target.dataset.fait; if (!k) return;
     const fait = e.target.checked;
     modifier(k, (r) => { r.data = Object.assign({}, r.data, fait ? { fait: true, faitLe: new Date().toISOString() } : { fait: false, faitLe: '' }); });
@@ -242,7 +386,7 @@ details[open] summary{margin-bottom:6px}
   function copier() {
     const tout = APP === 'orga' && V.tout;
     const ouv = liste(tout ? null : APP).filter((x) => !x.fait);
-    const bloc = (titre, l) => `${titre} — bugs et idées (${l.length})\n` + l.map((x) => `- ${typeDe(x)[1]} ${x.titre}${x.details ? ' : ' + x.details.replace(/\s*\n\s*/g, ' / ') : ''}`).join('\n');
+    const bloc = (titre, l) => `${titre} — bugs et idées (${l.length})\n` + l.map((x) => `- ${typeDe(x)[1]} ${x.titre}${x.details ? ' : ' + x.details.replace(/\s*\n\s*/g, ' / ') : ''}${(x.captures || []).length ? ` (📷 ${x.captures.length} capture${x.captures.length > 1 ? 's' : ''} dans l'app)` : ''}`).join('\n');
     const txt = tout ? Object.keys(APPS).map((a) => [a, ouv.filter((x) => x.app === a)]).filter(([, l]) => l.length).map(([a, l]) => bloc(APPS[a], l)).join('\n\n') : bloc(APPS[APP] || APP, ouv);
     const fini = () => toast('Copié : colle-le dans la conversation de l\'app.');
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(fini, () => copieSecours(txt, fini)); else copieSecours(txt, fini);

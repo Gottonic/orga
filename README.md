@@ -22,7 +22,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |
 | `marche/` | l'app Marché (liste de courses), avec sa police (Caveat) et ses icônes |
 | `commun/` | ce que les apps partagent : `supabase.js`, `ampoule.js` (bugs et idées), polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `idees.sql` (l'ampoule 💡, pour toutes les apps), `marche.sql` (Marché : table `marche_rows`) |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
@@ -32,7 +32,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 ### 1. Les bases de données
 Supabase → ton projet → **SQL Editor** → **New query** → coller `supabase/schema.sql` → **Run**
 (déjà fait pour Établi). Puis une nouvelle requête avec `supabase/cash.sql` → **Run** : le résultat doit être « cash_rows prête ».
-Puis `supabase/idees.sql` → **Run** : le résultat doit être « idees prête ».
+Puis `supabase/orga.sql` → **Run** : le résultat doit être « ORGA prêt » (table des idées, dossier des captures, mesure de la place). On peut le relancer sans risque.
 Puis `supabase/marche.sql` → **Run** : le résultat doit être « marche_rows prête ».
 
 ### 2. Ton compte
@@ -54,14 +54,24 @@ branche `main`, dossier `/ (root)` → **Save**.
 
 Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 
+## Réglages d'ORGA
+
+- Tuile « Réglages » et ⚙ de l'accueil → `reglages/` : place utilisée sur Supabase (base et fichiers, par app),
+  compte (se déconnecter de toutes les apps), version installée et recherche de mise à jour.
+- La place vient de la fonction `orga_espace()` (dans `supabase/orga.sql`) : seulement des totaux, réservée aux personnes connectées.
+- Limites du plan gratuit : 500 Mo de base pour ce projet ; 1 Go de fichiers et 5 Go de trafic pour tout le compte Supabase.
+
 ## L'ampoule 💡 (toutes les apps)
 
 - Dans chaque app et sur l'accueil, le bouton 💡 ouvre « Bugs et idées », comme dans l'app Gamins de Talus :
   choisir 🐞 Bug ou 💡 Idée, écrire le titre, « + » (détails facultatifs). Cocher = fait, la ligne quitte la liste.
 - Chaque app a sa propre liste. Sur l'accueil : la liste d'ORGA (menu, liens entre apps…) et « Toutes les apps ».
 - « Copier pour Claude » copie la liste en texte, à coller dans la conversation de l'app.
-- On peut noter hors ligne : l'envoi se fait dès que le réseau revient.
-- Données : table `idees` (une ligne par idée, colonne `app`), même connexion que les apps.
+- **Captures d'écran** : coller (Ctrl+V), glisser ou « 📎 Joindre une capture », à l'ajout comme dans la fiche (6 au plus).
+  Réduites à 1600 px (WebP), gardées sur l'appareil puis envoyées dans le dossier privé `idees` de Supabase.
+  Retirer une capture ou supprimer l'idée efface aussi le fichier.
+- On peut noter hors ligne : l'envoi (texte et captures) se fait dès que le réseau revient.
+- Données : table `idees` (une ligne par idée, colonne `app`), dossier `idees`, même connexion que les apps.
 - Pour l'ajouter à une nouvelle app : `<script src="../commun/ampoule.js" data-app="nom" data-avant="#bouton"></script>`
   (voir les explications en haut de `commun/ampoule.js`), puis ajouter son nom et son style dans `APPS` et `THEMES`.
 

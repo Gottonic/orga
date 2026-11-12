@@ -1,10 +1,10 @@
 /* ORGA : un seul service worker pour l'accueil et toutes les apps (Établi, Banque, Forge, Marché…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-12-11';
+const VERSION = 'orga-2026-11-12-12';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
-  'commun/supabase.js', 'commun/ampoule.js', 'commun/cadre.css',
+  'commun/supabase.js', 'commun/ampoule.js', 'commun/cadre.css', 'reglages/',
   'commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2', 'commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2',
   'commun/fonts/jetbrains-mono-latin-400-normal.woff2', 'commun/fonts/jetbrains-mono-latin-600-normal.woff2',
   'etabli/', 'etabli/icons/icon-192.png',

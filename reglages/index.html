@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Réglages · ORGA</title>
+<meta name="theme-color" content="#3C3C3C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
+:root{color-scheme:light;
+  --paper:#F3F1E7; --cell:#FFFFFF; --ink:#1E1E1E; --muted:#6B6A62; --line:#CFCCBF; --band:#3C3C3C; --hl:#FFECB0; --warn:#C8462C;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box;border-radius:0}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
+main{max-width:640px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+section{background:var(--cell);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:12px}
+h2{margin:0;font-size:1.1rem}
+p{margin:0}
+.note{color:var(--muted);font-size:.88rem}
+.jauge{display:flex;flex-direction:column;gap:6px}
+.jauge .tete{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px}
+.jauge .tete b{white-space:nowrap}
+.jauge .tete b{font-size:1rem}
+.jauge .tete span{font-family:var(--mono);font-size:.82rem;color:var(--muted);white-space:nowrap}
+.barre{height:14px;border:1px solid var(--ink);background:var(--paper);display:flex}
+.barre i{display:block;height:100%;background:var(--band)}
+.barre i.haut{background:var(--warn)}
+.detail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.detail li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.detail li span:last-child{font-family:var(--mono);font-size:.82rem;color:var(--muted);white-space:nowrap}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:2px solid var(--ink);background:var(--cell);color:var(--ink);font:700 .95rem/1 var(--body);padding:11px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn.prim{background:var(--band);border-color:var(--band);color:#fff}
+.btn:active{background:var(--hl)}
+.btn.prim:active{background:var(--ink)}
+.alerte{border-left:4px solid var(--warn);padding:8px 10px;background:#FBEDE8;font-size:.92rem}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+</style>
+<link rel="stylesheet" href="../commun/cadre.css">
+</head>
+<body>
+<header class="oh" style="--oh-bg:#3C3C3C;--oh-ink:#FFFFFF"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Réglages</h1><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button></div></header>
+<main>
+  <section aria-labelledby="t-place">
+    <h2 id="t-place">Place sur Supabase</h2>
+    <div id="place"><p class="note">Chargement…</p></div>
+    <p class="note">Plan gratuit : 500 Mo de base de données pour ORGA, 1 Go de fichiers et 5 Go de trafic par mois pour tout le compte Supabase (GDT compris s'il est dans la même organisation). Le trafic se voit seulement dans le tableau de bord de Supabase.</p>
+    <div class="btns"><button class="btn" type="button" id="actualiser">Actualiser</button><a class="btn" href="https://supabase.com/dashboard/project/rzcpjsffpvuvbdtqymms" target="_blank" rel="noopener">Ouvrir Supabase</a></div>
+  </section>
+  <section aria-labelledby="t-compte">
+    <h2 id="t-compte">Compte</h2>
+    <p id="compte" class="note">…</p>
+    <div class="btns"><button class="btn" type="button" id="sortir" hidden>Se déconnecter de toutes les apps</button></div>
+  </section>
+  <section aria-labelledby="t-app">
+    <h2 id="t-app">App</h2>
+    <p class="note">Version installée : <b id="version">…</b></p>
+    <div class="btns"><button class="btn" type="button" id="maj">Chercher une mise à jour</button></div>
+  </section>
+</main>
+<script src="../commun/supabase.js"></script>
+<script>
+(function(){
+'use strict';
+const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC';
+const MO=1024*1024, LIM_BASE=500*MO, LIM_FICHIERS=1024*MO, CACHE='orga-espace';
+const TABLES={rows:'📐 Établi',cash_rows:'🏦 Banque',carnet:'🔥 Forge',marche_rows:'🧺 Marché',idees:'💡 Ampoule'};
+const DOSSIERS={'cash-documents':'🏦 Banque : documents','carnet':'🔥 Forge : images','idees':'💡 Ampoule : captures'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=(v,d)=>new Intl.NumberFormat('fr-CH',{maximumFractionDigits:d,minimumFractionDigits:0}).format(v);
+const taille=o=>o>=1024*MO?nf(o/1024/MO,2)+' Go':o>=MO?nf(o/MO,o>=100*MO?0:1)+' Mo':o>=1024?nf(o/1024,0)+' ko':nf(o,0)+' o';
+const pct=(o,lim)=>Math.min(100,o/lim*100);
+const quand=iso=>{ try{ return new Date(iso).toLocaleString('fr-CH',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
+
+function jauge(titre,o,lim){ const p=pct(o,lim);
+  return `<div class="jauge"><div class="tete"><b>${titre}</b><span>${taille(o)} sur ${taille(lim)} · ${nf(p,p<10?1:0)} %</span></div>
+    <div class="barre" role="img" aria-label="${esc(titre)} : ${nf(p,0)} % utilisés"><i class="${p>=80?'haut':''}" style="width:${Math.max(p,.6)}%"></i></div>
+    <p class="note">Il reste ${taille(Math.max(0,lim-o))}.</p></div>`; }
+function liste(map,noms,reste,resteNom){
+  const l=Object.entries(map).map(([k,o])=>[noms[k]||k,o]).sort((a,b)=>b[1]-a[1]);
+  if(reste>0) l.push([resteNom,reste]);
+  return l.length?`<ul class="detail">${l.map(([n,o])=>`<li><span>${esc(n)}</span><span>${taille(o)}</span></li>`).join('')}</ul>`:'<p class="note">Aucun fichier pour l\'instant.</p>'; }
+function afficher(e,horsLigne){
+  const tables=e.tables||{}, fichiers=e.fichiers||{};
+  const tApps=Object.values(tables).reduce((s,o)=>s+o,0);
+  const totF=Object.values(fichiers).reduce((s,o)=>s+o,0);
+  $('place').innerHTML=(horsLigne?`<p class="note">Hors ligne : chiffres du ${esc(quand(e.le))}.</p>`:'')
+    +jauge('Base de données',e.base,LIM_BASE)
+    +liste(tables,TABLES,e.base-tApps,'Système Supabase (comptes, index…)')
+    +jauge('Fichiers',totF,LIM_FICHIERS)
+    +liste(fichiers,DOSSIERS,0,'')
+    +(horsLigne?'':`<p class="note">Mesuré le ${esc(quand(e.le))}.</p>`);
+}
+function memo(){ try{ return JSON.parse(localStorage.getItem(CACHE)||'null'); }catch(e){ return null; } }
+
+let sb=null;
+async function charger(){
+  const m=memo();
+  if(!navigator.onLine){ if(m) afficher(m,true); else $('place').innerHTML='<p class="note">Hors ligne : reviens avec du réseau pour voir la place utilisée.</p>'; return; }
+  $('actualiser').disabled=true;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){ $('place').innerHTML='<p class="note">Pas connecté : ouvre une app (Établi, Banque…) pour te connecter, puis reviens ici.</p>'; return; }
+    const {data,error}=await sb.rpc('orga_espace');
+    if(error) throw error;
+    try{ localStorage.setItem(CACHE,JSON.stringify(data)); }catch(e){}
+    afficher(data,false);
+  }catch(err){
+    const msg=String((err&&(err.message||err.code))||err);
+    if(/orga_espace|PGRST202|42883|schema cache/i.test(msg)) $('place').innerHTML='<p class="alerte">Pour voir la place utilisée, lance une fois <b>supabase/orga.sql</b> dans Supabase (SQL Editor → New query → Run).</p>';
+    else if(m) afficher(m,true); else $('place').innerHTML=`<p class="alerte">Impossible de lire la place utilisée pour l'instant. (${esc(msg)})</p>`;
+  }finally{ $('actualiser').disabled=false; }
+}
+async function compte(){
+  try{ const {data:{session}}=await sb.auth.getSession();
+    if(session){ $('compte').innerHTML='Connecté : <b>'+esc(session.user.email||'')+'</b>. Une seule connexion pour toutes les apps.'; $('sortir').hidden=false; }
+    else $('compte').textContent='Pas connecté. La connexion se fait dans n\'importe quelle app.';
+  }catch(e){ $('compte').textContent='Compte : impossible de vérifier pour l\'instant.'; }
+}
+async function version(){
+  try{ const ks=await caches.keys(); const v=ks.filter(k=>/^orga-\d/.test(k)).sort().pop(); $('version').textContent=v||'pas encore installée hors ligne'; }
+  catch(e){ $('version').textContent='inconnue'; }
+}
+$('actualiser').addEventListener('click',charger);
+$('sortir').addEventListener('click',async e=>{
+  const b=e.currentTarget; if(!b.dataset.sur){ b.dataset.sur='1'; b.textContent='Toucher encore pour te déconnecter'; setTimeout(()=>{ delete b.dataset.sur; b.textContent='Se déconnecter de toutes les apps'; },3000); return; }
+  try{ await sb.auth.signOut(); }catch(err){} try{ localStorage.removeItem('orga-auth'); }catch(err){}
+  location.reload();
+});
+$('maj').addEventListener('click',async e=>{
+  const b=e.currentTarget; b.disabled=true; b.textContent='Recherche…';
+  try{ const r=await navigator.serviceWorker.getRegistration('../'); if(r) await r.update(); }catch(err){}
+  setTimeout(()=>location.reload(),1200);
+});
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('../sw.js',{scope:'../'}); }catch(e){} }
+if(window.supabase&&window.supabase.createClient){
+  try{ if(!localStorage.getItem('orga-auth')&&localStorage.getItem('etabli-auth')) localStorage.setItem('orga-auth',localStorage.getItem('etabli-auth')); }catch(e){}
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'orga-auth'}});
+  charger(); compte();
+} else $('place').innerHTML='<p class="note">Impossible de charger la connexion. Recharge la page.</p>';
+version();
+addEventListener('online',charger);
+})();
+</script>
+<script src="../commun/ampoule.js" data-app="orga"></script>
+</body>
+</html>
