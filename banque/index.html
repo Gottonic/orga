@@ -183,6 +183,19 @@ input[type=checkbox]{accent-color:var(--acc)}
 .exl .chk{padding:7px 0;align-items:flex-start}
 .exl .chk input{margin-top:1px;flex:none}
 .exl .cap{display:block;margin-top:10px}
+.avl{display:flex;flex-direction:column;margin-top:6px}
+.avr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.avr:first-child{border-top:0}
+.avn{display:flex;flex-direction:column;gap:2px;min-width:0}
+.avr.alerte{font-size:14px}
+.avr b.num{white-space:nowrap}
+.rec{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line)}
+.card>h2+.rec,.card>.note+.rec{border-top:0}
+.rec.off{opacity:.65}
+.rec-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;border:0;background:transparent;padding:0;text-align:left;color:inherit;font-size:15px}
+.rec-n{font-weight:700}
+.rec-m{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.rec-a{flex-basis:100%;display:flex;gap:6px;justify-content:flex-end}
 .dsec{margin-top:10px}
 .dsec>.st{padding-bottom:4px}
 .dette-b{border:0;background:transparent;padding:0;text-align:left;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;color:inherit;font-size:15px}
@@ -424,7 +437,7 @@ function render(){
   document.querySelectorAll('.oh [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===ui.tab?'page':'false'));
   cacherTip();
   if(!booted){ $view.innerHTML=''; return; }
-  $view.innerHTML=ui.tab==='accueil'?vAccueil():ui.tab==='ops'?vOps():ui.tab==='stats'?vStats():ui.tab==='rappro'?vRappro():ui.tab==='cats'?vCats():ui.tab==='tags'?vTags():vReglages();
+  $view.innerHTML=ui.tab==='accueil'?vAccueil():ui.tab==='ops'?vOps():ui.tab==='stats'?vStats():ui.tab==='rappro'?vRappro():ui.tab==='cats'?vCats():ui.tab==='tags'?vTags():ui.tab==='recur'?vRecur():vReglages();
 }
 function seg(attr,cur,opts,label){ return '<div class="seg" role="group" aria-label="'+label+'">'+opts.map(([k,n])=>'<button data-'+attr+'="'+k+'" aria-pressed="'+(cur===k)+'">'+n+'</button>').join('')+'</div>'; }
 function tuile(c){ const s=solde(c), dev=c.devise&&c.devise!=='CHF'; return '<button class="tile'+(groupeDe(c)==='pro'?' pro':groupeDe(c)==='invest'?' inv':'')+'" data-compte="'+esc(c.id)+'"><span class="n">'+icCompte(c)+esc(c.nom)+'</span><span class="s'+(s<0?' neg':'')+'">'+fmt(s)+(dev?' '+esc(c.devise):'')+'</span></button>'; }
@@ -441,6 +454,7 @@ function vAccueil(){
     h+='<section class="sect" aria-labelledby="t-'+g+'"><div class="st"><h2 id="t-'+g+'">'+titre+'</h2></div><div class="tiles">'+L.map(tuile).join('')+'</div><div class="totrow"><span>'+tot+' en CHF</span><b>'+fmt(totalCHF(L))+'</b></div></section>'; });
   h+=carteYuh();
   h+=carteDettes(cs);
+  h+=carteAvenir();
   /* ce mois-ci */
   const m=moisDe(today()); let dep=0, rev=0; const parCat={};
   for(const t of Object.values(S.tx)){ if(t.date.slice(0,7)!==m||estVir(t)) continue;
@@ -517,7 +531,7 @@ function vReglages(){
 let draft=null, sheetErr='';
 function okBtn(act){ return '<button class="okb" data-act="'+act+'">'+svg(P.check,16,null,2.6)+'Enregistrer</button>'; }
 function ouvrir(html){ const sc=$sheet.scrollTop; $sheet.innerHTML=html; $scrim.hidden=false; document.body.style.overflow='hidden'; $sheet.scrollTop=sc; }
-function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; ec=null; et=null; eb=null; ex=null; document.body.style.overflow=''; }
+function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; ec=null; et=null; eb=null; ex=null; er=null; document.body.style.overflow=''; }
 function dernierCompte(){ return (S.regl.dernierCompte&&S.comptes[S.regl.dernierCompte])?S.regl.dernierCompte:(comptesTri()[0]||{}).id; }
 function nouvelleSaisie(){
   if(!comptesTri().length){ ouvrir('<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Saisie</h2></div><p class="note">Commence par charger tes données de départ (Réglages) : c’est là que tes comptes sont créés.</p>'); return; }
@@ -1427,6 +1441,111 @@ function telechargerExport(){ lireExport(); if(!ex.comptes.length){ exMsg='Coche
 async function copierExport(){ lireExport(); const X=genererExport(ex); memoExport();
   try{ await navigator.clipboard.writeText(X.texte); exMsg='Copié : colle-le dans ta conversation.'; exErr=false; }catch(e){ exMsg='La copie n’a pas marché ici : utilise « Télécharger ».'; exErr=true; } vExport(); }
 
+/* =============================== Paiements récurrents =============================== */
+/* [jours, libellé, tolérance en jours, fois par an] */
+const RYTHMES={semaine:[7,'chaque semaine',3,52],deuxsem:[14,'toutes les 2 semaines',4,26],mois:[30.44,'chaque mois',7,12],trimestre:[91.3,'tous les 3 mois',15,4],annee:[365.25,'chaque année',30,1]};
+function classeIntervalle(j){ return j>=6&&j<=8?'semaine':j>=12&&j<=16?'deuxsem':j>=26&&j<=35?'mois':j>=80&&j<=100?'trimestre':j>=345&&j<=385?'annee':null; }
+function ajouterPeriode(d,r,n){ n=n==null?1:n; const x=new Date(d+'T12:00');
+  if(r==='semaine') x.setDate(x.getDate()+7*n); else if(r==='deuxsem') x.setDate(x.getDate()+14*n);
+  else { const j=x.getDate(), m=(r==='mois'?1:r==='trimestre'?3:12)*n; x.setDate(1); x.setMonth(x.getMonth()+m); x.setDate(Math.min(j,new Date(x.getFullYear(),x.getMonth()+1,0).getDate())); }
+  return isoD(x); }
+/* jusqu'où on « voit » un compte : relevé importé, ou aujourd'hui pour un compte tenu à la main */
+function vuJusqua(compte){ const src=compte==='yuh'?'yuh':String(compte).startsWith('bas')?'bas':null; if(!src) return today();
+  let d=dernier(src); for(const t of Object.values(S.tx)) if(t.compte===compte&&t.date>d) d=t.date; return d>today()?today():d; }
+function cleRecur(t){ return estVir(t)?'v|'+t.compte+'|'+t.autre+'|'+Math.round(t.montant):'o|'+t.compte+'|'+(t.montant<0?'-':'+')+'|'+cle(t.banque_nom||t.tiers); }
+function catFreq(L){ const n={}; L.forEach(t=>{ if(t.cat&&!estVir(t)) n[t.cat]=(n[t.cat]||0)+1; }); const e=Object.entries(n).sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:null; }
+function nomRecur(t){ if(estVir(t)) return t.autre==='yuh-placements'?'Achats d’ETF':'Virement vers '+(S.comptes[t.autre]?S.comptes[t.autre].nom:t.autre); return t.tiers||t.banque_nom||'?'; }
+/* état d'une série : prochaines dates, raté, terminé */
+function suiteRecur(x){
+  const R=RYTHMES[x.rythme], vj=vuJusqua(x.compte), fin=finMois(today().slice(0,7));
+  let prochaine, manque=null;
+  if(x.manuel){ let g=0, d=x.debut, prev=null; while(d<=vj&&g<1000){ prev=d; g++; d=ajouterPeriode(x.debut,x.rythme,g); } prochaine=d;
+    if(prev&&jours(vj,prev)>R[2]){ const vu=Object.values(S.tx).some(t=>t.compte===x.compte&&Math.sign(t.montant)===Math.sign(x.montant)&&Math.abs(Math.abs(t.montant)-Math.abs(x.montant))<=Math.max(1,Math.abs(x.montant)*0.15)&&Math.abs(jours(t.date,prev))<=R[2]); if(!vu) manque=prev; } }
+  else { prochaine=ajouterPeriode(x.last,x.rythme); if(jours(vj,prochaine)>R[2]) manque=prochaine; }
+  const fini=!x.manuel&&manque&&jours(vj,manque)>Math.min(3*R[0],120);
+  const avenir=[]; if(!fini){ let d=manque&&!x.manuel?ajouterPeriode(manque,x.rythme):prochaine, g=0; while(d<=fin&&g<60){ if(d>vj) avenir.push(d); g++; d=ajouterPeriode(d,x.rythme); } }
+  return {vj,prochaine:fini?null:(avenir[0]||prochaine),manque:fini?null:manque,fini,avenir};
+}
+function recurrents(){
+  const conf=S.regl.recurrents||{}, G={};
+  for(const t of Object.values(S.tx)){ if(t.cat===AJU||t.source==='feuille') continue;
+    if(estVir(t)){ if(t.montant>=0) continue; } else if(t.source==='miroir'||!cle(t.banque_nom||t.tiers)) continue;
+    const k=cleRecur(t); (G[k]=G[k]||[]).push(t); }
+  const R=[];
+  for(const [k,L] of Object.entries(G)){
+    const pj={}; L.forEach(t=>{ pj[t.date]=r2((pj[t.date]||0)+t.montant); }); const D=Object.keys(pj).sort(); if(D.length<3) continue;
+    const ints=D.slice(1).map((d,i)=>jours(d,D[i])).slice(-8), n={}; ints.map(classeIntervalle).forEach(c=>{ if(c) n[c]=(n[c]||0)+1; });
+    const best=Object.entries(n).sort((a,b)=>b[1]-a[1])[0]; if(!best) continue; const regul=best[1]/ints.length; if(regul<0.75) continue;
+    const mts=D.slice(-4).map(d=>pj[d]), med=mts.slice().sort((a,b)=>a-b)[Math.floor(mts.length/2)], ecart=(Math.max(...mts)-Math.min(...mts))/Math.abs(med||1);
+    if(ecart>(regul===1?0.6:0.4)) continue;
+    const last=D[D.length-1], t0=L.find(t=>t.date===last), c=conf[k]||{};
+    R.push({k,rythme:best[0],compte:t0.compte,autre:estVir(t0)?t0.autre:null,vir:estVir(t0),nom:c.nom||nomRecur(t0),cat:catFreq(L),montant:r2(med),dernier:pj[last],precedent:pj[D[D.length-2]],variable:ecart>0.05,last,n:D.length,statut:c.statut||'auto'});
+  }
+  Object.values(conf).filter(x=>x.manuel).forEach(x=>R.push(Object.assign({k:x.id,statut:'ok',vir:false,variable:false},x)));
+  R.forEach(x=>{ x.suite=suiteRecur(x);
+    x.change=!x.vir&&!x.manuel&&!x.variable&&x.precedent!=null&&Math.abs(x.dernier-x.precedent)>Math.max(1,Math.abs(x.precedent)*0.05)&&jours(today(),x.last)<=45; });
+  return R.sort((a,b)=>String(a.suite.prochaine||'9').localeCompare(String(b.suite.prochaine||'9')));
+}
+function parAn(x){ return x.montant*RYTHMES[x.rythme][3]; }
+function dJM(d){ return d.slice(8,10)+'.'+d.slice(5,7); }
+function carteAvenir(){
+  const R=recurrents().filter(x=>x.statut!=='ignore'&&!x.suite.fini); if(!R.length) return '';
+  const fin=finMois(today().slice(0,7)), up=R.filter(x=>x.suite.avenir.length), al=R.filter(x=>x.suite.manque||x.change);
+  let h='<section class="card" aria-labelledby="t-av"><div class="st"><h2 id="t-av">À venir</h2><span class="note">d’ici le '+esc(dJM(fin))+'</span></div>';
+  if(up.length){ h+='<div class="avl">'+up.map(x=>{ const tot=r2(x.montant*x.suite.avenir.length), att=x.suite.avenir.filter(d=>d<=today());
+      return '<div class="avr"><span class="avn">'+esc(x.nom)+'<span class="note">'+esc(x.suite.avenir.map(dJM).join(', '))+' · '+esc(S.comptes[x.compte]?S.comptes[x.compte].nom:'')+(att.length?' · pas encore dans le relevé':'')+'</span></span><b class="num '+(x.vir?'':tot<0?'neg':'pos')+'">'+(x.variable?'≈ ':'')+fmt(tot,true)+'</b></div>'; }).join('')+'</div>';
+    const flux={}; up.forEach(x=>{ const m=r2(x.montant*x.suite.avenir.length); flux[x.compte]=(flux[x.compte]||0)+m; if(x.vir&&x.autre) flux[x.autre]=(flux[x.autre]||0)-m; });
+    const cs=Object.keys(flux).filter(id=>S.comptes[id]&&!S.comptes[id].archive&&!(S.comptes[id].devise&&S.comptes[id].devise!=='CHF')&&Math.abs(flux[id])>0.004);
+    if(cs.length) h+='<p class="note" style="margin-top:8px">Solde prévu le '+esc(dJM(fin))+' : '+cs.map(id=>esc(S.comptes[id].nom)+' <b>'+fmt(r2(solde(S.comptes[id])+flux[id]))+'</b>').join(' · ')+'</p>'; }
+  else h+='<p class="note" style="margin-top:4px">Plus rien de régulier d’ici la fin du mois.</p>';
+  if(al.length) h+='<div class="avl" style="margin-top:8px">'+al.map(x=>'<div class="avr alerte"><span class="avn">'+(x.suite.manque?'⚠ <b>'+esc(x.nom)+'</b> n’est pas passé le '+esc(dJM(x.suite.manque))+' ('+esc(RYTHMES[x.rythme][1])+'). Arrêté ou en retard ?':'↗ <b>'+esc(x.nom)+'</b> : le montant a changé, '+fmt(x.precedent)+' → '+fmt(x.dernier)+'.')+'</span></div>').join('')+'</div>';
+  return h+'<button class="lien" data-tab="recur">Tous les paiements récurrents</button></section>';
+}
+function vRecur(){
+  const R=recurrents(), act=R.filter(x=>x.statut!=='ignore'&&!x.suite.fini), ign=R.filter(x=>x.statut==='ignore'), fin=R.filter(x=>x.statut!=='ignore'&&x.suite.fini);
+  const charges=act.filter(x=>!x.vir&&x.montant<0), revs=act.filter(x=>!x.vir&&x.montant>0), virs=act.filter(x=>x.vir);
+  let h=navRetour('Récurrents','accueil','<button class="btn sm" data-act="nrecur" style="width:auto">+ Ajouter</button>');
+  h+='<p class="note">Trouvés dans ton historique (au moins 3 fois, à intervalle régulier), plus ceux que tu ajoutes, par exemple un paiement annuel. Rien n’est créé tout seul : les relevés s’en chargent.</p>';
+  if(charges.length){ const an=-charges.reduce((s,x)=>s+parAn(x),0); h+='<div class="kpis" style="margin:0"><div><span class="cap">Par mois</span><div class="v">'+fmt0(an/12)+'</div></div><div><span class="cap">Par an</span><div class="v">'+fmt0(an)+'</div></div><div><span class="cap">Charges</span><div class="v">'+charges.length+'</div></div></div><p class="note" style="margin-top:-8px">Dépenses régulières (sans les virements entre tes comptes).</p>'; }
+  const ligne=x=>{ const s=x.suite, nouv=x.statut==='auto'&&!x.manuel;
+    return '<div class="rec'+(s.manque||x.change?' alerte':'')+'"><button class="rec-b" '+(x.manuel?'data-erecur="'+esc(x.k)+'"':'data-voirrec="'+esc(x.k)+'"')+'><span class="rec-n">'+esc(x.nom)+(nouv?' <span class="tg">nouveau</span>':'')+(x.manuel?' <span class="tg">ajouté</span>':'')+'</span>'
+      +'<span class="note">'+esc(RYTHMES[x.rythme][1])+' · '+esc(S.comptes[x.compte]?S.comptes[x.compte].nom:'')+(s.prochaine?' · prochain '+esc(dCourte(s.prochaine)):'')+(x.cat?' · '+esc(catNom(x.cat)):'')+'</span>'
+      +(s.manque?'<span class="retard">Pas passé le '+esc(dCourte(s.manque))+'</span>':'')+(x.change?'<span class="vite">Montant changé : '+fmt(x.precedent)+' → '+fmt(x.dernier)+'</span>':'')+'</button>'
+      +'<span class="rec-m"><b class="num '+(x.vir?'':x.montant<0?'neg':'pos')+'">'+(x.variable?'≈ ':'')+fmt(x.montant,true)+'</b>'+(!x.vir?'<span class="note">'+fmt0(Math.abs(parAn(x)))+' / an</span>':'')+'</span>'
+      +(x.manuel?'':'<span class="rec-a">'+(nouv?'<button class="pill" data-okrecur="'+esc(x.k)+'" style="height:32px">C’est bon</button>':'')+'<button class="pill" data-ignrecur="'+esc(x.k)+'" style="height:32px">Pas récurrent</button></span>')+'</div>'; };
+  const sect=(titre,L)=>L.length?'<section class="card"><h2>'+titre+'</h2>'+L.map(ligne).join('')+'</section>':'';
+  h+=sect('Dépenses',charges)+sect('Virements entre tes comptes',virs)+sect('Rentrées',revs);
+  if(!act.length) h+='<p class="empty">Rien de régulier trouvé pour l’instant.</p>';
+  if(fin.length) h+='<section class="card"><h2>Terminés</h2><p class="note" style="margin-top:4px">Plus vus depuis un moment.</p>'+fin.map(x=>'<div class="rec off"><span class="rec-b"><span class="rec-n">'+esc(x.nom)+'</span><span class="note">'+esc(RYTHMES[x.rythme][1])+' · dernier le '+esc(dCourte(x.last||x.debut))+'</span></span><span class="rec-m"><b class="num">'+fmt(x.montant,true)+'</b></span></div>').join('')+'</section>';
+  if(ign.length) h+='<section class="card"><h2>Ignorés</h2>'+ign.map(x=>'<div class="rec off"><span class="rec-b"><span class="rec-n">'+esc(x.nom)+'</span><span class="note">'+esc(RYTHMES[x.rythme][1])+'</span></span><button class="pill" data-rtrecur="'+esc(x.k)+'" style="height:32px">Rétablir</button></div>').join('')+'</section>';
+  return h;
+}
+function statutRecur(k,st){ const c=S.regl.recurrents=Object.assign({},S.regl.recurrents||{}); c[k]=Object.assign({},c[k]||{},{statut:st}); if(st==='auto') delete c[k].statut; save(); render(); }
+let er=null;
+function lireRecur(){ const g=id=>document.getElementById(id); if(!er) return; ['nom','montant','compte','debut','cat'].forEach(k=>{ if(g('r-'+k)) er[k]=g('r-'+k).value; }); }
+function vRecurEdit(){
+  const x=er;
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Récurrent</h2>'+okBtn('recursave')+'</div>';
+  h+='<p class="note">Pour un paiement régulier que l’historique ne montre pas encore, par exemple une prime annuelle. Il apparaît dans « À venir » ; rien n’est créé dans tes comptes.</p>';
+  h+='<div class="field"><label class="lbl" for="r-nom">Nom</label><input class="input" id="r-nom" value="'+esc(x.nom)+'" placeholder="Taxe annuelle carte BAS, Infomaniak…"></div>';
+  h+=seg('rsens',x.sens,[['sortie','Sortie'],['entree','Rentrée']],'Sens');
+  h+='<div class="field"><label class="lbl" for="r-montant">Montant (CHF)</label><input class="input num" id="r-montant" inputmode="decimal" value="'+esc(x.montant)+'"></div>';
+  h+='<div class="field"><label class="lbl" for="r-compte">Compte</label><select class="sel" id="r-compte">'+comptesTri().filter(c=>!(c.devise&&c.devise!=='CHF')).map(c=>'<option value="'+esc(c.id)+'"'+(x.compte===c.id?' selected':'')+'>'+esc(c.nom)+'</option>').join('')+'</select></div>';
+  h+='<div class="field"><span class="lbl">Rythme</span><div class="pills">'+Object.entries(RYTHMES).map(([k,v])=>'<button class="pill" data-rryt="'+k+'" aria-pressed="'+(x.rythme===k)+'">'+v[1]+'</button>').join('')+'</div></div>';
+  h+='<div class="field"><label class="lbl" for="r-debut">Prochaine fois</label><input class="input" type="date" id="r-debut" value="'+esc(x.debut)+'"></div>';
+  h+='<div class="field"><label class="lbl" for="r-cat">Catégorie</label><select class="sel" id="r-cat">'+optsCats(x.cat,'—')+'</select></div>';
+  if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
+  if(x.id) h+='<button class="btn warn" data-act="recursuppr">Supprimer</button>';
+  ouvrir(h);
+}
+function enregistrerRecur(){
+  lireRecur(); const x=er, m=num(x.montant), nom=(x.nom||'').trim();
+  if(!nom){ sheetErr='Donne-lui un nom.'; vRecurEdit(); return; } if(!m||m<=0){ sheetErr='Indique un montant.'; vRecurEdit(); return; } if(!x.debut){ sheetErr='Indique la prochaine date.'; vRecurEdit(); return; }
+  const id=x.id||'m'+uid(), c=S.regl.recurrents=Object.assign({},S.regl.recurrents||{});
+  c[id]={id,manuel:true,nom,montant:(x.sens==='entree'?1:-1)*r2(m),compte:x.compte,rythme:x.rythme,debut:x.debut,cat:x.cat||null};
+  save(); fermer(); render();
+}
+
 /* =============================== Événements =============================== */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button,[data-tab]'); if(!b) return;
@@ -1452,6 +1571,12 @@ document.addEventListener('click',e=>{
   if(b.dataset.bcible&&eb){ lireBudget(); if(eb.cible!==b.dataset.bcible){ eb.cible=b.dataset.bcible; eb.ref=''; eb.periode=eb.cible==='tag'?'total':'mois'; } vBudget(); return; }
   if(b.dataset.bper&&eb){ lireBudget(); eb.periode=b.dataset.bper; vBudget(); return; }
   if(ex&&(b.dataset.exf||b.dataset.exper||b.dataset.exscope)){ lireExport(); if(b.dataset.exf) ex.format=b.dataset.exf; if(b.dataset.exper) ex.per=b.dataset.exper; if(b.dataset.exscope) ex.scope=b.dataset.exscope; exMsg=''; vExport(); return; }
+  if(b.dataset.okrecur){ statutRecur(b.dataset.okrecur,'ok'); return; }
+  if(b.dataset.ignrecur){ statutRecur(b.dataset.ignrecur,'ignore'); return; }
+  if(b.dataset.rtrecur){ statutRecur(b.dataset.rtrecur,'auto'); return; }
+  if(b.dataset.voirrec){ const x=recurrents().find(y=>y.k===b.dataset.voirrec); if(x){ Object.assign(ui,{tab:'ops',fCompte:x.compte,fCat:'',fTag:'',q:x.vir?'':x.nom,periode:'tout',limite:150}); window.scrollTo(0,0); render(); } return; }
+  if(b.dataset.erecur){ const c=(S.regl.recurrents||{})[b.dataset.erecur]; if(c){ er=Object.assign({},c,{sens:c.montant<0?'sortie':'entree',montant:String(Math.abs(c.montant))}); sheetErr=''; vRecurEdit(); } return; }
+  if(er&&(b.dataset.rsens||b.dataset.rryt)){ lireRecur(); if(b.dataset.rsens) er.sens=b.dataset.rsens; if(b.dataset.rryt) er.rythme=b.dataset.rryt; vRecurEdit(); return; }
   if(b.dataset.dette){ ouvrirDette(b.dataset.dette); return; }
   if(b.dataset.payer){ ouvrirDette(b.dataset.payer,true); return; }
   if(b.dataset.dsens&&dd){ lireDette(); dd.sens=b.dataset.dsens; vDette(); return; }
@@ -1481,6 +1606,9 @@ document.addEventListener('click',e=>{
   else if(a==='importok'){ if(!imp) return; const n=appliquerImport(imp); fermer(); if(aClasser().length||orphelines().length) ui.tab='rappro'; ui.limite=150; window.scrollTo(0,0); render(); setTimeout(()=>alert(n+' ligne'+(n>1?'s':'')+' du relevé importée'+(n>1?'s':'')+'.'),50); }
   else if(a==='toutvalider'){ const H=historique(); let n=0; aClasser().forEach(t=>{ const dm=detteQuiColle(t); if(dm){ reglerAvec(t,dm); n++; return; } const p=twintPersonne(t)?null:proposer(t,H); if(p&&p.sure&&S.cats[p.cat]){ t.cat=p.cat; n++; } }); if(n){ save(); render(); } }
   else if(a==='nouvelledette') nouvelleDette();
+  else if(a==='nrecur'){ er={id:null,nom:'',sens:'sortie',montant:'',compte:dernierCompte(),rythme:'annee',debut:'',cat:''}; sheetErr=''; vRecurEdit(); }
+  else if(a==='recursave') enregistrerRecur();
+  else if(a==='recursuppr'){ if(er&&er.id&&confirm('Supprimer « '+er.nom+' » ?')){ const c=S.regl.recurrents=Object.assign({},S.regl.recurrents||{}); delete c[er.id]; save(); fermer(); render(); } }
   else if(a==='exporter') ouvrirExport();
   else if(a==='exportdl') telechargerExport();
   else if(a==='exportcopie') copierExport();
