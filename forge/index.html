@@ -644,6 +644,13 @@ body.ov-open{overflow:hidden}
 .rxc.pg{background:var(--mint-soft);color:var(--mint-ink)}
 .pair .pz{margin:0}
 .pair .sh-it{background:var(--surface)}
+.chip.nomat{cursor:pointer;border:1px dashed var(--line);background:var(--surface);color:var(--ink-3);font:inherit;font-size:12.5px}
+.chip.nomat.on{border:1px solid var(--sun);background:var(--sun-soft);color:var(--ink);font-weight:600}
+.nomat-note{margin:0;font-size:13px;background:var(--sun-soft);border-radius:10px;padding:6px 10px}
+.moved-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-2);border:1px dashed var(--line);border-radius:12px;padding:6px 10px}
+.mv-weeks{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mv-weeks .btn{justify-content:center}
+.sheet .ask{border-radius:20px 20px 0 0}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -769,11 +776,31 @@ function seriesFor(wk){
     return weeksBetween(r.from, wk) % r.every === 0;
   }).map(([rid, r]) => ({ ...r.session, series: rid }));
 }
+/* Semaine sans matériel : les séances qui demandent la salle disparaissent, la séance voyage les remplace.
+   Les autres semaines, la séance voyage est cachée. Réglage de la semaine (logs.nomat), sinon celui du programme (weeks.nomat). */
+function nomatWeek(id){ const l = S.data.logs[id]; if (l && l.nomat != null) return !!l.nomat; const own = S.data.weeks[id]; return !!(own && own.nomat); }
+const needsGym = x => x.gym != null ? !!x.gym : ["s-haut","s-bas"].includes(x.id);
+const nomatOnly = x => x.nomatOnly != null ? !!x.nomatOnly : x.id === "s-voyage";
+/* Reporter une séance : elle quitte sa semaine (logs.moved) et devient une séance ajoutée dans la semaine choisie. */
+function moveSession(wk, sid, to){
+  const ps = planOf(wk).sessions.find(x => x.id === sid); if (!ps) return;
+  const sess = JSON.parse(JSON.stringify(ps, (k, v) => ["series","over","mod","_prog"].includes(k) ? undefined : v));
+  const taken = planOf(to).sessions.some(x => x.id === sid); sess.id = taken ? sid + "-" + wk.slice(-3).toLowerCase() : sid;
+  const rid = uid("r"); put("series", rid, { session: sess, from: to, every: 0, until: to, movedFrom: wk, movedSid: sid, edited: true });
+  patchLog(wk, l => { l.moved = { ...(l.moved || {}), [sid]: { to, rid, title: ps.title } }; });
+  toast("« " + ps.title + " » reportée en " + wkLabel(to));
+}
+function unmoveSession(wk, sid){
+  const m = (((S.data.logs[wk] || {}).moved) || {})[sid]; if (!m) return;
+  if (m.rid && S.data.series[m.rid]) del("series", m.rid);
+  patchLog(wk, l => { delete l.moved[sid]; if (!Object.keys(l.moved).length) delete l.moved; });
+}
 function planOf(id){
   const own = S.data.weeks[id]; const w = weekById(id); const b = w ? blockOf(w) : null;
   const addTests = ss => { ss = ss || []; if (!isTestWeek(id) || ss.some(x => x.id === "s-tests")) return ss; const t = testsSession(); return t ? [t, ...ss] : ss; };
-  const over = (own && own.over) || {};
-  const keep = ss => [...(addTests(ss) || []).filter(x => !x.onlyIf).map(x => over[x.id] ? { ...over[x.id], id: x.id, over: true } : x), ...seriesFor(id)];
+  const over = (own && own.over) || {}; const nm = nomatWeek(id); const moved = ((S.data.logs[id] || {}).moved) || {};
+  const keep = ss => [...(addTests(ss) || []).filter(x => !x.onlyIf).map(x => over[x.id] ? { ...over[x.id], id: x.id, over: true } : x), ...seriesFor(id)]
+    .filter(x => !moved[x.id] && (nm ? !needsGym(x) : !nomatOnly(x))).map(x => nm && nomatOnly(x) && x.optional ? { ...x, optional: false } : x);
   if (own && own.sessions && own.sessions.length) return { ...own, sessions: resolveWeek(keep(own.sessions), w, b, false), fromTemplate:false, block:b };
   const tpl = b && b.template && b.template.sessions ? b.template.sessions : null;
   return { ...(own || {}), sessions: resolveWeek(keep(tpl), w, b, true), fromTemplate: !!tpl, block:b };
@@ -1123,7 +1150,7 @@ function tile(w, now, today){
   const evs = eventsOf(w); const pr = weekProgress(w.id); const dl = isDeload(w); const b = blockOf(w);
   const pos = b ? blockWeeks(b).indexOf(w.id) + 1 : 0;
   const cls = ["wk", w.sun < today ? "past" : "", w.id === now ? "now" : "", dl ? "deload" : ""].join(" ");
-  const chips = (isTestWeek(w.id) ? `<span class="chip test">Tests</span>` : "") + evs.slice(0,2).map(e => `<span class="chip ${esc(e.type)}" title="${esc(EVT[e.type]||"")} · ${esc(e.title)}">${esc(e.title || EVT[e.type])}</span>`).join("") + ctxChips(w.id);
+  const chips = (isTestWeek(w.id) ? `<span class="chip test">Tests</span>` : "") + (nomatWeek(w.id) ? `<span class="chip">🎒</span>` : "") + evs.slice(0,2).map(e => `<span class="chip ${esc(e.type)}" title="${esc(EVT[e.type]||"")} · ${esc(e.title)}">${esc(e.title || EVT[e.type])}</span>`).join("") + ctxChips(w.id);
   const bands = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return `<span class="band ${p ? "" : "none"}" style="--ph:${phVar(p)}"><b>${short}</b><span>${p ? esc(PHASES[p.type]?.short || phName(p)) : "—"}</span></span>`; }).join("");
   return `<button class="${cls}" data-action="open-week" data-week="${w.id}">
     <span class="top"><span class="n">${wkLabel(w.id)}</span>${pr.planned && tracked(w.id) ? `<span class="num prog">${pr.done}/${pr.planned}</span>` : ""}</span>
@@ -1183,6 +1210,7 @@ function vWeek(){
       <h2>${wkLabel(w.id)} · ${fmtRange(w.mon,w.sun)} ${w.sun.getUTCFullYear()}</h2></div>
     <div class="row">${pills}
       ${isTestWeek(w.id) ? `<span class="chip test"><b>Tests</b></span>` : ""}
+      <button class="chip nomat ${nomatWeek(w.id) ? "on" : ""}" aria-pressed="${nomatWeek(w.id)}" data-action="nomat">🎒 ${nomatWeek(w.id) ? "Sans matériel" : "Sans matériel ?"}</button>
       ${evs.map(e => `<span class="chip ${esc(e.type)}">${e.title && e.title !== EVT[e.type] ? `<b>${esc(EVT[e.type]||"")}</b> ${esc(e.title)}` : `<b>${esc(EVT[e.type] || e.title)}</b>`}</span>`).join("")}
       <button class="btn small ghost" data-action="ev-here" data-start="${ds(w.mon)}">+ Événement</button>
     </div>
@@ -1192,7 +1220,9 @@ function vWeek(){
   ${w.id === now ? alertsPanel() : ""}
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="between"><h3>Séances</h3>${total ? `<span class="muted" style="font-size:12.5px">≈ ${fmtMin(total)}${free ? " + parkour libre" : ""}</span>` : ""}</div>
+    ${nomatWeek(w.id) ? `<p class="nomat-note">🎒 Semaine sans matériel : les séances en salle sont remplacées par la séance voyage (à faire 2 à 3 fois).</p>` : ""}
     <div class="slist">${sessions}</div>
+    ${Object.entries(log.moved || {}).map(([sid, m]) => `<div class="moved-row"><span>↪ <b>${esc(m.title || sid)}</b> reportée en ${wkLabel(m.to)}</span><span class="row"><button class="btn small ghost" data-action="open-week" data-week="${m.to}">Voir</button><button class="btn small ghost" data-action="mv-undo" data-sid="${esc(sid)}">Annuler</button></span></div>`).join("")}
     <button class="btn" data-action="pe-snew">+ Nouvelle séance</button>
     ${fx ? `<p class="muted" style="margin:0;font-size:12.5px">⚡ très exigeante pour le système nerveux · 🔥 grosses courbatures probables</p>` : ""}
     ${extrasPanel(log)}
@@ -1299,7 +1329,7 @@ function sessRow(wk, s, log, hint){
   return `<article class="srow ${st.done ? "done" : ""}">
     <div class="srow-t">
       <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
-      <h3><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h3>${s.series ? `<span class="sbadge">${(S.data.series[s.series] || {}).every ? "↻ ajoutée, répétée" : "ajoutée cette semaine"}</span>` : s.over ? `<span class="sbadge">modifiée cette semaine</span>` : ""}${status}${hint && s.nerv && !st.done ? `<span class="shint">${esc(hint)}</span>` : ""}
+      <h3><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h3>${s.series ? `<span class="sbadge">${(S.data.series[s.series] || {}).movedFrom ? "↪ reportée de " + wkLabel(S.data.series[s.series].movedFrom) : (S.data.series[s.series] || {}).every ? "↻ ajoutée, répétée" : "ajoutée cette semaine"}</span>` : s.over ? `<span class="sbadge">modifiée cette semaine</span>` : ""}${status}${hint && s.nerv && !st.done ? `<span class="shint">${esc(hint)}</span>` : ""}
     </div>
     <div class="srow-b ${guided(s) ? "" : "two"}">
       <button class="btn" data-action="show" data-sid="${esc(s.id)}">Afficher</button>
@@ -1383,7 +1413,7 @@ function showSheet(wk, s, log){
         <div class="sh-tx"><div class="sh-nm">${code ? `<span class="code">${code}</span>` : ""}<span>${esc(it.name)}</span>${it.mod ? `<span class="tag mod">modifié</span>` : ""}</div>
         ${it.tests ? "" : shChips(wk, s, it, f.kind === "simple" ? f.setRest[i] : 0)}
         ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; });
-    const kindTag = f.kind === "superset" ? "Superset" : f.kind === "contraste" ? "Contraste par paires" : "";
+    const kindTag = f.kind === "superset" ? (s.kind === "contraste" && items.length >= 3 ? "French contrast" : "Superset") : f.kind === "contraste" ? "Contraste par paires" : "";
     const title = b.name && (!grp || b.name !== kindLabel(b)) ? b.name : kindTag || "Exercices";
     const card = `<div class="sh-b ${grp ? "grp" : ""}">
       <div class="sh-bh">${grp ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}${altIdx > 0 ? `<span class="tag">ou</span>` : alt.length > 1 ? `<span class="tag">au choix</span>` : ""}<b>${esc(title)}</b>${kindTag && title !== kindTag ? `<span class="tag">${kindTag}</span>` : ""}${grp && b.rounds > 1 ? `<span class="tag tours">× ${b.rounds} tours</span>` : ""}</div>
@@ -1400,12 +1430,17 @@ function showSheet(wk, s, log){
       <button class="btn primary big" data-action="ed-save" data-scope="fwd">Oui, aux prochaines aussi</button>
       <button class="btn big" data-action="ed-save" data-scope="week">Non, cette séance seulement</button>
       <button class="btn ghost" data-action="ed-ask-cancel">Retour</button></div></div>` : "";
-  const foot = E ? `<div class="sh-foot two"><button class="btn" data-action="ed-cancel">Annuler</button><button class="btn primary big" data-action="ed-done">Enregistrer</button></div>`
-    : guided(s) && runSteps(s).length ? `<div class="sh-foot"><button class="btn primary big" data-action="run" data-sid="${esc(s.id)}">Démarrer</button></div>` : "";
+  const mvBtn = `<button class="btn" data-action="mv-open" data-sid="${esc(s.id)}">Reporter…</button>`;
+  const foot = guided(s) && runSteps(s).length ? `<div class="sh-foot two">${mvBtn}<button class="btn primary big" data-action="run" data-sid="${esc(s.id)}">Démarrer</button></div>` : `<div class="sh-foot">${mvBtn}</div>`;
+  const nexts = [1, 2, 3, 4].map(n => isoWeekId(addDays(weekById(wk).mon, 7 * n)));
+  const mvAsk = S.ui.mv === s.id ? `<div class="ask" role="alertdialog" aria-labelledby="mv-t"><div class="ask-card"><h3 id="mv-t">Reporter « ${esc(s.title)} »</h3>
+      <p>Elle quitte ${wkLabel(wk)} et s'ajoute à la semaine choisie. Tu pourras annuler.</p>
+      <div class="mv-weeks">${nexts.map(x => `<button class="btn" data-action="mv-to" data-sid="${esc(s.id)}" data-wk="${x}">${wkLabel(x)} · ${fmtD(weekById(x).mon)}</button>`).join("")}</div>
+      <button class="btn ghost" data-action="mv-close">Annuler</button></div></div>` : "";
   return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="sh-title"><div class="scrim" data-action="${E ? "ed-cancel" : "ov-close"}"></div>
     <div class="sheet"><div class="sh-head"><div>${E ? `<span class="eyebrow">Modifier · ${wkLabel(wk)}</span>` : `<div class="row">${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>`}<h2 id="sh-title"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div>
       <div class="row" style="flex-wrap:nowrap">${E ? "" : `<button class="btn small" data-action="pe-sess" data-sid="${esc(s.id)}">Modifier</button>`}<button class="x" data-action="${E ? "ed-cancel" : "ov-close"}" aria-label="${E ? "Annuler les modifications" : "Fermer"}">✕</button></div></div>
-      <div class="sh-body" data-sk="sh-${esc(s.id)}">${s.note && !E ? `<p class="sh-note">${esc(s.note)}</p>` : ""}${E ? `<div class="pe-link"><span>Ajouter, retirer ou réorganiser des exercices, changer les supersets :</span><button class="btn small" data-action="pe-sess" data-sid="${esc(s.id)}">Modifier les exercices</button></div>` : ""}${body}</div>${foot}${ask}</div></div>`;
+      <div class="sh-body" data-sk="sh-${esc(s.id)}">${s.note ? `<p class="sh-note">${esc(s.note)}</p>` : ""}${body}</div>${foot}${mvAsk}</div></div>`;
 }
 /* ---------- modifier une séance ---------- */
 const repsEditable = t => /^\s*\d+(\s*[–-]\s*\d+)?(\s*\/\s*jambe)?\s*$/.test(String(t || ""));
@@ -1486,7 +1521,7 @@ function exoAliases(){ const m = {}; Object.entries(S.data.exos || {}).forEach((
 const exoId = ex => exoAliases()[ex] || ex;
 function exoList(){
   const out = {}; Object.entries(S.data.exos || {}).forEach(([id, x]) => { out[id] = { id, ...x }; });
-  const al = exoAliases(); const skip = new Set(["ech-gen","ech-sauts","lacunes","mec-haut","mid-5x5","mid-lignes","mid-peur","vo-calme","vo-ech"]);
+  const al = exoAliases(); const skip = new Set(["ech-gen","ech-sauts","ech-bas","lacunes","mec-haut","mid-5x5","mid-lignes","mid-peur","vo-calme","vo-ech"]);
   const add = it => { const ex = it.ex || it.id; if (!ex || it.tests || skip.has(ex) || out[ex] || al[ex]) return; out[ex] = { id: ex, name: it.name || ex, img: it.img, cue: it.cue, link: it.link, tags: [], loose: true }; };
   blocksSorted().slice().reverse().forEach(b => ((b.template && b.template.sessions) || []).forEach(s => (s.blocks || []).forEach(g => (g.items || []).forEach(add))));
   Object.values(S.data.weeks || {}).forEach(w => (w.sessions || []).forEach(s => (s.blocks || []).forEach(g => (g.items || []).forEach(add))));
@@ -1883,6 +1918,8 @@ function peSessView(){
           <label class="pe-chk"><input type="checkbox" data-pe="s:nerv" ${s.nerv ? "checked" : ""}><span>⚡ Exigeante pour le système nerveux</span></label>
           <label class="pe-chk"><input type="checkbox" data-pe="s:doms" ${s.doms ? "checked" : ""}><span>🔥 Grosses courbatures</span></label>
           <label class="pe-chk"><input type="checkbox" data-pe="s:optional" ${s.optional ? "checked" : ""}><span>Optionnelle<small>Ne compte pas dans le suivi.</small></span></label>
+          <label class="pe-chk"><input type="checkbox" data-pe="s:gym" ${needsGym(s) ? "checked" : ""}><span>Demande la salle<small>Cachée les semaines sans matériel.</small></span></label>
+          <label class="pe-chk"><input type="checkbox" data-pe="s:nomatOnly" ${nomatOnly(s) ? "checked" : ""}><span>Seulement sans matériel<small>Visible uniquement les semaines sans matériel (séance voyage).</small></span></label>
         </div>
         <div class="field"><label for="pe-snote">Note</label><input id="pe-snote" type="text" data-pe="s:note" value="${esc(s.note || "")}"></div>
       </details>
@@ -2663,8 +2700,11 @@ function vData(){
   </section>
   <section class="panel">
     <h3>Importer</h3>
-    <p style="margin:0;max-width:68ch;color:var(--ink-2)">Remplace toutes les données par celles d'un fichier exporté (.json).</p>
-    <div class="row"><label class="btn" for="import-in">Choisir un fichier…</label><input id="import-in" type="file" accept=".json,application/json" hidden></div>
+    <p style="margin:0;max-width:68ch;color:var(--ink-2)"><b>Compléter</b> ajoute les séances, charges, notes et tests d'un fichier sans rien effacer : ce qui est déjà dans Forge est gardé.</p>
+    <div class="row"><label class="btn primary" for="merge-in">Compléter avec un fichier…</label><input id="merge-in" type="file" accept=".json,application/json" hidden></div>
+    ${S.ui.mergeMsg ? `<div class="muted">${esc(S.ui.mergeMsg)}</div>` : ""}
+    <p style="margin:6px 0 0;max-width:68ch;color:var(--ink-2)"><b>Remplacer</b> efface tout et met les données d'un fichier exporté (.json) à la place.</p>
+    <div class="row"><label class="btn" for="import-in">Remplacer avec un fichier…</label><input id="import-in" type="file" accept=".json,application/json" hidden></div>
     ${S.ui.importData ? `<div class="empty"><strong>${esc(S.ui.importName)}</strong> · exporté le ${esc((S.ui.importData.exportedAt||"").slice(0,10)) || "?"} · ${COLS.map(k => Object.keys(S.ui.importData.data[k]||{}).length).reduce((a,b)=>a+b,0)} éléments.
       <div class="row" style="margin-top:10px"><button class="btn danger" data-action="do-import">Remplacer mes données par ce fichier</button><button class="btn ghost" data-action="cancel-import">Annuler</button></div></div>` : ""}
   </section>
@@ -2690,6 +2730,26 @@ function pendingPanel(){
     <div class="row"><button class="btn small" data-action="pend-take" data-k="*">Prendre la version de Claude</button><button class="btn small ghost" data-action="pend-keep" data-k="*">Garder la mienne</button></div>
     <details><summary>Choisir élément par élément</summary>${docs.map(([k, d]) => `<div class="pend-r"><span>${esc(lab(k, d))}${d == null ? " <span class=\"muted\">(Claude l'a retiré)</span>" : ""}</span>
     <span class="row"><button class="btn small" data-action="pend-take" data-k="${esc(k)}">Version de Claude</button><button class="btn small ghost" data-action="pend-keep" data-k="${esc(k)}">Garder la mienne</button></span></div>`).join("")}</details></div>`;
+}
+/* Compléter : ajoute ce qui manque (journal, charges, ressenti, tests) sans écraser ce qui existe déjà dans Forge. */
+function mergeImport(j){
+  const d = j.data || {}; let weeks = 0, tests = 0;
+  Object.entries(d.logs || {}).forEach(([id, doc]) => {
+    if (!doc || typeof doc !== "object") return; const cur = S.data.logs[id];
+    if (!cur) { put("logs", id, doc); weeks++; return; }
+    const m = clone(cur);
+    m.actual = { ...(doc.actual || {}), ...(cur.actual || {}) };
+    m.sessions = { ...(doc.sessions || {}) }; Object.entries(cur.sessions || {}).forEach(([k, v]) => { m.sessions[k] = { ...((doc.sessions || {})[k] || {}), ...v }; });
+    m.checkin = { ...(doc.checkin || {}), ...(cur.checkin || {}) };
+    ["bodyweight","waist"].forEach(f => { if (m[f] == null && doc[f] != null) m[f] = doc[f]; });
+    if (doc.notes && !(cur.notes || "").includes(doc.notes)) m.notes = cur.notes ? cur.notes + "\n" + doc.notes : doc.notes;
+    if (doc.photos) m.photos = [...(cur.photos || []), ...doc.photos.filter(ph => !(cur.photos || []).some(q => (q.path || q.asset) === (ph.path || ph.asset)))];
+    ["actual","sessions","checkin"].forEach(f => { if (!Object.keys(m[f]).length) delete m[f]; });
+    if (canon(m) !== canon(cur)) { put("logs", id, m); weeks++; }
+  });
+  Object.entries(d.tests || {}).forEach(([id, doc]) => { if (!S.data.tests[id]) { put("tests", id, doc); tests++; } });
+  S.ui.mergeMsg = weeks || tests ? `Complété : ${weeks} semaine${weeks > 1 ? "s" : ""}${tests ? ", " + tests + " test" + (tests > 1 ? "s" : "") : ""}. Rien n'a été effacé.` : "Rien de nouveau dans ce fichier : tout y était déjà.";
+  toast(S.ui.mergeMsg); render();
 }
 function exportObj(){ return { app:"carnet-parkour", version:1, exportedAt:new Date().toISOString(), data:S.data }; }
 function offerFile(filename, text){
@@ -2752,6 +2812,11 @@ app.addEventListener("click", async e => {
     if (nowDone) { ovOpen("feel", sid); render(); } }
   else if (a === "feel") { const sid = b.dataset.sid, k = b.dataset.k, v = +b.dataset.v; patchLog(S.week, l => { l.sessions ||= {}; const cur = { ...(l.sessions[sid] || {}) }; const f = { ...(cur.feel || {}) }; if (f[k] === v) delete f[k]; else f[k] = v; cur.feel = f; l.sessions[sid] = cur; }); }
   else if (a === "alert-ok") { alertDismiss(b.dataset.id); }
+  else if (a === "nomat") { const v = !nomatWeek(S.week); patchLog(S.week, l => { l.nomat = v; }); }
+  else if (a === "mv-open") { S.ui.mv = b.dataset.sid; render(); }
+  else if (a === "mv-close") { S.ui.mv = null; render(); }
+  else if (a === "mv-to") { moveSession(S.week, b.dataset.sid, b.dataset.wk); S.ui.mv = null; ovClose(); }
+  else if (a === "mv-undo") { unmoveSession(S.week, b.dataset.sid); }
   else if (a === "alert-light") { alertLighten(b.dataset.sid, b.dataset.id); }
   else if (a === "show") { ovOpen("show", b.dataset.sid); render(); }
   else if (a === "run") { runStart(b.dataset.sid); }
@@ -2841,6 +2906,7 @@ app.addEventListener("change", async e => {
   if (el.id === "exo-img") { exoImage(el.files[0]); return; }
   if (el.id === "photo-in") return addPhotos(el.files);
   if (el.id === "media-in") { const f = el.files[0]; if (f) importMediaZip(f); return; }
+  if (el.id === "merge-in") { const f = el.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); if (!j || !j.data) throw 0; mergeImport(j); } catch(err){ toast("Ce fichier n'est pas un export du carnet."); } el.value = ""; return; }
   if (el.id === "import-in") { const f = el.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); if (!j || !j.data) throw 0; S.ui.importData = j; S.ui.importName = f.name; } catch(err){ toast("Ce fichier n'est pas un export du carnet."); } render(); return; }
   if (el.dataset.ui) { S.ui[el.dataset.ui] = el.value; if (el.id === "lift-sel") S.ui.exOpen = true; render(); return; }
   if (el.dataset.day != null && el.matches("select")) { const sid = el.dataset.day; patchLog(S.week, l => { l.sessions ||= {}; const cur = { ...(l.sessions[sid]||{}) }; if (el.value === "") delete cur.day; else cur.day = dayVal(el.value); l.sessions[sid] = cur; }); return; }

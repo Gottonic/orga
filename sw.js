@@ -1,6 +1,6 @@
 /* ORGA : un seul service worker pour l'accueil et toutes les apps (Établi, Banque, Forge, Marché…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-12-9';
+const VERSION = 'orga-2026-11-12-10';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
