@@ -132,7 +132,9 @@ main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-rig
 @media (min-width:600px){.scrim{align-items:center}.sheet{height:auto;max-height:94%;border-radius:24px;padding-top:6px}}
 @keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
 .sh{position:sticky;top:0;z-index:3;background:var(--bg);display:flex;align-items:center;gap:4px;margin:0 -8px;padding:calc(6px + env(safe-area-inset-top,0px)) 0 4px}
-.sh h2{font-size:22px;font-weight:700;flex:1}
+.sh h2{font-size:20px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.okb{height:42px;padding:0 12px 0 10px;border:0;border-radius:21px;background:var(--amber);color:var(--amberink);font-size:14px;font-weight:700;display:flex;align-items:center;gap:4px;flex:none;margin-right:8px}
+.okb:active{filter:brightness(.95)}
 .montant{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:2px 0}
 .montant b{font-family:var(--title);font-size:48px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 .montant span{font-size:18px;color:var(--muted)}
@@ -508,6 +510,7 @@ function vReglages(){
 
 /* =============================== Saisie =============================== */
 let draft=null, sheetErr='';
+function okBtn(act){ return '<button class="okb" data-act="'+act+'">'+svg(P.check,16,null,2.6)+'Enregistrer</button>'; }
 function ouvrir(html){ const sc=$sheet.scrollTop; $sheet.innerHTML=html; $scrim.hidden=false; document.body.style.overflow='hidden'; $sheet.scrollTop=sc; }
 function fermer(){ $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; ec=null; et=null; eb=null; document.body.style.overflow=''; }
 function dernierCompte(){ return (S.regl.dernierCompte&&S.comptes[S.regl.dernierCompte])?S.regl.dernierCompte:(comptesTri()[0]||{}).id; }
@@ -523,12 +526,12 @@ function editer(id){
     tags:(t.tags||[]).slice(),date:t.date,tiers:t.tiers||'',note:t.note||'',parts:t.parts?t.parts.map(p=>({montant:String(Math.abs(p.montant)),cat:p.cat})):null,source:t.source,orig:t.orig||null,signe:t.montant<0?-1:1,voirTiers:!!t.tiers,voirNote:!!t.note};
   sheetErr=''; vSaisie();
 }
-const TITRES={depense:'Nouvelle dépense',revenu:'Nouveau revenu',virement:'Nouveau virement'};
+const TITRES={depense:'Saisie',revenu:'Saisie',virement:'Saisie'};
 function vSaisie(){
   const d=draft, cs=comptesTri(), m=num(d.montant)||0;
   const coul=!m?'var(--muted)':d.type==='depense'?'var(--neg)':d.type==='revenu'?'var(--pos)':'var(--text)';
   const fixe=['yuh','bas','miroir'].includes(d.source);
-  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans enregistrer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(d.id?'Modifier':TITRES[d.type])+'</h2></div>';
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans enregistrer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(d.id?'Modifier':TITRES[d.type])+'</h2>'+okBtn('enregistrer')+'</div>';
   if(!fixe) h+=seg('type',d.type,[['depense','Dépense'],['revenu','Revenu'],['virement','Virement']],'Type d’opération');
   const sgn=d.type==='depense'?'−':d.type==='revenu'?'+':'';
   h+=fixe?'<div class="montant"><b style="color:'+coul+'">'+sgn+esc(d.montant||'0')+'</b><span>CHF</span></div>'
@@ -561,7 +564,6 @@ function vSaisie(){
   if(d.voirNote) h+='<div class="field"><label class="lbl" for="s-note">Note</label><input class="input" id="s-note" value="'+esc(d.note)+'"></div>';
   h+='<div class="field"><span class="lbl">Étiquettes</span><div class="pills">'+Object.values(S.tags).filter(g=>!g.archive||d.tags.includes(g.id)).sort((a,b)=>(b.du||'').localeCompare(a.du||'')||a.nom.localeCompare(b.nom)).map(g=>'<button class="pill tagp" data-tag="'+esc(g.id)+'" aria-pressed="'+d.tags.includes(g.id)+'">#'+esc(g.nom)+'</button>').join('')+'<button class="pill dash" data-act="nouveautag">+ Étiquette</button></div></div>';
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
-  h+='<button class="btn" data-act="enregistrer">'+svg(P.check,20)+'Enregistrer</button>';
   if(d.id&&!fixe) h+='<button class="btn warn" data-act="supprimer">Supprimer cette opération</button>';
   if(!d.id) h+='<p class="note" style="text-align:center">Elle sera reliée à sa ligne au prochain import du relevé (Yuh ou BAS).</p>';
   ouvrir(h);
@@ -1122,7 +1124,7 @@ function ouvrirDette(id,payer){ const d=S.dettes[id]; if(!d) return; dd={id,sens
 function lireDette(){ const g=id=>document.getElementById(id); if(!dd) return; ['montant','personne','objet','date','echeance','cat'].forEach(k=>{ if(g('d-'+k)) dd[k]=g('d-'+k).value; }); }
 function vDette(){
   const d=dd, D=d.id?S.dettes[d.id]:null;
-  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(d.payer?'Payée avec quelle opération ?':d.id?'Dette':'Nouvelle dette')+'</h2></div>';
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(d.payer?'Quel paiement ?':'Dette')+'</h2>'+(!d.payer&&!(D&&D.reglee)?okBtn('dettesave'):'')+'</div>';
   if(d.payer&&D){
     const C=candidatsPaiement(D);
     h+='<section class="card"><p style="margin:0"><b>'+esc(D.personne)+'</b> · '+esc(D.objet||'')+'</p><p class="note">'+(D.sens==='je_dois'?'Tu dois ':'On te doit ')+'<b>'+fmt(D.montant)+' CHF</b>'+(D.date?' depuis le '+esc(dDate(D.date)):'')+'.</p></section>';
@@ -1145,7 +1147,6 @@ function vDette(){
   h+='<div class="field"><label class="lbl" for="d-cat">Catégorie du paiement</label><select class="sel" id="d-cat">'+optsCats(d.cat,d.sens==='je_dois'?'À choisir au paiement':'Remboursements (par défaut)')+'</select><p class="note">Le paiement, quand il arrivera, sera classé ici. Pour une facture : la catégorie de l’activité (ex. Pro › Parkour).</p></div>';
   if(D&&D.paiements&&D.paiements.length) h+='<section class="card"><h2>Déjà payé</h2>'+D.paiements.map(p=>{ const t=p.tx&&S.tx[p.tx]; return '<div class="dette"><span>'+esc(dDate(p.date))+' · '+esc(p.tx?(t?(t.tiers||catNom(t.cat)):'opération supprimée'):'sans opération')+'</span><span style="display:flex;align-items:center;gap:8px"><b class="num">'+fmt(p.montant)+'</b>'+(p.tx?'<button class="pill" data-delierp="'+esc(p.tx)+'" style="height:34px">Délier</button>':'')+'</span></div>'; }).join('')+(D.montant_initial!=null?'<p class="note">Montant de départ : '+fmt(D.montant_initial)+' CHF. Le montant ci-dessus est ce qui reste.</p>':'')+'</section>';
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
-  h+='<button class="btn" data-act="dettesave">'+svg(P.check,20)+'Enregistrer</button>';
   if(D&&!D.reglee) h+='<button class="btn ghost" data-act="dettepayer">Marquer comme payée…</button>';
   if(D) h+='<button class="btn warn" data-act="dettesuppr">Supprimer cette dette</button>';
   ouvrir(h);
@@ -1193,7 +1194,7 @@ function vCats(){
 let ec=null;
 function vCat(){
   const c=ec, C=c.id?S.cats[c.id]:null, U=usageCat(), n=c.id?U[c.id]||0:0, P0=S.cats[c.parent||(C&&C.parent)];
-  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(c.id?'Catégorie':'Nouvelle sous-catégorie')+'</h2></div>';
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(c.id?'Catégorie':'Sous-catégorie')+'</h2>'+okBtn('catsave')+'</div>';
   if(P0) h+='<p class="note">Dans <b>'+esc(P0.nom)+'</b>'+(c.id?' · '+n+' opération'+(n>1?'s':''):'')+'</p>';
   h+='<div class="field"><label class="lbl" for="c-nom">Nom</label><input class="input" id="c-nom" value="'+esc(c.nom)+'"></div>';
   if(!c.id&&P0&&!sousDe(P0.id).length&&(U[P0.id]||0)) h+='<p class="note">'+esc(P0.nom)+' n’a pas encore de sous-catégorie : ses '+U[P0.id]+' opérations restent dans « '+esc(P0.nom)+' », mais à la saisie il faudra ensuite choisir une sous-catégorie.</p>';
@@ -1201,7 +1202,6 @@ function vCat(){
   if(C&&C.parent){ const cibles=catsTri().filter(x=>x.id!==C.id&&maitreDe(x.id)!=='autres'&&(x.parent||!sousDe(x.id).length));
     h+='<div class="field"><label class="lbl" for="c-fus">Fusionner dans</label><select class="sel" id="c-fus"><option value="">—</option>'+maitres().filter(m=>m.id!=='autres').map(m=>{ const L=cibles.filter(x=>maitreDe(x.id)===m.id); return L.length?'<optgroup label="'+esc(m.nom)+'">'+L.map(x=>'<option value="'+x.id+'"'+(c.fus===x.id?' selected':'')+'>'+esc(x.nom)+'</option>').join('')+'</optgroup>':''; }).join('')+'</select><p class="note">Ses opérations, dettes et budgets passent dans la catégorie choisie, puis elle disparaît.</p></div>'; }
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
-  h+='<button class="btn" data-act="catsave">'+svg(P.check,20)+'Enregistrer</button>';
   if(C&&C.parent&&!n) h+='<button class="btn warn" data-act="catsuppr">Supprimer (pas utilisée)</button>';
   ouvrir(h);
 }
@@ -1234,7 +1234,7 @@ let et=null;
 function lireTag(){ const g=id=>document.getElementById(id); if(!et) return; if(g('g-nom')) et.nom=g('g-nom').value; if(g('g-du')) et.du=g('g-du').value; if(g('g-au')) et.au=g('g-au').value; if(g('g-auto')) et.actif=g('g-auto').checked; if(g('g-arch')) et.archive=g('g-arch').checked; if(g('g-fus')) et.fus=g('g-fus').value; }
 function vTag(){
   const t=et, G=t.id?S.tags[t.id]:null, {n}=usageTag(), k=t.id?n[t.id]||0:0;
-  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(t.id?'Étiquette':'Nouvelle étiquette')+'</h2></div>';
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+'Étiquette'+'</h2>'+okBtn('tagsave')+'</div>';
   if(G) h+='<p class="note">'+k+' opération'+(k>1?'s':'')+'.</p>';
   h+='<div class="field"><label class="lbl" for="g-nom">Nom</label><input class="input" id="g-nom" value="'+esc(t.nom)+'" placeholder="Suède 2027, Van, Anniversaire…"></div>';
   h+='<div class="field"><span class="lbl">Genre</span><div class="pills">'+GENRES.map(([v,nm])=>'<button class="pill" data-gtype="'+v+'" aria-pressed="'+(t.genre===v)+'">'+nm+'</button>').join('')+'</div></div>';
@@ -1244,7 +1244,6 @@ function vTag(){
   if(G){ const autres=Object.values(S.tags).filter(x=>x.id!==G.id).sort((a,b)=>a.nom.localeCompare(b.nom));
     if(autres.length) h+='<div class="field"><label class="lbl" for="g-fus">Fusionner dans</label><select class="sel" id="g-fus"><option value="">—</option>'+autres.map(x=>'<option value="'+esc(x.id)+'"'+(t.fus===x.id?' selected':'')+'>#'+esc(x.nom)+'</option>').join('')+'</select><p class="note">Ses opérations et budgets passent sur l’étiquette choisie, puis elle disparaît.</p></div>'; }
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
-  h+='<button class="btn" data-act="tagsave">'+svg(P.check,20)+'Enregistrer</button>';
   if(G) h+='<button class="btn warn" data-act="tagsuppr">Supprimer l’étiquette'+(k?' (elle est retirée de '+k+' opération'+(k>1?'s':'')+')':'')+'</button>';
   ouvrir(h);
 }
@@ -1296,7 +1295,7 @@ let eb=null;
 function lireBudget(){ const g=id=>document.getElementById(id); if(!eb) return; if(g('b-ref')) eb.ref=g('b-ref').value; if(g('b-montant')) eb.montant=g('b-montant').value; if(g('b-du')) eb.du=g('b-du').value; if(g('b-au')) eb.au=g('b-au').value; }
 function vBudget(){
   const b=eb, B=b.id?S.budgets[b.id]:null, t=today();
-  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+(b.id?'Budget':'Nouveau budget')+'</h2></div>';
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">'+'Budget'+'</h2>'+okBtn('budsave')+'</div>';
   h+=seg('bcible',b.cible,[['cat','Catégorie'],['tag','Étiquette']],'Budget sur');
   if(b.cible==='cat') h+='<div class="field"><label class="lbl" for="b-ref">Catégorie</label><select class="sel" id="b-ref"><option value="">Choisis…</option>'+maitres().filter(m=>m.id!=='autres'&&m.id!=='revenus').map(m=>{ const ss=sousDe(m.id); return '<optgroup label="'+esc(m.nom)+'"><option value="'+m.id+'"'+(b.ref===m.id?' selected':'')+'>'+esc(m.nom)+(ss.length?' (tout)':'')+'</option>'+ss.map(s=>'<option value="'+s.id+'"'+(b.ref===s.id?' selected':'')+'>'+esc(s.nom)+'</option>').join('')+'</optgroup>'; }).join('')+'</select></div>';
   else h+='<div class="field"><label class="lbl" for="b-ref">Étiquette</label><select class="sel" id="b-ref"><option value="">Choisis…</option>'+Object.values(S.tags).filter(g=>!g.archive||g.id===b.ref).sort((x,y)=>String(y.du||'').localeCompare(String(x.du||''))||x.nom.localeCompare(y.nom)).map(g=>'<option value="'+esc(g.id)+'"'+(b.ref===g.id?' selected':'')+'>#'+esc(g.nom)+'</option>').join('')+'</select></div>';
@@ -1309,7 +1308,6 @@ function vBudget(){
       h+='<section class="card"><p class="note" style="margin:0">Moyenne des '+avec.length+' derniers mois complets : <b>'+fmt(moy)+'</b> par mois.</p><div class="hist">'+avec.slice().reverse().map(([k,v])=>'<span class="'+(bm&&v>bm?'neg':'')+'"><span class="note">'+esc(moisCourt(k))+'</span><b class="num">'+fmt0(v)+'</b></span>').join('')+'</div></section>'; }
     else { const [a,z]=fenetre(x); h+='<p class="note">Déjà dépensé sur cette période : <b>'+fmt(depense(x,a,z))+'</b>.</p>'; } }
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
-  h+='<button class="btn" data-act="budsave">'+svg(P.check,20)+'Enregistrer</button>';
   if(B) h+='<button class="btn warn" data-act="budsuppr">Supprimer ce budget</button>';
   ouvrir(h);
 }
