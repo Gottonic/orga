@@ -783,7 +783,7 @@ function migratePetites(){ const L=(S.lists&&S.lists.petites)||[]; if(!L.length)
 function vMiniHome(){
   const c=inWeek(CUR), ord=[...weekOrder(CUR,c.n),...c.s];
   $view.innerHTML=`<form class="minline" data-act="addVrac"><span class="kb">5</span><input class="input" id="f-vrac" placeholder="Noter en vrac…" aria-label="Noter en vrac" autocomplete="off"><button class="btn" type="submit">+</button></form>
-  <div class="mbig"><button data-act="new"><span class="kb">*</span>+ Projet</button><button class="dark" data-act="summary"><span class="kb">#</span>RECAP</button></div>
+  <div class="mbig"><button data-act="new"><span class="kb">#</span>+ Projet</button><button class="dark" data-act="summary"><span class="kb">*</span>RECAP</button></div>
   <button class="mminis" data-act="minis">📝 Mini projets <b>${S.projects.filter(p=>isMini(p)&&!p.closed).length}</b></button>
   <div class="mlbl"><span>Cette semaine</span><span>${c.all.length}/${MAXT}</span></div>
   <div class="mrows">${ord.map((p,i)=>`<button class="mrow" style="${pv(p)}" data-act="open" data-id="${p.id}">${i<3?`<span class="kb">${i+1}</span>`:''}<span class="emo">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b>${nextOf(p)?`<small>${esc(nextOf(p))}</small>`:''}</span>${p.due?`<span class="mdue${urgent(p)?' u':''}">⏱ ${fmt(p.due)}</span>`:''}</button>`).join('')||'<p class="empty" style="padding:6px 0">Rien de prévu cette semaine.</p>'}</div>
@@ -1487,7 +1487,7 @@ const kbdOn=()=>document.body.classList.contains('kbd');
 function addBadges(){ if(!kbdOn()) return;
   const put=(el,l,end)=>{ if(!el||[...el.children].some(c=>c.classList.contains('kb'))) return; const s=document.createElement('span'); s.className='kb'; s.textContent=l; end?el.appendChild(s):el.insertBefore(s,el.firstChild); };
   [['planning','7'],['projets','8'],['vrac','9']].forEach(([v,l])=>put(document.querySelector('.tab[data-view='+v+']'),l,true));
-  put(document.querySelector('.ot-t[data-act=summary]'),'#',true); put(document.getElementById('fab'),'*');
+  put(document.querySelector('.ot-t[data-act=summary]'),'*',true); put(document.getElementById('fab'),'#');
   put(document.querySelector('.wknav [data-d="-1"]'),'4'); put(document.querySelector('.wknav [data-d="1"]'),'6',true);
   document.querySelectorAll('.slots > .slot:not(.free) .band').forEach((b,i)=>put(b,String(i+1)));
   put(document.querySelector('.vrac form.inline'),'5');
@@ -1520,8 +1520,8 @@ document.addEventListener('keydown',e=>{
   if(k==='Enter'){ if(t.type==='checkbox'){ e.preventDefault(); t.click(); } return; }
   const sheetOpen=!$scrim.hidden;
   if(k==='0'||k==='Escape'){ e.preventDefault(); if(sheetOpen){ const b=$sheet.querySelector('.xbtn'); b?b.click():closeSheet(); } else if(MINI&&ui.view!=='mini'){ goView('mini'); } return; }
-  if(k==='#'){ e.preventDefault(); summary(); return; }
-  if(k==='*'){ e.preventDefault(); ctx=null; newSheet(false); return; }
+  if(k==='*'){ e.preventDefault(); summary(); return; }
+  if(k==='#'){ e.preventDefault(); ctx=null; newSheet(false); return; }
   if(sheetOpen) return;
   if(k==='4'||k==='6'){ if(ui.view==='planning'){ e.preventDefault(); const b=document.querySelector(k==='4'?'.gnav button:first-child':'.gnav button:last-child'); if(b) b.click(); } return; }
   if(k==='5'){ e.preventDefault(); const tv=MINI?'mini':'vrac'; if(ui.view!==tv){ goView(tv); } const i=document.getElementById('f-vrac'); if(i){ vracGuard={until:Date.now()+700,val:i.value}; fset(i); } return; }
