@@ -739,7 +739,7 @@ function estPersonne(n){ return /^[A-ZÀ-Ý][a-zà-ÿ'’-]+(\s+[A-ZÀ-Ý][a-zà
 function yuhMouvements(rows){
   const fx=[], M=[], vus={};
   rows.forEach(r=>{ const t=r.type;
-    if(t==='REWARD_RECEIVED'||t==='INVEST_RECURRING_ORDER_REJECTED') return;
+    if(t==='REWARD_RECEIVED'||/_REJECTED$/.test(t)) return; /* ordres refusés : aucun argent n'a bougé */
     if(t==='BANK_AUTO_ORDER_EXECUTED'||t==='BANK_ORDER_EXECUTED'){ fx.push(r); return; }
     const base=[r.date,t,r.nom,r.deb,r.cdeb,r.cre,r.ccre].join('|'); vus[base]=(vus[base]||0)+1;
     const m={src:'yuh',compte:'yuh',ref:base+'#'+vus[base],date:r.date,montant:null,devise:'CHF',tiers:'',canal:'',lieu:r.lieu||'',vers:null,cat:null};
