@@ -225,6 +225,7 @@ input[type=checkbox]{accent-color:var(--acc)}
 .rapl>li:first-child{border-top:0}
 .rapl .op{border-top:0}
 .rapa{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-left:56px}
+.note.orph{padding-left:56px;margin:0 0 8px}
 .prop{height:36px;padding:0 12px;border:1px solid var(--amber);border-radius:18px;background:var(--accsoft);color:var(--acc);font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;max-width:100%}
 .prop.doute{background:transparent;border-style:dashed;color:var(--muted)}
 .ic.vide{background:var(--tile);color:var(--muted)}
@@ -911,10 +912,41 @@ function comptesDe(src){ return src==='yuh'?['yuh']:Object.keys(S.comptes).filte
 function dernier(src){ const r=S.regl[src+'Import']; let d=r&&r.au||''; for(const t of Object.values(S.tx)) if(t.source===src&&t.date>d) d=t.date; return d; }
 function dernierYuh(){ return dernier('yuh'); }
 function aClasser(){ return Object.values(S.tx).filter(t=>(t.source==='yuh'||t.source==='bas')&&!t.cat&&!(t.parts&&t.parts.length)).sort((a,b)=>b.date.localeCompare(a.date)); }
+/* saisies sur un compte de banque, datées jusqu'à la fin du dernier relevé, qu'aucune ligne du relevé n'a reprises.
+   recente(t) : dans les 2 derniers jours du relevé (un paiement par carte peut encore être en attente chez la banque) */
 function orphelines(){ const R=[];
-  BANQUES.forEach(([src])=>{ const au=dernier(src); if(!au) return; const lim=isoD(new Date(Date.parse(au+'T12:00')-2*864e5)), cs=comptesDe(src);
-    Object.values(S.tx).forEach(t=>{ if(cs.includes(t.compte)&&NONCONF.includes(t.source)&&!t.sans_banque&&t.date<=lim) R.push(t); }); });
+  BANQUES.forEach(([src])=>{ const au=dernier(src); if(!au) return; const cs=comptesDe(src);
+    Object.values(S.tx).forEach(t=>{ if(cs.includes(t.compte)&&NONCONF.includes(t.source)&&!t.sans_banque&&t.date<=au) R.push(t); }); });
   return R.sort((a,b)=>b.date.localeCompare(a.date)); }
+function recente(t){ const src=t.compte==='yuh'?'yuh':'bas', au=dernier(src); return !!au&&t.date>isoD(new Date(Date.parse(au+'T12:00')-2*864e5)); }
+/* deux montants qui ne diffèrent que d'une faute de frappe : 50 centimes près, un seul chiffre (écart ≤ 25 %), deux chiffres inversés, ou la virgule mal placée */
+function fauteDeFrappe(a,b){ a=Math.round(Math.abs(a)*100); b=Math.round(Math.abs(b)*100); if(a===b) return false;
+  if(Math.abs(a-b)<=50||a===b*10||b===a*10||a===b*100||b===a*100) return true;
+  const x=String(a), y=String(b); if(x.length!==y.length) return false;
+  const d=[...x].map((c,i)=>c!==y[i]?i:-1).filter(i=>i>=0);
+  return (d.length===1&&Math.abs(a-b)<=Math.max(a,b)*0.25)||(d.length===2&&d[1]===d[0]+1&&x[d[0]]===y[d[1]]&&x[d[1]]===y[d[0]]); }
+/* ligne du relevé qui ressemble à une saisie pas retrouvée : bon montant mais autre date, faute de frappe sur le montant, ou autre compte */
+function sosie(t){
+  if(t.source==='miroir'||estVir(t)) return null; let best=null;
+  for(const x of Object.values(S.tx)){
+    if(!['yuh','bas'].includes(x.source)||x.saisie||estVir(x)||Math.sign(x.montant)!==Math.sign(t.montant)) continue;
+    const d=Math.abs(jours(x.date,t.date)), e=Math.abs(x.montant-t.montant), m=Math.abs(t.montant), meme=x.compte===t.compte; let sc=null, pq='';
+    if(meme&&e<0.005&&d<=10){ sc=d; pq='autre date'; }
+    else if(meme&&d<=5&&fauteDeFrappe(x.montant,t.montant)){ sc=10+d; pq='montant différent'; }
+    else if(!meme&&e<0.005&&d<=3){ sc=20+d; pq='sur '+(S.comptes[x.compte]?S.comptes[x.compte].nom:'un autre compte'); }
+    if(sc!=null&&(!best||sc<best.sc)) best={sc,x,pq}; }
+  return best; }
+/* « C'est la même » : la ligne du relevé garde les faits (date, montant, compte), la saisie apporte ce que tu as choisi (catégorie, étiquettes, note, dette) */
+function fusionnerSaisie(s,x){
+  const avant={date:s.date,montant:s.montant,tiers:s.tiers||'',compte:s.compte};
+  if(s.cat) x.cat=s.cat;
+  if(s.parts&&s.parts.length){ x.parts=s.parts.map(p=>Object.assign({},p)); const e=r2(x.montant-x.parts.reduce((a,p)=>a+p.montant,0)); if(Math.abs(e)>=0.005) x.parts[x.parts.length-1].montant=r2(x.parts[x.parts.length-1].montant+e); }
+  x.tags=[...new Set((x.tags||[]).concat(s.tags||[]))];
+  if(s.note&&!x.note) x.note=s.note;
+  if(s.tiers&&!x.tiers) x.tiers=s.tiers;
+  if(s.dette&&s.dette.length){ x.dette=[...new Set((x.dette||[]).concat(s.dette))]; s.dette.forEach(id=>{ const D=S.dettes[id]; if(D) (D.paiements||[]).forEach(p=>{ if(p.tx===s.id){ p.tx=x.id; p.date=x.date; } }); }); }
+  x.saisie=avant; x.rapproche=today();
+  delete S.tx[s.id]; }
 function historique(){ const H={};
   for(const t of Object.values(S.tx)){ if(!t.cat||t.cat===VIR||t.cat===AJU||(t.parts&&t.parts.length)||t.source==='miroir'||t.source==='feuille'||!S.cats[t.cat]) continue;
     const c=cle(t.banque_nom||t.tiers); if(!c) continue; const k=(t.montant<0?'-':'+')+c; (H[k]=H[k]||[]).push(t); }
@@ -967,6 +999,11 @@ function vRappro(){
   let h='<div class="nav"><button class="rond" data-tab="accueil" aria-label="Retour à l’accueil">'+svg(P.chevL,20)+'</button><b>Relevés</b><button class="btn sm" data-act="importyuh" style="width:auto">Importer</button></div>';
   h+='<p class="note">'+BANQUES.map(([src,nom])=>{ const au=dernier(src), r=S.regl[src+'Import']; return '<b>'+nom+'</b> : '+(au?'jusqu’au '+esc(dCourte(au))+(r?' (import fait '+esc(ilYa(r.le))+')':''):'rien d’importé'); }).join(' · ')+'.<br>Yuh : relevé CSV depuis l’app. BAS : export Excel (ou CSV) des mouvements depuis l’e-banking, les deux comptes ensemble.</p>';
   const props=L.map(t=>{ const dm=detteQuiColle(t); return [t,dm?{dette:dm,sure:true}:twintPersonne(t)?null:proposer(t,H)]; }), sures=props.filter(([t,p])=>p&&p.sure);
+  if(O.length) h+='<section class="card rappel" aria-labelledby="t-orph"><h2 id="t-orph">Saisies pas retrouvées dans le relevé ('+O.length+')</h2><p class="note" style="margin-top:4px">Notées sur Yuh ou la BAS, mais aucune ligne du relevé ne leur correspond : elles faussent le solde du compte. Faute de frappe (prends la ligne du relevé), mauvais compte (touche pour corriger), doublon (supprime), ou vraiment hors relevé (garde).</p><ul class="rapl">'+O.map(t=>{
+      const so=sosie(t), x=so&&so.x;
+      const info=x?'<p class="note orph">Dans le relevé : <b>'+esc(x.tiers||'?')+'</b> '+fmt(x.montant,true)+' le '+esc(dCourte(x.date))+' ('+esc(so.pq)+'). C’est la même ?</p>'
+        :recente(t)?'<p class="note orph">Peut-être pas encore passée chez la banque (un paiement par carte peut prendre 1 ou 2 jours) : elle sera revérifiée au prochain relevé.</p>':'';
+      return '<li>'+opLi(t).replace(/^<li>|<\/li>$/g,'')+info+'<div class="rapa">'+(x?'<button class="prop" data-orphm="'+esc(t.id)+'" data-ligne="'+esc(x.id)+'">'+svg(P.check,16)+'C’est la même</button>':'')+'<button class="pill" data-orphx="'+esc(t.id)+'" style="height:34px">Supprimer</button><button class="pill" data-orphok="'+esc(t.id)+'" style="height:34px">Garder</button></div></li>'; }).join('')+'</ul></section>';
   h+='<section class="card" aria-labelledby="t-acl"><div class="st"><h2 id="t-acl">À classer'+(L.length?' ('+L.length+')':'')+'</h2>'+(sures.length>1?'<button class="btn sm" data-act="toutvalider" style="width:auto">'+svg(P.check,18)+'Tout valider ('+sures.length+')</button>':'')+'</div>';
   if(!L.length) h+='<p class="empty">Tout est classé.</p>';
   else h+='<p class="note" style="margin-top:4px">Touche une ligne pour choisir sa catégorie'+(sures.length?', ou valide la proposition':'')+'.</p><ul class="rapl">'+props.slice(0,ui.limite).map(([t,p])=>{
@@ -978,7 +1015,7 @@ function vRappro(){
       return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic vide">'+svg(t.canal==='twint'?P.people:t.montant>0?P.down:P.card,22)+'</span><span class="mid"><span class="ti">'+esc(t.tiers||'?')+'</span><span class="sub">'+(t.source==='bas'?esc(S.comptes[t.compte]?S.comptes[t.compte].nom:'BAS')+' · ':'')+esc(dCourte(t.date))+(t.lieu?' · '+esc(t.lieu):'')+(t.note&&t.canal==='acquiring'?' · '+esc(t.note):'')+(t.orig?' · '+esc(t.orig):'')+'</span></span><span class="end"><span class="mt '+(t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span></span></button>'+(a?'<div class="rapa">'+a+'</div>':'')+'</li>'; }).join('')+'</ul>'
     +(L.length>ui.limite?'<button class="btn ghost" data-act="plus">Afficher plus ('+(L.length-ui.limite)+')</button>':'');
   h+='</section>';
-  if(O.length) h+='<section class="card" aria-labelledby="t-orph"><h2 id="t-orph">Saisies pas retrouvées dans le relevé</h2><p class="note" style="margin-top:4px">Notées sur Yuh ou la BAS, mais aucune ligne du relevé ne leur correspond. Mauvais compte (touche pour corriger), doublon (supprime), ou vraiment hors relevé (garde).</p><ul class="rapl">'+O.map(t=>'<li>'+opLi(t).replace(/^<li>|<\/li>$/g,'')+'<div class="rapa"><button class="pill" data-orphx="'+esc(t.id)+'" style="height:34px">Supprimer</button><button class="pill" data-orphok="'+esc(t.id)+'" style="height:34px">Garder</button></div></li>').join('')+'</ul></section>';
+
   return h;
 }
 function carteYuh(){
@@ -1682,6 +1719,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.voircat||b.dataset.voirtag){ Object.assign(ui,{tab:'ops',fCompte:'',fCat:b.dataset.voircat||'',fTag:b.dataset.voirtag||'',q:'',limite:150});
     if(ui.sPer==='annee'&&!b.dataset.voirtag){ ui.periode='annee'; ui.mois=ui.sAn+'-01'; } else ui.periode='tout'; window.scrollTo(0,0); render(); return; }
   if(b.dataset.prop){ const t=S.tx[b.dataset.prop]; if(t&&S.cats[b.dataset.pcat]){ t.cat=b.dataset.pcat; save(); render(); } return; }
+  if(b.dataset.orphm){ const t=S.tx[b.dataset.orphm], x=S.tx[b.dataset.ligne]; if(t&&x&&!x.saisie){ fusionnerSaisie(t,x); save(); render(); } return; }
   if(b.dataset.orphx){ const t=S.tx[b.dataset.orphx]; if(t&&confirm('Supprimer ta saisie « '+(t.tiers||catNom(t.cat))+' » ('+fmt(t.montant,true)+') du '+dCourte(t.date)+' ?')){ supprimerTx(t); save(); render(); } return; }
   if(b.dataset.orphok){ const t=S.tx[b.dataset.orphok]; if(t){ t.sans_banque=true; save(); render(); } return; }
   if(b.dataset.scope){ ui.scope=b.dataset.scope; render(); return; }
@@ -1727,7 +1765,7 @@ document.addEventListener('click',e=>{
   else if(a==='estvir'){ lireChamps(); draft.type='virement'; draft.parts=null; vSaisie(); }
   else if(a==='pasvir'){ lireChamps(); draft.type=draft.signe>0?'revenu':'depense'; draft.vers=null; draft.cat=null; draft.maitre=null; vSaisie(); }
   else if(a==='importyuh') document.getElementById('f-yuh').click();
-  else if(a==='importok'){ if(!imp) return; const n=appliquerImport(imp); fermer(); if(aClasser().length||orphelines().length) ui.tab='rappro'; ui.limite=150; window.scrollTo(0,0); render(); setTimeout(()=>alert(n+' ligne'+(n>1?'s':'')+' du relevé importée'+(n>1?'s':'')+'.'),50); }
+  else if(a==='importok'){ if(!imp) return; const n=appliquerImport(imp); fermer(); const o=orphelines().length; if(aClasser().length||o) ui.tab='rappro'; ui.limite=150; window.scrollTo(0,0); render(); setTimeout(()=>alert(n+' ligne'+(n>1?'s':'')+' du relevé importée'+(n>1?'s':'')+'.'+(o?'\n\n⚠ '+o+' saisie'+(o>1?'s':'')+' pas retrouvée'+(o>1?'s':'')+' dans le relevé : à vérifier, sinon le solde est faux.':'')),50); }
   else if(a==='toutvalider'){ const H=historique(); let n=0; aClasser().forEach(t=>{ const dm=detteQuiColle(t); if(dm){ reglerAvec(t,dm); n++; return; } const p=twintPersonne(t)?null:proposer(t,H); if(p&&p.sure&&S.cats[p.cat]){ t.cat=p.cat; n++; } }); if(n){ save(); render(); } }
   else if(a==='nouvelledette') nouvelleDette();
   else if(a==='nrecur'){ er={id:null,nom:'',sens:'sortie',montant:'',compte:dernierCompte(),rythme:'annee',debut:'',cat:''}; sheetErr=''; vRecurEdit(); }
