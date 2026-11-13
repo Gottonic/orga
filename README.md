@@ -59,7 +59,7 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 
 ## Réglages d'ORGA
 
-- Tuile « Réglages » et ⚙ de l'accueil → `reglages/` : place utilisée sur Supabase (base et fichiers, par app),
+- La roue dentée ⚙ en haut à droite de l'accueil → `reglages/` : place utilisée sur Supabase (base et fichiers, par app),
   compte (se déconnecter de toutes les apps), version installée et recherche de mise à jour.
 - La place vient de la fonction `orga_espace()` (dans `supabase/orga.sql`) : seulement des totaux, réservée aux personnes connectées.
 - Limites du plan gratuit : 500 Mo de base pour ce projet ; 1 Go de fichiers et 5 Go de trafic pour tout le compte Supabase.

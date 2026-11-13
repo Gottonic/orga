@@ -10,7 +10,7 @@
    Données : table Supabase « idees » (une ligne par idée, colonne « app »), même connexion que les apps
    (clé « orga-auth »). Copie locale « orga-idees » : on peut noter hors ligne, l'envoi se fait dès que possible.
    Une idée : { titre, type: 'bug' | 'idee', details, cree, fait?, faitLe?, captures?: [{ id, w, h, path? }] }
-   — cochée = faite, elle quitte la liste.
+   — cochée = faite, elle quitte la liste ; un mois après, elle est effacée pour de bon (avec ses captures).
    Captures d'écran : collées (Ctrl+V), glissées ou choisies, réduites à 1600 px (WebP), gardées sur l'appareil
    (cache « idees-media ») puis envoyées dans le dossier privé « idees » de Supabase (<utilisateur>/<id>.webp). */
 (function () {
@@ -78,13 +78,29 @@
   function oublierCaptures(S, caps) { (caps || []).forEach((c) => { oublierLocal(c.id); if (c.path && !S.effacer.includes(c.path)) S.effacer.push(c.path); }); }
   async function urlDe(cap) {
     if (urls.has(cap.id)) return urls.get(cap.id);
+    const b = await blobDe(cap);
+    if (!b) return null;
+    const u = URL.createObjectURL(b); urls.set(cap.id, u); return u;
+  }
+  async function blobDe(cap) {
     let b = await lireLocal(cap.id);
     if (!b && cap.path && navigator.onLine) {
       const c = await connecte();
       if (c) { try { const { data } = await c.storage.from(BUCKET).download(cap.path); if (data) { b = data; garderLocal(cap.id, data); } } catch (e) {} }
     }
-    if (!b) return null;
-    const u = URL.createObjectURL(b); urls.set(cap.id, u); return u;
+    return b;
+  }
+  /* une idée faite depuis plus d'un mois est effacée, ses captures aussi */
+  const GARDE_FAITES = 31 * 864e5;
+  function purger() {
+    const S = load(), lim = Date.now() - GARDE_FAITES; let n = 0;
+    for (const [k, r] of Object.entries(S.rows)) {
+      if (r.deleted || !r.data || !r.data.fait || !r.data.faitLe) continue;
+      if (!(Date.parse(r.data.faitLe) < lim)) continue;
+      oublierCaptures(S, r.data.captures); r.deleted = true; S.dirty.add(k); n++;
+    }
+    if (n) save(S);
+    return n;
   }
   async function envoyerCaptures(c) {
     const S0 = load();
@@ -143,6 +159,7 @@
     if (enCours) return enCours;
     enCours = (async () => {
       try {
+        purger();
         if (!navigator.onLine) { etat = 'horsligne'; return; }
         const c = await connecte(); if (!c) { etat = 'login'; return; }
         await envoyer(c); await recevoir(c);
@@ -247,7 +264,7 @@ details[open] summary{margin-bottom:6px}
         <div class="caps" style="margin-top:8px">${V.attente.map(capHtml).join('')}</div>${joindreHtml(V.attente.length)}
         <details style="margin-top:4px"><summary>+ Détails</summary><textarea name="details" rows="3" placeholder="Détails (facultatif)"></textarea></details></form>`}
       ${corps}
-      <div class="pied"><span class="etat">${esc(ETATS[etat] || '')}</span><span style="display:flex;gap:14px">${ouv.length ? `<button type="button" class="lien" data-act="copier">Copier pour Claude</button>` : ''}${faites.length ? `<button type="button" class="lien" data-act="faites">${V.faites ? 'Cacher' : 'Voir'} les faites (${faites.length})</button>` : ''}</span></div>
+      <div class="pied"><span class="etat">${esc(ETATS[etat] || '')}</span><span style="display:flex;gap:14px">${ouv.length ? `<button type="button" class="lien" data-act="copier">Copier pour Claude</button>` : ''}${nbCaps(ouv) ? `<button type="button" class="lien" data-act="partager">Avec les captures (${nbCaps(ouv)})</button>` : ''}${faites.length ? `<button type="button" class="lien" data-act="faites">${V.faites ? 'Cacher' : 'Voir'} les faites (${faites.length})</button>` : ''}</span></div>
       ${V.faites && faites.length ? `<div class="liste">${faites.slice(0, 60).map(ligne).join('')}</div>` : ''}`;
   }
   function vueEdit(x) {
@@ -278,6 +295,7 @@ details[open] summary{margin-bottom:6px}
       if (garde.focus && f[garde.focus]) { try { f[garde.focus].focus({ preventScroll: true }); } catch (e) {} }
     }
     remplirImages();
+    if (!V.edit && root.querySelector('[data-act=partager]')) preparerEnvoi();
   }
   function capsVisibles() { const x = V.edit ? liste(null).find((y) => y.key === V.edit.key) : null; return (x ? x.captures || [] : V.attente); }
   async function remplirImages() {
@@ -360,6 +378,7 @@ details[open] summary{margin-bottom:6px}
     else if (a === 'typeEdit') { V.edit.type = el.dataset.k; dessiner(); }
     else if (a === 'suppr') { if (!confirmer(el)) return; const S = load(); const r = S.rows[V.edit.key]; if (r) { oublierCaptures(S, r.data && r.data.captures); r.deleted = true; S.dirty.add(V.edit.key); save(S); } V.edit = null; dessiner(); sync(); }
     else if (a === 'copier') copier();
+    else if (a === 'partager') partager();
   }
   /* pas de fenêtre du navigateur : on demande de toucher une deuxième fois */
   function confirmer(el) { if (el.dataset.sur) return true; el.dataset.sur = '1'; el.textContent = 'Toucher encore pour supprimer'; setTimeout(() => { if (el.isConnected) { delete el.dataset.sur; el.textContent = 'Supprimer'; } }, 3000); return false; }
@@ -384,13 +403,58 @@ details[open] summary{margin-bottom:6px}
     modifier(k, (r) => { r.data = Object.assign({}, r.data, fait ? { fait: true, faitLe: new Date().toISOString() } : { fait: false, faitLe: '' }); });
     etat = 'attente'; setTimeout(() => { if (ouvert && !V.edit) dessiner(); }, 300); sync();
   }
-  function copier() {
-    const tout = APP === 'orga' && V.tout;
-    const ouv = liste(tout ? null : APP).filter((x) => !x.fait);
-    const bloc = (titre, l) => `${titre} — bugs et idées (${l.length})\n` + l.map((x) => `- ${typeDe(x)[1]} ${x.titre}${x.details ? ' : ' + x.details.replace(/\s*\n\s*/g, ' / ') : ''}${(x.captures || []).length ? ` (📷 ${x.captures.length} capture${x.captures.length > 1 ? 's' : ''} dans l'app)` : ''}`).join('\n');
-    const txt = tout ? Object.keys(APPS).map((a) => [a, ouv.filter((x) => x.app === a)]).filter(([, l]) => l.length).map(([a, l]) => bloc(APPS[a], l)).join('\n\n') : bloc(APPS[APP] || APP, ouv);
-    const fini = () => toast('Copié : colle-le dans la conversation de l\'app.');
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(fini, () => copieSecours(txt, fini)); else copieSecours(txt, fini);
+  const nbCaps = (l) => l.reduce((n, x) => n + (x.captures || []).length, 0);
+  const ouvertes = () => { const tout = APP === 'orga' && V.tout; return { tout, ouv: liste(tout ? null : APP).filter((x) => !x.fait) }; };
+  /* le texte pour Claude ; « noms » : idée → noms des images jointes, quand on les envoie avec */
+  function texteClaude(ouv, tout, noms) {
+    const cap = (x) => (noms && noms[x.key] ? ` (📷 ${noms[x.key].join(', ')})` : (x.captures || []).length ? ` (📷 ${x.captures.length} capture${x.captures.length > 1 ? 's' : ''} dans l'app)` : '');
+    const bloc = (titre, l) => `${titre} — bugs et idées (${l.length})\n` + l.map((x) => `- ${typeDe(x)[1]} ${x.titre}${x.details ? ' : ' + x.details.replace(/\s*\n\s*/g, ' / ') : ''}${cap(x)}`).join('\n');
+    return tout ? Object.keys(APPS).map((a) => [a, ouv.filter((x) => x.app === a)]).filter(([, l]) => l.length).map(([a, l]) => bloc(APPS[a], l)).join('\n\n') : bloc(APPS[APP] || APP, ouv);
+  }
+  function copierTexte(txt, fini) {
+    return new Promise((ok) => {
+      const f = () => { if (fini) fini(); ok(true); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(f, () => copieSecours(txt, f)); else copieSecours(txt, f);
+    });
+  }
+  function copier() { const { tout, ouv } = ouvertes(); copierTexte(texteClaude(ouv, tout), () => toast('Copié : colle-le dans la conversation de l\'app.')); }
+  /* Images numérotées, nommées d'après l'idée : préparées d'avance pour que le partage parte dès qu'on touche */
+  const slug = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'capture';
+  let prepa = null;
+  async function preparerEnvoi() {
+    const { tout, ouv } = ouvertes();
+    const sig = JSON.stringify(ouv.map((x) => [x.key, x.titre, x.details, (x.captures || []).map((c) => c.id)]));
+    if (prepa && prepa.sig === sig) return prepa.p;
+    const p = (async () => {
+      const files = [], noms = {}; let i = 0;
+      for (const x of ouv) for (const cap of x.captures || []) {
+        const b = await blobDe(cap); if (!b) continue;
+        i++; const nom = `${i}-${slug(x.titre)}.${b.type === 'image/webp' ? 'webp' : b.type === 'image/png' ? 'png' : 'jpg'}`;
+        files.push(new File([b], nom, { type: b.type })); (noms[x.key] = noms[x.key] || []).push(nom);
+      }
+      return { files, txt: texteClaude(ouv, tout, noms) };
+    })();
+    prepa = { sig, p }; return p;
+  }
+  async function partager() {
+    const { files, txt } = await preparerEnvoi();
+    if (!files.length) { copierTexte(txt, () => toast('Captures pas encore disponibles (réseau ?) : texte seul copié.')); return; }
+    const s = files.length > 1 ? 's' : '';
+    if (navigator.canShare && navigator.share && navigator.canShare({ files })) {
+      copierTexte(txt);
+      try { await navigator.share({ title: 'Bugs et idées', text: txt, files }); toast('Envoyé. Le texte est aussi copié, au cas où.'); return; }
+      catch (e) {
+        if (e && e.name === 'AbortError') { toast('Partage annulé.'); return; }
+        if (e && e.name === 'NotAllowedError') { toast('Prêt : touche encore « Avec les captures ».'); return; }
+      }
+    }
+    /* ordinateur : le texte est copié et les images téléchargées, à glisser dans la conversation */
+    await copierTexte(txt);
+    files.forEach((f, k) => setTimeout(() => {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; root.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }, k * 350));
+    toast(`Texte copié et ${files.length} capture${s} téléchargée${s} : colle le texte dans la conversation, puis glisse les images.`);
   }
   function copieSecours(txt, fini) { const t = document.createElement('textarea'); t.value = txt; t.style.cssText = 'position:fixed;opacity:0'; root.appendChild(t); t.select(); try { document.execCommand('copy'); fini(); } catch (e) {} t.remove(); }
 

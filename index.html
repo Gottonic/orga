@@ -38,8 +38,6 @@ main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-rig
 .tuile .logo img{width:52px;height:52px;display:block}
 .tuile .nom{font-weight:700;font-size:1.1rem}
 .tuile .etat{margin-top:auto;font-family:var(--mono);font-size:.75rem;opacity:.75}
-.tuile.outil .logo{background:var(--band);color:var(--band-ink)}
-.tuile.outil .logo svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @font-face{font-family:"Bricolage Grotesque";font-weight:700;font-style:normal;font-display:swap;src:url(commun/fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
 p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
 </style>
@@ -69,10 +67,6 @@ p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
       <span class="logo"><img src="mine/icons/icon-192.png" alt=""></span>
       <span class="nom">La Mine</span>
     </a></li>
-    <li><a class="tuile outil" href="reglages/">
-      <span class="logo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-      <span class="nom">Réglages</span>
-    </a></li>
   </ul>
   <p class="pied">Une seule app à installer : les autres s'ouvrent depuis ces tuiles, chacune avec son propre style.</p>
 </main>
@@ -86,5 +80,6 @@ p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
 })();
 </script>
 <script src="commun/ampoule.js" data-app="orga" defer></script>
+<script src="commun/cadre.js"></script>
 </body>
 </html>
