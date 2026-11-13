@@ -293,6 +293,7 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .tcol.none{background:linear-gradient(135deg,transparent 45%,var(--neg) 45%,var(--neg) 55%,transparent 55%),var(--cell)}
 .tcol[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px}
 .durrow{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.durrow .dfree{grid-column:1/-1}
 .dfree{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--cell);padding:0 10px}
 .dfree .input{border:0;padding:10px 0;font-family:var(--mono);font-size:1.3rem;font-weight:600;width:100%;min-width:0;background:transparent}
 .dfree span{font-size:.85rem;color:var(--muted);white-space:nowrap}
@@ -428,7 +429,7 @@ td.st{font-weight:700;font-size:.86rem}
   .pcell .nm{white-space:normal;font-size:.8rem;line-height:1.15;padding:0 7px}
   .pcell .nm>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 }
-.st-cours{background:#F2A39C}.st-plan{background:var(--hl)}.st-attente{background:#D8D8D4}.st-fini{background:var(--cell)}
+.st-cours{background:#F2A39C}.st-plan{background:var(--hl)}.st-attente{background:#D8D8D4}.st-perm{background:#E6E0F2}.st-fini{background:var(--cell)}
 td .tg{margin-right:4px;color:var(--muted)}
 
 /* Formulaires */
@@ -613,7 +614,7 @@ body.kbd .oh .ot .ot-t .kb{position:static;margin-left:4px}
 const MAXN=3, MAXS=2, MAXW=3, MAXT=5, URG=21, KEY='etabli-maquette-v4';
 const COLORS=['#F0A35E','#F5CF4E','#E0574F','#F07F9E','#9A6BD1','#4A86D9','#3FB6C8','#5BAE5B','#A9A63A','#A2703F','#5E6B7A','#2B2B2B','#3F51B5','#7FD1AE'];
 const SIZES={mini:{l:'Mini',sub:'moins de 4 h · liste à part',unit:'none',min:0},h4:{l:'+4 h',sub:'petit · sur un jour',unit:'day',min:4},j2:{l:'+2 jours',sub:'1 case · sur des jours',unit:'day',min:16},w1:{l:'+1 semaine',sub:'1 case par semaine',unit:'week',min:40},m1:{l:'+1 mois',sub:'à découper en étapes',unit:'week',min:160}};
-const STATE={later:'Autre temps',cours:'En cours',proch:'Prochaine semaine',plan:'Planifié',attente:'À planifier',fini:'Terminé'};
+const STATE={later:'Autre temps',cours:'En cours',proch:'Prochaine semaine',plan:'Planifié',attente:'À planifier',perm:'Perpétuel',fini:'Terminé'};
 const IMP={1:'secondaire',2:'normal',3:'important'};
 const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -715,17 +716,18 @@ const pv=p=>`--pc:${p.color};--pt:${ink(p.color)}`;
 const P=id=>S.projects.find(p=>p.id===id);
 const T=id=>S.tags.find(t=>t.id===id);
 const isMini=p=>p&&p.size==='mini';
+const isPerm=p=>p&&p.size==='perm'; /* projet perpétuel : ni durée, ni échéance, ni clôture */
 const DUR_OPTS=[1,2,3,5,10,20];
-const durOf=p=>isMini(p)?0:(p.dur||5);
+const durOf=p=>isMini(p)||isPerm(p)?0:(p.dur||5);
 const fmtDur=d=>String(d).replace('.',',')+' j';
-const durLbl=p=>isMini(p)?'Mini':fmtDur(durOf(p));
-const small=p=>!isMini(p)&&durOf(p)<=1;
-const isDay=p=>!isMini(p)&&durOf(p)<5; /* placement proposé par défaut : par jours sous 5 jours */
+const durLbl=p=>isMini(p)?'Mini':isPerm(p)?'∞':fmtDur(durOf(p));
+const small=p=>!isMini(p)&&!isPerm(p)&&durOf(p)<=1;
+const isDay=p=>!isMini(p)&&!isPerm(p)&&durOf(p)<5; /* placement proposé par défaut : par jours sous 5 jours */
 const MINI_COLOR='#E2DFD3';
 function newMini(name,id,done){ const p={id:id||'p'+Date.now(),emoji:'',color:MINI_COLOR,name,size:'mini',imp:2,due:null,tags:[],weeks:[],days:[],why:'',next:'',folder:null,tasks:[]}; if(done) p.closed=todayS; return p; }
 const pWeeks=p=>[...new Set([...(p.weeks||[]),...(p.days||[]).map(d=>wkKey(parse(d)))])].sort();
 const open=()=>S.projects.filter(p=>!p.closed&&!p.later);
-function state(p){ if(p.closed) return 'fini'; if(p.later) return 'later'; const w=pWeeks(p); if(w.includes(CUR)) return 'cours'; if(w.includes(wkAdd(CUR,1))) return 'proch'; if(w.some(x=>x>CUR)) return 'plan'; return 'attente'; }
+function state(p){ if(p.closed) return 'fini'; if(p.later) return 'later'; const w=pWeeks(p); if(w.includes(CUR)) return 'cours'; if(w.includes(wkAdd(CUR,1))) return 'proch'; if(w.some(x=>x>CUR)) return 'plan'; return isPerm(p)?'perm':'attente'; }
 function inWeek(k){const ps=open().filter(p=>!isMini(p)&&pWeeks(p).includes(k)); return {n:ps.filter(p=>p.weeks.includes(k)),s:ps.filter(p=>!p.weeks.includes(k)),all:ps};}
 function workdaysUntil(due,cap){ let n=0; const d=new Date(today), e=parse(due); while(d<=e){ const w=d.getDay(); if(w!==0&&w!==6&&!(typeof offOn==='function'&&offOn(iso(d)))) n++; if(cap!=null&&n>cap) return n; d.setDate(d.getDate()+1); } return n; }
 function urgLimit(dur){ return dur<=1?null:Math.ceil(dur*3); }
@@ -899,7 +901,7 @@ function vPlanning(){
 
 /* Vue projets */
 function vProjets(){
-  const order={cours:0,proch:1,plan:2,attente:3,later:4,fini:5};
+  const order={cours:0,proch:1,plan:2,attente:3,perm:3,later:4,fini:5};
   let rows=S.projects.filter(p=>ui.filter==='fini'?!!p.closed:ui.filter==='later'?(!p.closed&&!!p.later):ui.filter==='attente'?(!isMini(p)&&!p.closed&&state(p)==='attente'):(!isMini(p)&&!p.closed&&!p.later));
   const mOpen=S.projects.filter(p=>isMini(p)&&!p.closed), mBest=mOpen.slice().sort(prioSort)[0];
   if(ui.tagSel.length) rows=rows.filter(tagMatch);
@@ -948,7 +950,7 @@ function itemSheet(src,vid,mode){
   const opt=(act,emo,title,sub,extra)=>`<button class="optbtn" data-act="${act}" ${extra||''}><span class="oe">${emo}</span><span class="tx"><b>${title}</b><span>${sub}</span></span></button>`;
   let body;
   if(mode==='step'){
-    const order={cours:0,proch:1,plan:2,attente:3};
+    const order={cours:0,proch:1,plan:2,attente:3,perm:3};
     const ps=open().slice().sort((x,y)=>order[state(x)]-order[state(y)]||prioSort(x,y));
     body=`<p style="margin:0"><b>${esc(v.t)}</b></p><span class="lbl">Étape de quel projet ?</span>
     <div class="picklist">${ps.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="toStep" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta"><span>${STATE[state(p)]}</span><span>${p.tasks.length} étape${p.tasks.length>1?'s':''}</span></span></span></button>`).join('')}</div>`;
@@ -1063,8 +1065,8 @@ function tasksBlock(p,closed,word){
    ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
    ${closed?'':`<form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form><p class="note" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative.</p>`}</div>`;
 }
-function durPick(isM,dur,act){ return `<div class="durrow"><div class="dfree${isM?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="mini" aria-pressed="${isM}">Moins d'1 jour<small>→ mini projet</small></button></div>`; }
-function applyDur(p,v){ if(v!=='mini'&&Number(v)<1) v='mini'; if(v==='mini'){ p.size='mini'; p.dur=null; p.emoji=''; p.color=MINI_COLOR; p.weeks=[]; p.days=[]; return; } const n=Number(v); if(!(n>0)) return; if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='proj'; p.dur=n; }
+function durPick(mode,dur,act){ const isM=mode===true||mode==='mini', isP=mode==='perm'; return `<div class="durrow"><div class="dfree${isM||isP?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&!isP&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="mini" aria-pressed="${isM}">Moins d'1 jour<small>→ mini projet</small></button><button class="dmini" data-act="${act}" data-v="perm" aria-pressed="${isP}">∞ Perpétuel<small>sans fin ni durée</small></button></div>`; }
+function applyDur(p,v){ if(v==='perm'){ if(isPerm(p)){ p.size='proj'; p.dur=p.dur||5; return; } if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='perm'; p.due=null; return; } if(v!=='mini'&&Number(v)<1) v='mini'; if(v==='mini'){ p.size='mini'; p.dur=null; p.emoji=''; p.color=MINI_COLOR; p.weeks=[]; p.days=[]; return; } const n=Number(v); if(!(n>0)) return; if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='proj'; p.dur=n; }
 function sizePick(cur,act){return `<div class="sizes">${Object.entries(SIZES).map(([k,s])=>`<button data-act="${act}" data-s="${k}" aria-pressed="${cur===k}"><b>${s.l}</b><span>${s.sub}</span></button>`).join('')}</div>`;}
 function tagPick(sel,act){return `<div class="pchips">${S.tags.map(t=>`<button class="tchip${t.color?' col':''}"${tcs(t)} data-act="${act}" data-t="${t.id}" aria-pressed="${sel.includes(t.id)}">${esc(t.name)}</button>`).join('')}</div>
   <form class="inline" data-act="newTag" data-for="${act}"><input class="input" id="f-tag" autocomplete="off" autocorrect="off" placeholder="Nouveau tag" aria-label="Nouveau tag" maxlength="20"><button class="btn" type="submit">+</button></form>`;}
@@ -1077,9 +1079,9 @@ function newSheet(keep){
   const d=draft;
   openSheet(`<div class="shead"><h2>Nouveau projet<small>${ctx&&ctx.fromCell?((ui.cellMode||'j')==='j'?'pour le '+fmt(ctx.cell):'pour la semaine '+wkNum(ctx.k)):ctx&&ctx.k?'pour la semaine '+wkNum(ctx.k):'il ira dans « À planifier »'}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
    <div class="namerow" style="--pc:${d.color}">${d.size==='mini'?'':`<button class="emobtn" data-act="emojiPick" data-for="new" aria-label="Choisir un émoji" id="nemo">${d.emoji}</button>`}<input class="input" id="n-name" autocomplete="off" autocorrect="off" placeholder="Ex. Monter le tunnel de semis" value="${esc(d.name)}" aria-label="Nom du projet"></div>
-   <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(d.size==='mini',d.dur,'ndur')}</div>
+   <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(d.size,d.dur,'ndur')}</div>
    <div class="field"><span class="lbl">Importance</span>${starPick(d.imp,'nimp')}</div>
-   <div class="field"><label for="n-due">Échéance (facultatif)</label><div class="duerow"><input class="input" type="date" id="n-due" value="${d.due}"><button data-act="nodue">Aucune</button></div><p class="duehint" id="n-duehint">${dueHint(d.due,d.size==='mini'?0:d.dur)}</p></div>
+   ${d.size==='perm'?'':`<div class="field"><label for="n-due">Échéance (facultatif)</label><div class="duerow"><input class="input" type="date" id="n-due" value="${d.due}"><button data-act="nodue">Aucune</button></div><p class="duehint" id="n-duehint">${dueHint(d.due,d.size==='mini'?0:d.dur)}</p></div>`}
    ${d.size==='mini'||(ctx&&(ctx.fromFill||ctx.fromCell))?'':`<button class="tchip" style="align-self:flex-start" data-act="nlater" aria-pressed="${!!d.later}">🕰️ Pour un autre temps</button>`}
    ${d.size==='mini'?'':`<div class="field"><span class="lbl">Tags</span>${tagPick(d.tags,'ntag')}</div>
    <details class="more"><summary>Plus de détails</summary>
@@ -1110,7 +1112,7 @@ function detail(id,msg){
   if(isMini(p)){ detailMini(p,msg); return; }
   const st=state(p), closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, mo=money(id), h=hoursOf(id);
   const placed=[...p.weeks.map(w=>({k:w,l:'S'+wkNum(w)+' · lun–ven '+wkRange(w).split(' – ')[0],w,o:iso(wkMon(w))})),...p.days.map(x=>({k:x,l:dayLbl(x)+' '+MOIS[parse(x).getMonth()],w:wkKey(parse(x)),o:x}))].sort((u,v)=>u.o.localeCompare(v.o));
-  openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>${esc(p.name)}<small>${durLbl(p)} · ${IMP[p.imp]}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="projSave">OK</button>'}<button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>${esc(p.name)}<small>${isPerm(p)?'∞ Perpétuel':durLbl(p)} · ${IMP[p.imp]}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="projSave">OK</button>'}<button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
   <div><span class="state st-${st}">${STATE[st]}</span>${urgHtml(p)} ${tagsHtml(p)}</div>
   ${closed?`<div class="bilan"><span class="lbl">Clôturé le ${fmt(p.closed)}</span>${p.bilan&&p.bilan.learn?`<p><b>Ce que j'en retire.</b> ${esc(p.bilan.learn)}</p>`:''}${p.bilan&&p.bilan.diff?`<p><b>À refaire autrement.</b> ${esc(p.bilan.diff)}</p>`:''}${!(p.bilan&&(p.bilan.learn||p.bilan.diff))?'<p>Pas de bilan noté.</p>':''}</div>`:''}
   ${msg&&msg!=='del'?msg:''}
@@ -1122,8 +1124,8 @@ function detail(id,msg){
     ${durOf(p)>=20&&!closed?'<p class="note" style="margin:0">Projet d\'un mois ou plus : note ses grandes étapes dans les tâches.</p>':''}</div>`}
   ${closed?'':`
   <div class="field"><span class="lbl">Importance</span>${starPick(p.imp,'imp')}</div>
-  <div class="field"><label for="f-due">Échéance</label><div class="duerow"><input class="input" type="date" id="f-due" data-field="due" value="${p.due||''}"><button data-act="clearDue">Aucune</button></div><p class="duehint">${dueHint(p.due,durOf(p))}</p></div>
-  <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(false,p.dur,'dur')}</div>
+  ${isPerm(p)?'':`<div class="field"><label for="f-due">Échéance</label><div class="duerow"><input class="input" type="date" id="f-due" data-field="due" value="${p.due||''}"><button data-act="clearDue">Aucune</button></div><p class="duehint">${dueHint(p.due,durOf(p))}</p></div>`}
+  <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(p.size,p.dur,'dur')}${isPerm(p)?'<p class="note" style="margin:4px 0 0">Projet sans fin : place-le au planning quand tu t\'y consacres.</p>':''}</div>
   <div class="field"><span class="lbl">Tags</span>${tagPick(p.tags,'tag')}</div>`}
   <div class="field"><span class="lbl">Notes</span>${p.notes&&p.notes.some(x=>x.t)?`<button class="notesprev" data-act="notes">${p.notes.filter(x=>x.t).slice(0,3).map(x=>`<span style="padding-left:${x.l*14}px">• ${esc(x.t)}</span>`).join('')}<b>Ouvrir les notes · ${p.notes.filter(x=>x.t).length} ligne${p.notes.filter(x=>x.t).length>1?'s':''}</b></button>`:`<button class="btn ghost" data-act="notes">+ Feuille de notes</button>`}</div>
   <details class="more" ${p.why?'open':''}><summary>Pourquoi, dossier, couleur</summary>
@@ -1131,7 +1133,7 @@ function detail(id,msg){
   <div class="field"><span class="lbl">Dossier sur l'ordi</span>${p.folder?`<div class="folder"><code id="fpath">${esc(folderPath(p))}</code><button data-act="copyPath">Copier</button></div>`:`<button class="btn ghost" data-act="mkFolder">Créer un dossier pour ce projet</button>`}</div>
   ${closed?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
   </details>
-  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Clôturer le projet</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">🕰️ Ranger dans « un autre temps »</button>`}`}
+  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`${isPerm(p)?'':'<button class="btn" data-act="closeStart">Clôturer le projet</button>'}${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">🕰️ Ranger dans « un autre temps »</button>`}`}
   ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, clôture-le plutôt.</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
   </div>`,'d:'+id);
 }
@@ -1336,7 +1338,7 @@ function afterCreate(p){
     if(ctx.size==='s'){ placeMode='j'; placeSheet(p.id,null,k); return; }
     if(placeWeekly(p,k)){ toast(p.emoji+' '+p.name+' · semaine '+wkNum(k)); weekSheet(k); return; }
   }
-  toast(p.emoji+' '+p.name+' · à planifier'); closeSheet();
+  toast(p.emoji+' '+p.name+(isPerm(p)?' · projet perpétuel créé':' · à planifier')); closeSheet();
 }
 
 document.addEventListener('click',e=>{
@@ -1420,7 +1422,7 @@ document.addEventListener('click',e=>{
   else if(a==='tag'){const p=P(sheetId), t=el.dataset.t; p.tags=p.tags.includes(t)?p.tags.filter(x=>x!==t):[...p.tags,t]; save(); detail(sheetId);}
   else if(a==='nsize'){syncDraft(); draft.size=el.dataset.s; newSheet(true);}
   else if(a==='durStep'){ const inp=el.parentNode.querySelector('input'), cur=parseFloat(String(inp.value).replace(',','.'))||0; let nv=cur+Number(el.dataset.d); if(nv<1) nv=1; nv=Math.round(nv*10)/10; inp.value=nv; if(el.dataset.for==='ndur'){ const was=draft.size; syncDraft(); if(draft.size!==was) newSheet(true); } else { const p=P(sheetId); applyDur(p,nv); save(); detail(sheetId); } }
-  else if(a==='ndur'){ const di=document.querySelector('[data-durother=ndur]'); if(di) di.value=''; syncDraft(); if(el.dataset.v==='mini') draft.size=draft.size==='mini'?'proj':'mini'; newSheet(true);}
+  else if(a==='ndur'){ const di=document.querySelector('[data-durother=ndur]'); if(di) di.value=''; syncDraft(); if(el.dataset.v==='mini') draft.size=draft.size==='mini'?'proj':'mini'; if(el.dataset.v==='perm') draft.size=draft.size==='perm'?'proj':'perm'; newSheet(true);}
   else if(a==='dur'){const p=P(sheetId); applyDur(p,el.dataset.v); save(); detail(sheetId);}
   else if(a==='nimp'){syncDraft(); draft.imp=Number(el.dataset.n); newSheet(true);}
   else if(a==='nodue'){syncDraft(); draft.due=''; newSheet(true);}
@@ -1431,7 +1433,7 @@ document.addEventListener('click',e=>{
   else if(a==='emojiJump'){const t=document.getElementById('ecat-'+el.dataset.i); if(t){ $sheet.scrollTop=t.offsetTop-110; }}
   else if(a==='emojiBack') emojiDone(null);
   else if(a==='create'){syncDraft(); const d=draft; if(!d.name.trim()){toast('Donne un nom au projet'); return;}
-    const p={id:'p'+Date.now(),emoji:d.emoji,color:d.color,name:d.name.trim(),size:d.size,dur:d.size==='mini'?null:d.dur,imp:d.imp,due:d.due||null,tags:d.tags,weeks:[],days:[],why:d.why.trim(),next:'',folder:null,tasks:[]};
+    const p={id:'p'+Date.now(),emoji:d.emoji,color:d.color,name:d.name.trim(),size:d.size,dur:d.size==='mini'||d.size==='perm'?null:d.dur,imp:d.imp,due:d.size==='perm'?null:(d.due||null),tags:d.tags,weeks:[],days:[],why:d.why.trim(),next:'',folder:null,tasks:[]};
     if(p.size==='mini'){ p.emoji=''; p.color=MINI_COLOR; p.tags=[]; } else if(d.later&&!(ctx&&(ctx.fromFill||ctx.fromCell))) p.later=true;
     if(d.fromItem){const arr=itemArr(d.fromItem.src), i=arr.findIndex(v=>v.id===d.fromItem.vid); if(i>=0) arr.splice(i,1);} S.projects.push(p); save(); draft=null; if(d.fromItem){toast(p.emoji+' '+p.name+' créé'); closeSheet(); return;} afterCreate(p);}
   else if(a==='kind'){syncForm(); ui.kind=el.dataset.k; ui.amount=''; render();}
