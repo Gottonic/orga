@@ -384,7 +384,7 @@ const CISEAUX='m 0.764814,4.283977 c 0.337358,0.143009 0.862476,-0.115279 0.7751
 
 function vide(){ return {acts:{},mands:{},conts:{},heures:{},docs:{},liens:{},regl:{},chrono:null}; }
 let S=vide();
-let B={cats:{},tx:{}}, bLast=null, bErr='', bPret=false; /* copie en lecture seule des opérations Pro de la Banque */
+let B={cats:{},tx:{},docs:{}}, bLast=null, bErr='', bPret=false; /* copie en lecture seule des opérations Pro de la Banque */
 let sb=null, UID=null, EMAIL='', prev={}, dirty=new Set(), lastPull=null, pushing=false, pushTimer=null, saveTimer=null, syncErr='', booted=false;
 const ui={tab:lsGet('mine-tab')||'mandats', filtre:lsGet('mine-filtre')||'', pile:[], sem:0, seg:'factures', an:new Date().getFullYear(), q:'', finis:{}, tf:false, toutH:false, chronoM:'', vieux:false, ignorePop:0, payees:false, annulees:false};
 if(!['mandats','heures','factures','contacts','bilan'].includes(ui.tab)) ui.tab='mandats';
@@ -473,6 +473,9 @@ function actDeTx(t){ for(const l of bLignes(t)) if(estPro(l.cat)){ const a=actDe
 function txDe(mid){ return Object.values(S.liens).filter(l=>l.mandat===mid&&B.tx[l.id]).map(l=>B.tx[l.id]).sort((a,b)=>b.date.localeCompare(a.date)); }
 function paiements(){ return new Set(Object.values(S.docs).map(d=>d.paiement).filter(Boolean)); }
 function ignoree(t){ const a=actDeTx(t); return !!(a&&a.ignorer); }
+function autoLier(){ if(!booted||!UID) return false; let n=0; const ms=Object.values(S.mands);
+  for(const t of Object.values(B.tx)){ if(!t.mine||!t.mine.mandat||S.liens[t.id]) continue; const k=norm(t.mine.mandat), c=ms.filter(m=>norm(m.nom)===k); if(c.length===1){ S.liens[t.id]={id:t.id,mandat:c[0].id,auto:true}; n++; } }
+  if(n) save(); return n>0; }
 function aTrier(jours,tout){ const lim=tout?'':jours?plusJours(today(),-jours):today().slice(0,4)+'-01-01'; return Object.values(B.tx).filter(t=>!S.liens[t.id]&&t.date>=lim&&!ignoree(t)).sort((a,b)=>b.date.localeCompare(a.date)); }
 /* un paiement reçu dans la Banque qui correspond à une facture envoyée (même montant, après la date de la facture) */
 function paiementPour(d,pris){ if(d.type!=='facture'||d.etat!=='envoyee') return null; const T=docTotal(d); if(!T) return null; pris=pris||paiements();
@@ -537,18 +540,19 @@ async function pull(full){
     if(changed){ S=fromRows(prev); render(); } else if(avait) render();
     if(booted&&!Object.keys(S.acts).length){ semer(); save(); render(); }
     if(booted&&S.acts.gdt&&S.acts.gdt.ignorer===undefined){ S.acts.gdt.ignorer=true; save(); render(); }
+    if(booted&&autoLier()) render();
     setSync(); return true;
   }catch(e){ const avait=syncErr; syncErr=(e&&e.message)||String(e); setSync(); if(!avait) render(); return false; }
 }
 /* Banque : on lit seulement (opérations Pro, catégories), on n'écrit jamais dans sa table */
-function bCharger(){ try{ const c=JSON.parse(localStorage.getItem(BK())||'null'); if(c&&c.B){ B=c.B; B.cats=B.cats||{}; B.tx=B.tx||{}; bLast=c.last||null; bPret=true; } }catch(e){} }
+function bCharger(){ try{ const c=JSON.parse(localStorage.getItem(BK())||'null'); if(c&&c.B){ B=c.B; B.cats=B.cats||{}; B.tx=B.tx||{}; B.docs=B.docs||{}; bLast=c.last||null; bPret=true; } }catch(e){} }
 function bGarder(){ try{ localStorage.setItem(BK(),JSON.stringify({B,last:bLast})); }catch(e){} }
 async function bPull(full){
   if(!sb||!UID||!navigator.onLine) return;
   try{
     const since=full?null:bLast; let maxTs=bLast, from=0, ch=false; const lot=[];
     for(;;){
-      let q=sb.from(BTABLE).select('key,kind,data,deleted,updated_at').in('kind',['tx','categorie']).order('updated_at',{ascending:true}).range(from,from+999);
+      let q=sb.from(BTABLE).select('key,kind,data,deleted,updated_at').in('kind',['tx','categorie','document']).order('updated_at',{ascending:true}).range(from,from+999);
       if(since) q=q.gte('updated_at',since);
       const {data,error}=await q; if(error) throw error;
       lot.push(...data); if(data.length<1000) break; from+=1000;
@@ -557,13 +561,13 @@ async function bPull(full){
     lot.sort((a,b)=>(a.kind==='categorie'?0:1)-(b.kind==='categorie'?0:1));
     for(const r of lot){
       if(!maxTs||r.updated_at>maxTs) maxTs=r.updated_at;
-      const id=r.key.slice(2), coll=r.kind==='tx'?'tx':'cats';
+      const id=r.key.slice(2), coll=r.kind==='tx'?'tx':r.kind==='document'?'docs':'cats';
       let d=null;
-      if(!r.deleted&&r.data){ if(r.kind==='tx'){ if(txPro(r.data)){ const t=r.data; d={id:t.id||id,date:t.date,compte:t.compte,montant:t.montant,tiers:t.tiers||'',note:t.note||'',cat:t.cat,parts:t.parts&&t.parts.length?t.parts.map(p=>({montant:p.montant,cat:p.cat})):null}; } } else d=r.data; }
+      if(!r.deleted&&r.data){ if(r.kind==='tx'){ if(txPro(r.data)){ const t=r.data; d={id:t.id||id,date:t.date,compte:t.compte,montant:t.montant,tiers:t.tiers||'',note:t.note||'',cat:t.cat,parts:t.parts&&t.parts.length?t.parts.map(p=>({montant:p.montant,cat:p.cat})):null,docs:t.docs&&t.docs.length?t.docs.slice():undefined,mine:t.mine&&t.mine.mandat?{mandat:t.mine.mandat}:undefined}; } } else if(r.kind==='document'){ const f=r.data; d={id:f.id||id,tx:f.tx,nom:f.nom||'',type:f.type||'',path:f.path||null}; } else d=r.data; }
       if(d){ if(canon(B[coll][id])!==canon(d)){ B[coll][id]=d; ch=true; } }
       else if(B[coll][id]){ delete B[coll][id]; ch=true; }
     }
-    bLast=maxTs; bErr=''; const avant=bPret; bPret=true; bGarder(); if(ch||!avant) render();
+    bLast=maxTs; bErr=''; const avant=bPret; bPret=true; bGarder(); if(autoLier()) ch=true; if(ch||!avant) render();
   }catch(e){ bErr=(e&&e.message)||String(e); }
 }
 function etatSync(){
@@ -761,7 +765,7 @@ function vBilan(){
 /* ---------- Page d'un mandat ---------- */
 function rowTache(t){ return `<div class="tache${t.fait?' fait':''}"><button class="ck" data-act="tache" data-tid="${t.id}" role="checkbox" aria-checked="${!!t.fait}" aria-label="${esc(t.t)}">${CHECK}</button><span class="tt">${esc(t.t)}</span><button class="tx-x" data-act="t-sup" data-tid="${t.id}" aria-label="Supprimer la tâche">✕</button></div>`; }
 function rowTx(t,mid){ const v=proMontant(t);
-  return `<div class="txrow"><span class="hb"><b>${esc(t.tiers||t.note||'Opération')}</b><span>${fJour(t.date)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span></span><b class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</b>${mid?`<button class="tx-x" data-act="delier" data-tx="${t.id}" aria-label="Détacher cette opération du mandat">✕</button>`:''}</div>`; }
+  return `<div class="txrow"><span class="hb"><b>${esc(t.tiers||t.note||'Opération')}</b><span>${fJour(t.date)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span></span><b class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</b>${t.docs&&t.docs.length?`<button class="tx-x" data-act="justif" data-tx="${t.id}" aria-label="Voir le justificatif">📎${t.docs.length>1?t.docs.length:''}</button>`:''}${mid?`<button class="tx-x" data-act="delier" data-tx="${t.id}" aria-label="Détacher cette opération du mandat">✕</button>`:''}</div>`; }
 function pileLabel(){ const p=ui.pile[ui.pile.length-2]; if(p) return p.k==='mandat'?(S.mands[p.id]||{}).nom||'Retour':(S.docs[p.id]||{}).num||'Retour'; return {mandats:'Mandats',heures:'Heures',factures:'Factures',contacts:'Contacts',bilan:'Bilan'}[ui.tab]; }
 function vMandat(id){
   const m=S.mands[id]; if(!m) return `<button class="retour" data-act="retour">← ${esc(pileLabel())}</button><div class="vide">Ce mandat n’existe plus.</div>`;
@@ -1066,6 +1070,14 @@ function vTrier(){ if(!ed||ed.k!=='trier') ed={k:'trier',vieux:false,conf:false}
 function vActionsMandat(mid){ const m=S.mands[mid]; ed={k:'actm',id:mid};
   montrer(sh(esc(m.nom))+`<div class="menu-a"><button class="btn2" data-act="heure-new" data-id="${mid}">⏱ Noter des heures</button>${S.chrono&&S.chrono.mandat===mid?'':`<button class="btn2" data-act="chrono-go" data-id="${mid}">▶ Lancer le chrono</button>`}<button class="btn2" data-act="m-tache">☑ Ajouter une tâche</button><button class="btn2" data-act="doc-new" data-type="devis" data-id="${mid}">📄 Nouveau devis</button><button class="btn2" data-act="doc-new" data-type="facture" data-id="${mid}">🧾 Nouvelle facture</button><button class="btn2" data-act="rattacher" data-id="${mid}">🏦 Rattacher des opérations</button></div>`); }
 
+/* --- justificatifs (gardés par la Banque dans « cash-documents ») --- */
+async function vJustif(txId){ const t=B.tx[txId]; if(!t) return; ed={k:'justif',id:txId}; const L=(t.docs||[]).map(id=>B.docs[id]).filter(Boolean);
+  montrer(sh('Justificatif')+`<p class="aide">${esc(t.tiers||t.note||'Opération')} · ${fJour(t.date)} ${t.date.slice(0,4)} · <b class="mono">${fmt(proMontant(t),true)}</b></p><div id="jf">${L.length?L.map(f=>`<div class="bloc" data-f="${f.id}"><b>${esc(f.nom||'Justificatif')}</b><p class="aide">${f.path?'Chargement…':'Pas encore envoyé depuis la Banque (l’appareil qui l’a ajouté doit être en ligne).'}</p></div>`).join(''):'<p class="aide">Pas encore synchronisé : ouvre la Banque, puis reviens ici.</p>'}</div>`);
+  for(const f of L){ if(!f.path) continue; const box=$sheet.querySelector(`[data-f="${f.id}"]`); try{
+    const {data,error}=await sb.storage.from('cash-documents').createSignedUrl(f.path,600); if(error) throw error; if(!box||!box.isConnected) continue; const u=data.signedUrl;
+    box.innerHTML=`<b>${esc(f.nom||'Justificatif')}</b>${/pdf/.test(f.type)?'':`<img src="${esc(u)}" alt="" style="width:100%;height:auto;border:1px solid var(--trait)">`}<a class="btn2" href="${esc(u)}" target="_blank" rel="noopener">Ouvrir en grand</a>`;
+  }catch(e){ if(box) box.querySelector('.aide').textContent=navigator.onLine?'Impossible de l’ouvrir ('+((e&&e.message)||e)+').':'Hors ligne : à ouvrir avec du réseau.'; } } }
+
 /* --- aperçu --- */
 function vApercu(id){ const d=S.docs[id], fac=d.type==='facture', manque=fac?manqueQR(d):[], c=S.conts[d.client]; ed={k:'apercu',id};
   const mail=c&&c.email?`mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(titreDoc(d).split(' – ')[0]+(d.objet?' – '+d.objet:''))}&body=${encodeURIComponent('Bonjour,\n\nVous trouverez ci-joint '+(fac?'la facture '+d.num+' de CHF '+fmt(docTotal(d))+', payable d’ici le '+fDate(echeance(d)):'le devis '+d.num+' de CHF '+fmt(docTotal(d))+', valable jusqu’au '+fDate(echeance(d)))+'.\n\nMeilleures salutations\n'+(emetteur(d).nom||''))}`:'';
@@ -1184,6 +1196,7 @@ document.addEventListener('click',e=>{
     case 'r-tout': ed.tout=b.dataset.v==='1'; vRattacher(ed.id); break;
     case 'r-vieux': ed.vieux=!ed.vieux; vRattacher(ed.id); break;
     case 'r-tx': { const tx=b.dataset.tx; if(S.liens[tx]&&S.liens[tx].mandat===ed.id) delete S.liens[tx]; else S.liens[tx]={id:tx,mandat:ed.id}; save(); vRattacher(ed.id); render(); break; }
+    case 'justif': vJustif(b.dataset.tx); break;
     case 'delier': { const tx=b.dataset.tx, l=S.liens[tx]; if(!l) break; delete S.liens[tx]; save(); render(); toast('Opération détachée','Annuler',()=>{ S.liens[tx]=l; save(); render(); }); break; }
     case 'trier': ed=null; vTrier(); break;
     case 't-vieux': ed.vieux=!ed.vieux; ed.conf=false; vTrier(); break;
