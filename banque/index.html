@@ -220,6 +220,24 @@ input[type=checkbox]{accent-color:var(--acc)}
 .dette-b .note{font-size:13px}
 .dette.off{opacity:.75}
 .retard{color:var(--neg);font-weight:700}
+.bon{color:var(--pos);font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.big b.neg{color:var(--neg)}
+.big b small{font-size:.55em;font-weight:600;color:var(--muted)}
+.sh2{font-size:19px;font-weight:600;margin:22px 4px 10px}
+.vrow{display:flex;gap:8px;align-items:center;margin-top:10px}
+.vrow .input{flex:1;max-width:200px}
+.etapes{list-style:none;margin:8px 0 0;padding:0}
+.etape{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.etape:first-child{border-top:0}
+.etape .no{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;background:var(--tile);color:var(--text);margin-top:1px}
+.etape.ok .no{background:var(--pos)}
+.etape .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.etape.ok .tx b{color:var(--muted);font-weight:600}
+.etape .act{flex:none;align-self:center}
+.sem{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.sem-v{margin:4px 0 2px;font-size:16px}
+.sem-v b{font-variant-numeric:tabular-nums}
 .rapl{list-style:none;margin:6px 0 0;padding:0}
 .rapl>li{border-top:1px solid var(--line);padding-bottom:8px}
 .rapl>li:first-child{border-top:0}
@@ -452,7 +470,8 @@ const ICAT={alimentation:'cart','alimentation.courses':'cart','alimentation.rest
   finances:'bank','finances.impots':'receipt','finances.assurances':'shield','finances.frais-administratifs':'file',revenus:'down','revenus.salaire':'briefcase',pro:'briefcase',autres:'swap'};
 function icCat(id){ return P[ICAT[id]||ICAT[maitreDe(id)]||'dots']; }
 const CCOMPTE={yuh:'#E5484D','yuh-epargne':'#F28C28','yuh-placements':'#C08A12','bas-cc':'#3E7BFA','bas-epargne':'#7C5CFF',especes:'#2E9E6B',tmnous:'#0EA5A4',crypto:'#8B5CF6'};
-function icCompte(c){ const d=c.devise&&c.devise!=='CHF'?P.hex:c.type==='epargne'?P.shield:c.type==='especes'?P.coins:c.type==='dette'?P.people:c.type==='placements'?P.chart:c.pro?P.bank:P.card; return svg(d,14,CCOMPTE[c.id]||'#5C6270',2.4); }
+function typeDe(c){ return slug(c.type||''); }   /* « espèces », « épargne » : avec ou sans accents selon l’origine */
+function icCompte(c){ const ty=typeDe(c), d=c.devise&&c.devise!=='CHF'?P.hex:ty==='epargne'?P.shield:ty==='especes'?P.coins:ty==='dette'?P.people:ty==='placements'?P.chart:c.pro?P.bank:P.card; return svg(d,14,CCOMPTE[c.id]||'#5C6270',2.4); }
 
 /* =============================== Écrans =============================== */
 const $view=document.getElementById('view'), $scrim=document.getElementById('scrim'), $sheet=document.getElementById('sheet');
@@ -460,7 +479,7 @@ function render(){
   document.querySelectorAll('.oh [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===ui.tab?'page':'false'));
   cacherTip();
   if(!booted){ $view.innerHTML=''; return; }
-  $view.innerHTML=ui.tab==='accueil'?vAccueil():ui.tab==='ops'?vOps():ui.tab==='stats'?vStats():ui.tab==='rappro'?vRappro():ui.tab==='cats'?vCats():ui.tab==='tags'?vTags():ui.tab==='recur'?vRecur():vReglages();
+  $view.innerHTML=ui.tab==='accueil'?vAccueil():ui.tab==='ops'?vOps():ui.tab==='stats'?vStats():ui.tab==='rappro'?vRappro():ui.tab==='cats'?vCats():ui.tab==='tags'?vTags():ui.tab==='recur'?vRecur():ui.tab==='compte'?vCompte():vReglages();
 }
 function seg(attr,cur,opts,label){ return '<div class="seg" role="group" aria-label="'+label+'">'+opts.map(([k,n])=>'<button data-'+attr+'="'+k+'" aria-pressed="'+(cur===k)+'">'+n+'</button>').join('')+'</div>'; }
 function tuile(c){ const s=solde(c), dev=c.devise&&c.devise!=='CHF'; return '<button class="tile'+(groupeDe(c)==='pro'?' pro':groupeDe(c)==='invest'?' inv':'')+'" data-compte="'+esc(c.id)+'"><span class="n">'+icCompte(c)+esc(c.nom)+'</span><span class="s'+(s<0?' neg':'')+'">'+fmt(s)+(dev?' '+esc(c.devise):'')+'</span></button>'; }
@@ -475,7 +494,7 @@ function vAccueil(){
   if(autres.length) h+='<p class="note" style="margin-top:-12px;text-align:right">+ '+autres.map(c=>fmt(solde(c))+' '+esc(c.devise)+' ('+esc(c.nom)+')').join(', ')+'</p>';
   GROUPES.forEach(([g,titre,tot])=>{ const L=cs.filter(c=>groupeDe(c)===g); if(!L.length) return;
     h+='<section class="sect" aria-labelledby="t-'+g+'"><div class="st"><h2 id="t-'+g+'">'+titre+'</h2></div><div class="tiles">'+L.map(tuile).join('')+'</div><div class="totrow"><span>'+tot+' en CHF</span><b>'+fmt(totalCHF(L))+'</b></div></section>'; });
-  h+=carteYuh();
+  const pt=pointSemaine(); h+=pt||carteYuh();
   h+=carteDettes(cs);
   h+=carteAvenir();
   /* ce mois-ci */
@@ -533,6 +552,100 @@ function vOps(){
   html+='</ul></section>';
   if(L.length>ui.limite) html+='<button class="btn ghost" data-act="plus">Afficher plus ('+(L.length-ui.limite)+')</button>';
   return h+html;
+}
+
+/* =============================== Page d'un compte =============================== */
+function srcDe(c){ return c.id==='yuh'?'yuh':String(c.id).startsWith('bas')?'bas':null; }
+function premierJour(c){ let d=c.date_initiale||today(); for(const t of Object.values(S.tx)) if(t.compte===c.id&&t.date<d) d=t.date; return d; }
+function valeurLe(c){ if(c.valeur_le) return c.valeur_le; let d=''; for(const t of Object.values(S.tx)) if(t.compte===c.id&&t.cat===AJU&&t.tiers==='Variation de valeur'&&t.date>d) d=t.date; return d||null; }
+/* valeur d'un placement : en devise, on garde la valeur ; en CHF, la différence devient une ligne « Variation de valeur » (ni dépense ni revenu) */
+function mettreValeur(c,v){
+  if(c.devise&&c.devise!=='CHF') c.valeur=r2(v);
+  else { const ecart=r2(v-solde(c)); if(Math.abs(ecart)>=0.005){ const id=uid(); S.tx[id]={id,date:today(),compte:c.id,montant:ecart,tiers:'Variation de valeur',cat:AJU,tags:[],note:'Valeur mise à jour : '+fmt(v)+' CHF',parts:null,autre:null,lien:null,source:'saisie',cree:new Date().toISOString()}; } }
+  c.valeur_le=today(); }
+/* points de la courbe : chaque jour (3 mois), chaque semaine (12 mois) ou chaque fin de mois (tout), jamais avant la première ligne du compte */
+function pointsSolde(c,per){
+  const t=today(), p0=premierJour(c), veille=d=>isoD(new Date(Date.parse(d+'T12:00')-864e5)), plus=(d,n)=>isoD(new Date(Date.parse(d+'T12:00')+n*864e5));
+  let D=[];
+  if(per==='tout'){ D.push(veille(p0)); moisEntre(p0,t).forEach(m=>{ const f=finMois(m); D.push(f<t?f:t); }); }
+  else { const pas=per==='3m'?1:7, n=per==='3m'?91:53; for(let i=n-1;i>=0;i--){ const d=plus(t,-i*pas); if(d>=veille(p0)) D.push(d); } if(D.length&&D[0]>veille(p0)&&p0>plus(t,-(n-1)*pas)) D.unshift(veille(p0)); }
+  D=[...new Set(D)];
+  return D.map(d=>({d,v:soldeAu(c,d)})); }
+function vCompte(){
+  const c=S.comptes[ui.cpt]; if(!c) { ui.tab='accueil'; return vAccueil(); }
+  TIPS={}; const dev=c.devise&&c.devise!=='CHF', src=srcDe(c), inv=groupeDe(c)==='invest', s=solde(c), per=ui.cPer||'12m';
+  let h=navRetour(esc(c.nom),'accueil',src?'<button class="btn sm" data-act="importyuh" style="width:auto">Importer</button>':'');
+  h+='<div class="big" style="margin-top:14px"><span class="cap">'+(inv?'Valeur':'Solde')+'</span><b'+(s<0?' class="neg"':'')+'>'+fmt(s)+(dev?' <small>'+esc(c.devise)+'</small>':'')+'</b></div>';
+  /* d'où viennent les chiffres */
+  if(src){ const au=dernier(src), r=S.regl[src+'Import'], O=orphelines().filter(t=>t.compte===c.id).length, A=aClasser().filter(t=>t.compte===c.id).length;
+    h+='<p class="note">Relevé '+(src==='yuh'?'Yuh':'BAS')+' '+(au?'jusqu’au '+esc(dCourte(au))+(r?' (import fait '+esc(ilYa(r.le))+')':''):'pas encore importé')+'.'
+      +(A?' <b>'+A+'</b> opération'+(A>1?'s':'')+' à classer.':'')+(O?' <span class="retard"><b>'+O+'</b> saisie'+(O>1?'s':'')+' pas retrouvée'+(O>1?'s':'')+'</span> : le solde est peut-être faux.':'')+'</p>'
+      +(A||O?'<p style="margin:6px 0 0"><button class="btn ghost sm" data-tab="rappro" style="width:auto">Vérifier</button></p>':''); }
+  else if(inv){ const le=valeurLe(c);
+    h+='<section class="card" aria-labelledby="t-val"><h2 id="t-val">Valeur</h2><p class="note" style="margin-top:4px">'+(le?'Dernière mise à jour : '+esc(dLong(le))+(jours(today(),le)>31?' · <span class="vite">à mettre à jour</span>':'')+'.':'Pas encore mise à jour ici.')
+      +(dev?'':' Banque compte tout seul l’argent versé et retiré ; elle ne suit pas les cours : tape la valeur affichée par ta banque, la différence devient une « variation de valeur » (ni dépense ni revenu).')+'</p>'
+      +'<div class="vrow"><input class="input num" id="c-valeur" inputmode="decimal" placeholder="'+esc(String(s==null?'':s))+'" aria-label="Valeur actuelle de '+esc(c.nom)+(dev?' en '+esc(c.devise):' en CHF')+'"><button class="btn sm" data-act="cvaleur" style="width:auto">Mettre à jour</button></div></section>'; }
+  else h+='<p class="note">'+(c.type==='dette'?esc(c.note||'Compte partagé, tenu à la main.'):'Tenu à la main : ce sont tes saisies.')+'</p>';
+  /* courbe du solde */
+  if(!dev){
+    const W=chartW(), pts=pointsSolde(c,per), n=pts.length;
+    h+='<section class="card" aria-labelledby="t-cc">'+enTete('t-cc',inv?'Évolution':'Solde','cpt')+'<div style="margin:8px 0 4px">'+seg('cper',per,[['3m','3 mois'],['12m','12 mois'],['tout','Tout']],'Période de la courbe')+'</div>';
+    if(n>=2){
+      const lab=pts.map((p,i)=>per==='tout'?(i?moisCourt(p.d.slice(0,7),p.d.endsWith('-01-31')):''):p.d.slice(8,10)+'.'+p.d.slice(5,7)), tt=pts.map(p=>p.d===today()?'Aujourd’hui':dLong(p.d));
+      if(ui.sTab.cpt) h+=tableau(['Date',inv?'Valeur':'Solde'],pts.slice().reverse().map((p,i)=>[esc(tt[n-1-i]),fmt(p.v)]));
+      else h+='<div class="viz">'+courbe({W,pts,lab,tt,col:SERIE.pat,nom:inv?'Valeur':'Solde',label:(inv?'Valeur':'Solde')+' de '+c.nom})+'</div>';
+      const a=pts[0].d, M=Object.values(S.tx).filter(t=>t.compte===c.id&&t.date>a&&t.date<=today());
+      const fk=(v,sg)=>Math.abs(v)>=1000?fmt(v,sg).replace(/\.\d\d$/,''):fmt(v,sg);
+      let ent=0, sor=0, vers=0, varv=0; M.forEach(t=>{ if(t.montant<0) sor+=t.montant; else ent+=t.montant; if(estVir(t)) vers+=t.montant; if(t.cat===AJU) varv+=t.montant; });
+      h+=inv?'<div class="kpis"><div><span class="cap">Versé net</span><div class="v">'+fk(r2(vers),true)+'</div></div><div><span class="cap">Variations</span><div class="v '+(varv<0?'neg':'pos')+'">'+fk(r2(varv),true)+'</div></div><div><span class="cap">Évolution</span><div class="v">'+fk(r2(pts[n-1].v-pts[0].v),true)+'</div></div></div>'
+        :'<div class="kpis"><div><span class="cap">Entrées</span><div class="v pos">'+fk(r2(ent),true)+'</div></div><div><span class="cap">Sorties</span><div class="v neg">'+fk(r2(sor))+'</div></div><div><span class="cap">Évolution</span><div class="v">'+fk(r2(pts[n-1].v-pts[0].v),true)+'</div></div></div>';
+    } else h+='<p class="empty">Pas encore assez d’historique.</p>';
+    h+='</section>'; }
+  /* opérations du compte, avec le solde à la fin de chaque jour */
+  const L=Object.values(S.tx).filter(t=>t.compte===c.id).sort((a,b)=>b.date.localeCompare(a.date)||String(b.cree||'').localeCompare(String(a.cree||''))||String(b.id).localeCompare(String(a.id)));
+  if(!L.length) return h+'<p class="empty">Aucune opération sur ce compte.</p>';
+  const lim=ui.cLim||100, parJour={}; L.forEach(t=>{ parJour[t.date]=(parJour[t.date]||0)+t.montant; });
+  let jour='', html='';
+  L.slice(0,lim).forEach(t=>{ if(t.date!==jour){ if(jour) html+='</ul></section>'; jour=t.date; const sj=dev?null:soldeAu(c,jour);
+      html+='<section class="card" style="padding:12px 16px 4px"><div class="jour"><span>'+esc(dLong(jour))+'</span><span class="num">'+(sj!=null?'solde '+fmt(sj):fmt(r2(parJour[jour]),true))+'</span></div><ul class="ops">'; }
+    html+=opLi(t,true).replace('<span class="ac">'+esc(c.nom)+'</span>',''); });
+  html+='</ul></section>';
+  if(L.length>lim) html+='<button class="btn ghost" data-act="cplus">Afficher plus ('+(L.length-lim)+')</button>';
+  return h+'<h2 class="sh2">Opérations</h2>'+html;
+}
+
+/* =============================== Point de la semaine =============================== */
+function lundiDe(d){ const x=new Date(d+'T12:00'), j=(x.getDay()+6)%7; x.setDate(x.getDate()-j); return isoD(x); }
+function depSemaine(a,z){ let s=0; const parCat={};
+  for(const t of Object.values(S.tx)){ if(t.date<a||t.date>z) continue;
+    for(const l of lignes(t)){ if(sensLigne(l)!=='dep'||estPro(l.cat)) continue; s-=l.montant; const m=maitreDe(l.cat); parCat[m]=(parCat[m]||0)-l.montant; } }
+  return {s:r2(s),parCat}; }
+function pointSemaine(){
+  const t=today(), L=lundiDe(t); if(S.regl.point===L||!Object.keys(S.tx).length) return '';
+  const plus=(d,n)=>isoD(new Date(Date.parse(d+'T12:00')+n*864e5)), a=plus(L,-7), z=plus(L,-1);
+  const yi=S.regl.yuhImport, yuhOk=!!(yi&&yi.le>=L), db=dernier('bas'), basRetard=!!S.comptes['bas-cc']&&(!db||jours(t,db)>35);
+  const nC=aClasser().length, nO=orphelines().length;
+  const esp=comptesTri().find(c=>typeDe(c)==='especes'), espOk=!esp||S.regl.especesVu===L;
+  const E=[];
+  E.push([yuhOk,'Importer le relevé Yuh',yuhOk?'Fait, jusqu’au '+dCourte(dernier('yuh'))+'.':(dernier('yuh')?'Le dernier s’arrête au '+dCourte(dernier('yuh'))+'.':''),yuhOk?'':'<button class="btn sm" data-act="importyuh" style="width:auto">Importer</button>']);
+  if(basRetard) E.push([false,'Importer aussi la BAS',db?'Dernier relevé il y a '+jours(t,db)+' jours (une fois par mois suffit).':'Pas encore importée.','<button class="btn ghost sm" data-act="importyuh" style="width:auto">Importer</button>']);
+  E.push([!nC,'Classer les opérations',nC?nC+' opération'+(nC>1?'s':'')+' à classer.':'Tout est classé.',nC?'<button class="btn ghost sm" data-tab="rappro" style="width:auto">Classer</button>':'']);
+  E.push([!nO,'Vérifier les saisies',nO?nO+' saisie'+(nO>1?'s':'')+' pas retrouvée'+(nO>1?'s':'')+' dans le relevé.':'Toutes retrouvées dans les relevés.',nO?'<button class="btn ghost sm" data-tab="rappro" style="width:auto">Vérifier</button>':'']);
+  if(esp) E.push([espOk,'Compter tes espèces',espOk?'C’est vérifié : '+fmt(solde(esp))+'.':'Banque dit '+fmt(solde(esp))+'. Tape ce que tu as vraiment, ou valide tel quel.',espOk?'':'<div class="vrow"><input class="input num" id="p-esp" inputmode="decimal" placeholder="'+esc(String(solde(esp)))+'" aria-label="Espèces que tu as vraiment"><button class="btn ghost sm" data-act="espok" style="width:auto">Valider</button></div>']);
+  const fait=E.filter(e=>e[0]).length;
+  let h='<section class="card rappel" aria-labelledby="t-pt"><div class="st"><h2 id="t-pt">Point de la semaine</h2><span class="note">'+fait+' / '+E.length+'</span></div><ol class="etapes">'
+    +E.map(([ok,titre,txt,act],i)=>'<li class="etape'+(ok?' ok':'')+'"><span class="no" aria-hidden="true">'+(ok?svg(P.check,15,'#fff',3):i+1)+'</span><span class="tx"><b>'+esc(titre)+'</b>'+(ok?'<span class="sr"> (fait)</span>':'')+(txt?'<span class="note">'+esc(txt)+'</span>':'')+(act&&act.startsWith('<div')?act:'')+'</span>'+(act&&!act.startsWith('<div')?'<span class="act">'+act+'</span>':'')+'</li>').join('')+'</ol>';
+  /* la semaine passée */
+  const W=depSemaine(a,z), p0=comptesTri().reduce((d,c)=>c.date_initiale&&c.date_initiale<d?c.date_initiale:d,t); let tot=0, nb=0;
+  for(let k=2;k<=13;k++){ const wa=plus(L,-7*k); if(wa<p0) break; tot+=depSemaine(wa,plus(wa,6)).s; nb++; }
+  const moy=nb>=4?r2(tot/nb):null, top=Object.entries(W.parCat).filter(x=>x[1]>0.005).sort((x,y)=>y[1]-x[1]).slice(0,3);
+  h+='<div class="sem"><span class="cap">Semaine du '+esc(dJM(a))+' au '+esc(dJM(z))+' (privé)</span><p class="sem-v"><b>'+fmt(W.s)+'</b> dépensés'+(moy!=null?' · ta moyenne : '+fmt0(moy)+' par semaine'+(W.s>moy*1.25?' <span class="vite">(plus que d’habitude)</span>':W.s<moy*0.8?' <span class="bon">(moins que d’habitude)</span>':''):'')+'</p>'
+    +(top.length?'<p class="note">'+top.map(([k,v])=>esc(S.cats[k]?S.cats[k].nom:k)+' '+fmt0(v)).join(' · ')+'</p>':'')+(yuhOk?'':'<p class="note">Complet une fois le relevé Yuh importé.</p>')+'</div>';
+  const B=Object.values(S.budgets).filter(b=>!b.archive).map(etatBudget);
+  if(B.length){ const dep=B.filter(e=>e.part>1).length, vite=B.filter(e=>e.part<=1&&e.rythme!=null&&e.part>e.rythme*1.1&&e.part>0.2).length, ok=B.length-dep-vite;
+    h+='<p class="note" style="margin-top:6px">Budgets : '+[ok?ok+' dans le rythme':'',vite?'<span class="vite">'+vite+' un peu vite</span>':'',dep?'<span class="retard">'+dep+' dépassé'+(dep>1?'s':'')+'</span>':''].filter(Boolean).join(', ')+'.</p>'; }
+  h+='<button class="btn'+(fait===E.length?'':' ghost')+'" data-act="pointok" style="margin-top:12px">'+svg(P.check,20)+'Point terminé</button></section>';
+  return h;
 }
 
 function vReglages(){
@@ -1723,7 +1836,8 @@ document.addEventListener('click',e=>{
   if(b.dataset.orphx){ const t=S.tx[b.dataset.orphx]; if(t&&confirm('Supprimer ta saisie « '+(t.tiers||catNom(t.cat))+' » ('+fmt(t.montant,true)+') du '+dCourte(t.date)+' ?')){ supprimerTx(t); save(); render(); } return; }
   if(b.dataset.orphok){ const t=S.tx[b.dataset.orphok]; if(t){ t.sans_banque=true; save(); render(); } return; }
   if(b.dataset.scope){ ui.scope=b.dataset.scope; render(); return; }
-  if(b.dataset.compte){ ui.tab='ops'; ui.fCompte=b.dataset.compte; ui.periode='mois'; ui.mois=moisDe(today()); window.scrollTo(0,0); render(); return; }
+  if(b.dataset.compte){ ui.tab='compte'; ui.cpt=b.dataset.compte; ui.cLim=100; window.scrollTo(0,0); render(); return; }
+  if(b.dataset.cper){ ui.cPer=b.dataset.cper; render(); return; }
   if(b.dataset.tx){ editer(b.dataset.tx); return; }
   if(b.dataset.ecat){ const C=S.cats[b.dataset.ecat]; if(C){ ec={id:C.id,nom:C.nom,parent:C.parent,archive:!!C.archive}; sheetErr=''; vCat(); } return; }
   if(b.dataset.nsub){ ec={id:null,nom:'',parent:b.dataset.nsub}; sheetErr=''; vCat(); return; }
@@ -1799,6 +1913,12 @@ document.addEventListener('click',e=>{
   else if(a==='partstop'){ lireChamps(); draft.cat=draft.parts[0]&&draft.parts[0].cat; draft.maitre=draft.cat?maitreDe(draft.cat):null; draft.parts=null; vSaisie(); }
   else if(a==='nouveautag'){ lireChamps(); const nom=(prompt('Nom de l’étiquette (un voyage, un projet…) :')||'').trim(); if(!nom) return; const id=slug(nom)||uid(); if(!S.tags[id]) S.tags[id]={id,nom}; if(!draft.tags.includes(id)) draft.tags.push(id); save(); vSaisie(); }
   else if(a==='plus'){ ui.limite+=300; render(); }
+  else if(a==='cplus'){ ui.cLim=(ui.cLim||100)+300; render(); }
+  else if(a==='cvaleur'){ const c=S.comptes[ui.cpt], i=document.getElementById('c-valeur'), v=i&&num(i.value); if(!c||v==null||isNaN(v)){ if(i) i.focus(); return; } mettreValeur(c,v); save(); render(); }
+  else if(a==='espok'){ const c=comptesTri().find(x=>typeDe(x)==='especes'), i=document.getElementById('p-esp'), v=i&&i.value.trim()?num(i.value):null;
+    if(c&&v!=null&&!isNaN(v)){ const e=r2(v-solde(c)); if(Math.abs(e)>=0.005){ const id=uid(); S.tx[id]={id,date:today(),compte:c.id,montant:e,tiers:'Comptage des espèces',cat:AJU,tags:[],note:'Compté : '+fmt(v)+' (Banque disait '+fmt(r2(v-e))+')',parts:null,autre:null,lien:null,source:'saisie',cree:new Date().toISOString(),sans_banque:true}; } }
+    S.regl.especesVu=lundiDe(today()); save(); render(); }
+  else if(a==='pointok'){ S.regl.point=lundiDe(today()); save(); render(); }
   else if(a==='reglages'){ ui.tab='reglages'; render(); }
   else if(a==='charger') document.getElementById('fichier').click();
   else if(a==='synchro'){ syncErr=''; pull().then(()=>push()).then(()=>render()); }
@@ -1819,10 +1939,7 @@ document.addEventListener('change',e=>{
   else if(t.dataset.nomc){ const c=S.comptes[t.dataset.nomc], v=t.value.trim(); if(c&&v){ c.nom=v; save(); render(); } }
   else if(t.dataset.groupe){ const c=S.comptes[t.dataset.groupe]; if(c){ c.groupe=t.value; c.pro=t.value==='pro'; save(); render(); } }
   else if(t.dataset.archive){ const c=S.comptes[t.dataset.archive]; if(c){ c.archive=t.checked; save(); render(); } }
-  else if(t.dataset.valeur){ const c=S.comptes[t.dataset.valeur], v=num(t.value); if(!c||v==null) return;
-    if(c.devise&&c.devise!=='CHF'){ c.valeur=r2(v); c.valeur_le=today(); }
-    else { const ecart=r2(v-solde(c)); if(Math.abs(ecart)>=0.005){ const id=uid(); S.tx[id]={id,date:today(),compte:c.id,montant:ecart,tiers:'Variation de valeur',cat:AJU,tags:[],note:'Valeur mise à jour : '+fmt(v)+' CHF',parts:null,autre:null,lien:null,source:'saisie',cree:new Date().toISOString()}; } }
-    save(); render(); }
+  else if(t.dataset.valeur){ const c=S.comptes[t.dataset.valeur], v=num(t.value); if(!c||v==null) return; mettreValeur(c,v); save(); render(); }
   else if(t.id==='s-tiers'&&draft&&!draft.cat&&!draft.parts){ lireChamps(); const q=draft.tiers.trim().toLowerCase(); if(!q) return;
     const ex=Object.values(S.tx).filter(x=>!estVir(x)&&x.source!=='miroir'&&x.cat&&(x.tiers||'').toLowerCase()===q&&(draft.type==='depense'?x.montant<0:x.montant>0)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     if(ex){ draft.cat=ex.cat; draft.maitre=maitreDe(ex.cat); vSaisie(); } }
