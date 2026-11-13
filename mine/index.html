@@ -468,7 +468,13 @@ function estPro(cat){ if(!cat) return false; if(cat==='pro'||cat.startsWith('pro
 function txPro(t){ return bLignes(t).some(l=>estPro(l.cat)); }
 function proMontant(t){ return r2(bLignes(t).filter(l=>estPro(l.cat)).reduce((s,l)=>s+(+l.montant||0),0)); }
 function catNom(id){ const c=B.cats[id]; if(!c) return id==='pro'?'Pro':(id||'').replace(/^pro\./,'Pro › '); const p=c.parent&&B.cats[c.parent]; return p?p.nom+' › '+c.nom:c.nom; }
-function actDeCat(cat){ return actsTri(true).find(a=>a.cat&&a.cat===cat)||null; }
+function actDeCat(cat){ const L=actsTri(true), a=L.find(x=>x.cat&&x.cat===cat); if(a) return a;
+  /* sinon par le nom : « Pro › GDT » va avec l'activité « GDT », quel que soit l'identifiant de la catégorie */
+  const c=B.cats[cat], n=c?norm(c.nom):norm(String(cat||'').replace(/^pro\./,'').replace(/-/g,' ')); return n&&n!=='pro'?L.find(x=>norm(x.nom)===n)||null:null; }
+/* répare le lien activité ↔ catégorie quand la catégorie de la Banque a un autre identifiant (même nom) */
+function reparerCats(){ const pros=Object.values(B.cats).filter(c=>c.parent==='pro'); if(!pros.length) return false; let n=0;
+  for(const a of Object.values(S.acts)){ if(a.cat&&B.cats[a.cat]) continue; const c=pros.find(x=>norm(x.nom)===norm(a.nom)); if(c&&a.cat!==c.id){ a.cat=c.id; n++; } }
+  if(n) save(); return n>0; }
 function actDeTx(t){ for(const l of bLignes(t)) if(estPro(l.cat)){ const a=actDeCat(l.cat); if(a) return a; } return null; }
 function txDe(mid){ return Object.values(S.liens).filter(l=>l.mandat===mid&&B.tx[l.id]).map(l=>B.tx[l.id]).sort((a,b)=>b.date.localeCompare(a.date)); }
 function paiements(){ return new Set(Object.values(S.docs).map(d=>d.paiement).filter(Boolean)); }
@@ -540,7 +546,7 @@ async function pull(full){
     if(changed){ S=fromRows(prev); render(); } else if(avait) render();
     if(booted&&!Object.keys(S.acts).length){ semer(); save(); render(); }
     if(booted&&S.acts.gdt&&S.acts.gdt.ignorer===undefined){ S.acts.gdt.ignorer=true; save(); render(); }
-    if(booted&&autoLier()) render();
+    if(booted&&(reparerCats()|autoLier())) render();
     setSync(); return true;
   }catch(e){ const avait=syncErr; syncErr=(e&&e.message)||String(e); setSync(); if(!avait) render(); return false; }
 }
@@ -567,7 +573,7 @@ async function bPull(full){
       if(d){ if(canon(B[coll][id])!==canon(d)){ B[coll][id]=d; ch=true; } }
       else if(B[coll][id]){ delete B[coll][id]; ch=true; }
     }
-    bLast=maxTs; bErr=''; const avant=bPret; bPret=true; bGarder(); if(autoLier()) ch=true; if(ch||!avant) render();
+    bLast=maxTs; bErr=''; const avant=bPret; bPret=true; bGarder(); if(booted&&reparerCats()) ch=true; if(autoLier()) ch=true; if(ch||!avant) render();
   }catch(e){ bErr=(e&&e.message)||String(e); }
 }
 function etatSync(){
@@ -739,8 +745,8 @@ function vBilan(){
     const min=Object.values(S.heures).filter(x=>ids.has(x.mandat)&&dansY(x.date)).reduce((s,x)=>s+x.min,0);
     const F=Object.values(S.docs).filter(d=>d.type==='facture'&&ids.has(d.mandat));
     const fac=sum(F.filter(d=>emise(d)&&dansY(d.date)),docTotal), enc=sum(F.filter(d=>d.etat==='payee'&&dansY(d.paye_le)),docTotal);
-    let rec=0, dep=0; for(const t of Object.values(B.tx)){ if(!dansY(t.date)) continue; for(const l of bLignes(t)){ if(!estPro(l.cat)) continue; const aa=actDeCat(l.cat); if((aa?aa.id:'')!==a.id) continue; const v=+l.montant||0; if(v>0) rec+=v; else dep+=v; } }
-    return {a,min,fac,enc,rec:r2(rec),dep:r2(dep),net:r2(rec+dep)};
+    let rec=0, dep=0; const cats=new Set(); for(const t of Object.values(B.tx)){ if(!dansY(t.date)) continue; for(const l of bLignes(t)){ if(!estPro(l.cat)) continue; const aa=actDeCat(l.cat); if((aa?aa.id:'')!==a.id) continue; const v=+l.montant||0; if(v>0) rec+=v; else dep+=v; cats.add(catNom(l.cat)); } }
+    return {a,min,fac,enc,rec:r2(rec),dep:r2(dep),net:r2(rec+dep),cats:[...cats]};
   });
   const apercus=lignes.filter(x=>x.a.ignorer&&(x.rec||x.dep)); lignes=lignes.filter(x=>!x.a.ignorer);
   const calmes=lignes.filter(x=>!(x.min||x.fac||x.enc||x.rec||x.dep)&&x.a.id&&!x.a.archive).map(x=>x.a);
@@ -749,7 +755,7 @@ function vBilan(){
   h+=`<section class="hero"><span class="cap">Extrait en ${Y} · encaissé</span><span class="gros">${fCHF(T('enc'))}</span><span class="sous">Facturé ${fCHF(T('fac'))} · ${fH(tmin)} de travail${bPret?` · Banque net ${fCHF(T('net'),true)}`:''}</span></section>`;
   if(!bPret) h+=`<p class="info">${bErr?'La Banque n’est pas accessible pour l’instant ('+esc(bErr)+').':'La Banque se charge…'} Les dépenses et recettes Pro viennent de la Banque.</p>`;
   h+=lignes.map(x=>{ const parH=x.min?(bPret&&(x.rec||x.dep)?x.net:x.enc)/(x.min/60):null;
-    return `<section class="bact" style="--c:${x.a.couleur}"><h3>${esc(x.a.emoji)} ${esc(x.a.nom)}</h3><div class="g3"><div><span class="cap">Heures</span><b>${fH(x.min)}</b></div><div><span class="cap">Facturé</span><b>${fCHF(x.fac)}</b></div><div><span class="cap">Encaissé</span><b>${fCHF(x.enc)}</b></div><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Par heure</span><b>${parH!=null?fCHF(r2(parH)):'—'}</b></div></div></section>`; }).join('');
+    return `<section class="bact" style="--c:${x.a.couleur}"><h3>${esc(x.a.emoji)} ${esc(x.a.id?x.a.nom:'Autres opérations Pro')}</h3>${x.a.id?'':`<p class="aide" style="margin:-2px 0 6px">Catégories de la Banque reliées à aucune activité : ${x.cats.map(esc).join(', ')||'—'}. Relie-les dans « Gérer les activités ».</p>`}<div class="g3"><div><span class="cap">Heures</span><b>${fH(x.min)}</b></div><div><span class="cap">Facturé</span><b>${fCHF(x.fac)}</b></div><div><span class="cap">Encaissé</span><b>${fCHF(x.enc)}</b></div><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Par heure</span><b>${parH!=null?fCHF(r2(parH)):'—'}</b></div></div></section>`; }).join('');
   h+=apercus.map(x=>`<section class="bact" style="--c:${x.a.couleur};background:#F7F4EF"><h3>${esc(x.a.emoji)} ${esc(x.a.nom)} <span class="meta" style="font:400 .8rem var(--body);text-transform:none;letter-spacing:0">· aperçu, suivi à part</span></h3><div class="g3"><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Net</span><b>${fCHF(x.net,true)}</b></div></div></section>`).join('');
   if(calmes.length) h+=`<p class="aide">Rien en ${Y} : ${calmes.map(a=>esc(a.emoji+' '+a.nom)).join(', ')}.</p>`;
   h+=`<p class="aide">« Banque + / − » : toutes les opérations Pro de l’activité dans la Banque. « Par heure » : le net de la Banque (ou l’encaissé) divisé par les heures notées.${apercus.length?' Les activités en aperçu ne comptent pas dans les totaux du haut.':''}</p>`;
@@ -758,7 +764,7 @@ function vBilan(){
   const nf=Object.values(S.mands).map(m=>({m,c:chiffres(m)})).filter(x=>x.c.minNF).sort((a,b)=>b.c.valNF-a.c.valNF);
   if(nf.length) h+=`<section class="bloc"><div class="bh"><h3>Pas encore facturé</h3><span class="meta">${fCHF(sum(nf,x=>x.c.valNF))}</span></div>${nf.map(x=>`<div class="ligne-r"><button class="lien-b" data-act="mandat" data-id="${x.m.id}">${esc(x.m.nom)}</button><span class="mono">${fH(x.c.minNF)} · ${fCHF(x.c.valNF)}</span></div>`).join('')}</section>`;
   const n=aTrier(0,false).length;
-  if(bPret) h+=`<section class="bloc"><div class="bh"><h3>Opérations Pro</h3><span class="meta">${n?pl(n,'à rattacher'):'tout est rangé'}</span></div><p class="aide">Rattacher une opération de la Banque à un mandat compte ses dépenses dans le mandat. La Banque n’est jamais modifiée.</p>${n?'<button class="btn2" data-act="trier">Trier les opérations de l’année</button>':''}</section>`;
+  if(bPret) h+=`<section class="bloc"><div class="bh"><h3>Opérations Pro</h3><span class="meta">${n?n+' à rattacher':'tout est rangé'}</span></div><p class="aide">Rattacher une opération de la Banque à un mandat compte ses dépenses dans le mandat. La Banque n’est jamais modifiée.</p>${n?'<button class="btn2" data-act="trier">Trier les opérations de l’année</button>':''}</section>`;
   return h;
 }
 
