@@ -603,11 +603,23 @@ function vSaisie(){
   h+='<div class="pills">'+(d.voirTiers?'':'<button class="pill dash" data-act="voirTiers">+ Bénéficiaire</button>')+(d.voirNote?'':'<button class="pill dash" data-act="voirNote">+ Note</button>')+(d.type!=='virement'&&!d.parts?'<button class="pill dash" data-act="partager">+ Partager</button>':'')+(banque&&d.type!=='virement'?'<button class="pill dash" data-act="estvir">C’est un virement entre mes comptes</button>':'')+'</div>';
   if(d.voirTiers) h+='<div class="field"><label class="lbl" for="s-tiers">'+(d.type==='revenu'?'De qui':'Où, à qui')+'</label><input class="input" id="s-tiers" list="l-tiers" value="'+esc(d.tiers)+'" autocomplete="off"><datalist id="l-tiers">'+[...new Set(Object.values(S.tx).filter(t=>t.source!=='miroir').map(t=>t.tiers).filter(Boolean))].sort().slice(0,500).map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist></div>';
   if(d.voirNote) h+='<div class="field"><label class="lbl" for="s-note">Note</label><input class="input" id="s-note" value="'+esc(d.note)+'"></div>';
-  h+='<div class="field"><span class="lbl">Étiquettes</span><div class="pills">'+Object.values(S.tags).filter(g=>!g.archive||d.tags.includes(g.id)).sort((a,b)=>(b.du||'').localeCompare(a.du||'')||a.nom.localeCompare(b.nom)).map(g=>'<button class="pill tagp" data-tag="'+esc(g.id)+'" aria-pressed="'+d.tags.includes(g.id)+'">#'+esc(g.nom)+'</button>').join('')+'<button class="pill dash" data-act="nouveautag">+ Étiquette</button></div></div>';
+  h+=etiquettesSaisie(d);
   if(sheetErr) h+='<p class="err" role="alert">'+esc(sheetErr)+'</p>';
   if(d.id&&!fixe) h+='<button class="btn warn" data-act="supprimer">Supprimer cette opération</button>';
   if(!d.id) h+='<p class="note" style="text-align:center">Elle sera reliée à sa ligne au prochain import du relevé (Yuh ou BAS).</p>';
   ouvrir(h);
+}
+/* étiquettes de la saisie : les 6 plus utilisées ces derniers temps (+ celles déjà choisies ou en cours), le reste replié */
+function etiquettesSaisie(d){
+  const lim=isoD(new Date(Date.now()-120*864e5)), n={}, der={};
+  for(const t of Object.values(S.tx)){ if(t.source==='miroir') continue; (t.tags||[]).forEach(g=>{ if(t.date>=lim) n[g]=(n[g]||0)+1; if(!der[g]||t.date>der[g]) der[g]=t.date; }); }
+  const dispo=Object.values(S.tags).filter(g=>!g.archive||d.tags.includes(g.id)), actifs=tagsActifs(d.date||today());
+  const tri=dispo.slice().sort((a,b)=>(n[b.id]||0)-(n[a.id]||0)||String(der[b.id]||b.du||'').localeCompare(String(der[a.id]||a.du||''))||a.nom.localeCompare(b.nom));
+  const top=tri.slice(0,6).map(g=>g.id), vis=new Set(top.concat(d.tags,actifs));
+  const montres=d.toutesEtiq?tri:tri.filter(g=>vis.has(g.id)), caches=tri.length-montres.length;
+  return '<div class="field"><span class="lbl">Étiquettes</span><div class="pills">'+montres.map(g=>'<button class="pill tagp" data-tag="'+esc(g.id)+'" aria-pressed="'+d.tags.includes(g.id)+'">#'+esc(g.nom)+'</button>').join('')
+    +(caches>0?'<button class="pill dash" data-act="etiqplus">+ '+caches+' autre'+(caches>1?'s':'')+'</button>':d.toutesEtiq&&tri.length>vis.size?'<button class="pill dash" data-act="etiqmoins">Moins</button>':'')
+    +'<button class="pill dash" data-act="nouveautag">+ Étiquette</button></div></div>';
 }
 function frequentes(type){
   const lim=new Date(Date.now()-120*864e5).toISOString().slice(0,10), n={};
@@ -1741,6 +1753,8 @@ document.addEventListener('click',e=>{
   else if(a==='voirreglees'){ ui.dReglees=!ui.dReglees; render(); }
   else if(a==='frequentes'){ lireChamps(); draft.toutes=false; vSaisie(); }
   else if(a==='voirTiers'){ lireChamps(); draft.voirTiers=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-tiers'); if(i) i.focus(); },30); }
+  else if(a==='etiqplus'){ lireChamps(); draft.toutesEtiq=true; vSaisie(); }
+  else if(a==='etiqmoins'){ lireChamps(); draft.toutesEtiq=false; vSaisie(); }
   else if(a==='voirNote'){ lireChamps(); draft.voirNote=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-note'); if(i) i.focus(); },30); }
   else if(a==='partager'){ lireChamps(); const m=num(draft.montant)||0; draft.parts=[{montant:m?String(m):'',cat:draft.cat},{montant:'',cat:null}]; vSaisie(); }
   else if(a==='partajout'){ lireChamps(); const tot=num(draft.montant)||0, s=draft.parts.reduce((x,p)=>x+(num(p.montant)||0),0); draft.parts.push({montant:tot-s>0?String(r2(tot-s)):'',cat:null}); vSaisie(); }
