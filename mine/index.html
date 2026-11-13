@@ -438,6 +438,7 @@ function coche(id){ const el=document.getElementById(id); return !!(el&&el.check
 
 /* =============================== Données =============================== */
 const R=()=>Object.assign({},DEF,S.regl);
+function actsTravail(){ return actsTri().filter(a=>!a.ignorer); }
 function actsTri(tout){ return Object.values(S.acts).filter(a=>tout||!a.archive).sort((a,b)=>(a.ordre||0)-(b.ordre||0)||a.nom.localeCompare(b.nom,'fr')); }
 const SANS={id:'',nom:'Sans activité',emoji:'❔',couleur:'#55606B'};
 function act(id){ return S.acts[id]||SANS; }
@@ -621,7 +622,7 @@ function aFaire(){
 function vMandats(){
   let h=alerteTable()+chronoBanniere();
   const af=aFaire(); if(af.length) h+=`<section class="afaire" aria-label="À faire"><div class="cap">À faire</div>${af.join('')}</section>`;
-  const acts=actsTri(), tous=Object.values(S.mands);
+  const acts=actsTravail(), tous=Object.values(S.mands);
   if(ui.filtre&&!S.acts[ui.filtre]) ui.filtre='';
   if(acts.length>1&&tous.length) h+=`<div class="filtres" role="group" aria-label="Activités"><button data-act="filtre" data-id="" aria-pressed="${!ui.filtre}">Tout <span class="n">${tous.filter(m=>m.etat!=='fini').length}</span></button>${acts.map(a=>`<button data-act="filtre" data-id="${a.id}" aria-pressed="${ui.filtre===a.id}" style="--c:${a.couleur}"><span aria-hidden="true">${esc(a.emoji)}</span>${esc(a.nom)} <span class="n">${mandsDe(a.id).filter(m=>m.etat!=='fini').length}</span></button>`).join('')}</div>`;
   if(!tous.length) h+=`<div class="vide"><span class="gros">La mine est vide</span>Un mandat, c’est un chantier, un cours, une commande… avec son client, ses heures, ses tâches, son devis et sa facture.<br><button class="btn" data-act="mandat-new">Ouvrir un premier mandat</button></div>`;
@@ -737,6 +738,7 @@ function vBilan(){
     let rec=0, dep=0; for(const t of Object.values(B.tx)){ if(!dansY(t.date)) continue; for(const l of bLignes(t)){ if(!estPro(l.cat)) continue; const aa=actDeCat(l.cat); if((aa?aa.id:'')!==a.id) continue; const v=+l.montant||0; if(v>0) rec+=v; else dep+=v; } }
     return {a,min,fac,enc,rec:r2(rec),dep:r2(dep),net:r2(rec+dep)};
   });
+  const apercus=lignes.filter(x=>x.a.ignorer&&(x.rec||x.dep)); lignes=lignes.filter(x=>!x.a.ignorer);
   const calmes=lignes.filter(x=>!(x.min||x.fac||x.enc||x.rec||x.dep)&&x.a.id&&!x.a.archive).map(x=>x.a);
   lignes=lignes.filter(x=>x.min||x.fac||x.enc||x.rec||x.dep);
   const T=k=>r2(lignes.reduce((s,x)=>s+x[k],0)), tmin=lignes.reduce((s,x)=>s+x.min,0);
@@ -744,8 +746,9 @@ function vBilan(){
   if(!bPret) h+=`<p class="info">${bErr?'La Banque n’est pas accessible pour l’instant ('+esc(bErr)+').':'La Banque se charge…'} Les dépenses et recettes Pro viennent de la Banque.</p>`;
   h+=lignes.map(x=>{ const parH=x.min?(bPret&&(x.rec||x.dep)?x.net:x.enc)/(x.min/60):null;
     return `<section class="bact" style="--c:${x.a.couleur}"><h3>${esc(x.a.emoji)} ${esc(x.a.nom)}</h3><div class="g3"><div><span class="cap">Heures</span><b>${fH(x.min)}</b></div><div><span class="cap">Facturé</span><b>${fCHF(x.fac)}</b></div><div><span class="cap">Encaissé</span><b>${fCHF(x.enc)}</b></div><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Par heure</span><b>${parH!=null?fCHF(r2(parH)):'—'}</b></div></div></section>`; }).join('');
+  h+=apercus.map(x=>`<section class="bact" style="--c:${x.a.couleur};background:#F7F4EF"><h3>${esc(x.a.emoji)} ${esc(x.a.nom)} <span class="meta" style="font:400 .8rem var(--body);text-transform:none;letter-spacing:0">· aperçu, suivi à part</span></h3><div class="g3"><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Net</span><b>${fCHF(x.net,true)}</b></div></div></section>`).join('');
   if(calmes.length) h+=`<p class="aide">Rien en ${Y} : ${calmes.map(a=>esc(a.emoji+' '+a.nom)).join(', ')}.</p>`;
-  h+=`<p class="aide">« Banque + / − » : toutes les opérations Pro de l’activité dans la Banque. « Par heure » : le net de la Banque (ou l’encaissé) divisé par les heures notées.</p>`;
+  h+=`<p class="aide">« Banque + / − » : toutes les opérations Pro de l’activité dans la Banque. « Par heure » : le net de la Banque (ou l’encaissé) divisé par les heures notées.${apercus.length?' Les activités en aperçu ne comptent pas dans les totaux du haut.':''}</p>`;
   const att=docsType('facture').filter(d=>d.etat==='envoyee').sort((a,b)=>echeance(a).localeCompare(echeance(b)));
   if(att.length) h+=`<div class="grp"><div class="cap">À encaisser · ${fCHF(sum(att,docTotal))}</div>${att.map(rowDoc).join('')}</div>`;
   const nf=Object.values(S.mands).map(m=>({m,c:chiffres(m)})).filter(x=>x.c.minNF).sort((a,b)=>b.c.valNF-a.c.valNF);
@@ -915,10 +918,10 @@ function optContacts(sel){ return `<option value="">— Aucun —</option>${Obje
 
 /* --- mandat (création, modification) --- */
 function ouvrirMandat(id,aid){ const m=id&&S.mands[id];
-  ed={k:'mandat',id:m?id:null,d:m?{...m}:{activite:aid||(ui.filtre&&S.acts[ui.filtre]?ui.filtre:(actsTri()[0]||{}).id||''),nom:'',client:'',etat:'cours',debut:today(),fin:'',tarif:'',nclient:''}}; vMandatEd(); focus1(m?'':'e-nom'); }
+  ed={k:'mandat',id:m?id:null,d:m?{...m}:{activite:aid||(ui.filtre&&S.acts[ui.filtre]&&!S.acts[ui.filtre].ignorer?ui.filtre:(actsTravail()[0]||{}).id||''),nom:'',client:'',etat:'cours',debut:today(),fin:'',tarif:'',nclient:''}}; vMandatEd(); focus1(m?'':'e-nom'); }
 function lireMandat(){ const d=ed.d; d.nom=val('e-nom'); d.client=val('e-client'); d.nclient=val('e-ncl'); d.debut=val('e-debut'); d.fin=val('e-fin'); d.tarif=val('e-tarif'); }
 function vMandatEd(){ const d=ed.d, a=S.acts[d.activite];
-  montrer(sh(ed.id?'Modifier':'Nouveau mandat')+`<div class="lbl">Activité</div><div class="chips">${actsTri().map(x=>`<button class="chip coul${x.id===d.activite?' on':''}" style="--c:${x.couleur}" data-act="e-act" data-id="${x.id}" aria-pressed="${x.id===d.activite}">${esc(x.emoji)} ${esc(x.nom)}</button>`).join('')}</div>
+  montrer(sh(ed.id?'Modifier':'Nouveau mandat')+`<div class="lbl">Activité</div><div class="chips">${actsTravail().concat(S.acts[d.activite]&&S.acts[d.activite].ignorer?[S.acts[d.activite]]:[]).map(x=>`<button class="chip coul${x.id===d.activite?' on':''}" style="--c:${x.couleur}" data-act="e-act" data-id="${x.id}" aria-pressed="${x.id===d.activite}">${esc(x.emoji)} ${esc(x.nom)}</button>`).join('')}</div>
 <label class="lbl" for="e-nom">Nom du mandat</label><input class="in" id="e-nom" value="${esc(d.nom)}" placeholder="Ex. Expo Morges, Anniversaire Léo, Galetas Dupont" autocomplete="off" autocapitalize="sentences">
 <label class="lbl" for="e-client">Client</label><select class="in" id="e-client" data-act-change="e-client">${optContacts(d.client)}</select>
 ${d.client==='__new'?`<input class="in" id="e-ncl" value="${esc(d.nclient)}" placeholder="Nom du nouveau client (entreprise ou personne)" autocomplete="off" style="margin-top:6px">`:''}
@@ -979,7 +982,7 @@ function sauverHeure(){ lireHeure(); const d=ed.d, min=parseDuree(d.duree);
 /* --- activités --- */
 function vActs(){ ed={k:'acts'}; const L=actsTri(true);
   montrer(sh('Activités')+`<p class="aide">Une activité = un filon de ton travail pro, avec sa couleur. Relie-la à sa catégorie Pro de la Banque pour y retrouver ses dépenses et recettes.</p>`
-  +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${a.couleur};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${a.ignorer?' · opérations pas proposées':''}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
+  +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${a.couleur};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${a.ignorer?' · aperçu seulement':''}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
   +`<button class="btn2" data-act="act-new" style="margin-top:8px">+ Nouvelle activité</button>`);
 }
 function ouvrirAct(id){ const a=id&&S.acts[id]; ed={k:'act',id:a?id:null,d:a?{...a}:{nom:'',emoji:'⛏️',couleur:MINERAIS[actsTri(true).length%MINERAIS.length][1],cat:'',tarif:'',nomDoc:'',sousTitre:'',iban:'',archive:false,ignorer:false}}; vAct(); if(!a) focus1('e-nom'); }
@@ -995,7 +998,7 @@ function vAct(){ const d=ed.d, pros=Object.values(B.cats).filter(c=>c.id==='pro'
 <label class="lbl" for="e-nomdoc">Nom</label><input class="in" id="e-nomdoc" value="${esc(d.nomDoc)}" placeholder="${esc(R().nom||'Ton nom')}" autocomplete="off">
 <label class="lbl" for="e-sous">Ligne sous le nom</label><input class="in" id="e-sous" value="${esc(d.sousTitre)}" placeholder="Ex. Cours et constructions de parkour" autocomplete="off">
 <label class="lbl" for="e-iban">IBAN</label><input class="in mono" id="e-iban" value="${esc(ibanJoli(d.iban))}" placeholder="${esc(R().iban?ibanJoli(R().iban):'CH…')}" autocomplete="off">
-<label class="sw"><input type="checkbox" id="e-ign" ${d.ignorer?'checked':''}><span><b>Ne pas proposer ses opérations à rattacher</b><small>Pour une activité suivie ailleurs (ex. GDT). Ses chiffres restent dans le Bilan.</small></span></label>
+<label class="sw"><input type="checkbox" id="e-ign" ${d.ignorer?'checked':''}><span><b>Aperçu seulement</b><small>Suivie dans une autre app (ex. GDT) : pas de mandats ni d’heures ici, ses opérations ne sont jamais proposées à rattacher ; le Bilan montre juste ses chiffres de la Banque.</small></span></label>
 <label class="sw"><input type="checkbox" id="e-arch" ${d.archive?'checked':''}><span><b>Rangée</b><small>Elle n’apparaît plus dans les mandats ni les choix.</small></span></label>
 <button class="btn" data-act="sauver-act" style="margin-top:14px">${ed.id?'Enregistrer':'Ajouter'}</button>${ed.id?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-act">${ed.conf?(mandsDe(ed.id).length?'Ses '+mandsDe(ed.id).length+' mandats deviendront « sans activité ». Toucher encore':'Toucher encore pour supprimer'):'Supprimer'}</button>`:''}`);
 }
@@ -1045,7 +1048,7 @@ function vPayer(id){ const d=S.docs[id], T=docTotal(d), pris=paiements(), m=S.ma
 function marquerPayee(d,txId,date){ d.etat='payee'; d.paye_le=date||today(); d.paiement=txId||null; if(txId&&!S.liens[txId]) S.liens[txId]={id:txId,mandat:d.mandat}; save(); }
 function vRattacher(mid){ const m=S.mands[mid], a=S.acts[m.activite]; if(!ed||ed.k!=='ratt'||ed.id!==mid) ed={k:'ratt',id:mid,tout:false,vieux:false};
   const lim=ed.vieux?'':plusJours(today(),-365);
-  let L=Object.values(B.tx).filter(t=>(!S.liens[t.id]||S.liens[t.id].mandat===mid)&&t.date>=lim);
+  let L=Object.values(B.tx).filter(t=>(!S.liens[t.id]||S.liens[t.id].mandat===mid)&&t.date>=lim&&(S.liens[t.id]||!ignoree(t)));
   if(!ed.tout&&a&&a.cat) L=L.filter(t=>S.liens[t.id]||bLignes(t).some(l=>l.cat===a.cat));
   L.sort((x,y)=>y.date.localeCompare(x.date));
   montrer(sh('Rattacher')+`<p class="aide">Les opérations Pro de la Banque${!ed.tout&&a&&a.cat?' en '+esc(catNom(a.cat)):''} qui ne sont encore rattachées à aucun mandat. Touche pour rattacher à <b>${esc(m.nom)}</b> ou détacher.</p>`
@@ -1055,7 +1058,7 @@ function vRattacher(mid){ const m=S.mands[mid], a=S.acts[m.activite]; if(!ed||ed
   $sheet.querySelectorAll('.opt-l.on .ck').forEach(c=>c.parentElement.classList.add('fait'));
 }
 function vTrier(){ if(!ed||ed.k!=='trier') ed={k:'trier',vieux:false,conf:false}; const tous=aTrier(0,ed.vieux), L=tous.slice(0,80), n=tous.length, ign=actsTri(true).filter(a=>a.ignorer);
-  montrer(sh('Trier')+`<p class="aide">Les opérations Pro de la Banque ${ed.vieux?'':'de cette année '}pas encore rattachées (${n}). Choisis le mandat, ou « Ignorer » : elle ne sera plus proposée.${ign.length?' Jamais proposées : '+ign.map(a=>esc(a.emoji+' '+a.nom)).join(', ')+' (réglage de l’activité).':''}</p><div class="row-btns"><button class="chip${ed.vieux?' on':''}" data-act="t-vieux">Aussi les années d’avant</button>${n?`<button class="btn-sup${ed.conf?' conf':''}" data-act="t-tout">${ed.conf?'Toucher encore : ignorer les '+n:'Ignorer tout le reste ('+n+')'}</button>`:''}</div>`
+  montrer(sh('Trier')+`<p class="aide">Les opérations Pro de la Banque ${ed.vieux?'':'de cette année '}pas encore rattachées (${n}). Choisis le mandat, ou « Ignorer » : elle ne sera plus proposée.${ign.length?' Jamais proposées : '+ign.map(a=>esc(a.emoji+' '+a.nom)).join(', ')+' (aperçu seulement).':''}</p><div class="row-btns"><button class="chip${ed.vieux?' on':''}" data-act="t-vieux">Aussi les années d’avant</button>${n?`<button class="btn-sup${ed.conf?' conf':''}" data-act="t-tout">${ed.conf?'Toucher encore : ignorer les '+n:'Ignorer tout le reste ('+n+')'}</button>`:''}</div>`
   +(L.length?L.map(t=>{ const a=actDeTx(t), v=proMontant(t), ms=(a?mandsDe(a.id):Object.values(S.mands)).sort(triMandat).filter(m=>m.etat!=='fini'||ecart(m.fin||derniereAct(m).slice(0,10)||today(),t.date)<60).slice(0,6);
     return `<div class="tri"><div class="l1"><b>${esc(t.tiers||t.note||'Opération')}</b><span class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</span></div><span class="meta">${fJour(t.date)} ${t.date.slice(0,4)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span><div class="chips">${ms.map(m=>`<button class="chip coul" style="--c:${act(m.activite).couleur}" data-act="t-lier" data-tx="${t.id}" data-id="${m.id}">${esc(m.nom)}</button>`).join('')}<button class="chip" data-act="t-lier" data-tx="${t.id}" data-id="">Ignorer</button></div></div>`; }).join(''):'<div class="vide"><span class="gros">Tout est rangé</span></div>')
   +(n>L.length?`<p class="aide">${n-L.length} de plus après celles-ci.</p>`:''));
