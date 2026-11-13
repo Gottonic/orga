@@ -471,7 +471,8 @@ function actDeCat(cat){ return actsTri(true).find(a=>a.cat&&a.cat===cat)||null; 
 function actDeTx(t){ for(const l of bLignes(t)) if(estPro(l.cat)){ const a=actDeCat(l.cat); if(a) return a; } return null; }
 function txDe(mid){ return Object.values(S.liens).filter(l=>l.mandat===mid&&B.tx[l.id]).map(l=>B.tx[l.id]).sort((a,b)=>b.date.localeCompare(a.date)); }
 function paiements(){ return new Set(Object.values(S.docs).map(d=>d.paiement).filter(Boolean)); }
-function aTrier(jours,tout){ const lim=tout?'':jours?plusJours(today(),-jours):today().slice(0,4)+'-01-01'; return Object.values(B.tx).filter(t=>!S.liens[t.id]&&t.date>=lim).sort((a,b)=>b.date.localeCompare(a.date)); }
+function ignoree(t){ const a=actDeTx(t); return !!(a&&a.ignorer); }
+function aTrier(jours,tout){ const lim=tout?'':jours?plusJours(today(),-jours):today().slice(0,4)+'-01-01'; return Object.values(B.tx).filter(t=>!S.liens[t.id]&&t.date>=lim&&!ignoree(t)).sort((a,b)=>b.date.localeCompare(a.date)); }
 /* un paiement reçu dans la Banque qui correspond à une facture envoyée (même montant, après la date de la facture) */
 function paiementPour(d,pris){ if(d.type!=='facture'||d.etat!=='envoyee') return null; const T=docTotal(d); if(!T) return null; pris=pris||paiements();
   const lim=plusJours(d.date||today(),-3), m=S.mands[d.mandat], lie=m?new Set(Object.values(S.liens).filter(l=>l.mandat!==m.id&&l.mandat).map(l=>l.id)):new Set();
@@ -534,6 +535,7 @@ async function pull(full){
     const avait=syncErr; syncErr='';
     if(changed){ S=fromRows(prev); render(); } else if(avait) render();
     if(booted&&!Object.keys(S.acts).length){ semer(); save(); render(); }
+    if(booted&&S.acts.gdt&&S.acts.gdt.ignorer===undefined){ S.acts.gdt.ignorer=true; save(); render(); }
     setSync(); return true;
   }catch(e){ const avait=syncErr; syncErr=(e&&e.message)||String(e); setSync(); if(!avait) render(); return false; }
 }
@@ -977,11 +979,11 @@ function sauverHeure(){ lireHeure(); const d=ed.d, min=parseDuree(d.duree);
 /* --- activités --- */
 function vActs(){ ed={k:'acts'}; const L=actsTri(true);
   montrer(sh('Activités')+`<p class="aide">Une activité = un filon de ton travail pro, avec sa couleur. Relie-la à sa catégorie Pro de la Banque pour y retrouver ses dépenses et recettes.</p>`
-  +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${a.couleur};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
+  +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${a.couleur};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${a.ignorer?' · opérations pas proposées':''}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
   +`<button class="btn2" data-act="act-new" style="margin-top:8px">+ Nouvelle activité</button>`);
 }
-function ouvrirAct(id){ const a=id&&S.acts[id]; ed={k:'act',id:a?id:null,d:a?{...a}:{nom:'',emoji:'⛏️',couleur:MINERAIS[actsTri(true).length%MINERAIS.length][1],cat:'',tarif:'',nomDoc:'',sousTitre:'',iban:'',archive:false}}; vAct(); if(!a) focus1('e-nom'); }
-function lireAct(){ const d=ed.d; d.nom=val('e-nom').trim(); d.emoji=val('e-emoji').trim()||'⛏️'; d.cat=val('e-cat'); d.tarif=val('e-tarif').trim(); d.nomDoc=val('e-nomdoc').trim(); d.sousTitre=val('e-sous').trim(); d.iban=ibanNet(val('e-iban')); d.archive=coche('e-arch'); }
+function ouvrirAct(id){ const a=id&&S.acts[id]; ed={k:'act',id:a?id:null,d:a?{...a}:{nom:'',emoji:'⛏️',couleur:MINERAIS[actsTri(true).length%MINERAIS.length][1],cat:'',tarif:'',nomDoc:'',sousTitre:'',iban:'',archive:false,ignorer:false}}; vAct(); if(!a) focus1('e-nom'); }
+function lireAct(){ const d=ed.d; d.nom=val('e-nom').trim(); d.emoji=val('e-emoji').trim()||'⛏️'; d.cat=val('e-cat'); d.tarif=val('e-tarif').trim(); d.nomDoc=val('e-nomdoc').trim(); d.sousTitre=val('e-sous').trim(); d.iban=ibanNet(val('e-iban')); d.archive=coche('e-arch'); d.ignorer=coche('e-ign'); }
 function vAct(){ const d=ed.d, pros=Object.values(B.cats).filter(c=>c.id==='pro'||c.parent==='pro').sort((a,b)=>(a.parent?1:0)-(b.parent?1:0)||(a.ordre||0)-(b.ordre||0));
   if(d.cat&&!pros.some(c=>c.id===d.cat)) pros.push({id:d.cat,nom:catNom(d.cat)});
   montrer(sh(ed.id?esc(d.emoji+' '+d.nom):'Nouvelle activité')+`<label class="lbl" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" placeholder="Ex. Parkour" autocomplete="off">
@@ -993,6 +995,7 @@ function vAct(){ const d=ed.d, pros=Object.values(B.cats).filter(c=>c.id==='pro'
 <label class="lbl" for="e-nomdoc">Nom</label><input class="in" id="e-nomdoc" value="${esc(d.nomDoc)}" placeholder="${esc(R().nom||'Ton nom')}" autocomplete="off">
 <label class="lbl" for="e-sous">Ligne sous le nom</label><input class="in" id="e-sous" value="${esc(d.sousTitre)}" placeholder="Ex. Cours et constructions de parkour" autocomplete="off">
 <label class="lbl" for="e-iban">IBAN</label><input class="in mono" id="e-iban" value="${esc(ibanJoli(d.iban))}" placeholder="${esc(R().iban?ibanJoli(R().iban):'CH…')}" autocomplete="off">
+<label class="sw"><input type="checkbox" id="e-ign" ${d.ignorer?'checked':''}><span><b>Ne pas proposer ses opérations à rattacher</b><small>Pour une activité suivie ailleurs (ex. GDT). Ses chiffres restent dans le Bilan.</small></span></label>
 <label class="sw"><input type="checkbox" id="e-arch" ${d.archive?'checked':''}><span><b>Rangée</b><small>Elle n’apparaît plus dans les mandats ni les choix.</small></span></label>
 <button class="btn" data-act="sauver-act" style="margin-top:14px">${ed.id?'Enregistrer':'Ajouter'}</button>${ed.id?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-act">${ed.conf?(mandsDe(ed.id).length?'Ses '+mandsDe(ed.id).length+' mandats deviendront « sans activité ». Toucher encore':'Toucher encore pour supprimer'):'Supprimer'}</button>`:''}`);
 }
@@ -1051,10 +1054,10 @@ function vRattacher(mid){ const m=S.mands[mid], a=S.acts[m.activite]; if(!ed||ed
   +`<button class="btn" data-act="fermer" style="margin-top:12px">Terminé</button>`);
   $sheet.querySelectorAll('.opt-l.on .ck').forEach(c=>c.parentElement.classList.add('fait'));
 }
-function vTrier(){ if(!ed||ed.k!=='trier') ed={k:'trier',vieux:false}; const L=aTrier(0,ed.vieux).slice(0,80), n=aTrier(0,ed.vieux).length;
-  montrer(sh('Trier')+`<p class="aide">Les opérations Pro de la Banque ${ed.vieux?'':'de cette année '}pas encore rattachées (${n}). Choisis le mandat, ou « Frais généraux » pour ce qui ne concerne pas un mandat (assurance, outillage…).</p><div class="chips"><button class="chip${ed.vieux?' on':''}" data-act="t-vieux">Aussi les années d’avant</button></div>`
+function vTrier(){ if(!ed||ed.k!=='trier') ed={k:'trier',vieux:false,conf:false}; const tous=aTrier(0,ed.vieux), L=tous.slice(0,80), n=tous.length, ign=actsTri(true).filter(a=>a.ignorer);
+  montrer(sh('Trier')+`<p class="aide">Les opérations Pro de la Banque ${ed.vieux?'':'de cette année '}pas encore rattachées (${n}). Choisis le mandat, ou « Ignorer » : elle ne sera plus proposée.${ign.length?' Jamais proposées : '+ign.map(a=>esc(a.emoji+' '+a.nom)).join(', ')+' (réglage de l’activité).':''}</p><div class="row-btns"><button class="chip${ed.vieux?' on':''}" data-act="t-vieux">Aussi les années d’avant</button>${n?`<button class="btn-sup${ed.conf?' conf':''}" data-act="t-tout">${ed.conf?'Toucher encore : ignorer les '+n:'Ignorer tout le reste ('+n+')'}</button>`:''}</div>`
   +(L.length?L.map(t=>{ const a=actDeTx(t), v=proMontant(t), ms=(a?mandsDe(a.id):Object.values(S.mands)).sort(triMandat).filter(m=>m.etat!=='fini'||ecart(m.fin||derniereAct(m).slice(0,10)||today(),t.date)<60).slice(0,6);
-    return `<div class="tri"><div class="l1"><b>${esc(t.tiers||t.note||'Opération')}</b><span class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</span></div><span class="meta">${fJour(t.date)} ${t.date.slice(0,4)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span><div class="chips">${ms.map(m=>`<button class="chip coul" style="--c:${act(m.activite).couleur}" data-act="t-lier" data-tx="${t.id}" data-id="${m.id}">${esc(m.nom)}</button>`).join('')}<button class="chip" data-act="t-lier" data-tx="${t.id}" data-id="">Frais généraux</button></div></div>`; }).join(''):'<div class="vide"><span class="gros">Tout est rangé</span></div>')
+    return `<div class="tri"><div class="l1"><b>${esc(t.tiers||t.note||'Opération')}</b><span class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</span></div><span class="meta">${fJour(t.date)} ${t.date.slice(0,4)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span><div class="chips">${ms.map(m=>`<button class="chip coul" style="--c:${act(m.activite).couleur}" data-act="t-lier" data-tx="${t.id}" data-id="${m.id}">${esc(m.nom)}</button>`).join('')}<button class="chip" data-act="t-lier" data-tx="${t.id}" data-id="">Ignorer</button></div></div>`; }).join(''):'<div class="vide"><span class="gros">Tout est rangé</span></div>')
   +(n>L.length?`<p class="aide">${n-L.length} de plus après celles-ci.</p>`:''));
 }
 function vActionsMandat(mid){ const m=S.mands[mid]; ed={k:'actm',id:mid};
@@ -1180,8 +1183,9 @@ document.addEventListener('click',e=>{
     case 'r-tx': { const tx=b.dataset.tx; if(S.liens[tx]&&S.liens[tx].mandat===ed.id) delete S.liens[tx]; else S.liens[tx]={id:tx,mandat:ed.id}; save(); vRattacher(ed.id); render(); break; }
     case 'delier': { const tx=b.dataset.tx, l=S.liens[tx]; if(!l) break; delete S.liens[tx]; save(); render(); toast('Opération détachée','Annuler',()=>{ S.liens[tx]=l; save(); render(); }); break; }
     case 'trier': ed=null; vTrier(); break;
-    case 't-vieux': ed.vieux=!ed.vieux; vTrier(); break;
-    case 't-lier': { const tx=b.dataset.tx; S.liens[tx]={id:tx,mandat:id||null}; save(); vTrier(); render(); break; }
+    case 't-vieux': ed.vieux=!ed.vieux; ed.conf=false; vTrier(); break;
+    case 't-lier': { const tx=b.dataset.tx; S.liens[tx]={id:tx,mandat:id||null}; ed.conf=false; save(); vTrier(); render(); break; }
+    case 't-tout': { if(!ed.conf){ ed.conf=true; vTrier(); break; } const s=snap(), L=aTrier(0,ed.vieux); L.forEach(t=>{ S.liens[t.id]={id:t.id,mandat:null}; }); ed.conf=false; save(); vTrier(); render(); toast(pl(L.length,'opération ignorée','opérations ignorées'),'Annuler',()=>{ restaurer(s); if(ed&&ed.k==='trier') vTrier(); }); break; }
     case 'sauver-regl': sauverRegl(); break;
     case 'synchro': syncErr=''; setSync(); Promise.all([pull().then(()=>push()),bPull()]).then(()=>{ if(ed&&ed.k==='regl') vReglages(); }); break;
     case 'export': exporter(); break;
@@ -1217,8 +1221,8 @@ setInterval(()=>{ if(S.chrono) document.querySelectorAll('[data-chrono]').forEac
 
 /* =============================== Démarrage =============================== */
 function semer(){ const pros=Object.values(B.cats).filter(c=>c.parent==='pro'&&!c.archive).sort((a,b)=>(a.ordre||0)-(b.ordre||0)); let i=0;
-  if(pros.length){ for(const c of pros){ const id=slug(c.nom)||c.id, d=ACTS0.find(x=>x[0]===id); S.acts[id]={id,nom:c.nom,emoji:d?d[2]:'⛏️',couleur:d?d[3]:MINERAIS[i%MINERAIS.length][1],cat:c.id,tarif:'',ordre:i}; i++; } }
-  else ACTS0.forEach(([id,nom,emoji,couleur])=>{ S.acts[id]={id,nom,emoji,couleur,cat:'pro.'+id,tarif:'',ordre:i++}; }); }
+  if(pros.length){ for(const c of pros){ const id=slug(c.nom)||c.id, d=ACTS0.find(x=>x[0]===id); S.acts[id]={id,nom:c.nom,emoji:d?d[2]:'⛏️',couleur:d?d[3]:MINERAIS[i%MINERAIS.length][1],cat:c.id,tarif:'',ordre:i,ignorer:id==='gdt'}; i++; } }
+  else ACTS0.forEach(([id,nom,emoji,couleur])=>{ S.acts[id]={id,nom,emoji,couleur,cat:'pro.'+id,tarif:'',ordre:i++,ignorer:id==='gdt'}; }); }
 function showLogin(msg){ booted=false; document.getElementById('login').hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; try{ document.getElementById('l-mail').focus(); }catch(e){} }
 async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
