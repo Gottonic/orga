@@ -750,7 +750,7 @@ function vGdt(){
   let h='<div class="sh"><h2 id="sh-titre">GDT</h2>'+okBtn('gdtok')+'</div><p class="note">'+G.M.length+' élément'+(G.M.length>1?'s':'')+' GDT te concernent depuis le '+esc(dDate(gdtCfg().depuis||'2026-01-01'))+' (tes dépenses, ce que tu encaisses, vos remboursements). Rien n’est modifié dans GDT.</p>';
   if(G.lies.length) h+='<section class="card"><h2>Déjà dans Banque ('+G.lies.length+')</h2><p class="note" style="margin-top:4px">L’opération reçoit l’objet GDT et passe en Pro › GDT.</p>'+G.lies.slice(0,ui.gLim||12).map(([m,t])=>li(m,'<span class="note">'+esc(S.comptes[t.compte]?S.comptes[t.compte].nom:'')+(t.date!==m.date?' · '+esc(dJM(t.date)):'')+'</span>')).join('')+(G.lies.length>(ui.gLim||12)?'<button class="lien" data-act="gplus">Tout afficher</button>':'')+'</section>';
   if(G.nouveaux.length) h+='<section class="card"><h2>À ajouter ('+G.nouveaux.length+')</h2><p class="note" style="margin-top:4px">En espèces, ou plus récent que tes relevés : le prochain import les retrouvera.</p>'+G.nouveaux.map(m=>li(m)).join('')+'</section>';
-  if(G.introuvables.length) h+='<section class="card rappel"><h2>Pas retrouvées dans tes relevés ('+G.introuvables.length+')</h2><p class="note" style="margin-top:4px">Aucune opération de Banque n’a ce montant à ces dates : payé en plusieurs fois, en espèces, ou montant faux dans GDT ? Si c’est une autre opération, touche-la ; sinon ajoute-la quand même, ou ignore-la.</p>'+G.introuvables.map(m=>{ const a=G.ajout.has(m.gk); return li(m)+'<div class="rapa" style="padding-left:0;margin:-2px 0 10px">'+(m.sugg||[]).map(t=>'<button class="prop doute" data-glier="'+esc(m.gk)+'" data-gtx="'+esc(t.id)+'">C’est '+esc(t.banque_nom||t.tiers||'?')+' '+fmt(t.montant,true)+' le '+esc(dJM(t.date))+' ?</button>').join('')+'<button class="pill" data-gajout="'+esc(m.gk)+'" aria-pressed="'+a+'" style="height:34px'+(a?';background:var(--possoft);border-color:var(--pos)':'')+'">'+(a?'✓ Sera ajoutée':'Ajouter quand même')+'</button><button class="pill" data-gign="'+esc(m.gk)+'" style="height:34px">Ignorer</button></div>'; }).join('')+'</section>';
+  if(G.introuvables.length) h+='<section class="card rappel"><h2>Pas retrouvées dans tes relevés ('+G.introuvables.length+')</h2><p class="note" style="margin-top:4px">Aucune opération de Banque n’a ce montant à ces dates : payé en plusieurs fois, en espèces, ou montant faux dans GDT ? Touche la bonne opération, ou cherche-la avec « Autre opération… » ; « Ajouter quand même » si elle n’est pas encore dans Banque ; « Ignorer » si elle y est déjà autrement (payée en plusieurs fois…).</p>'+G.introuvables.map(m=>{ const a=G.ajout.has(m.gk); return li(m)+'<div class="rapa" style="padding-left:0;margin:-2px 0 10px">'+(m.sugg||[]).map(t=>'<button class="prop doute" data-glier="'+esc(m.gk)+'" data-gtx="'+esc(t.id)+'">C’est '+esc(t.banque_nom||t.tiers||'?')+' '+fmt(t.montant,true)+' le '+esc(dJM(t.date))+' ?</button>').join('')+'<button class="pill" data-gchoix="'+esc(m.gk)+'" style="height:34px">Autre opération…</button><button class="pill" data-gajout="'+esc(m.gk)+'" aria-pressed="'+a+'" style="height:34px'+(a?';background:var(--possoft);border-color:var(--pos)':'')+'">'+(a?'✓ Sera ajoutée'+(m.compte==='especes'?' (espèces)':''):'Ajouter quand même')+'</button><button class="pill" data-gign="'+esc(m.gk)+'" style="height:34px">Ignorer</button></div>'; }).join('')+'</section>';
   if(G.changes.length) h+='<section class="card"><h2>Modifiées dans GDT ('+G.changes.length+')</h2>'+G.changes.map(([m])=>li(m)).join('')+'</section>';
   if(G.ecarts.length) h+='<section class="card rappel"><h2>Montant différent du relevé ('+G.ecarts.length+')</h2><p class="note" style="margin-top:4px">Le relevé fait foi : corrige GDT si c’est une faute.</p>'+G.ecarts.map(([m,t])=>li(m,'<span class="note">relevé '+fmt(t.montant,true)+'</span>')).join('')+'</section>';
   if(G.supprimes.length) h+='<section class="card"><h2>Supprimées dans GDT ('+G.supprimes.length+')</h2><p class="note" style="margin-top:4px">Les saisies venues de GDT disparaissent ; une ligne de relevé reste, simplement déliée.</p>'+G.supprimes.map(t=>li({texte:t.tiers||t.note||'?',date:t.date,type:'dep',montant:t.montant})).join('')+'</section>';
@@ -763,6 +763,19 @@ function vGdt(){
       +(G.twAttente.length?'<p class="note" style="margin-top:6px">En attente du prochain relevé BAS : '+G.twAttente.length+' jour'+(G.twAttente.length>1?'s':'')+' de ventes ('+fmt(r2(G.twAttente.reduce((a,x)=>a+x.gdt,0)))+').</p>':'')+'</section>'; }
   if(!G.M.length) h+='<p class="empty">Rien dans GDT à ton nom depuis cette date.</p>';
   h+='<button class="btn" data-act="gdtok">'+svg(P.check,20)+'Relier</button>';
+  ouvrir(h); }
+function gdtListe(m){ const q=slug(ui.gQ||'');
+  const L=Object.values(S.tx).filter(t=>!t.gdt&&!estVir(t)&&t.source!=='miroir'&&Math.sign(t.montant)===Math.sign(m.montant)&&Math.abs(jours(t.date,m.date))<=60)
+    .filter(t=>!q||slug([t.banque_nom,t.tiers,t.note,catNom(t.cat),fmt(t.montant),String(Math.abs(t.montant))].join(' ')).includes(q))
+    .sort((a,b)=>Math.abs(jours(a.date,m.date))-Math.abs(jours(b.date,m.date))||Math.abs(a.montant-m.montant)-Math.abs(b.montant-m.montant)).slice(0,40);
+  return L.length?'<ul class="ops">'+L.map(t=>'<li><button class="op" data-glier="'+esc(m.gk)+'" data-gtx="'+esc(t.id)+'"><span class="ic" style="background:'+(t.cat?couleur(t.cat):'#A8A59A')+'">'+svg(t.cat?icCat(t.cat):P.card,22,'#fff')+'</span><span class="mid"><span class="ti"><span class="tt">'+esc(t.banque_nom||t.tiers||catNom(t.cat))+'</span></span><span class="sub">'+esc(dCourte(t.date))+' · '+esc(S.comptes[t.compte]?S.comptes[t.compte].nom:'')+(t.cat?' · '+esc(catNom(t.cat)):'')+'</span></span><span class="end"><span class="mt '+(t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span></span></button></li>').join('')+'</ul>':'<p class="empty">Aucune opération à ± 60 jours'+(q?' pour « '+esc(ui.gQ)+' »':'')+'.</p>'; }
+function vGdtChoix(){
+  const m=gdtP&&gdtP.introuvables.find(x=>x.gk===ui.gChoix); if(!m){ vGdt(); return; }
+  let h='<div class="sh"><button class="rond" data-act="gretour" aria-label="Retour">'+svg(P.chevL,20)+'</button><h2 id="sh-titre">Quelle opération ?</h2><span style="width:44px"></span></div>';
+  h+='<div class="card" style="margin-top:8px"><b>'+esc(m.texte)+'</b> · <b class="num">'+fmt(m.montant,true)+'</b><p class="note">Dans GDT le '+esc(dCourte(m.date))+'. Choisis l’opération de Banque qui la paie : elle passe en Pro › GDT et garde son montant (le relevé fait foi).</p></div>';
+  h+='<input class="input" id="g-q" type="search" placeholder="Chercher : commerçant, montant…" value="'+esc(ui.gQ||'')+'" style="margin:12px 0 4px">';
+  h+='<div id="g-liste">'+gdtListe(m)+'</div>';
+  h+='<div class="pills" style="margin-top:12px"><button class="btn ghost sm" data-gesp="'+esc(m.gk)+'" style="width:auto">Payé en espèces, pas dans Banque : l’ajouter sur Espèces</button></div>';
   ouvrir(h); }
 function carteGdt(){
   const g=gdtCfg();
@@ -1965,7 +1978,9 @@ document.addEventListener('click',e=>{
   if(b.dataset.orphok){ const t=S.tx[b.dataset.orphok]; if(t){ t.sans_banque=true; save(); render(); } return; }
   if(b.dataset.scope){ ui.scope=b.dataset.scope; render(); return; }
   if(b.dataset.compte){ ui.tab='compte'; ui.cpt=b.dataset.compte; ui.cLim=100; window.scrollTo(0,0); render(); return; }
-  if(b.dataset.glier&&gdtP){ const m=gdtP.introuvables.find(x=>x.gk===b.dataset.glier), t=S.tx[b.dataset.gtx]; if(m&&t&&!t.gdt){ t.gdt=m.gk; t.gdt_m=m.montant; if(!estVir(t)) t.cat=GDT_CAT; t.note=t.note?(t.note.includes(m.texte)?t.note:m.texte+' · '+t.note):m.texte; gdtP.introuvables=gdtP.introuvables.filter(x=>x!==m); gdtP.introuvables.forEach(x=>{ if(x.sugg) x.sugg=x.sugg.filter(y=>y!==t); }); save(); vGdt(); } return; }
+  if(b.dataset.glier&&gdtP){ const m=gdtP.introuvables.find(x=>x.gk===b.dataset.glier), t=S.tx[b.dataset.gtx]; if(m&&t&&!t.gdt){ t.gdt=m.gk; t.gdt_m=m.montant; if(!estVir(t)) t.cat=GDT_CAT; t.note=t.note?(t.note.includes(m.texte)?t.note:m.texte+' · '+t.note):m.texte; gdtP.introuvables=gdtP.introuvables.filter(x=>x!==m); gdtP.introuvables.forEach(x=>{ if(x.sugg) x.sugg=x.sugg.filter(y=>y!==t); }); ui.gChoix=null; save(); vGdt(); } return; }
+  if(b.dataset.gchoix&&gdtP){ ui.gChoix=b.dataset.gchoix; ui.gQ=''; vGdtChoix(); return; }
+  if(b.dataset.gesp&&gdtP){ const m=gdtP.introuvables.find(x=>x.gk===b.dataset.gesp); if(m){ m.compte='especes'; gdtP.ajout.add(m.gk); } ui.gChoix=null; vGdt(); return; }
   if(b.dataset.gajout&&gdtP){ const k=b.dataset.gajout; if(gdtP.ajout.has(k)) gdtP.ajout.delete(k); else gdtP.ajout.add(k); vGdt(); return; }
   if(b.dataset.gign&&gdtP){ const g=S.regl.gdt=Object.assign({},gdtCfg()); g.ignore=Object.assign({},g.ignore||{},{[b.dataset.gign]:true}); gdtP.introuvables=gdtP.introuvables.filter(m=>m.gk!==b.dataset.gign); save(); vGdt(); return; }
   if(b.dataset.cper){ ui.cPer=b.dataset.cper; render(); return; }
@@ -2055,6 +2070,7 @@ document.addEventListener('click',e=>{
   else if(a==='gdtsync') syncGdt(true);
   else if(a==='gdtdeco'){ if(!confirm('Délier GDT ? Les opérations déjà reliées restent comme elles sont.')) return; const c=gdtClient(); if(c) c.auth.signOut(); S.regl.gdt={ignore:gdtCfg().ignore||{},depuis:gdtCfg().depuis}; gdtMsg=''; save(); render(); }
   else if(a==='gdtok'){ if(!gdtP) return; const n=appliquerGdt(gdtP,gdtP.ajout); gdtP=null; fermer(); render(); setTimeout(()=>alert('GDT : '+n+' changement'+(n>1?'s':'')+' dans Banque.'),50); }
+  else if(a==='gretour'){ ui.gChoix=null; vGdt(); }
   else if(a==='gplus'){ ui.gLim=9999; vGdt(); }
   else if(a==='pointok'){ S.regl.point=lundiDe(today()); save(); render(); }
   else if(a==='reglages'){ ui.tab='reglages'; render(); }
@@ -2085,6 +2101,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='s-montant'&&draft){ const v=e.target.value.replace(/[^0-9.,]/g,''); if(v!==e.target.value) e.target.value=v; draft.montant=v; const c=!num(v)?'var(--muted)':draft.type==='depense'?'var(--neg)':draft.type==='revenu'?'var(--pos)':'var(--text)'; e.target.style.color=c; const sg=document.getElementById('s-sg'); if(sg) sg.style.color=c; return; }
+  if(e.target.id==='g-q'){ ui.gQ=e.target.value; const m=gdtP&&gdtP.introuvables.find(x=>x.gk===ui.gChoix), L=document.getElementById('g-liste'); if(m&&L) L.innerHTML=gdtListe(m); return; }
   if(e.target.id==='f-q'){ ui.q=e.target.value; const pos=e.target.selectionStart; render(); const i=document.getElementById('f-q'); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(x){} } } });
 document.addEventListener('keydown',e=>{
   if($scrim.hidden) return;
