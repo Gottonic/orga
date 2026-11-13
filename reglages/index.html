@@ -70,8 +70,8 @@ p{margin:0}
 'use strict';
 const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC';
 const MO=1024*1024, LIM_BASE=500*MO, LIM_FICHIERS=1024*MO, CACHE='orga-espace';
-const TABLES={rows:'📐 Établi',cash_rows:'🏦 Banque',carnet:'🔥 Forge',marche_rows:'🧺 Marché',idees:'💡 Ampoule'};
-const DOSSIERS={'cash-documents':'🏦 Banque : documents','carnet':'🔥 Forge : images','idees':'💡 Ampoule : captures'};
+const TABLES={rows:'📐 L’Établi',cash_rows:'🏦 La Banque',carnet:'🔥 La Forge',marche_rows:'🧺 Le Marché',mine_rows:'⛏️ La Mine',idees:'💡 Ampoule'};
+const DOSSIERS={'cash-documents':'🏦 La Banque : documents','carnet':'🔥 La Forge : images','idees':'💡 Ampoule : captures'};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=(v,d)=>new Intl.NumberFormat('fr-CH',{maximumFractionDigits:d,minimumFractionDigits:0}).format(v);
@@ -107,7 +107,7 @@ async function charger(){
   $('actualiser').disabled=true;
   try{
     const {data:{session}}=await sb.auth.getSession();
-    if(!session){ $('place').innerHTML='<p class="note">Pas connecté : ouvre une app (Établi, Banque…) pour te connecter, puis reviens ici.</p>'; return; }
+    if(!session){ $('place').innerHTML='<p class="note">Pas connecté : ouvre une app (l’Établi, la Banque…) pour te connecter, puis reviens ici.</p>'; return; }
     const {data,error}=await sb.rpc('orga_espace');
     if(error) throw error;
     try{ localStorage.setItem(CACHE,JSON.stringify(data)); }catch(e){}

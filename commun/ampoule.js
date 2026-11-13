@@ -2,7 +2,7 @@
 
    Dans une page :
      <script src="../commun/ampoule.js" data-app="forge" data-avant="#gear" data-classe="gear"></script>
-   - data-app     : orga | etabli | banque | forge | marche (à quelle app appartiennent les idées notées ici)
+   - data-app     : orga | etabli | banque | forge | marche | mine (à quelle app appartiennent les idées notées ici)
    - data-avant / data-apres : à côté de quel élément placer le bouton 💡 (sélecteur CSS),
      ou bien un élément [data-ampoule] déjà présent dans la page
    - data-classe  : classe(s) du bouton, pour qu'il prenne le style de l'app ; data-taille : taille de l'émoji
@@ -20,7 +20,7 @@
   const APP = D.app || 'orga';
   const SB_URL = 'https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY = 'sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC';
   const TABLE = 'idees', LS = 'orga-idees';
-  const APPS = { orga: 'ORGA', etabli: 'Établi', banque: 'Banque', forge: 'Forge', marche: 'Marché' };
+  const APPS = { orga: 'ORGA', etabli: 'L’Établi', banque: 'La Banque', forge: 'La Forge', marche: 'Le Marché', mine: 'La Mine' };
   const TYPES = [['bug', '🐞', 'Bug'], ['idee', '💡', 'Idée']];
   const ATK = '"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif';
   const PAPIER = { f: '#F3F1E7', c: '#FFFFFF', i: '#1E1E1E', m: '#6B6A62', l: '#CFCCBF', a: '#3C3C3C', ai: '#FFFFFF', s: '#FFECB0', r: '0px', p: '0px', font: ATK, titre: ATK };
@@ -29,6 +29,7 @@
     etabli: PAPIER,
     banque: { f: '#F4F5F7', c: '#FFFFFF', i: '#17181B', m: '#5C6270', l: '#E2E5EA', a: '#F0B54A', ai: '#1A1406', s: '#FBEFD6', r: '20px', p: '99px', font: ATK, titre: '"Bricolage Grotesque",' + ATK },
     marche: { f: '#F5EEDF', c: '#FFFCF5', i: '#24211B', m: '#6F6656', l: '#E6DBC6', a: '#2E6B4E', ai: '#FFFFFF', s: '#E2EEE4', r: '14px', p: '99px', font: ATK, titre: ATK },
+    mine: { f: '#ECE7DF', c: '#FFFFFF', i: '#2B2420', m: '#6E655C', l: '#D8D0C4', a: '#2B2420', ai: '#FFFFFF', s: '#F6E7CC', r: '0px', p: '0px', font: ATK, titre: '"Big Shoulders Stencil Display",' + ATK },
     forge: { f: '#F6F7F4', c: '#FFFFFF', i: '#1B1E24', m: '#6B717C', l: '#E1E4DE', a: '#D6E0FF', ai: '#1D2B6B', s: '#EEF2FF', r: '16px', p: '99px', font: 'Figtree,system-ui,sans-serif', titre: '"Bricolage Grotesque",Figtree,sans-serif' }
   };
   const T = THEMES[APP] || PAPIER;
@@ -235,7 +236,7 @@ details[open] summary{margin-bottom:6px}
     const l = liste(tout ? null : APP), ouv = l.filter((x) => !x.fait), faites = l.filter((x) => x.fait);
     let corps;
     if (tout) {
-      const ordre = ['orga', 'etabli', 'banque', 'forge', 'marche'].concat([...new Set(ouv.map((x) => x.app))].filter((a) => !APPS[a]));
+      const ordre = ['orga', 'etabli', 'banque', 'forge', 'marche', 'mine'].concat([...new Set(ouv.map((x) => x.app))].filter((a) => !APPS[a]));
       const groupes = ordre.map((a) => [a, ouv.filter((x) => x.app === a)]).filter(([, g]) => g.length);
       corps = groupes.length ? groupes.map(([a, g]) => `<p class="app">${esc(APPS[a] || a)} · ${g.length}</p><div class="liste">${g.map(ligne).join('')}</div>`).join('') : '<p class="vide">Rien en attente, dans aucune app. 🌿</p>';
     } else corps = ouv.length ? `<div class="liste">${ouv.map(ligne).join('')}</div>` : '<p class="vide">Rien en attente. 🌿</p>';

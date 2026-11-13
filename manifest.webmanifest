@@ -1,7 +1,7 @@
 {
   "name": "ORGA",
   "short_name": "ORGA",
-  "description": "Mes apps : Établi, Banque, Forge, Marché.",
+  "description": "Mes apps : l’Établi, la Banque, la Forge, le Marché, la Mine.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
@@ -29,7 +29,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Établi",
+      "name": "L’Établi",
       "url": "etabli/",
       "icons": [
         {
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "name": "Banque",
+      "name": "La Banque",
       "url": "banque/",
       "icons": [
         {
@@ -51,7 +51,7 @@
       ]
     },
     {
-      "name": "Forge",
+      "name": "La Forge",
       "url": "forge/",
       "icons": [
         {
@@ -62,11 +62,22 @@
       ]
     },
     {
-      "name": "Marché",
+      "name": "Le Marché",
       "url": "marche/",
       "icons": [
         {
           "src": "marche/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "La Mine",
+      "url": "mine/",
+      "icons": [
+        {
+          "src": "mine/icons/icon-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }

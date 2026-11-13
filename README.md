@@ -3,10 +3,11 @@
 Mes apps perso, réunies derrière un menu à tuiles. Une seule app à installer.
 
 - Accueil : https://gottonic.github.io/orga/
-- **Établi** — mes projets, semaine par semaine : https://gottonic.github.io/orga/etabli/
-- **Banque** — mes comptes et mes dépenses (ex-« Cash ») : https://gottonic.github.io/orga/banque/
-- **Forge** — mon entraînement parkour (ex-« Carnet ») : https://gottonic.github.io/orga/forge/
-- **Marché** — ma liste de courses, rangée par magasin : https://gottonic.github.io/orga/marche/
+- **L’Établi** — mes projets, semaine par semaine : https://gottonic.github.io/orga/etabli/
+- **La Banque** — mes comptes et mes dépenses (ex-« Cash ») : https://gottonic.github.io/orga/banque/
+- **La Forge** — mon entraînement parkour (ex-« Carnet ») : https://gottonic.github.io/orga/forge/
+- **Le Marché** — ma liste de courses, rangée par magasin : https://gottonic.github.io/orga/marche/
+- **La Mine** — mon travail pro : mandats, clients, heures, devis, factures avec QR-facture : https://gottonic.github.io/orga/mine/
 
 Toutes les apps partagent la même base Supabase et la même connexion : on se connecte une fois.
 Chaque app garde son propre style : chacune est un lieu à part.
@@ -21,8 +22,9 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `banque/` | l'app Banque (`cash/` redirige vers elle) |
 | `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |
 | `marche/` | l'app Marché (liste de courses), avec sa police (Caveat) et ses icônes |
+| `mine/` | l'app Mine (travail pro), avec sa police (Big Shoulders Stencil), ses icônes et `lib/qrcode.js` (générateur de codes QR, licence MIT) |
 | `commun/` | ce que les apps partagent : `supabase.js`, `ampoule.js` (bugs et idées), polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`) |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`), `mine.sql` (Mine : table `mine_rows`) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
@@ -34,6 +36,7 @@ Supabase → ton projet → **SQL Editor** → **New query** → coller `supabas
 (déjà fait pour Établi). Puis une nouvelle requête avec `supabase/cash.sql` → **Run** : le résultat doit être « cash_rows prête ».
 Puis `supabase/orga.sql` → **Run** : le résultat doit être « ORGA prêt » (table des idées, dossier des captures, mesure de la place). On peut le relancer sans risque.
 Puis `supabase/marche.sql` → **Run** : le résultat doit être « marche_rows prête ».
+Puis `supabase/mine.sql` → **Run** : le résultat doit être « mine_rows prête ».
 
 ### 2. Ton compte
 Supabase → **Authentication** → **Users** → **Add user** → **Create new user** :
@@ -108,3 +111,22 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 - **Magasins** : un magasin a un ou plusieurs types (Supermarché, Brico, Jardin…) ; la couleur du type donne celle de l'auvent.
 - Données : table `marche_rows` (une ligne par magasin `m:`, type `y:`, article `a:`). Réglages ⚙ → Exporter.
 
+## Bon à savoir (Mine)
+
+- **Mandats** : le travail pro rangé par activité (les « filons » : GDT, Isolation, Fertik, Parkour, Petits travaux,
+  comme les sous-catégories Pro de la Banque). Un mandat = un chantier, un cours, une commande : son client, son état
+  (Prospection, En cours, Terminé), ses tâches, ses heures, ses opérations de la Banque, ses devis et factures.
+  En haut, « À faire » : paiements reçus à confirmer, factures en retard, heures pas encore facturées.
+- **Heures** : chronomètre (▶ sur un mandat, ■ pour noter) ou saisie après coup (« 2:30 », « 2,5 », « 45 min ») ; vue par semaine.
+- **Factures** et **Devis** : numéros `F-2026-001` et `D-2026-001`. « Facturer » reprend les heures pas encore facturées ;
+  « + Matériel de la Banque » reprend les dépenses rattachées au mandat. Un devis accepté devient une facture en un geste.
+  « Aperçu et PDF » → Imprimer → « Enregistrer en PDF » (A4, sans marges).
+- **QR-facture** : bulletin suisse en bas de chaque facture (normes SIX, version 2.3, adresses structurées).
+  Il faut ton nom, ton NPA et lieu, et ton IBAN (⚙ Réglages). Référence `RF…` tirée du numéro de facture
+  (référence `QRR` si c'est une QR-IBAN). Une activité peut facturer sous un autre nom ou sur un autre IBAN.
+- **Banque** : la Mine lit les opérations Pro de la Banque (table `cash_rows`) sans jamais les modifier.
+  Rattacher une opération à un mandat compte ses dépenses dans le mandat ; un paiement reçu du même montant qu'une
+  facture envoyée est proposé pour la marquer payée. « Bilan » → « Trier les opérations » range celles de l'année.
+- **Contacts** : clients et fournisseurs ; leur adresse va sur les documents et dans la QR-facture.
+- Données : table `mine_rows` (une ligne par activité `a:`, mandat `m:`, contact `c:`, heure `h:`, document `d:`,
+  lien vers la Banque `l:`, réglages `s:reglages`, chrono en cours `s:chrono`). ⚙ Réglages → Exporter.
