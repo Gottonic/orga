@@ -48,6 +48,11 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .rel .nm small{display:block;font-weight:400;color:var(--gris);font-size:.8rem}
 .rel select{max-width:100%;height:40px;border:1.5px solid var(--trait2);background:var(--carte);padding:0 6px}
 .projet-l{font-size:.85rem;color:var(--gris)}
+.tache-sec{font-weight:800;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;padding:12px 0 4px;border-bottom:2px solid currentColor}
+.relier-pro{border:2px solid var(--c,currentColor);padding:10px 12px;margin:10px 0;display:flex;flex-direction:column;gap:8px}
+.relier-pro .rel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.relier-pro .rel .nm{flex:1 1 160px;font-weight:700}
+.relier-pro select{padding:6px 8px}
 .alerte{background:var(--rougepale);color:#6E1A25;border:1.5px solid var(--rouge);padding:12px 14px;font-size:.92rem}
 .alerte b{display:block}
 .info{background:var(--orpale);border:1.5px solid var(--or);padding:10px 12px;font-size:.92rem}
@@ -508,19 +513,28 @@ function chiffres(m){
 }
 
 /* =============================== Projets de l'Établi (fiche projet commune) =============================== */
-/* Un mandat est un projet de l'Établi (champ m.projet), une activité un projet pro ∞ (champ a.projet).
+/* Un mandat est un projet pro de l'Établi (champ m.projet). Depuis l'étape 1b, une activité est « qui paie » :
+   elle n'est plus un projet, mais peut avoir un domaine de l'Établi par défaut (a.domaine) où ranger ses nouveaux mandats.
+   (Avant : a.projet = projet pro ∞ qui contenait les mandats ; repris tout seul.)
    Le projet garde le nom, l'état et les tâches ; la Mine garde le client, les heures, les documents et l'argent. */
 const proj=id=>PB&&id?PB.get(id):null;
 const projDe=m=>m&&m.projet?proj(m.projet):null;
 const relie=()=>!!S.regl.projets;
+const dom=id=>PB&&id?(id===Projets.AUTRES?Projets.autres():PB.domaine(id)):null;
+const domsListe=()=>PB?PB.domaines().filter(d=>!d.closed&&!d.auto).sort((a,b)=>a.name.localeCompare(b.name,'fr')):[];
+const horsMine=()=>new Set((S.regl.horsMine||[]));
+/* projets pro de l'Établi qui ne sont le mandat de personne (et pas mis de côté) */
+function proSansMandat(){ if(!PB||!relie()) return []; const lies=new Set(Object.values(S.mands).map(m=>m.projet).filter(Boolean)), hm=horsMine();
+  const apercu=new Set(Object.values(S.acts).filter(a=>a.ignorer).map(a=>a.domaine||a.projet).filter(Boolean)); /* GDT : aperçu seulement */
+  return PB.liste().filter(p=>!p.closed&&!p.later&&p.size!=='mini'&&p.nature==='pro'&&!lies.has(p.id)&&!hm.has(p.id)&&!apercu.has(p.parent)&&!Projets.enfants(p.id,PB.liste()).length); }
 function etatDeProjet(p){ if(p.closed) return 'fini'; if(p.later) return 'piste'; return 'cours'; }
 function ecrireProjet(p){ p.touche=today(); PB.ecrire(p); }
 function etatVersProjet(p,e){ if(!p) return;
   if(e==='fini'){ if(!p.closed){ p.closed=today(); p.fin=p.fin||{type:'termine'}; delete p.prevu; } }
   else { delete p.closed; delete p.fin; if(e==='piste') p.later=true; else delete p.later; } }
-function tachesDe(m){ const p=projDe(m); return p?(p.tasks||[]).map((x,i)=>({id:'i'+i,t:x.t,fait:!!x.d})):(m.taches||[]); }
+function tachesDe(m){ const p=projDe(m); return p?(p.tasks||[]).map((x,i)=>({id:'i'+i,t:x.t,fait:!!x.d&&!x.s,sec:!!x.s})):(m.taches||[]); }
 function majTaches(m,f){ const p=projDe(m);
-  if(p){ p.tasks=p.tasks||[]; f(p.tasks,true); const o=p.tasks.filter(x=>!x.d), d=p.tasks.filter(x=>x.d); p.tasks=o.concat(d); ecrireProjet(p); }
+  if(p){ p.tasks=p.tasks||[]; f(p.tasks,true); p.tasks=Projets.trierTaches(p.tasks); ecrireProjet(p); }
   else { m.taches=m.taches||[]; f(m.taches,false); save(); } }
 function toucherProjet(mid){ const p=projDe(S.mands[mid]); if(p&&p.touche!==today()) ecrireProjet(p); }
 /* ce que l'Établi a changé (nom, état) et les projets pro rangés sous une activité, qui deviennent des mandats */
@@ -528,6 +542,17 @@ function relierDepuisProjets(){ if(!PB||!relie()) return false; let n=0; const L
   for(const m of Object.values(S.mands)){ const p=m.projet&&get(m.projet); if(!p) continue;
     if(p.name&&m.nom!==p.name){ m.nom=p.name; n++; }
     const e=etatDeProjet(p); if(m.etat!==e){ m.etat=e; if(e==='fini'&&!m.fin) m.fin=p.closed||today(); n++; } }
+  /* étape 1b : une activité reliée à un projet devenu domaine garde ce domaine comme rangement par défaut ;
+     reliée à un projet qui reste un projet (Petits travaux ∞), ce projet devient un mandat de l'activité */
+  for(const a of Object.values(S.acts)){ if(!a.projet) continue;
+    if(dom(a.projet)){ a.domaine=a.projet; delete a.projet; n++; continue; }
+    const p=get(a.projet); if(p&&!Projets.enfants(p.id,L).length&&!Object.values(S.mands).some(m=>m.projet===p.id)){
+      const id=uid(); S.mands[id]={id,activite:a.id,nom:p.name,client:'',etat:etatDeProjet(p),debut:today(),fin:'',tarif:'',note:'',taches:[],cree:nowIso(),projet:p.id};
+      if(p.parent&&dom(p.parent)) a.domaine=p.parent; delete a.projet; n++; } }
+  const parDom={}; Object.values(S.acts).forEach(a=>{ if(a.domaine&&!a.archive&&!a.ignorer) (parDom[a.domaine]=parDom[a.domaine]||[]).push(a); });
+  { const lies2=new Set(Object.values(S.mands).map(m=>m.projet).filter(Boolean)), hm=horsMine();
+    for(const p of L){ if(lies2.has(p.id)||hm.has(p.id)||p.closed||p.later||p.nature!=='pro'||!p.parent) continue; const A=parDom[p.parent]; if(!A||A.length!==1) continue;
+      const id=uid(); S.mands[id]={id,activite:A[0].id,nom:p.name,client:'',etat:etatDeProjet(p),debut:today(),fin:'',tarif:'',note:'',taches:[],cree:nowIso(),projet:p.id}; lies2.add(p.id); n++; } }
   const actDe={}; Object.values(S.acts).forEach(a=>{ if(a.projet&&!a.archive) actDe[a.projet]=a; });
   const lies=new Set(Object.values(S.mands).map(m=>m.projet).filter(Boolean));
   for(const p of L){ if(lies.has(p.id)||p.closed||!p.parent||!actDe[p.parent]||actDe[p.id]) continue; const a=actDe[p.parent]; if(a.ignorer) continue;
@@ -538,7 +563,8 @@ function relierDepuisProjets(){ if(!PB||!relie()) return false; let n=0; const L
 const MOTS_VIDES=new Set(['pour','avec','dans','chez','des','les','une','sur','projet','mandat']);
 const mots=s=>norm(s).split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!MOTS_VIDES.has(w));
 function liensInit(){ const L=PB?PB.liste():[], tops=L.filter(p=>!p.parent&&!p.closed&&p.size!=='mini'), R={acts:{},mands:{}}, pris=new Set();
-  for(const a of actsTri(true)){ const same=tops.find(p=>norm(p.name)===norm(a.nom)&&Projets.nature(p,proj)==='pro'); R.acts[a.id]=a.projet&&proj(a.projet)?a.projet:a.archive?'':same?same.id:'new'; if(R.acts[a.id]&&R.acts[a.id]!=='new') pris.add(R.acts[a.id]); }
+  const DS=PB?PB.domaines():[];
+  for(const a of actsTri(true)){ const same=DS.find(d=>!d.closed&&norm(d.name)===norm(a.nom)); R.acts[a.id]=a.domaine&&dom(a.domaine)?a.domaine:a.projet&&dom(a.projet)?a.projet:same?same.id:''; }
   for(const m of Object.values(S.mands).sort(triMandat)){ if(m.projet&&proj(m.projet)){ R.mands[m.id]=m.projet; pris.add(m.projet); continue; }
     const same=L.find(p=>!pris.has(p.id)&&norm(p.name)===norm(m.nom)); if(same){ R.mands[m.id]=same.id; pris.add(same.id); continue; }
     const w=new Set([...mots(m.nom),...mots(act(m.activite).nom)]); let best=null, sc=0;
@@ -549,21 +575,20 @@ function optsProjets(cur,L,nouveau){ const o=L.slice().sort((a,b)=>(!!a.closed-!
   return `<option value="new"${cur==='new'?' selected':''}>${nouveau}</option><option value=""${!cur?' selected':''}>ne pas relier</option>${o.map(p=>`<option value="${p.id}"${cur===p.id?' selected':''}>${esc((p.emoji?p.emoji+' ':'')+p.name)}${p.size==='perm'?' (∞)':''}${p.closed?' (archivé)':''}</option>`).join('')}`; }
 function vLiens(){ if(!ed||ed.k!=='liens') ed={k:'liens',R:liensInit()}; const R=ed.R, L=PB?PB.liste():[];
   const tops=L.filter(p=>!p.parent&&p.size!=='mini'), autres=L.filter(p=>p.size!=='perm');
-  const aRows=actsTri(true).map(a=>`<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(a.emoji)} ${esc(a.nom)}<small>activité${a.ignorer?' · aperçu seulement':''}${a.archive?' · rangée':''}</small></span><select data-lien-a="${a.id}" aria-label="Projet de l'activité ${esc(a.nom)}">${optsProjets(R.acts[a.id],tops,'créer le projet ∞ « '+esc(a.nom)+' »')}</select></div>`).join('');
+  const DL=domsListe(), optsD=cur=>`<option value=""${!cur?' selected':''}>📦 Autres projets</option>${DL.map(d=>`<option value="${d.id}"${cur===d.id?' selected':''}>${esc((d.emoji?d.emoji+' ':'')+d.name)}</option>`).join('')}`;
+  const aRows=actsTri(true).map(a=>`<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(a.emoji)} ${esc(a.nom)}<small>activité${a.ignorer?' · aperçu seulement':''}${a.archive?' · rangée':''} · ses nouveaux mandats vont dans</small></span><select data-lien-a="${a.id}" aria-label="Domaine des mandats de ${esc(a.nom)}">${optsD(R.acts[a.id])}</select></div>`).join('');
   const mRows=Object.values(S.mands).sort(triMandat).map(m=>{ const a=act(m.activite); return `<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(m.nom)}<small>${esc(a.emoji)} ${esc(a.nom)} · ${ETATS[m.etat]}</small></span><select data-lien-m="${m.id}" aria-label="Projet du mandat ${esc(m.nom)}">${optsProjets(R.mands[m.id],autres,'créer le projet « '+esc(m.nom)+' »')}</select></div>`; }).join('');
-  montrer(sh('Relier aux projets')+`<p class="aide">Chaque activité devient un projet pro ∞ de l'Établi, et chaque mandat un projet rangé sous lui. Le projet garde le nom, l'état et les tâches ; la Mine garde le client, les heures, les devis, les factures et l'argent. Si les noms diffèrent, c'est celui du projet de l'Établi qui est gardé (tu peux le changer ensuite, dans l'une ou l'autre app). Vérifie ma proposition : rien ne change avant d'enregistrer, et une sauvegarde de la Mine est téléchargée juste avant.</p>
+  montrer(sh('Relier aux projets')+`<p class="aide">Une activité, c'est <b>qui paie</b>. Ses nouveaux mandats sont rangés dans le domaine choisi de l'Établi (un domaine peut mélanger perso et pro). Chaque mandat est un projet pro de l'Établi. Le projet garde le nom, l'état et les tâches ; la Mine garde le client, les heures, les devis, les factures et l'argent. Si les noms diffèrent, c'est celui du projet de l'Établi qui est gardé (tu peux le changer ensuite, dans l'une ou l'autre app). Vérifie ma proposition : rien ne change avant d'enregistrer, et une sauvegarde de la Mine est téléchargée juste avant.</p>
   <div class="lbl">Activités</div>${aRows||'<p class="aide">Aucune activité.</p>'}
   <div class="lbl">Mandats</div>${mRows||'<p class="aide">Aucun mandat.</p>'}
   <button class="btn" data-act="liens-ok" style="margin-top:12px">Enregistrer les liens</button>`,true); }
 function sauverLiens(){ if(!ed||ed.k!=='liens'||!PB) return; const R=ed.R; exporter(); const all=()=>PB.liste(), get=id=>all().find(x=>x.id===id);
-  for(const a of actsTri(true)){ const v=R.acts[a.id]; if(v==='new'){ const dbl=all().some(x=>!x.parent&&norm(x.name)===norm(a.nom)); const p=Projets.nouveau({emoji:a.emoji,color:a.couleur,name:a.nom+(dbl?' (pro)':''),size:'perm',dur:null,nature:'pro'}); PB.ecrire(p); a.projet=p.id; }
-    else if(v){ a.projet=v; const p=get(v); if(p&&Projets.nature(p,get)!=='pro'){ p.nature='pro'; PB.ecrire(p); } } else delete a.projet; }
-  for(const m of Object.values(S.mands)){ const v=R.mands[m.id], a=S.acts[m.activite], par=a&&a.projet&&a.projet!==v?a.projet:null; let p=null;
-    if(v==='new'){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom}); }
+  for(const a of actsTri(true)){ const v=R.acts[a.id]; if(v&&dom(v)) a.domaine=v; else delete a.domaine; delete a.projet; }
+  for(const m of Object.values(S.mands)){ const v=R.mands[m.id], a=S.acts[m.activite]; let p=null;
+    if(v==='new'){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom,nature:'pro'}); if(a&&a.domaine&&dom(a.domaine)) p.parent=a.domaine; }
     else if(v){ p=get(v); } else { delete m.projet; continue; }
     if(!p) continue;
-    if(par&&!Projets.enfants(p.id,all()).length&&p.id!==par) p.parent=par;
-    if(p.parent&&Projets.nature(get(p.parent)||{},get)==='pro') delete p.nature; else p.nature='pro';
+    p.nature='pro'; /* un mandat est un projet pro */
     const txt=new Set((p.tasks||[]).map(x=>norm(x.t))); p.tasks=p.tasks||[]; for(const t of m.taches||[]) if(!txt.has(norm(t.t))) p.tasks.push({t:t.t,d:!!t.fait});
     if(m.etat==='fini') etatVersProjet(p,'fini'); else if(m.etat==='cours'&&p.later&&!p.closed) delete p.later;
     PB.ecrire(p); m.projet=p.id; }
@@ -703,6 +728,7 @@ function aFaire(){
 function vMandats(){
   let h=alerteTable()+chronoBanniere();
   if(!relie()&&PB&&PB.liste().length) h+=`<section class="lien-p"><p><b>Nouveau : les mandats deviennent des projets de l'Établi.</b> Un mandat a alors un seul nom, un seul état et une seule liste de tâches, dans les deux apps.</p><button class="btn" data-act="liens">Relier aux projets</button></section>`;
+  const sm=proSansMandat(); if(sm.length){ const A=actsTravail().filter(a=>!a.ignorer); h+=`<section class="relier-pro" aria-label="Projets pro à relier"><p><b>${pl(sm.length,'projet pro de l’Établi','projets pro de l’Établi')} sans mandat.</b> Pour qui ? Choisis l'activité qui paie, ou « pas un mandat ».</p>${sm.map(p=>{ const d=p.parent&&dom(p.parent); return `<div class="rel"><span class="nm">${esc((p.emoji?p.emoji+' ':'')+p.name)}<small class="meta"> ${d?esc(d.name):'Autres projets'}</small></span><select data-pro-act="${p.id}" aria-label="Activité de ${esc(p.name)}"><option value="">choisir…</option>${A.map(a=>`<option value="${a.id}">${esc(a.emoji)} ${esc(a.nom)}</option>`).join('')}<option value="__hors">pas un mandat</option></select></div>`; }).join('')}</section>`; }
   const af=aFaire(); if(af.length) h+=`<section class="afaire" aria-label="À faire"><div class="cap">À faire</div>${af.join('')}</section>`;
   const acts=actsTravail(), tous=Object.values(S.mands);
   if(ui.filtre&&!S.acts[ui.filtre]) ui.filtre='';
@@ -841,7 +867,9 @@ function vBilan(){
 }
 
 /* ---------- Page d'un mandat ---------- */
-function rowTache(t){ return `<div class="tache${t.fait?' fait':''}"><button class="ck" data-act="tache" data-tid="${t.id}" role="checkbox" aria-checked="${!!t.fait}" aria-label="${esc(t.t)}">${CHECK}</button><span class="tt">${esc(t.t)}</span><button class="tx-x" data-act="t-sup" data-tid="${t.id}" aria-label="Supprimer la tâche">✕</button></div>`; }
+/* tâches ouvertes, avec les titres de section qui en ont encore */
+function ouvertes(T0){ const out=[]; let sec=null; T0.forEach(t=>{ if(t.sec){ sec=t; return; } if(!t.fait){ if(sec){ out.push(sec); sec=null; } out.push(t); } }); return out; }
+function rowTache(t){ if(t.sec) return `<div class="tache-sec">${esc(t.t)}</div>`; return `<div class="tache${t.fait?' fait':''}"><button class="ck" data-act="tache" data-tid="${t.id}" role="checkbox" aria-checked="${!!t.fait}" aria-label="${esc(t.t)}">${CHECK}</button><span class="tt">${esc(t.t)}</span><button class="tx-x" data-act="t-sup" data-tid="${t.id}" aria-label="Supprimer la tâche">✕</button></div>`; }
 function rowTx(t,mid){ const v=proMontant(t);
   return `<div class="txrow"><span class="hb"><b>${esc(t.tiers||t.note||'Opération')}</b><span>${fJour(t.date)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span></span><b class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</b>${t.docs&&t.docs.length?`<button class="tx-x" data-act="justif" data-tx="${t.id}" aria-label="Voir le justificatif">📎${t.docs.length>1?t.docs.length:''}</button>`:''}${mid?`<button class="tx-x" data-act="delier" data-tx="${t.id}" aria-label="Détacher cette opération du mandat">✕</button>`:''}</div>`; }
 function pileLabel(){ const p=ui.pile[ui.pile.length-2]; if(p) return p.k==='mandat'?(S.mands[p.id]||{}).nom||'Retour':(S.docs[p.id]||{}).num||'Retour'; return {mandats:'Mandats',heures:'Heures',factures:'Factures',contacts:'Contacts',bilan:'Bilan'}[ui.tab]; }
@@ -854,7 +882,7 @@ function vMandat(id){
   if(c.minNF) h+=`<div class="reste"><span><b>${fH(c.minNF)}</b> pas encore facturées${c.valNF?' · '+fCHF(c.valNF):''}</span><button class="btn2" data-act="facturer" data-id="${m.id}">Facturer</button></div>`;
   if(run) h+=carteChrono();
   else h+=`<div class="actions"><button class="btn" data-act="chrono-go" data-id="${m.id}">▶ Chrono</button><button class="btn2" data-act="heure-new" data-id="${m.id}">+ Heures</button><button class="btn2" data-act="doc-new" data-type="devis" data-id="${m.id}">+ Devis</button><button class="btn2" data-act="doc-new" data-type="facture" data-id="${m.id}">+ Facture</button></div>`;
-  const T=tachesDe(m), ouv=T.filter(t=>!t.fait), faites=T.filter(t=>t.fait), pj=projDe(m);
+  const T0=tachesDe(m), T=T0.filter(t=>!t.sec), ouv=ouvertes(T0), faites=T.filter(t=>t.fait), pj=projDe(m);
   h+=`<section class="bloc"><div class="bh"><h3>Tâches</h3><span class="meta">${T.length?faites.length+' / '+T.length+' faites':''}</span></div>${pj?`<p class="projet-l">Les mêmes que dans l'Établi, projet ${esc((pj.emoji?pj.emoji+' ':'')+pj.name)}.</p>`:''}<form class="qa" id="t-form" autocomplete="off"><input id="t-new" class="in" placeholder="Ajouter une tâche…" enterkeyhint="done" autocapitalize="sentences" aria-label="Nouvelle tâche"><button class="btn sq" type="submit" aria-label="Ajouter la tâche">+</button></form>${ouv.map(rowTache).join('')}${faites.length?`<button class="plus-fini" data-act="t-faites" aria-expanded="${ui.tf}">${ui.tf?'▾':'▸'} Faites · ${faites.length}</button>${ui.tf?faites.map(rowTache).join(''):''}`:''}</section>`;
   const hs=heuresDe(m.id), fh=reprises('heures'), vis=ui.toutH?hs:hs.slice(0,6);
   h+=`<section class="bloc"><div class="bh"><h3>Heures</h3><span class="meta">${fH(c.min)}</span></div>${hs.length?`<div>${vis.map(x=>rowHeure(x,true,fh)).join('')}</div>`:'<p class="aide">Aucune heure notée.</p>'}${hs.length>6?`<button class="plus-fini" data-act="tout-h">${ui.toutH?'▾ Moins':'▸ Toutes les heures ('+hs.length+')'}</button>`:''}</section>`;
@@ -1018,7 +1046,7 @@ function sauverMandat(){ lireMandat(); const d=ed.d; if(!d.nom.trim()){ toast('D
   const m=Object.assign(base,{activite:d.activite,nom:d.nom.trim(),client,etat:d.etat,debut:d.debut,fin:d.fin,tarif:d.tarif.trim()});
   S.mands[m.id]=m;
   if(relie()&&PB){ let p=projDe(m); const a=S.acts[m.activite];
-    if(!p){ const par=a&&a.projet&&proj(a.projet); p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom}); if(par){ p.parent=par.id; if(Projets.nature(par,proj)!=='pro') p.nature='pro'; } else p.nature='pro'; m.projet=p.id; }
+    if(!p){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom,nature:'pro'}); const dd=a&&(a.domaine||a.projet); if(dd&&(dom(dd)||proj(dd))) p.parent=dd; m.projet=p.id; }
     p.name=m.nom; etatVersProjet(p,m.etat); ecrireProjet(p); }
   save(); const neuf=!ed.id;
   if(neuf){ allerPage('mandat',m.id); toast('Mandat ouvert'); } else { fermer(); render(); }
@@ -1307,6 +1335,10 @@ document.addEventListener('input',e=>{
     const lt=document.getElementById('lt-'+lid); if(lt) lt.textContent='= '+fmt(ligneTotal(l)); majTotaux(d); }
 });
 document.addEventListener('change',e=>{ const t=e.target;
+  if(t.dataset&&t.dataset.proAct){ const p=PB&&PB.get(t.dataset.proAct), v=t.value; if(!p||!v) return;
+    if(v==='__hors'){ S.regl.horsMine=[...(S.regl.horsMine||[]),p.id]; save(); render(); toast(p.name+' · pas un mandat'); return; }
+    const a=S.acts[v]; if(!a) return; const id=uid(); S.mands[id]={id,activite:a.id,nom:p.name,client:'',etat:etatDeProjet(p),debut:today(),fin:'',tarif:'',note:'',taches:[],cree:nowIso(),projet:p.id};
+    if(!a.domaine&&p.parent&&dom(p.parent)) a.domaine=p.parent; save(); render(); toast(p.name+' · mandat de '+a.nom); return; }
   if(t.id==='df-client'){ const d=docCourant(); if(d){ d.client=t.value; save(); render(); } return; }
   if(t.dataset&&t.dataset.lienA&&ed&&ed.k==='liens'){ ed.R.acts[t.dataset.lienA]=t.value; return; }
   if(t.dataset&&t.dataset.lienM&&ed&&ed.k==='liens'){ ed.R.mands[t.dataset.lienM]=t.value; return; }

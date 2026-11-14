@@ -88,6 +88,10 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   - Onglet Projets : filtres En cours, Non planifiés, Prévus, Idées, Archivés ; compteur ; les projets ∞ dans une rangée à part (ils ne comptent pas dans les projets en cours) ; tri « Par parent ».
   - **Projets qui dorment** : un projet en cours qui n'a pas bougé depuis 4 mois (et n'a rien de prévu au planning) apparaît en haut du Récap, avec Terminé, Abandonné, Prévu plus tard, Redevient une idée ou Il avance encore. Le champ `touche` garde la date de la dernière modification.
   - Les **tags** sont remplacés par les projets parents : l'écran « Nouvelle organisation » (onglet Projets) propose un rangement, télécharge une sauvegarde, puis enregistre (ligne `m:reprise`). Les tags restent dans les données mais ne s'affichent plus.
+- **Domaines** (14.11.2026, étape 1b) : deux niveaux aux rôles nets. Un **domaine** range (nom, émoji, couleur, petites tâches, notes ; ni perso/pro, ni état, ni temps ; lignes `d:<id>`). Un **projet** prend du temps (4 h à ∞), il est perso ou pro sur lui-même (plus d'héritage) et son champ `parent` est son domaine. « Autres projets » (`d:autres`) est automatique.
+  - L'écran « Passer aux domaines » (onglet Projets) transforme les projets parents en domaines, fige le perso/pro de chaque projet, garde si on veut un projet ∞ du même nom pour le temps au planning, et change les mini projets en tâches ; sauvegarde téléchargée avant, ligne `m:domaines`.
+  - **Tâches** : titres de section (« + Section », ou une ligne qui commence par #) ; les tâches faites descendent à la fin de leur section.
+  - **Petites tâches** (moins de 4 h, hors projet) : les tâches des domaines, réunies dans une liste (onglet Projets, En vrac, mode mini). Il n'y a plus de mini projets.
 
 - Le petit symbole à côté du numéro de semaine indique l'état : ✓ tout est enregistré,
   ↻ envoi en cours, « hors ligne », ⚠ problème (toucher pour les détails).
@@ -129,6 +133,10 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   Un nouveau mandat crée son projet ; un projet pro rangé dans l'Établi sous une activité devient un mandat (sauf les activités
   « aperçu seulement », comme GDT). Noter des heures compte comme une activité du projet (projets qui dorment).
   Les projets sont lus et écrits par `Projets.base` (`commun/projets.js`, copie locale `locus-projets-<utilisateur>`).
+- **Activité = qui paie** (14.11.2026, étape 1b) : une activité n'est plus un projet ; elle a un domaine de l'Établi par défaut
+  (`a.domaine`) où vont ses nouveaux mandats. Un projet pro rangé dans ce domaine devient un mandat de l'activité (si une seule
+  activité y range ses mandats). Les autres projets pro sans mandat s'affichent en haut de l'onglet Mandats : choisir l'activité,
+  ou « pas un mandat » (`regl.horsMine`). Les anciens liens `a.projet` sont repris tout seuls.
 
 - **Mandats** : le travail pro rangé par activité (les « filons » : GDT, Isolation, Fertik, Parkour, Petits travaux,
   comme les sous-catégories Pro de la Banque). Un mandat = un chantier, un cours, une commande : son client, son état
