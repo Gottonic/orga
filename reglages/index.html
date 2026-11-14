@@ -182,7 +182,9 @@ async function dessinerDossier(){
   const etat=perm==='granted'?'<p class="ok">✓ Accès accordé.</p>':'<p class="alerte">L\'accès doit être redonné (un clic).</p>';
   const ouverture=D.aLOuverture==='granted'?'<p class="ok">✓ À l\'ouverture de cette page, l\'accès était <b>encore là</b>, sans rien demander : le navigateur s\'en souvient.</p>'
     :D.aLOuverture?'<p class="alerte">À l\'ouverture de cette page, le navigateur <b>a oublié</b> l\'accès : il faudrait le redonner à chaque fois (un clic).</p>':'';
-  $('dossier').innerHTML=`<p>Dossier : <b>${esc(D.racine.name)}</b> · choisi le ${esc(quand(i.choisi))}</p>${ouverture}${etat}
+  const appli=['standalone','window-controls-overlay','minimal-ui','fullscreen'].some(m=>{ try{ return matchMedia('(display-mode: '+m+')').matches; }catch(e){ return false; } });
+  const mode=appli?'<p class="note">Ouvert comme <b>app installée</b> ✓</p>':'<p class="alerte">Ouvert dans un <b>onglet</b> du navigateur, pas comme app installée : le navigateur garde moins facilement l\'accès. Ouvre ORGA depuis son icône d\'app.</p>';
+  $('dossier').innerHTML=`<p>Dossier : <b>${esc(D.racine.name)}</b> · choisi le ${esc(quand(i.choisi))}</p>${mode}${ouverture}${etat}
     ${i.dernier?`<p class="note">Dernier test écrit le ${esc(quand(i.dernier))} (${i.n||0} en tout).</p>`:''}${D.resultat||''}
     ${perm==='granted'?`<p class="note">Contenu :</p>${await contenuDossier()}`:''}
     <p class="note">Pour le test complet : écris un fichier, ferme complètement l'app ORGA, rouvre-la et reviens ici. La ligne « À l'ouverture » dira si l'accès a été gardé.</p>`;
