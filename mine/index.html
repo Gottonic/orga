@@ -48,6 +48,8 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .rel .nm small{display:block;font-weight:400;color:var(--gris);font-size:.8rem}
 .rel select{max-width:100%;height:40px;border:1.5px solid var(--trait2);background:var(--carte);padding:0 6px}
 .projet-l{font-size:.85rem;color:var(--gris)}
+.fup{position:relative;overflow:hidden;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.fup input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .tache-sec{font-weight:800;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;padding:12px 0 4px;border-bottom:2px solid currentColor}
 .relier-pro{border:2px solid var(--c,currentColor);padding:10px 12px;margin:10px 0;display:flex;flex-direction:column;gap:8px}
 .relier-pro .rel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
@@ -378,6 +380,7 @@ table.dl tfoot tr.tot td{border-top:1.2pt solid #000;font-weight:700;font-size:1
 <datalist id="unites"><option value="h"><option value="pce"><option value="forfait"><option value="jour"><option value="m"><option value="m²"><option value="km"></datalist>
 <script src="../commun/supabase.js"></script>
 <script src="../commun/projets.js"></script>
+<script src="../commun/dossier.js"></script>
 <script src="lib/qrcode.js"></script>
 <script>
 'use strict';
@@ -399,6 +402,7 @@ function vide(){ return {acts:{},mands:{},conts:{},heures:{},docs:{},liens:{},re
 let S=vide();
 let B={cats:{},tx:{},docs:{}}, bLast=null, bErr='', bPret=false; /* copie en lecture seule des opérations Pro de la Banque */
 let PB=null; /* projets de l'Établi (commun/projets.js) */
+let FB=null; /* fiches des fichiers (commun/dossier.js, étape 3) */
 let sb=null, UID=null, EMAIL='', prev={}, dirty=new Set(), lastPull=null, pushing=false, pushTimer=null, saveTimer=null, syncErr='', booted=false;
 const ui={tab:lsGet('mine-tab')||'mandats', filtre:lsGet('mine-filtre')||'', pile:[], sem:0, seg:'factures', an:new Date().getFullYear(), q:'', finis:{}, tf:false, toutH:false, chronoM:'', vieux:false, ignorePop:0, payees:false, annulees:false};
 if(!['mandats','heures','factures','contacts','bilan'].includes(ui.tab)) ui.tab='mandats';
@@ -918,7 +922,8 @@ function vDoc(id){
   let h=`<button class="retour" data-act="retour">← ${esc(pileLabel())}</button>`;
   h+=`<section class="mtete" style="--c:${a.couleur}"><div class="mt-a">${fac?'Facture':'Devis'} · ${esc(a.emoji)} ${m?`<button class="lien-b" data-act="mandat" data-id="${m.id}">${esc(m.nom)}</button>`:'sans mandat'}</div><h2 class="mt-n mono">${esc(d.num||'—')}</h2><div class="mt-c"><span class="etat ${st.cl}">${st.t}</span> <span class="meta">${st.sous}</span></div></section>`;
   const p=paiementPour(d); if(p) h+=`<div class="trouve"><span>💰 Paiement trouvé dans la Banque : ${fJour(p.date)}${p.tiers?' · '+esc(p.tiers):''} · <b class="mono">+${fmt(proMontant(p))}</b></span><button class="btn or" data-act="payer-auto" data-id="${d.id}" data-tx="${p.id}">C’est payé</button></div>`;
-  h+=`<div class="actions">${boutonsDoc(d)}</div>`;
+  h+=`<div class="actions">${boutonsDoc(d)}${projetDuDoc(d)&&FB?`<label class="btn2 fup">Ranger le PDF<input type="file" accept="application/pdf" data-docpdf="${d.id}" aria-label="Choisir le PDF enregistré depuis l'aperçu"></label>`:''}</div>`;
+  if(projetDuDoc(d)&&FB) h+=`<p class="aide">${d.copie?'Copie dans le dossier du projet (Factures) le '+fJour(d.copie.le)+'. ':''}Une copie du document va dans le dossier du projet quand tu le marques envoyé ; « Ranger le PDF » y ajoute le PDF enregistré depuis l'aperçu.</p>`;
   if(fac&&d.etat!=='brouillon') h+=`<p class="aide">Cette facture est ${d.etat==='payee'?'payée':d.etat==='annulee'?'annulée':'envoyée'} : ce que tu changes ici change aussi ce que tu réimprimes.</p>`;
   const cs=Object.values(S.conts).sort((x,y)=>cNom(x).localeCompare(cNom(y),'fr'));
   h+=`<section class="bloc form"><div class="g2"><label>Numéro<input class="in mono" id="df-num" data-df="num" value="${esc(d.num)}" autocomplete="off"></label><label>Date<input class="in" type="date" id="df-date" data-df="date" value="${esc(d.date)}"></label></div>
@@ -1008,6 +1013,19 @@ function placerSlip(box){
     else { const n=document.createElement('div'); n.className='a4 page-slip'; n.appendChild(slip); p.after(n); }
     p.removeAttribute('data-slip'); });
 }
+/* Étape 3 : une copie du document dans Locus/…/<projet>/Factures. Sans fichier choisi : la page du document en HTML
+   (elle s'ouvre et s'imprime comme l'aperçu) ; avec un fichier : le PDF enregistré depuis l'aperçu. */
+function projetDuDoc(d){ const m=d&&S.mands[d.mandat]; return m?projDe(m):null; }
+async function rangerDoc(d,fichier){
+  const p=projetDuDoc(d); if(!p||!FB||!window.Dossier||!PB) return false;
+  if(!p.dossier){ const dm=p.parent?PB.domaine(p.parent):null; p.dossier=Dossier.cheminProjet(p,dm); PB.ecrire(p); }
+  let fi=fichier;
+  if(!fi){ $print.innerHTML=docHtml(d); placerSlip($print); const corps=$print.innerHTML; $print.innerHTML='';
+    const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');
+    const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${esc(titreDoc(d))}</title><style>${css}</style><style>html,body{background:#fff!important}body>*:not(#print){display:none!important}#print{position:static!important;left:auto!important;visibility:visible!important;pointer-events:auto!important;width:210mm;margin:0 auto}</style></head><body><div id="print">${corps}</div></body></html>`;
+    fi=new File([html],Dossier.propre(titreDoc(d))+'.html',{type:'text/html'}); }
+  await Dossier.envoyer(sb,UID,FB,p.dossier+'/Factures',fi,p.id); d.copie={nom:fi.name,le:today()}; save(); return true; }
+function rangerDocToast(d,fichier){ rangerDoc(d,fichier).then(ok=>{ if(ok) toast((fichier?'PDF':'Copie')+' rangé'+(fichier?'':'e')+' dans le dossier du projet'); }).catch(e=>toast('⚠ '+((e&&e.message)||e))); }
 function titreDoc(d){ const c=S.conts[d.client]; return (d.type==='facture'?'Facture ':'Devis ')+(d.num||'')+(c?' – '+cNom(c):''); }
 let titreAvant=null;
 function imprimer(id){ const d=S.docs[id]; if(!d) return;
@@ -1280,7 +1298,7 @@ document.addEventListener('click',e=>{
     case 'facturer': { const d=creerDoc('facture',id,true); allerPage('doc',d.id); toast('Facture préparée avec les heures non facturées'); break; }
     case 'apercu': vApercu(id); break;
     case 'imprimer': imprimer(id); break;
-    case 'd-envoyee': case 'd-envoye': { const d=S.docs[id]; d.etat=act==='d-envoyee'?'envoyee':'envoye'; d.envoye_le=today(); save(); render(); break; }
+    case 'd-envoyee': case 'd-envoye': { const d=S.docs[id]; d.etat=act==='d-envoyee'?'envoyee':'envoye'; d.envoye_le=today(); save(); render(); rangerDocToast(d); break; }
     case 'd-etat-brouillon': case 'd-rouvrir': { const d=S.docs[id]; d.etat=d.type==='facture'?'brouillon':'envoye'; save(); render(); break; }
     case 'd-accepte': { const d=S.docs[id]; d.etat='accepte'; save(); render(); break; }
     case 'd-refuse': { const d=S.docs[id]; d.etat='refuse'; save(); render(); break; }
@@ -1335,6 +1353,7 @@ document.addEventListener('input',e=>{
     const lt=document.getElementById('lt-'+lid); if(lt) lt.textContent='= '+fmt(ligneTotal(l)); majTotaux(d); }
 });
 document.addEventListener('change',e=>{ const t=e.target;
+  if(t.dataset&&t.dataset.docpdf&&t.files&&t.files[0]){ const d=S.docs[t.dataset.docpdf]; if(d) rangerDocToast(d,t.files[0]); t.value=''; return; }
   if(t.dataset&&t.dataset.proAct){ const p=PB&&PB.get(t.dataset.proAct), v=t.value; if(!p||!v) return;
     if(v==='__hors'){ S.regl.horsMine=[...(S.regl.horsMine||[]),p.id]; save(); render(); toast(p.name+' · pas un mandat'); return; }
     const a=S.acts[v]; if(!a) return; const id=uid(); S.mands[id]={id,activite:a.id,nom:p.name,client:'',etat:etatDeProjet(p),debut:today(),fin:'',tarif:'',note:'',taches:[],cree:nowIso(),projet:p.id};
@@ -1363,6 +1382,7 @@ async function enter(user){
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
   bCharger(); S=fromRows(prev);
+  try{ if(window.Dossier) FB=Dossier.base(sb,UID); }catch(e){ FB=null; }
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(!booted) return; if(relierDepuisProjets()) save(); render(); });
   booted=true; render(); setSync();
   await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);

@@ -1413,7 +1413,37 @@ async function syncFichiers(){
   if(ch){ quiet=true; save(); quiet=false; }
   const B=await Dossier.synchro(sb,UID,FB,[...S.projects.filter(p=>p.dossier).map(p=>p.dossier),Dossier.A_TRIER]);
   if(B&&(B.ranges||B.deplaces)) toast('📁 '+(B.ranges?B.ranges+' fichier'+(B.ranges>1?'s':'')+' arrivé'+(B.ranges>1?'s':''):'')+(B.ranges&&B.deplaces?' · ':'')+(B.deplaces?B.deplaces+' rangé'+(B.deplaces>1?'s':''):''));
-  if(B&&B.erreurs.length) toast('⚠ '+B.erreurs[0]); }
+  if(B&&B.erreurs.length) toast('⚠ '+B.erreurs[0]);
+  const nj=await copierJustificatifs(); if(nj) toast('🧾 '+nj+' justificatif'+(nj>1?'s':'')+' copié'+(nj>1?'s':'')+' dans les dossiers'); }
+/* Justificatifs de la Banque (photos de tickets, PDF) : une copie dans <dossier du projet>/Justificatifs, pour les opérations
+   reliées au projet dans la Banque, ou rattachées à son mandat dans la Mine. Ils restent aussi dans Supabase. */
+async function copierJustificatifs(){
+  if(fsEtat!=='granted'||!sb||!UID||!navigator.onLine) return 0;
+  const K='etabli-justifs-'+UID; let fait={}; try{ fait=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){}
+  const PS=S.projects.filter(p=>p.dossier&&!p.closed&&!p.dossier.startsWith('Archives/')); if(!PS.length) return 0;
+  const parId={}; PS.forEach(p=>{ parId[p.id]=p; }); let n=0;
+  try{
+    const ops=[]; const {data:tx,error}=await sb.from('cash_rows').select('key,data').eq('kind','tx').eq('deleted',false).in('data->>projet',PS.map(p=>p.id)); if(error) throw error;
+    (tx||[]).forEach(r=>{ if(r.data) ops.push({t:r.data,p:parId[r.data.projet]}); });
+    const pros=PS.filter(p=>natureOf(p)==='pro');
+    if(pros.length){ const {data:ms}=await sb.from('mine_rows').select('data').like('key','m:%').eq('deleted',false).in('data->>projet',pros.map(p=>p.id));
+      const mp={}; (ms||[]).forEach(r=>{ if(r.data) mp[r.data.id]=parId[r.data.projet]; });
+      if(Object.keys(mp).length){ const {data:ls}=await sb.from('mine_rows').select('key,data').like('key','l:%').eq('deleted',false).in('data->>mandat',Object.keys(mp));
+        const keys=(ls||[]).filter(r=>r.data&&mp[r.data.mandat]).map(r=>({k:'t:'+r.key.slice(2),p:mp[r.data.mandat]}));
+        for(let i=0;i<keys.length;i+=100){ const part=keys.slice(i,i+100); const {data:t2}=await sb.from('cash_rows').select('key,data').eq('kind','tx').eq('deleted',false).in('key',part.map(x=>x.k));
+          (t2||[]).forEach(r=>{ const x=part.find(y=>y.k===r.key); if(r.data&&x&&!ops.some(o=>o.t.id===r.data.id)) ops.push({t:r.data,p:x.p}); }); } } }
+    const veut=[]; ops.forEach(o=>(o.t.docs||[]).forEach(id=>{ if(!fait[id]) veut.push({id,t:o.t,p:o.p}); })); if(!veut.length) return 0;
+    for(let i=0;i<veut.length;i+=100){ const part=veut.slice(i,i+100); const {data:ds}=await sb.from('cash_rows').select('key,data').eq('kind','document').eq('deleted',false).in('key',part.map(x=>'f:'+x.id));
+      for(const r of ds||[]){ const doc=r.data, x=doc&&part.find(y=>y.id===doc.id); if(!x||!doc.path) continue;
+        try{ const {data:blob,error:e2}=await sb.storage.from('cash-documents').download(doc.path); if(e2) throw e2;
+          const ext=(String(doc.nom||'').match(/\.[a-z0-9]{2,5}$/i)||[''])[0]||(doc.type==='application/pdf'?'.pdf':doc.type&&doc.type.startsWith('image/')?'.'+doc.type.split('/')[1]:'');
+          const base=String(doc.nom||'justificatif').replace(/\.[a-z0-9]{2,5}$/i,''), nom=(x.t.date||'')+' '+(x.t.tiers?x.t.tiers+' ':'')+base+ext;
+          const ch=x.p.dossier+'/Justificatifs', w=await Dossier.ecrire(ch,nom,blob);
+          FB.ecrire({id:Dossier.idDe(ch,w.nom),chemin:ch,nom:w.nom,taille:w.taille,modif:w.modif,type:w.type,projet:x.p.id,etat:'ici',le:new Date().toISOString()});
+          fait[doc.id]=todayS; n++; }catch(e){} } }
+  }catch(e){ return n; }
+  try{ localStorage.setItem(K,JSON.stringify(fait)); }catch(e){}
+  return n; }
 function fichiersChanges(){ if($scrim.hidden) { if(ui.view==='projets') render(); return; } if(sheetKey==='atrier') aTrierSheet(); else if(sheetId&&P(sheetId)&&sheetKey==='d:'+sheetId){ const y=$sheet.scrollTop; detail(sheetId); $sheet.scrollTop=y; } }
 
 /* Fiche projet */

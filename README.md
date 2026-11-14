@@ -151,6 +151,10 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   Sans accès au dossier (téléphone), le fichier part dans le stockage `transit` (50 Mo au plus) et descend dans le bon dossier à la prochaine ouverture
   de Locus sur l'ordinateur, puis il est effacé de Supabase. 📥 À trier (onglet Projets) : « Ranger dans… » déplace un fichier dans le dossier d'un projet.
   Archiver un projet déplace son dossier dans `Archives/<année>/`. Les fichiers ajoutés à la main dans un dossier de projet sont repris à chaque ouverture.
+  - **La Mine** : marquer une facture ou un devis envoyé en range une copie (la page du document en HTML, qui s'ouvre et s'imprime comme l'aperçu)
+    dans `Factures/` du dossier du projet ; « Ranger le PDF » y ajoute le PDF enregistré depuis l'aperçu.
+  - **La Banque** : sur l'ordinateur, l'Établi copie les justificatifs des opérations reliées à un projet (ou rattachées à son mandat dans la Mine)
+    dans `Justificatifs/` (« date tiers nom ») ; ils restent aussi dans Supabase. Copies déjà faites : `etabli-justifs-<utilisateur>`.
 
 - **Mandats** : le travail pro rangé par activité (les « filons » : GDT, Isolation, Fertik, Parkour, Petits travaux,
   comme les sous-catégories Pro de la Banque). Un mandat = un chantier, un cours, une commande : son client, son état
