@@ -53,5 +53,10 @@ Du plus sombre au plus clair : Forge, Banque, Locus, Marché, Établi, Mine. La 
 ## Ordre d'application
 1. L'accueil Locus, fait le 15.11 : `index.html`, logos de toutes les apps (`*/icons/`, `icons/`).
    - La Bibliothèque, faite le 15.11 : le contenu est une grande page claire posée sur le mur bordeaux. Les boutons d'action sont bordeaux sur les pages ; le doré sert à l'onglet actif, au bouton + flottant et aux plaques. La barre d'outils de l'éditeur est en pictos.
+   - L'Établi, fait le 15.11 :
+     - Le fond est en bois huilé et les cartes en contreplaqué, avec des bordures bois plus sombres plutôt que noires.
+     - Les intertitres et les choix actifs sont en graphite avec le jaune du mètre. Le rouge du crayon marque l'urgent.
+     - Les projets gardent leurs couleurs et leurs émojis.
+     - Les pictos remplacent les émojis d'interface : petites tâches, idées, à trier, notes, échéance, congés, choix du vrac.
 2. Puis app par app, chacune dans sa conversation ou ici : la page reçoit `data-lieu`, charge `lieux.css`, remplace ses couleurs propres par les jetons, passe ses titres en Unbounded et ses émojis d'interface en pictos. Le thème de l'ampoule (`commun/ampoule.js`, THEMES) suit.
 3. La Forge garde ses couleurs. Elle peut adopter les jetons quand ça l'arrange.
