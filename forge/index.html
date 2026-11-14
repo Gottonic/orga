@@ -19,12 +19,12 @@
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
 /* Layout: sticky header + tabs, single column (max 960px). Look « forge rétro-futuriste » (14.11) : fond presque noir chaud,
-   cartes brun sombre très arrondies, crème pour le texte, orange-tan #E0A15E comme signature, tomate, sauge, moutarde ;
+   cartes brun sombre très arrondies, crème pour le texte, bleu doux #81B9DA comme accent (l'orange est devenu la puissance) ;
    titres larges (Unbounded), texte Space Grotesk, micro-étiquettes en mono. */
 :root{
   --page:#1A1714; --surface:#25201C; --surface-2:#332C26; --line:#3D352E;
   --ink:#EFE3CC; --ink-2:#C4B6A0; --ink-3:#8F8372;
-  --accent:#E0A15E; --accent-ink:#F0BE85; --accent-soft:#3A2C1F; --accent-pastel:#E0A15E; --on-acc:#1A1714;
+  --accent:#81B9DA; --accent-ink:#AFD4EA; --accent-soft:#1A2B36; --accent-pastel:#81B9DA; --on-acc:#1A1714;
   --mint-soft:#27342A; --mint-ink:#A9D2A4;
   --sun:#F2B957; --sun-soft:#3A2F1C;
   --tomato:#D9614A; --coral:#E8505B; --sage:#8DBA88; --tan:#CDA47B; --stone:#B8B4AE;
@@ -716,7 +716,7 @@ input[type=text],input[type=number],input[type=date],select,textarea,.exq{backgr
 input[type=email],input[type=password]{background:var(--page);border:1px solid var(--line);border-radius:12px;padding:9px 11px;width:100%;min-width:0;color:var(--ink)}
 input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .x{background:var(--surface-2);color:var(--ink)}
-/* « Tu es ici » : la carte orange du moodboard, avec son code-barres */
+/* « Tu es ici » : carte pleine de la couleur d'accent */
 .here{position:relative;overflow:hidden;background:var(--accent);border:0;color:var(--on-acc);border-radius:24px;padding:16px 18px 18px}
 .here .eyebrow{color:var(--on-acc);opacity:.8}
 .here .muted{color:rgba(26,23,20,.72)}
@@ -724,12 +724,11 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .here .band.none{background:rgba(26,23,20,.25);color:var(--on-acc);box-shadow:none}
 .here .btn.primary{background:var(--on-acc);border-color:var(--on-acc);color:var(--accent)}
 .here .btn{background:transparent;border-color:rgba(26,23,20,.4);color:var(--on-acc)}
-.here::after{content:"";position:absolute;right:16px;top:16px;width:58px;height:16px;opacity:.75;
-  background:repeating-linear-gradient(90deg,var(--on-acc) 0 2px,transparent 2px 4px,var(--on-acc) 4px 5px,transparent 5px 8px,var(--on-acc) 8px 11px,transparent 11px 12px)}
-.here-pos span{color:var(--on-acc)}
+.here-pos span{color:var(--on-acc);background:var(--accent)}
+.here-pos span::after{border-top-color:var(--accent)}
 /* Suivi : les quatre chiffres en cartes de couleur */
 .kpi{border-radius:22px}
-.kpi:nth-child(1){background:var(--accent)}
+.kpi:nth-child(1){background:var(--ph-puissance)}
 .kpi:nth-child(2){background:var(--sage)}
 .kpi:nth-child(3){background:var(--stone)}
 .kpi:nth-child(4){background:var(--tomato)}
@@ -773,7 +772,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 </head>
 <body>
 
-<header class="oh" style="--oh-bg:#14110E;--oh-ink:#EFE3CC;--oh-acc:#E0A15E"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">La Forge</h1><button class="mode" id="sync" data-sync type="button" title="Synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" id="gear" type="button" aria-label="Données et réglages" title="Données et réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+<header class="oh" style="--oh-bg:#14110E;--oh-ink:#EFE3CC;--oh-acc:#81B9DA"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">La Forge</h1><button class="mode" id="sync" data-sync type="button" title="Synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" id="gear" type="button" aria-label="Données et réglages" title="Données et réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
 <nav class="ot" id="tabs" aria-label="Sections">
       <button class="ot-t" data-view="calendrier">Saison</button>
       <button class="ot-t" data-view="semaine">Semaine</button>

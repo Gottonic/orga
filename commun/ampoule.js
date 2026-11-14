@@ -30,7 +30,7 @@
     banque: { f: '#F4F5F7', c: '#FFFFFF', i: '#17181B', m: '#5C6270', l: '#E2E5EA', a: '#F0B54A', ai: '#1A1406', s: '#FBEFD6', r: '20px', p: '99px', font: ATK, titre: '"Bricolage Grotesque",' + ATK },
     marche: { f: '#F5EEDF', c: '#FFFCF5', i: '#24211B', m: '#6F6656', l: '#E6DBC6', a: '#2E6B4E', ai: '#FFFFFF', s: '#E2EEE4', r: '14px', p: '99px', font: ATK, titre: ATK },
     mine: { f: '#ECE7DF', c: '#FFFFFF', i: '#2B2420', m: '#6E655C', l: '#D8D0C4', a: '#2B2420', ai: '#FFFFFF', s: '#F6E7CC', r: '0px', p: '0px', font: ATK, titre: '"Big Shoulders Stencil Display",' + ATK },
-    forge: { f: '#1A1714', c: '#25201C', i: '#EFE3CC', m: '#8F8372', l: '#3D352E', a: '#E0A15E', ai: '#1A1714', s: '#3A2C1F', r: '22px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }
+    forge: { f: '#1A1714', c: '#25201C', i: '#EFE3CC', m: '#8F8372', l: '#3D352E', a: '#81B9DA', ai: '#1A1714', s: '#1A2B36', r: '22px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }
   };
   const T = THEMES[APP] || PAPIER;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
