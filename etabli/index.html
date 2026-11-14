@@ -321,6 +321,21 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .bgc[data-act="cell"]:hover{background:var(--hl)}
 .grow.blank .gg{grid-template-rows:44px}
 .laterbox{border:2px solid var(--ink);background:#E4E7F0;padding:12px;display:flex;flex-direction:column;gap:8px}
+.st-prevu{background:#CFE3F5}
+.pro{display:inline-block;border:1px solid currentColor;font-size:.66rem;font-weight:700;padding:0 4px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:1.4}
+.cnt{margin:10px 0 0;font-size:.9rem}
+.infrow{margin:12px 0 0;display:flex;flex-direction:column;gap:6px}
+.infrow .lbl small{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)}
+.parcell{font-size:.85rem;white-space:nowrap}
+.reprow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;border:1px solid var(--line);background:var(--cell);padding:8px 10px}
+.reprow .nm{flex:1 1 170px;font-weight:700;min-width:0}
+.reprow .nm small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.reprow select{max-width:100%;padding:6px 8px;border:1px solid var(--ink);background:var(--cell)}
+select.input{appearance:auto}
+.dort{border-top:1px solid var(--ink);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+.dort small{color:var(--muted);font-weight:400}
+.dbtns{display:flex;flex-wrap:wrap;gap:6px}
+.dbtns button{border:1px solid var(--ink);background:var(--cell);padding:6px 9px;font-weight:700;font-size:.85rem}
 .laterbox span{font-size:.9rem;color:var(--muted)}
 .vlist .lsw{width:30px;align-self:stretch;display:grid;place-items:center;background:var(--pc);flex:none;margin-left:-12px}
 .okbtn{background:var(--pt,var(--band-ink))!important;color:var(--pc,var(--band))!important}
@@ -609,12 +624,13 @@ body.kbd .oh .ot .ot-t .kb{position:static;margin-left:4px}
 
 
 <script src="../commun/supabase.js"></script>
+<script src="../commun/projets.js"></script>
 <script>
 (function(){
 const MAXN=3, MAXS=2, MAXW=3, MAXT=5, URG=21, KEY='etabli-maquette-v4';
 const COLORS=['#F0A35E','#F5CF4E','#E0574F','#F07F9E','#9A6BD1','#4A86D9','#3FB6C8','#5BAE5B','#A9A63A','#A2703F','#5E6B7A','#2B2B2B','#3F51B5','#7FD1AE'];
 const SIZES={mini:{l:'Mini',sub:'moins de 4 h · liste à part',unit:'none',min:0},h4:{l:'+4 h',sub:'petit · sur un jour',unit:'day',min:4},j2:{l:'+2 jours',sub:'1 case · sur des jours',unit:'day',min:16},w1:{l:'+1 semaine',sub:'1 case par semaine',unit:'week',min:40},m1:{l:'+1 mois',sub:'à découper en étapes',unit:'week',min:160}};
-const STATE={later:'Autre temps',cours:'En cours',proch:'Prochaine semaine',plan:'Planifié',attente:'À planifier',perm:'Perpétuel',fini:'Terminé'};
+const STATE={later:'Idée',prevu:'Prévu',cours:'En cours',proch:'Prochaine semaine',plan:'Planifié',attente:'À planifier',perm:'∞ Perpétuel',fini:'Terminé'};
 const IMP={1:'secondaire',2:'normal',3:'important'};
 const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -637,7 +653,7 @@ const EMOJIS=[
  ['Maison','🛏️🛋️🪑🚿🛁🧼🧽🕯️🧸🪞🚽🧊🪟🧦👕🧥🔒🪴'],
  ['Symboles','✨💥✅❌⚠️🔴🟠🟡🟢🔵🟣⚫⚪🟥🟧🟨🟩🟦🟪⬛💎🌀♻️🔄💯❓❗🏁🚩']
 ];
-const SUGG=[[/patate|courge|légume|recolt|récolt|potager|cultur|semis|plant/i,'🌱'],[/patate/i,'🍠'],[/carotte/i,'🥕'],[/marché|vente|panier/i,'🧺'],[/isol|ouate/i,'🧱'],[/plancher|combles|bois|osb/i,'🪵'],[/toit|maison|studio/i,'🏠'],[/parkour|compet|compét|entraîn/i,'🤸'],[/voyage|vacances|suède|trip/i,'✈️'],[/van|maxus|camion/i,'🚐'],[/factur|compta|impôt|admin/i,'🧾'],[/site|web|ordi|pc/i,'💻'],[/fête|anniv|soirée/i,'🎉'],[/film|vidéo|musée/i,'🎥'],[/bière|brass/i,'🍺'],[/choco|chacao|cacao/i,'🍫'],[/resto|repas|cuisine/i,'🍽️'],[/formation|cours|apprendre/i,'🎓'],[/ferme/i,'🏡'],[/instagram|écran|téléphone/i,'📵']];
+const SUGG=[[/talus|gdt|maraîch|maraich/i,'🥕'],[/patate|courge|légume|recolt|récolt|potager|cultur|semis|plant/i,'🌱'],[/patate/i,'🍠'],[/carotte/i,'🥕'],[/marché|vente|panier/i,'🧺'],[/isol|ouate/i,'🧱'],[/plancher|combles|bois|osb/i,'🪵'],[/toit|maison|studio/i,'🏠'],[/parkour|compet|compét|entraîn/i,'🤸'],[/voyage|vacances|suède|trip/i,'✈️'],[/van|maxus|camion/i,'🚐'],[/factur|compta|impôt|admin/i,'🧾'],[/site|web|ordi|pc/i,'💻'],[/fête|anniv|soirée/i,'🎉'],[/film|vidéo|musée/i,'🎥'],[/bière|brass/i,'🍺'],[/choco|chacao|cacao/i,'🍫'],[/resto|repas|cuisine/i,'🍽️'],[/formation|cours|apprendre/i,'🎓'],[/ferme/i,'🏡'],[/instagram|écran|téléphone/i,'📵']];
 
 const VRAC0=()=>[{id:'v1',t:'Rappeler le garagiste pour les pneus'},{id:'v2',t:'Idée : soupe de courge au marché'},{id:'v3',t:'Acheter des vis inox'}];
 const LISTS0=()=>({petites:[{id:'s1',t:'Réparer la poignée de la porte du studio',d:false},{id:'s2',t:'Idée : panier découverte pour les clients',d:false},{id:'s3',t:'Racheter de la ficelle de palissage',d:true}],autre:[{id:'a1',t:'Four à pain dans le jardin'},{id:'a2',t:'Apprendre la soudure'}]});
@@ -715,6 +731,23 @@ function ink(hex){const h=hex.replace('#',''); const r=parseInt(h.slice(0,2),16)
 const pv=p=>`--pc:${p.color};--pt:${ink(p.color)}`;
 const P=id=>S.projects.find(p=>p.id===id);
 const T=id=>S.tags.find(t=>t.id===id);
+/* Fiche projet commune (commun/projets.js) : parent, perso/pro, états */
+const kidsOf=id=>S.projects.filter(x=>x.parent===id);
+const natureOf=p=>Projets.nature(p,P);
+const parentOf=p=>Projets.parentDe(p,P);
+const proHtml=p=>natureOf(p)==='pro'?'<span class="pro">pro</span>':'';
+function stName(p){ if(p.closed) return p.fin&&p.fin.type==='abandonne'?'Abandonné':'Terminé'; return STATE[state(p)]; }
+function parentSelect(id,cur,p){
+  if(p&&kidsOf(p.id).length) return '<p class="note" style="margin:0">Il contient des sous-projets : il reste au premier niveau.</p>';
+  const me=p||{id:'__nouveau'}, L=S.projects.filter(x=>Projets.parentPossible(x,me,S.projects)).sort((a,b)=>(isPerm(b)-isPerm(a))||a.name.localeCompare(b.name,'fr'));
+  return `<select class="input" id="${id}"><option value="">Aucun : premier niveau</option>${L.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.emoji?x.emoji+' ':''}${esc(x.name)}${isPerm(x)?' (∞)':''}</option>`).join('')}</select>`; }
+function natPick(cur,par,act){
+  const opts=par?[['','Comme '+par.name+' ('+natureOf(par)+')'],['perso','Perso'],['pro','Pro']]:[['perso','Perso'],['pro','Pro']];
+  const on=v=>par?(cur||'')===v:(cur==='pro'?'pro':'perso')===v;
+  return `<div class="seg">${opts.map(([v,l])=>`<button data-act="${act}" data-v="${v}" aria-pressed="${on(v)}">${esc(l)}</button>`).join('')}</div>`; }
+function prevuField(p){
+  const e=Projets.etat(p,todayS);
+  return `<div class="field"><label for="f-prevu">Prévu à partir du</label><div class="duerow"><input class="input" type="date" id="f-prevu" value="${p.prevu||''}"><button data-act="clearPrevu">Aucun</button></div><p class="duehint">${e==='prevu'?'Prévu : il passera en cours tout seul le '+fmt(p.prevu)+' '+p.prevu.slice(0,4)+', ou dès que tu le places au planning.':(p.prevu?'Il a déjà commencé (placé au planning) : il reste en cours.':'Pour un projet décidé qui commence plus tard. Vide = déjà en cours.')}</p></div>`; }
 const isMini=p=>p&&p.size==='mini';
 const isPerm=p=>p&&p.size==='perm'; /* projet perpétuel : ni durée, ni échéance, ni clôture */
 const DUR_OPTS=[1,2,3,5,10,20];
@@ -727,7 +760,7 @@ const MINI_COLOR='#E2DFD3';
 function newMini(name,id,done){ const p={id:id||'p'+Date.now(),emoji:'',color:MINI_COLOR,name,size:'mini',imp:2,due:null,tags:[],weeks:[],days:[],why:'',next:'',folder:null,tasks:[]}; if(done) p.closed=todayS; return p; }
 const pWeeks=p=>[...new Set([...(p.weeks||[]),...(p.days||[]).map(d=>wkKey(parse(d)))])].sort();
 const open=()=>S.projects.filter(p=>!p.closed&&!p.later);
-function state(p){ if(p.closed) return 'fini'; if(p.later) return 'later'; const w=pWeeks(p); if(w.includes(CUR)) return 'cours'; if(w.includes(wkAdd(CUR,1))) return 'proch'; if(w.some(x=>x>CUR)) return 'plan'; return isPerm(p)?'perm':'attente'; }
+function state(p){ if(p.closed) return 'fini'; if(p.later) return 'later'; if(Projets.etat(p,todayS)==='prevu') return 'prevu'; const w=pWeeks(p); if(w.includes(CUR)) return 'cours'; if(w.includes(wkAdd(CUR,1))) return 'proch'; if(w.some(x=>x>CUR)) return 'plan'; return isPerm(p)?'perm':'attente'; }
 function inWeek(k){const ps=open().filter(p=>!isMini(p)&&pWeeks(p).includes(k)); return {n:ps.filter(p=>p.weeks.includes(k)),s:ps.filter(p=>!p.weeks.includes(k)),all:ps};}
 function workdaysUntil(due,cap){ let n=0; const d=new Date(today), e=parse(due); while(d<=e){ const w=d.getDay(); if(w!==0&&w!==6&&!(typeof offOn==='function'&&offOn(iso(d)))) n++; if(cap!=null&&n>cap) return n; d.setDate(d.getDate()+1); } return n; }
 function urgLimit(dur){ return dur<=1?null:Math.ceil(dur*3); }
@@ -900,37 +933,99 @@ function vPlanning(){
 }
 
 /* Vue projets */
+function needReprise(){ return !S.reprise&&S.projects.some(p=>(p.tags||[]).some(t=>T(t))); }
 function vProjets(){
-  const order={cours:0,proch:1,plan:2,attente:3,perm:3,later:4,fini:5};
-  let rows=S.projects.filter(p=>ui.filter==='fini'?!!p.closed:ui.filter==='later'?(!p.closed&&!!p.later):ui.filter==='attente'?(!isMini(p)&&!p.closed&&state(p)==='attente'):(!isMini(p)&&!p.closed&&!p.later));
+  const order={cours:0,proch:1,plan:2,attente:3,perm:3,prevu:4,later:5,fini:6};
+  const E=p=>Projets.etat(p,todayS), f=ui.filter;
+  const nCours=S.projects.filter(p=>!isMini(p)&&!isPerm(p)&&E(p)==='encours').length, nPrevu=S.projects.filter(p=>!isMini(p)&&E(p)==='prevu').length, nIdee=S.projects.filter(p=>!isMini(p)&&E(p)==='idee').length;
+  let rows=S.projects.filter(p=>{ if(isMini(p)) return false; const e=E(p);
+    if(f==='fini') return e==='archive'; if(f==='later') return e==='idee'; if(f==='prevu') return e==='prevu';
+    if(f==='attente') return e==='encours'&&!isPerm(p)&&state(p)==='attente';
+    return e==='encours'&&!isPerm(p); });
   const mOpen=S.projects.filter(p=>isMini(p)&&!p.closed), mBest=mOpen.slice().sort(prioSort)[0];
-  if(ui.tagSel.length) rows=rows.filter(tagMatch);
-  const prio=ui.sort==='prio';
-  rows.sort(prio?prioSort:(x,y)=>order[state(x)]-order[state(y)]||prioSort(x,y));
-  if(ui.filter==='ouverts'&&!ui.tagSel.length&&mBest){ const g={__g:true,id:'__minis',imp:mBest.imp,due:mBest.due,size:'mini',tags:[],weeks:[],days:[]}; if(prio){ rows.push(g); rows.sort(prioSort); } else rows.unshift(g); }
-  const F=[['ouverts','En cours et à venir'],['attente','Non planifiés'],['later','Autre temps'],['fini','Terminés']];
-  let lastQ=-1;
-  $view.innerHTML=`<div class="ctrl"><div class="seg"><button data-act="sort" data-s="prio" aria-pressed="${prio}">Par priorité</button><button data-act="sort" data-s="etat" aria-pressed="${!prio}">Par état</button></div>
-  <div class="chips">${F.map(([k,l])=>`<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${ui.filter===k}">${l}</button>`).join('')}</div></div>
-  <div class="tablebox"><table class="ptable"><thead><tr><th class="pth">Projet</th><th>État</th><th>Importance</th><th>Échéance</th><th>Taille</th><th>Tags</th></tr></thead>
-  <tbody>${rows.map(p=>{let pre=''; if(prio&&quad(p)!==lastQ){lastQ=quad(p); pre=`<tr class="qrow"><td colspan="6"><span class="quad"><i style="background:${QUADS[lastQ][1]}"></i>${QUADS[lastQ][0]}</span></td></tr>`;}
-   if(p.__g){ const nu=mOpen.filter(urgent).length, fd=mOpen.map(x=>x.due).filter(Boolean).sort()[0]; return pre+`<tr data-act="minis" class="mgrp" style="--pc:${MINI_COLOR};--pt:#1E1E1E"><td class="pcell"><div class="in"><span class="sw" style="font-family:var(--mono);font-size:.8rem;font-weight:600">(${mOpen.length})</span><span class="nm"><span>Mini projets</span></span></div></td><td class="st">Liste</td><td>${starsHtml(mBest.imp)}</td><td>${fd?fmt(fd)+' '+parse(fd).getFullYear():''} ${nu?`<span class="urg">${nu} URGENT</span>`:''}</td><td style="font-family:var(--mono)">Mini</td><td></td></tr>`; }
-   const st=state(p);
-   return pre+`<tr data-act="open" data-id="${p.id}" style="${pv(p)}"><td class="pcell"><div class="in"><span class="sw">${p.emoji}</span><span class="nm"><span>${esc(p.name)}</span></span></div></td><td class="st st-${st}">${STATE[st]}</td><td>${starsHtml(p.imp)}</td><td>${p.due?fmt(p.due)+' '+parse(p.due).getFullYear():''} ${urgHtml(p)}</td><td style="font-family:var(--mono)">${durLbl(p)}</td><td>${tagsHtml(p)}</td></tr>`}).join('')||'<tr class="qrow"><td class="empty" colspan="6"><span class="quad">Aucun projet ici.</span></td></tr>'}</tbody></table></div>
-  ${S.tags.length?(()=>{ const cols=[...new Set(S.tags.map(t=>t.color).filter(Boolean))]; return `<div class="tagfilter"><span class="lbl">Filtrer par tag</span>
-   ${cols.length?`<div class="cdots">${cols.map(c=>{ const ids=S.tags.filter(t=>t.color===c).map(t=>t.id), on=ids.every(id=>ui.tagSel.includes(id)); return `<button class="cdot" style="--sw:${c}" data-act="colf" data-c="${c}" aria-pressed="${on}" aria-label="Tous les tags de cette couleur"></button>`; }).join('')}</div>`:''}
-   <div class="pchips">${S.tags.map(t=>`<button class="tchip${t.color?' col':''}"${tcs(t)} data-act="tagf" data-t="${t.id}" aria-pressed="${ui.tagSel.includes(t.id)}">${esc(t.name)}</button>`).join('')}</div>
-   ${ui.tagSel.length?`<p class="note" style="margin:0">Même couleur : l'un ou l'autre. Couleurs différentes : les deux à la fois. <button class="linkbtn" data-act="tagClear">Effacer les filtres</button></p>`:''}</div>`; })():''}
-  <button class="btn ghost" style="margin-top:10px" data-act="tags">Gérer les tags</button>
-  <p class="note">« Par priorité » range les projets comme la matrice d'Eisenhower : importance selon tes étoiles, urgence quand il reste moins de 3 × la durée du projet en jours ouvrables (la dernière semaine pour un projet d'1 jour ou moins).</p>`;
+  const sort=ui.sort==='etat'||ui.sort==='parent'?ui.sort:'prio', prio=sort==='prio';
+  const inf=S.projects.filter(p=>isPerm(p)&&!p.closed&&!p.later).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  const F=[['ouverts','En cours'],['attente','Non planifiés'],['prevu','Prévus'],['later','Idées'],['fini','Archivés']];
+  const row=p=>{ const par=parentOf(p); return `<tr data-act="open" data-id="${p.id}" style="${pv(p)}"><td class="pcell"><div class="in"><span class="sw">${p.emoji}</span><span class="nm"><span>${esc(p.name)}${proHtml(p)}</span></span></div></td><td class="st st-${state(p)}">${stName(p)}</td><td>${starsHtml(p.imp)}</td><td>${p.due?fmt(p.due)+' '+parse(p.due).getFullYear():''} ${urgHtml(p)}</td><td style="font-family:var(--mono)">${f==='prevu'&&p.prevu?'dès '+fmt(p.prevu):durLbl(p)}</td><td class="parcell">${par?esc((par.emoji?par.emoji+' ':'')+par.name):''}</td></tr>`; };
+  let body='';
+  if(sort==='parent'){
+    const groups=new Map(); rows.slice().sort(prioSort).forEach(p=>{ const k=p.parent&&P(p.parent)?p.parent:''; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(p); });
+    const keys=[...groups.keys()].sort((x,y)=>x===''?1:y===''?-1:P(x).name.localeCompare(P(y).name,'fr'));
+    body=keys.map(k=>{ const par=k?P(k):null; return `<tr class="qrow"${par?` data-act="open" data-id="${par.id}"`:''}><td colspan="6"><span class="quad">${par?`${par.emoji} ${esc(par.name)}${proHtml(par)}`:'Premier niveau'}</span></td></tr>`+groups.get(k).map(row).join(''); }).join('');
+  } else {
+    rows.sort(prio?prioSort:(x,y)=>order[state(x)]-order[state(y)]||prioSort(x,y));
+    if(f==='ouverts'&&mBest){ const g={__g:true,id:'__minis',imp:mBest.imp,due:mBest.due,size:'mini',tags:[],weeks:[],days:[]}; if(prio){ rows.push(g); rows.sort(prioSort); } else rows.unshift(g); }
+    let lastQ=-1;
+    body=rows.map(p=>{let pre=''; if(prio&&quad(p)!==lastQ){lastQ=quad(p); pre=`<tr class="qrow"><td colspan="6"><span class="quad"><i style="background:${QUADS[lastQ][1]}"></i>${QUADS[lastQ][0]}</span></td></tr>`;}
+     if(p.__g){ const nu=mOpen.filter(urgent).length, fd=mOpen.map(x=>x.due).filter(Boolean).sort()[0]; return pre+`<tr data-act="minis" class="mgrp" style="--pc:${MINI_COLOR};--pt:#1E1E1E"><td class="pcell"><div class="in"><span class="sw" style="font-family:var(--mono);font-size:.8rem;font-weight:600">(${mOpen.length})</span><span class="nm"><span>Mini projets</span></span></div></td><td class="st">Liste</td><td>${starsHtml(mBest.imp)}</td><td>${fd?fmt(fd)+' '+parse(fd).getFullYear():''} ${nu?`<span class="urg">${nu} URGENT</span>`:''}</td><td style="font-family:var(--mono)">Mini</td><td></td></tr>`; }
+     return pre+row(p); }).join('');
+  }
+  $view.innerHTML=`${needReprise()?`<div class="alert" style="margin-bottom:12px"><div><b>Nouvelle organisation.</b> Les tags laissent la place aux projets parents : un projet peut en contenir d'autres (Isolation › Grenier Marly), et chacun est perso ou pro. Je te propose un rangement, tu le vérifies avant que rien ne change.</div><button class="btn" data-act="reprise">Ranger mes projets</button></div>`:''}
+  <div class="ctrl"><div class="seg"><button data-act="sort" data-s="prio" aria-pressed="${sort==='prio'}">Par priorité</button><button data-act="sort" data-s="etat" aria-pressed="${sort==='etat'}">Par état</button><button data-act="sort" data-s="parent" aria-pressed="${sort==='parent'}">Par parent</button></div>
+  <div class="chips">${F.map(([k,l])=>`<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div></div>
+  <p class="cnt">En cours : <b>${nCours}</b> · Prévus : ${nPrevu} · Idées : ${nIdee}</p>
+  ${inf.length?`<div class="infrow"><span class="lbl">∞ Toujours là <small>· sans fin, ils ne comptent pas dans les projets en cours</small></span><div class="pchips">${inf.map(p=>{ const n=kidsOf(p.id).filter(k=>!k.closed).length; return `<button class="pchip" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${n?' · '+n:''}</button>`; }).join('')}</div></div>`:''}
+  <div class="tablebox" style="margin-top:12px"><table class="ptable"><thead><tr><th class="pth">Projet</th><th>État</th><th>Importance</th><th>Échéance</th><th>${f==='prevu'?'Début':'Taille'}</th><th>Rangé sous</th></tr></thead>
+  <tbody>${body||'<tr class="qrow"><td class="empty" colspan="6"><span class="quad">Aucun projet ici.</span></td></tr>'}</tbody></table></div>
+  <p class="note">« Par priorité » range les projets comme la matrice d'Eisenhower : importance selon tes étoiles, urgence quand il reste moins de 3 × la durée du projet en jours ouvrables (la dernière semaine pour un projet d'1 jour ou moins). « Par parent » les regroupe sous le projet qui les contient.</p>`;
 }
+
+/* Reprise : les tags deviennent des projets parents (validée par Nicolas avant d'enregistrer) */
+const plain=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+function repriseInit(){
+  const used=S.tags.filter(t=>S.projects.some(p=>(p.tags||[]).includes(t.id)));
+  const R={tags:{},projs:{}};
+  used.forEach(t=>{ const same=S.projects.find(p=>!p.closed&&!isMini(p)&&!p.parent&&plain(p.name)===plain(t.name));
+    R.tags[t.id]={mode:/^perso$/i.test(t.name.trim())?'none':same?same.id:'new', nature:/talus|gdt|ouate|isol|expo|fertik|travaux|pro\b|mandat/i.test(t.name)?'pro':'perso'}; });
+  S.projects.filter(p=>!p.closed&&!isMini(p)).forEach(p=>{ const t=(p.tags||[]).find(id=>R.tags[id]&&R.tags[id].mode!=='none');
+    let par=p.parent||'';
+    if(!par&&t){ const m=R.tags[t].mode; par=m==='new'?'tag:'+t:m; }
+    if(par===p.id) par='';
+    const t0=(p.tags||[]).find(id=>R.tags[id]);
+    R.projs[p.id]={parent:par, nature:p.nature||(par?'':(t0?R.tags[t0].nature:'perso'))}; });
+  return R; }
+function repriseSheet(){
+  sheetId=null; ctx=null; if(!ui.rep) ui.rep=repriseInit(); const R=ui.rep;
+  const tops=S.projects.filter(p=>!p.closed&&!isMini(p)&&!p.parent).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  const count=id=>S.projects.filter(p=>(p.tags||[]).includes(id)).length;
+  const tagRows=Object.keys(R.tags).map(id=>{ const t=T(id), x=R.tags[id]; return `<div class="reprow"><span class="nm">${esc(t.name)}<small>tag de ${count(id)} projet${count(id)>1?'s':''}</small></span>
+    <select data-rep-tag="${id}" aria-label="Que devient le tag ${esc(t.name)}"><option value="new"${x.mode==='new'?' selected':''}>devient le projet ∞ « ${esc(t.name)} »</option><option value="none"${x.mode==='none'?' selected':''}>pas de projet parent</option>${tops.map(p=>`<option value="${p.id}"${x.mode===p.id?' selected':''}>rangé sous ${p.emoji?p.emoji+' ':''}${esc(p.name)}</option>`).join('')}</select>
+    <select data-rep-tagnat="${id}" aria-label="Perso ou pro"><option value="perso"${x.nature==='perso'?' selected':''}>perso</option><option value="pro"${x.nature==='pro'?' selected':''}>pro</option></select></div>`; }).join('');
+  const parOpts=cur=>`<option value="">premier niveau</option>${Object.keys(R.tags).filter(id=>R.tags[id].mode==='new').map(id=>`<option value="tag:${id}"${cur==='tag:'+id?' selected':''}>sous ${esc(T(id).name)} (nouveau ∞)</option>`).join('')}${tops.map(p=>`<option value="${p.id}"${cur===p.id?' selected':''}>sous ${p.emoji?p.emoji+' ':''}${esc(p.name)}</option>`).join('')}`;
+  const L=Object.keys(R.projs).map(P).filter(Boolean).sort((a,b)=>String(R.projs[a.id].parent).localeCompare(String(R.projs[b.id].parent))||a.name.localeCompare(b.name,'fr'));
+  const projRows=L.map(p=>{ const x=R.projs[p.id]; return `<div class="reprow" style="border-left:6px solid ${p.color}"><span class="nm">${p.emoji} ${esc(p.name)}<small>${stName(p)}${(p.tags||[]).map(T).filter(Boolean).map(t=>' · '+esc(t.name)).join('')}</small></span>
+    <select data-rep-p="${p.id}" aria-label="Rangé sous">${parOpts(x.parent)}</select>
+    <select data-rep-pnat="${p.id}" aria-label="Perso ou pro">${x.parent?`<option value=""${x.nature===''?' selected':''}>comme le parent</option>`:''}<option value="perso"${x.nature==='perso'?' selected':''}>perso</option><option value="pro"${x.nature==='pro'?' selected':''}>pro</option></select></div>`; }).join('');
+  openSheet(`<div class="shead"><h2>Nouvelle organisation<small>tes tags deviennent des projets parents</small></h2><button class="xbtn" data-act="close">Plus tard</button></div><div class="sbody">
+   <p class="note" style="margin:0">Voici ma proposition. Rien ne change tant que tu n'as pas enregistré, et une sauvegarde de tes données est téléchargée juste avant. Deux niveaux au plus : un projet qui en contient d'autres reste au premier niveau.</p>
+   <div class="sechead" style="margin-top:6px">1 · Tes tags</div>${tagRows||'<p class="note">Aucun tag utilisé.</p>'}
+   <div class="sechead">2 · Tes projets</div>${projRows||'<p class="note">Aucun projet ouvert.</p>'}
+   <button class="btn" data-act="repSave">Enregistrer la nouvelle organisation</button>
+   <p class="note" style="margin:0">Après l'enregistrement, les tags ne s'affichent plus (ils restent dans la sauvegarde).</p></div>`,'reprise');
+}
+function backupDownload(tag){ try{ const blob=new Blob([JSON.stringify({app:'etabli',version:1,exported:new Date().toISOString(),data:S},null,2)],{type:'application/json'}); const u=URL.createObjectURL(blob); const l=document.createElement('a'); l.href=u; l.download='etabli-'+todayS+(tag?'-'+tag:'')+'.json'; document.body.appendChild(l); l.click(); setTimeout(()=>{URL.revokeObjectURL(u); l.remove();},1000); return true; }catch(e){ return false; } }
+function repriseSave(){
+  const R=ui.rep; if(!R) return; backupDownload('avant-reprise');
+  const newIds={}; let i=0;
+  Object.keys(R.tags).forEach(id=>{ const x=R.tags[id]; if(x.mode!=='new') return; if(!Object.values(R.projs).some(v=>v.parent==='tag:'+id)) return;
+    const t=T(id); let em='✨'; for(const [re,e2] of SUGG){ if(re.test(t.name)){em=e2; break;} }
+    const p={id:'p'+(Date.now()+(i++)),emoji:em,color:t.color||COLORS[i%COLORS.length],name:t.name,size:'perm',dur:null,imp:2,due:null,tags:[],weeks:[],days:[],why:'',next:'',folder:null,tasks:[],nature:x.nature};
+    S.projects.push(p); newIds[id]=p.id; });
+  Object.keys(R.tags).forEach(id=>{ const x=R.tags[id]; if(x.mode!=='new'&&x.mode!=='none'){ const tp=P(x.mode); if(tp&&!tp.nature) tp.nature=x.nature; } });
+  Object.keys(R.projs).forEach(pid=>{ const p=P(pid), x=R.projs[pid]; if(!p) return; let par=x.parent||'';
+    if(par.startsWith('tag:')) par=newIds[par.slice(4)]||'';
+    if(par&&par!==p.id) p.parent=par; else delete p.parent;
+    if(x.nature) p.nature=x.nature; else if(p.parent) delete p.nature; else p.nature='perso'; });
+  /* deux niveaux au plus : un projet qui en contient d'autres reste au premier niveau */
+  S.projects.forEach(p=>{ if(p.parent&&kidsOf(p.id).length) delete p.parent; });
+  S.reprise={le:todayS}; ui.rep=null; quiet=true; save(); quiet=false; closeSheet(); toast('Nouvelle organisation enregistrée'); }
 
 /* Vue en vrac */
 const itemArr=src=>src==='inbox'?S.inbox:S.lists[src];
 function laterBox(){ const L=S.projects.filter(p=>p.later&&!p.closed).sort(prioSort);
-  return `<div class="sechead">🕰️ Projets d'un autre temps<span>${L.length}</span></div><ul class="vlist vrac">${L.map(p=>`<li style="${pv(p)}"><span class="lsw">${p.emoji}</span><button class="vt" data-act="open" data-id="${p.id}">${esc(p.name)} <span class="meta" style="display:inline-flex">${starsHtml(p.imp)}<span>${durLbl(p)}</span></span></button><span class="vgo">›</span></li>`).join('')}<li><button class="vt" data-act="laterPick"><b>+ Y ranger un projet existant</b></button><span class="vgo">›</span></li></ul>`; }
+  return `<div class="sechead">💭 Idées de projets<span>${L.length}</span></div><ul class="vlist vrac">${L.map(p=>`<li style="${pv(p)}"><span class="lsw">${p.emoji}</span><button class="vt" data-act="open" data-id="${p.id}">${esc(p.name)} <span class="meta" style="display:inline-flex">${starsHtml(p.imp)}<span>${durLbl(p)}</span></span></button><span class="vgo">›</span></li>`).join('')}<li><button class="vt" data-act="laterPick"><b>+ Remettre un projet en idée</b></button><span class="vgo">›</span></li></ul>`; }
 function laterPickSheet(){ sheetId=null; ctx=null; const L=open().filter(p=>!isMini(p)).sort(prioSort);
-  openSheet(`<div class="shead"><h2>Ranger dans un autre temps<small>le projet quitte le planning et la liste</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody"><div class="picklist">${L.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="laterSet" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta">${starsHtml(p.imp)}<span>${durLbl(p)}</span><span>${STATE[state(p)]}</span></span></span></button>`).join('')||'<p class="empty">Aucun projet ouvert.</p>'}</div></div>`,'laterpick');
+  openSheet(`<div class="shead"><h2>Remettre en idée<small>le projet quitte le planning et les projets en cours</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody"><div class="picklist">${L.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="laterSet" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta">${starsHtml(p.imp)}<span>${durLbl(p)}</span><span>${stName(p)}</span></span></span></button>`).join('')||'<p class="empty">Aucun projet ouvert.</p>'}</div></div>`,'laterpick');
 }
 function setLater(p,on){ if(on){ const [a]=wkDates(CUR); p.weeks=p.weeks.filter(w=>w<CUR); p.days=p.days.filter(d=>d<a); p.later=true; } else delete p.later; save(); }
 function migrateLater(){ const L=(S.lists&&S.lists.autre)||[]; if(!L.length) return false; L.forEach(v=>{ const id='pl'+v.id; if(!P(id)){ let em='✨'; for(const [re,e2] of SUGG){ if(re.test(v.t)){em=e2; break;} } S.projects.push({id,emoji:em,color:COLORS[[...String(v.id)].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length],name:v.t,size:'proj',dur:5,imp:2,due:null,tags:[],weeks:[],days:[],why:'',next:'',folder:null,tasks:[],later:true}); } }); S.lists.autre=[]; save(); return true; }
@@ -953,7 +1048,7 @@ function itemSheet(src,vid,mode){
     const order={cours:0,proch:1,plan:2,attente:3,perm:3};
     const ps=open().slice().sort((x,y)=>order[state(x)]-order[state(y)]||prioSort(x,y));
     body=`<p style="margin:0"><b>${esc(v.t)}</b></p><span class="lbl">Étape de quel projet ?</span>
-    <div class="picklist">${ps.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="toStep" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta"><span>${STATE[state(p)]}</span><span>${p.tasks.length} étape${p.tasks.length>1?'s':''}</span></span></span></button>`).join('')}</div>`;
+    <div class="picklist">${ps.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="toStep" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta"><span>${stName(p)}</span><span>${p.tasks.length} étape${p.tasks.length>1?'s':''}</span></span></span></button>`).join('')}</div>`;
   } else {
     body=`<div class="field"><label for="f-item">Texte</label><input class="input" id="f-item" autocomplete="off" autocorrect="off" value="${esc(v.t)}"></div>
     <span class="lbl">Ranger dans…</span>
@@ -961,7 +1056,7 @@ function itemSheet(src,vid,mode){
      ${opt('itemStep','🧩','Étape d\'un projet','Ajoutée aux tâches du projet choisi')}
      ${opt('itemProj','✨','Transformer en projet','Création rapide, le nom est déjà rempli')}
      ${opt('itemMini','📝','Mini projet','Moins d\'1 jour : ajouté à la liste des mini projets')}
-     ${opt('itemLater','🕰️','Projet d\'un autre temps','Un vrai projet, rangé pour plus tard')}
+     ${opt('itemLater','💭','Idée de projet','Pas encore décidé, gardé pour plus tard')}
      ${src!=='inbox'?opt('itemTo','📥','Remettre en vrac','À trier plus tard','data-to="inbox"'):''}
     </div>
     <button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="itemDel">Supprimer</button>`;
@@ -978,7 +1073,7 @@ function cellSheet(dS,msg){
   <div class="seg"><button data-act="cmode" data-m="j" aria-pressed="${mode==='j'}">Ce jour</button><button data-act="cmode" data-m="s" aria-pressed="${mode==='s'}">La semaine (lun–ven)</button></div>
   ${msg||''}
   <button class="btn" data-act="new">+ Nouveau projet</button>
-  <div class="picklist">${list.map(p=>{ const on=mode==='j'?p.days.includes(dS):p.weeks.includes(k); return `<button class="pickbtn" style="${pv(p)}" data-act="cellAdd" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta">${starsHtml(p.imp)}<span>${durLbl(p)}</span><span>${STATE[state(p)]}</span>${on?'<span>✓ déjà là · toucher pour retirer</span>':''}${urgHtml(p)}</span></span></button>`; }).join('')||'<p class="empty">Aucun projet ouvert.</p>'}</div></div>`,'cell:'+dS+mode);
+  <div class="picklist">${list.map(p=>{ const on=mode==='j'?p.days.includes(dS):p.weeks.includes(k); return `<button class="pickbtn" style="${pv(p)}" data-act="cellAdd" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta">${starsHtml(p.imp)}<span>${durLbl(p)}</span><span>${stName(p)}</span>${on?'<span>✓ déjà là · toucher pour retirer</span>':''}${urgHtml(p)}</span></span></button>`; }).join('')||'<p class="empty">Aucun projet ouvert.</p>'}</div></div>`,'cell:'+dS+mode);
 }
 function cellPlace(p,dS,k){ const mode=ui.cellMode||'j';
   if(mode==='j'){ if(p.days.includes(dS)){ p.days=p.days.filter(x=>x!==dS); return 'retiré'; } if(!canAdd(p,k,'j')) return false; p.days.push(dS); p.days.sort(); return 'ajouté'; }
@@ -1074,7 +1169,7 @@ function dueHint(due,dur){ if(!due) return 'Pas d\'échéance, pas d\'urgence.';
 
 /* Création express */
 function newSheet(keep){
-  if(!keep||!draft) draft={name:'',emoji:'✨',picked:false,color:COLORS[Math.floor(Math.random()*COLORS.length)],size:'proj',dur:5,imp:2,due:'',tags:[],why:''};
+  if(!keep||!draft) draft={name:'',emoji:'✨',picked:false,color:COLORS[Math.floor(Math.random()*COLORS.length)],size:'proj',dur:5,imp:2,due:'',tags:[],why:'',etat:'encours',prevu:'',parent:(ctx&&ctx.parentFor)||null,nature:''};
   if(ctx&&ctx.size==='s'&&!keep) draft.dur=1;
   const d=draft;
   openSheet(`<div class="shead"><h2>Nouveau projet<small>${ctx&&ctx.fromCell?((ui.cellMode||'j')==='j'?'pour le '+fmt(ctx.cell):'pour la semaine '+wkNum(ctx.k)):ctx&&ctx.k?'pour la semaine '+wkNum(ctx.k):'il ira dans « À planifier »'}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
@@ -1082,8 +1177,10 @@ function newSheet(keep){
    <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(d.size,d.dur,'ndur')}</div>
    <div class="field"><span class="lbl">Importance</span>${starPick(d.imp,'nimp')}</div>
    ${d.size==='perm'?'':`<div class="field"><label for="n-due">Échéance (facultatif)</label><div class="duerow"><input class="input" type="date" id="n-due" value="${d.due}"><button data-act="nodue">Aucune</button></div><p class="duehint" id="n-duehint">${dueHint(d.due,d.size==='mini'?0:d.dur)}</p></div>`}
-   ${d.size==='mini'||(ctx&&(ctx.fromFill||ctx.fromCell))?'':`<button class="tchip" style="align-self:flex-start" data-act="nlater" aria-pressed="${!!d.later}">🕰️ Pour un autre temps</button>`}
-   ${d.size==='mini'?'':`<div class="field"><span class="lbl">Tags</span>${tagPick(d.tags,'ntag')}</div>
+   ${d.size==='mini'||(ctx&&(ctx.fromFill||ctx.fromCell))?'':`<div class="field"><span class="lbl">État</span><div class="seg">${[['encours','En cours'],['prevu','Prévu plus tard'],['idee','Idée']].map(([k,l])=>`<button data-act="netat" data-v="${k}" aria-pressed="${d.etat===k}">${l}</button>`).join('')}</div>${d.etat==='prevu'?`<label class="lbl" for="n-prevu" style="margin-top:8px">À partir du</label><input class="input" type="date" id="n-prevu" value="${d.prevu}">`:''}</div>`}
+   <div class="field"><label class="lbl" for="n-parent">Rangé sous (facultatif)</label>${parentSelect('n-parent',d.parent,null)}</div>
+   <div class="field"><span class="lbl">Perso ou pro</span>${natPick(d.nature,d.parent?P(d.parent):null,'nnat')}</div>
+   ${d.size==='mini'?'':`
    <details class="more"><summary>Plus de détails</summary>
     <div class="field"><label for="n-why">Pourquoi ce projet</label><input class="input" id="n-why" value="${esc(d.why)}" placeholder="Ce que tu veux en retirer"></div>
     <div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="ncolor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
@@ -1091,7 +1188,7 @@ function newSheet(keep){
    <button class="btn" data-act="create">Créer${ctx?' et placer':''}</button></div>`,'new');
   if(!keep) setTimeout(()=>{const n=document.getElementById('n-name'); if(n) try{n.focus();}catch(e){}},60);
 }
-function syncDraft(){ if(!draft) return; const di=document.querySelector('[data-durother=ndur]'); if(di&&di.value){ const v=parseFloat(String(di.value).replace(',','.')); if(v>0){ if(v<1) draft.size='mini'; else { draft.size='proj'; draft.dur=v; } } } const g=id=>document.getElementById(id); if(g('n-name')) draft.name=g('n-name').value; if(g('n-due')) draft.due=g('n-due').value; if(g('n-why')) draft.why=g('n-why').value; }
+function syncDraft(){ if(!draft) return; const di=document.querySelector('[data-durother=ndur]'); if(di&&di.value){ const v=parseFloat(String(di.value).replace(',','.')); if(v>0){ if(v<1) draft.size='mini'; else { draft.size='proj'; draft.dur=v; } } } const g=id=>document.getElementById(id); if(g('n-name')) draft.name=g('n-name').value; if(g('n-due')) draft.due=g('n-due').value; if(g('n-why')) draft.why=g('n-why').value; if(g('n-prevu')) draft.prevu=g('n-prevu').value; if(g('n-parent')) draft.parent=g('n-parent').value||null; }
 
 /* Choix d'émoji */
 let emojiFor=null;
@@ -1110,14 +1207,15 @@ let lastDetail=null;
 function detail(id,msg){
   const p=P(id); if(!p) return; if(lastDetail!==id){ ui.taskAdmin=false; ui.showDone=false; lastDetail=id; } sheetId=id; ctx=null; draft=null; placeMode=null;
   if(isMini(p)){ detailMini(p,msg); return; }
-  const st=state(p), closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, mo=money(id), h=hoursOf(id);
+  const st=state(p), closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, mo=money(id), h=hoursOf(id), par=parentOf(p), kids=kidsOf(p.id).sort((x,y)=>(!!x.closed-!!y.closed)||prioSort(x,y));
   const placed=[...p.weeks.map(w=>({k:w,l:'S'+wkNum(w)+' · lun–ven '+wkRange(w).split(' – ')[0],w,o:iso(wkMon(w))})),...p.days.map(x=>({k:x,l:dayLbl(x)+' '+MOIS[parse(x).getMonth()],w:wkKey(parse(x)),o:x}))].sort((u,v)=>u.o.localeCompare(v.o));
   openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>${esc(p.name)}<small>${isPerm(p)?'∞ Perpétuel':durLbl(p)} · ${IMP[p.imp]}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="projSave">OK</button>'}<button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
-  <div><span class="state st-${st}">${STATE[st]}</span>${urgHtml(p)} ${tagsHtml(p)}</div>
-  ${closed?`<div class="bilan"><span class="lbl">Clôturé le ${fmt(p.closed)}</span>${p.bilan&&p.bilan.learn?`<p><b>Ce que j'en retire.</b> ${esc(p.bilan.learn)}</p>`:''}${p.bilan&&p.bilan.diff?`<p><b>À refaire autrement.</b> ${esc(p.bilan.diff)}</p>`:''}${!(p.bilan&&(p.bilan.learn||p.bilan.diff))?'<p>Pas de bilan noté.</p>':''}</div>`:''}
+  <div><span class="state st-${st}">${stName(p)}</span>${proHtml(p)}${urgHtml(p)} ${par?`<button class="tchip" style="margin-left:4px" data-act="open" data-id="${par.id}">↑ ${par.emoji?par.emoji+' ':''}${esc(par.name)}</button>`:''}</div>
+  ${closed?`<div class="bilan"><span class="lbl">${p.fin&&p.fin.type==='abandonne'?'Abandonné':'Terminé'} le ${fmt(p.closed)}</span>${p.fin&&p.fin.raison?`<p><b>Pourquoi.</b> ${esc(p.fin.raison)}</p>`:''}${p.bilan&&p.bilan.learn?`<p><b>Ce que j'en retire.</b> ${esc(p.bilan.learn)}</p>`:''}${p.bilan&&p.bilan.diff?`<p><b>À refaire autrement.</b> ${esc(p.bilan.diff)}</p>`:''}${!(p.bilan&&(p.bilan.learn||p.bilan.diff))&&!(p.fin&&p.fin.raison)?'<p>Pas de bilan noté.</p>':''}</div>`:''}
   ${msg&&msg!=='del'?msg:''}
   ${tasksBlock(p,closed,'tâche')}
-  ${p.later&&!closed?`<div class="laterbox"><b>🕰️ Dans un autre temps</b><span>Ce projet attend son heure : il n'apparaît pas au planning.</span><button class="btn" data-act="laterOut">Sortir de l'autre temps</button></div>`:''}
+  ${kids.length||isPerm(p)?`<div class="field"><span class="lbl">Sous-projets · ${kids.filter(k=>!k.closed).length}</span>${kids.length?`<div class="picklist">${kids.map(k=>`<button class="pickbtn" style="${pv(k)}" data-act="open" data-id="${k.id}"><span class="sw">${k.emoji||'·'}</span><span class="tx"><b>${esc(k.name)}</b><span class="meta"><span>${stName(k)}</span>${proHtml(k)}${k.due?`<span>⏱ ${fmt(k.due)}</span>`:''}</span></span></button>`).join('')}</div>`:''}${closed||p.parent?'':'<button class="btn ghost" data-act="newKid">+ Sous-projet</button>'}</div>`:''}
+  ${p.later&&!closed?`<div class="laterbox"><b>💭 Idée</b><span>Ce projet n'est pas encore décidé : il n'apparaît ni au planning ni dans les projets en cours.</span><button class="btn" data-act="laterOut">C'est décidé : le passer en cours</button></div>`:''}
   ${p.later&&!closed?'':`<div class="field"><span class="lbl">Placement · ${placed.length}</span>
     ${placed.length?`<ul class="list">${placed.map(x=>`<li><span class="t" style="font-family:var(--mono);font-size:.88rem">${x.l}${x.w===CUR?' <span class="state" style="background:var(--hl);font-size:.7rem;padding:1px 5px">cette sem.</span>':''}</span>${closed?'':`<button class="x" data-act="unplace" data-k="${x.k}" aria-label="Retirer">×</button>`}</li>`).join('')}</ul>`:'<p class="note" style="margin:0">Pas encore placé.</p>'}
     ${closed?'':`<div class="actions"><button class="btn ghost" data-act="place" data-m="j">Par jours</button><button class="btn ghost" data-act="place" data-m="s">Par semaines</button></div>`}
@@ -1126,15 +1224,18 @@ function detail(id,msg){
   <div class="field"><span class="lbl">Importance</span>${starPick(p.imp,'imp')}</div>
   ${isPerm(p)?'':`<div class="field"><label for="f-due">Échéance</label><div class="duerow"><input class="input" type="date" id="f-due" data-field="due" value="${p.due||''}"><button data-act="clearDue">Aucune</button></div><p class="duehint">${dueHint(p.due,durOf(p))}</p></div>`}
   <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(p.size,p.dur,'dur')}${isPerm(p)?'<p class="note" style="margin:4px 0 0">Projet sans fin : place-le au planning quand tu t\'y consacres.</p>':''}</div>
-  <div class="field"><span class="lbl">Tags</span>${tagPick(p.tags,'tag')}</div>`}
+  ${p.later?'':prevuField(p)}
+  <div class="field"><label class="lbl" for="f-parent">Rangé sous</label>${parentSelect('f-parent',p.parent||'',p)}</div>
+  <div class="field"><span class="lbl">Perso ou pro</span>${natPick(p.nature||'',par,'nat')}</div>`}
   <div class="field"><span class="lbl">Notes</span>${p.notes&&p.notes.some(x=>x.t)?`<button class="notesprev" data-act="notes">${p.notes.filter(x=>x.t).slice(0,3).map(x=>`<span style="padding-left:${x.l*14}px">• ${esc(x.t)}</span>`).join('')}<b>Ouvrir les notes · ${p.notes.filter(x=>x.t).length} ligne${p.notes.filter(x=>x.t).length>1?'s':''}</b></button>`:`<button class="btn ghost" data-act="notes">+ Feuille de notes</button>`}</div>
   <details class="more" ${p.why?'open':''}><summary>Pourquoi, dossier, couleur</summary>
   <div class="field"><label for="f-why">Pourquoi ce projet</label><textarea class="input" id="f-why" data-field="why" ${closed?'disabled':''}>${esc(p.why)}</textarea></div>
   <div class="field"><span class="lbl">Dossier sur l'ordi</span>${p.folder?`<div class="folder"><code id="fpath">${esc(folderPath(p))}</code><button data-act="copyPath">Copier</button></div>`:`<button class="btn ghost" data-act="mkFolder">Créer un dossier pour ce projet</button>`}</div>
   ${closed?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
+  ${closed||p.parent||kids.length||isPerm(p)?'':'<button class="btn ghost" data-act="newKid">+ Ranger un sous-projet ici</button>'}
   </details>
-  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`${isPerm(p)?'':'<button class="btn" data-act="closeStart">Clôturer le projet</button>'}${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">🕰️ Ranger dans « un autre temps »</button>`}`}
-  ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, clôture-le plutôt.</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
+  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Archiver le projet…</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">💭 Redevient une idée</button>`}`}
+  ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, archive-le plutôt.${kids.length?' Ses '+kids.length+' sous-projet'+(kids.length>1?'s':'')+' passeront au premier niveau.':''}</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
   </div>`,'d:'+id);
 }
 
@@ -1177,12 +1278,14 @@ function fillWeek(k,size,msg){
   <button class="btn" data-act="new">+ Nouveau projet</button>
   <div class="picklist">${html||'<p class="empty">Aucun projet à placer.</p>'}</div></div>`,'f:'+k+size);
 }
-function closeFlow(id){const p=P(id);
-  openSheet(`<div class="shead" style="${pv(p)}"><span class="emo">${p.emoji}</span><h2>Clôturer<small>${esc(p.name)}</small></h2><button class="xbtn" data-act="back">Retour</button></div><div class="sbody">
-    <div class="field"><label for="f-learn">Ce que j'en retire</label><textarea class="input" id="f-learn" placeholder="Une ou deux phrases suffisent"></textarea></div>
-    <div class="field"><label for="f-diff">Ce que je ferais autrement</label><textarea class="input" id="f-diff" placeholder="Prévu ${durLbl(p)}. Et en vrai ?"></textarea></div>
+function closeFlow(id){const p=P(id), type=ui.finType||'termine', kids=kidsOf(id).filter(k=>!k.closed);
+  openSheet(`<div class="shead" style="${pv(p)}"><span class="emo">${p.emoji}</span><h2>Archiver<small>${esc(p.name)}</small></h2><button class="xbtn" data-act="back">Retour</button></div><div class="sbody">
+    <div class="seg"><button data-act="finType" data-v="termine" aria-pressed="${type==='termine'}">✓ Terminé</button><button data-act="finType" data-v="abandonne" aria-pressed="${type==='abandonne'}">Abandonné</button></div>
+    ${type==='abandonne'?`<div class="field"><label for="f-raison">Pourquoi, en une ligne</label><input class="input" id="f-raison" autocomplete="off" placeholder="Plus l'envie, autre priorité, plus le bon moment…"></div><p class="note" style="margin:0">Lâcher un projet, c'est aussi le finir : il ne pèse plus.</p>`:`<div class="field"><label for="f-learn">Ce que j'en retire</label><textarea class="input" id="f-learn" placeholder="Une ou deux phrases suffisent"></textarea></div>
+    <div class="field"><label for="f-diff">Ce que je ferais autrement</label><textarea class="input" id="f-diff" placeholder="Prévu ${durLbl(p)}. Et en vrai ?"></textarea></div>`}
+    ${kids.length?`<p class="note" style="margin:0">Ses ${kids.length} sous-projet${kids.length>1?'s':''} en cours ${kids.length>1?'seront archivés':'sera archivé'} aussi.</p>`:''}
     ${p.folder?`<div class="folder"><code>~/Projets/${esc(p.folder)} → ~/Projets/_Archives/${todayS.slice(0,4)}/${esc(p.folder)}</code></div><p class="note" style="margin:0">Dans la vraie version, le dossier sera déplacé automatiquement.</p>`:''}
-    <div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn" data-act="closeDo">Clôturer et archiver</button></div></div>`);}
+    <div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn" data-act="closeDo">Archiver</button></div></div>`,'fin:'+id+type);}
 function summary(){
   render();
   const c=inWeek(CUR), nk=wkAdd(CUR,1), nx=inWeek(nk); const [a,b]=wkDates(CUR);
@@ -1193,9 +1296,13 @@ function summary(){
   const pool=open().filter(p=>!isMini(p)&&state(p)==='attente'&&quad(p)<=1).sort(prioSort);
   L.push('','IMPORTANTS PAS ENCORE PLACÉS'); if(pool.length) pool.forEach(p=>L.push('- '+p.emoji+' '+p.name+(p.due?' (⏱ '+fmt(p.due)+')':''))); else L.push('- aucun');
   const mp=S.projects.filter(p=>isMini(p)&&!p.closed).sort(prioSort); L.push('','MINI PROJETS'); if(mp.length) mp.forEach(p=>L.push('- '+p.name+' ['+'★'.repeat(p.imp)+(urgent(p)?' · urgent':'')+']'+(p.due?' (⏱ '+fmt(p.due)+')':'')+(p.tasks.length?' · '+p.tasks.filter(x=>x.d).length+'/'+p.tasks.length+' étapes':''))); else L.push('- aucun');
+  const pv2=S.projects.filter(p=>!isMini(p)&&Projets.etat(p,todayS)==='prevu').sort((x,y)=>x.prevu.localeCompare(y.prevu)); L.push('','PRÉVUS PLUS TARD'); if(pv2.length) pv2.forEach(p=>L.push('- '+p.emoji+' '+p.name+' (dès le '+fmt(p.prevu)+' '+p.prevu.slice(0,4)+')')); else L.push('- aucun');
+  const dm=S.projects.filter(p=>Projets.dort(p,todayS)); L.push('','PROJETS QUI DORMENT (rien depuis plus de 4 mois)'); if(dm.length) dm.forEach(p=>L.push('- '+(p.emoji?p.emoji+' ':'')+p.name+' (rien depuis '+Math.floor(Projets.depuis(p,todayS)/30)+' mois)')); else L.push('- aucun');
   L.push('','EN VRAC, À TRIER'); if(S.inbox.length) S.inbox.forEach(v=>L.push('- '+v.t)); else L.push('- rien');
+  const dorment=S.projects.filter(p=>Projets.dort(p,todayS)).sort((x,y)=>(Projets.depuis(y,todayS)||0)-(Projets.depuis(x,todayS)||0));
+  const dortHtml=dorment.length?`<div class="alert"><div><b>${dorment.length} projet${dorment.length>1?'s dorment':' dort'}</b> depuis plus de 4 mois. ${dorment.length>1?'Que deviennent-ils ?':'Que devient-il ?'}</div>${dorment.map(p=>`<div class="dort"><b>${p.emoji?p.emoji+' ':''}${esc(p.name)} <small>· rien depuis ${Math.floor(Projets.depuis(p,todayS)/30)} mois</small></b><div class="dbtns"><button data-act="dortFin" data-id="${p.id}" data-v="termine">Terminé</button><button data-act="dortFin" data-id="${p.id}" data-v="abandonne">Abandonné</button><button data-act="dortPrevu" data-id="${p.id}">Prévu plus tard</button><button data-act="dortIdee" data-id="${p.id}">Redevient une idée</button><button data-act="dortGo" data-id="${p.id}">Il avance encore</button></div></div>`).join('')}</div>`:'';
   openSheet(`<div class="shead"><h2>Recap<small>à coller dans la conversation</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
-  <pre class="sum" id="sumtxt">${esc(L.join('\n'))}</pre><button class="btn" data-act="copySum">Copier le texte</button></div>`,'recap');
+  ${dortHtml}<pre class="sum" id="sumtxt">${esc(L.join('\n'))}</pre><button class="btn" data-act="copySum">Copier le texte</button></div>`,'recap');
 }
 function bravo(p){
   const big=durOf(p)>=20;
@@ -1331,7 +1438,9 @@ let tt; function toast(m){const t=document.getElementById('toast'); t.textConten
 function syncForm(){const a=document.getElementById('f-amount'),n=document.getElementById('f-note'),d=document.getElementById('f-date'); if(a) ui.amount=a.value; if(n) ui.note=n.value; if(d) ui.date=d.value;}
 function placeWeekly(p,k){ if(p.weeks.includes(k)) return true; if(!canAdd(p,k,'s')) return false; p.weeks.push(k); p.weeks.sort(); save(); return true; }
 function afterCreate(p){
-  if(p.later){ toast(p.emoji+' '+p.name+' · rangé dans un autre temps'); closeSheet(); return; }
+  if(ctx&&ctx.parentFor&&P(ctx.parentFor)){ const par=ctx.parentFor; toast(p.emoji+' '+p.name+' · rangé sous '+P(par).name); detail(par); return; }
+  if(p.later){ toast(p.emoji+' '+p.name+' · rangé en idée'); closeSheet(); return; }
+  if(p.prevu){ toast(p.emoji+' '+p.name+' · prévu dès le '+fmt(p.prevu)); closeSheet(); return; }
   if(ctx&&ctx.fromCell&&!isMini(p)){ const r=cellPlace(p,ctx.cell,ctx.k); save(); toast(p.emoji+' '+p.name+(r?' · placé':' · semaine pleine, à planifier')); closeSheet(); return; }
   if(isMini(p)){ toast('Mini projet ajouté : '+p.name); if(ctx&&ctx.fromFill) weekSheet(ctx.k); else closeSheet(); return; }
   if(ctx&&ctx.fromFill){ const k=ctx.k;
@@ -1349,7 +1458,7 @@ document.addEventListener('click',e=>{
   if(a==='open') detail(id);
   else if(a==='close') closeSheet();
   else if(a==='summary') summary();
-  else if(a==='new'){ if(!ctx||!(ctx.fromFill||ctx.fromCell)) ctx=null; newSheet(false); }
+  else if(a==='new'){ if(!ctx||!(ctx.fromFill||ctx.fromCell||ctx.parentFor)) ctx=null; newSheet(false); }
   else if(a==='reset'){S=seed(); save(); ui.wk=CUR; render(); toast('Exemples remis');}
   else if(a==='wk'){ui.wk=wkAdd(ui.wk,Number(el.dataset.d)); render();}
   else if(a==='goWk'||a==='wkS'||a==='backWeek') weekSheet(el.dataset.k);
@@ -1365,12 +1474,22 @@ document.addEventListener('click',e=>{
   else if(a==='itemStep') {const inp=document.getElementById('f-item'), v=itemArr(ctx.src).find(x=>x.id===ctx.vid); if(inp&&v&&inp.value.trim()) v.t=inp.value.trim(); save(); itemSheet(ctx.src,ctx.vid,'step');}
   else if(a==='itemBack') itemSheet(ctx.src,ctx.vid);
   else if(a==='toStep'){const p=P(id), v=takeItem(); if(v){p.tasks.push({t:v.t,d:false}); save(); toast('Étape ajoutée à '+p.emoji+' '+p.name);} closeSheet();}
-  else if(a==='itemLater'){ const src=ctx.src, vid=ctx.vid, inp=document.getElementById('f-item'), v=itemArr(src).find(x=>x.id===vid); const t=(inp&&inp.value.trim())||v.t; ctx=null; draft=null; newSheet(false); draft.name=t.replace(/^idée\s*:\s*/i,''); draft.fromItem={src,vid}; draft.later=true; let em='✨'; for(const [re,e2] of SUGG){ if(re.test(draft.name)){em=e2; break;} } draft.emoji=em; newSheet(true); }
-  else if(a==='nlater'){ syncDraft(); draft.later=!draft.later; newSheet(true); }
+  else if(a==='itemLater'){ const src=ctx.src, vid=ctx.vid, inp=document.getElementById('f-item'), v=itemArr(src).find(x=>x.id===vid); const t=(inp&&inp.value.trim())||v.t; ctx=null; draft=null; newSheet(false); draft.name=t.replace(/^idée\s*:\s*/i,''); draft.fromItem={src,vid}; draft.etat='idee'; let em='✨'; for(const [re,e2] of SUGG){ if(re.test(draft.name)){em=e2; break;} } draft.emoji=em; newSheet(true); }
+  else if(a==='netat'){ syncDraft(); draft.etat=el.dataset.v; newSheet(true); }
+  else if(a==='nnat'){ syncDraft(); draft.nature=el.dataset.v; newSheet(true); }
+  else if(a==='nat'){ const p=P(sheetId), v=el.dataset.v; if(v) p.nature=v; else delete p.nature; save(); detail(sheetId); }
+  else if(a==='clearPrevu'){ const p=P(sheetId); delete p.prevu; save(); detail(sheetId); }
+  else if(a==='newKid'){ const pid=sheetId; ctx={parentFor:pid}; draft=null; newSheet(false); }
+  else if(a==='reprise'){ ui.rep=null; repriseSheet(); }
+  else if(a==='repSave') repriseSave();
+  else if(a==='dortFin'){ sheetId=el.dataset.id; ui.finType=el.dataset.v; closeFlow(sheetId); }
+  else if(a==='dortPrevu'){ detail(el.dataset.id,'<div class="alert"><div>Choisis la date de début dans « Prévu à partir du » : il disparaît des projets en cours jusque-là.</div></div>'); }
+  else if(a==='dortIdee'){ const p=P(el.dataset.id); setLater(p,true); toast(p.emoji+' '+p.name+' · rangé en idée'); summary(); }
+  else if(a==='dortGo'){ const p=P(el.dataset.id); p.touche=todayS; save(); toast(p.emoji+' '+p.name+' · toujours en cours'); summary(); }
   else if(a==='laterPick') laterPickSheet();
-  else if(a==='laterSet'){ const p=P(id); setLater(p,true); toast(p.emoji+' '+p.name+' · rangé dans un autre temps'); render(); laterPickSheet(); }
-  else if(a==='laterIn'){ const p=P(sheetId); setLater(p,true); toast(p.emoji+' '+p.name+' · rangé dans un autre temps'); closeSheet(); }
-  else if(a==='laterOut'){ const p=P(sheetId); setLater(p,false); toast(p.emoji+' '+p.name+' · de retour, à planifier'); detail(p.id); }
+  else if(a==='laterSet'){ const p=P(id); setLater(p,true); toast(p.emoji+' '+p.name+' · rangé en idée'); render(); laterPickSheet(); }
+  else if(a==='laterIn'){ const p=P(sheetId); setLater(p,true); toast(p.emoji+' '+p.name+' · rangé en idée'); closeSheet(); }
+  else if(a==='laterOut'){ const p=P(sheetId); setLater(p,false); toast(p.emoji+' '+p.name+' · en cours, à planifier'); detail(p.id); }
   else if(a==='itemTo'){const to=el.dataset.to, v=takeItem(); if(v){const arr=itemArr(to); arr.push(to==='petites'?{id:v.id,t:v.t,d:false}:{id:v.id,t:v.t}); save(); toast(to==='inbox'?'Remis en vrac':'Rangé dans '+LISTS[to].name);} closeSheet();}
   else if(a==='itemDel'){takeItem(); save(); toast('Supprimé'); closeSheet();}
   else if(a==='itemProj'){const src=ctx.src, vid=ctx.vid, inp=document.getElementById('f-item'), v=itemArr(src).find(x=>x.id===vid); const t=(inp&&inp.value.trim())||v.t; ctx=null; draft=null; newSheet(false); draft.name=t.replace(/^idée\s*:\s*/i,''); draft.fromItem={src,vid}; let em='✨'; for(const [re,e2] of SUGG){ if(re.test(draft.name)){em=e2; break;} } draft.emoji=em; newSheet(true);}
@@ -1403,7 +1522,7 @@ document.addEventListener('click',e=>{
   else if(a==='mv'){const k=ui.wk, ord=weekOrder(k,inWeek(k).n).map(p=>p.id), i=ord.indexOf(id), j=i+Number(el.dataset.d); if(j>=0&&j<ord.length){[ord[i],ord[j]]=[ord[j],ord[i]]; S.order=S.order||{}; S.order[k]=ord; save();} render();}
   else if(a==='rmWk'){const p=P(id); removeFromWeek(p,ui.wk); save(); toast(p.emoji+' '+p.name+' retiré de la semaine '+wkNum(ui.wk)); render();}
   else if(a==='delAsk') detail(sheetId,'del');
-  else if(a==='delOk'){const p=P(sheetId); S.projects=S.projects.filter(x=>x.id!==p.id); S.entries=S.entries.filter(e=>e.pid!==p.id); save(); toast((p.emoji?p.emoji+' ':'')+p.name+' supprimé'); if(isMini(p)) minisSheet(); else closeSheet();}
+  else if(a==='delOk'){const p=P(sheetId); S.projects=S.projects.filter(x=>x.id!==p.id); S.projects.forEach(x=>{ if(x.parent===p.id) delete x.parent; }); S.entries=S.entries.filter(e=>e.pid!==p.id); save(); toast((p.emoji?p.emoji+' ':'')+p.name+' supprimé'); if(isMini(p)) minisSheet(); else closeSheet();}
   else if(a==='tagDel') tagsSheet(el.dataset.t);
   else if(a==='tagDelNo') tagsSheet();
   else if(a==='tagDelOk'){const id=el.dataset.t, t=T(id); S.tags=S.tags.filter(x=>x.id!==id); S.projects.forEach(p=>p.tags=p.tags.filter(x=>x!==id)); ui.tagSel=ui.tagSel.filter(x=>x!==id); save(); toast('Tag « '+t.name+' » supprimé'); tagsSheet();}
@@ -1434,7 +1553,8 @@ document.addEventListener('click',e=>{
   else if(a==='emojiBack') emojiDone(null);
   else if(a==='create'){syncDraft(); const d=draft; if(!d.name.trim()){toast('Donne un nom au projet'); return;}
     const p={id:'p'+Date.now(),emoji:d.emoji,color:d.color,name:d.name.trim(),size:d.size,dur:d.size==='mini'||d.size==='perm'?null:d.dur,imp:d.imp,due:d.size==='perm'?null:(d.due||null),tags:d.tags,weeks:[],days:[],why:d.why.trim(),next:'',folder:null,tasks:[]};
-    if(p.size==='mini'){ p.emoji=''; p.color=MINI_COLOR; p.tags=[]; } else if(d.later&&!(ctx&&(ctx.fromFill||ctx.fromCell))) p.later=true;
+    if(p.size==='mini'){ p.emoji=''; p.color=MINI_COLOR; p.tags=[]; } else if(!(ctx&&(ctx.fromFill||ctx.fromCell))){ if(d.etat==='idee') p.later=true; else if(d.etat==='prevu'){ if(!d.prevu){ toast('Choisis la date de début'); return; } p.prevu=d.prevu; } }
+    if(d.parent&&P(d.parent)) p.parent=d.parent; if(d.nature) p.nature=d.nature;
     if(d.fromItem){const arr=itemArr(d.fromItem.src), i=arr.findIndex(v=>v.id===d.fromItem.vid); if(i>=0) arr.splice(i,1);} S.projects.push(p); save(); draft=null; if(d.fromItem){toast(p.emoji+' '+p.name+' créé'); closeSheet(); return;} afterCreate(p);}
   else if(a==='kind'){syncForm(); ui.kind=el.dataset.k; ui.amount=''; render();}
   else if(a==='pick'){syncForm(); ui.pid=id; render();}
@@ -1444,10 +1564,13 @@ document.addEventListener('click',e=>{
   else if(a==='copyPath'){const f=document.getElementById('fpath'); copy(f.textContent,f);}
   else if(a==='mkFolder'){const p=P(sheetId); p.folder=p.name.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,''); save(); toast('Dossier ~/Projets/'+p.folder+' prévu'); detail(sheetId);}
   else if(a==='logFor'){ui.pid=sheetId; ui.view='saisir'; $scrim.hidden=true; sheetId=null; window.scrollTo(0,0); render();}
-  else if(a==='closeStart') closeFlow(sheetId);
+  else if(a==='closeStart'){ ui.finType=null; closeFlow(sheetId); }
   else if(a==='back') detail(sheetId);
-  else if(a==='closeDo'){const p=P(sheetId); p.bilan={learn:document.getElementById('f-learn').value.trim(),diff:document.getElementById('f-diff').value.trim()}; p.weeks=p.weeks.filter(w=>w<=CUR); p.days=p.days.filter(d=>d<=todayS); p.closed=todayS; save(); detail(p.id); bravo(p);}
-  else if(a==='reopen'){const p=P(sheetId); delete p.closed; save(); toast('Projet rouvert'); detail(p.id);}
+  else if(a==='closeDo'){const p=P(sheetId), type=ui.finType||'termine', g=x=>document.getElementById(x); p.fin={type}; if(type==='abandonne'){ const r=g('f-raison'); if(r&&r.value.trim()) p.fin.raison=r.value.trim(); } else p.bilan={learn:g('f-learn')?g('f-learn').value.trim():'',diff:g('f-diff')?g('f-diff').value.trim():''};
+    const arch=x=>{ x.weeks=x.weeks.filter(w=>w<=CUR); x.days=x.days.filter(d=>d<=todayS); x.closed=todayS; delete x.prevu; };
+    arch(p); kidsOf(p.id).filter(k=>!k.closed).forEach(k=>{ arch(k); k.fin={type,raison:'archivé avec '+p.name}; }); ui.finType=null; save(); detail(p.id); if(type==='termine') bravo(p);}
+  else if(a==='finType'){ ui.finType=el.dataset.v; closeFlow(sheetId); }
+  else if(a==='reopen'){const p=P(sheetId); delete p.closed; delete p.fin; save(); toast('Projet rouvert'); detail(p.id);}
   else if(a==='color'){const p=P(sheetId); p.color=el.dataset.c; save(); detail(sheetId);}
   else if(a==='copySum'){const s=document.getElementById('sumtxt'); copy(s.textContent,s);}
 });
@@ -1461,6 +1584,13 @@ document.addEventListener('change',e=>{
   if(t.dataset.field&&sheetId){const p=P(sheetId), f=t.dataset.field; let v=t.value.trim(); if(f==='name'&&!v) return; if(f==='due') v=v||null; p[f]=v; save(); toast('Enregistré'); if(f==='due') detail(sheetId);}
   if(t.id==='n-due'&&draft){draft.due=t.value; const h=document.getElementById('n-duehint'); if(h) h.textContent=dueHint(draft.due,draft.size==='mini'?0:draft.dur);}
   if(t.id==='f-date') ui.date=t.value;
+  if(t.id==='n-parent'&&draft){ syncDraft(); draft.parent=t.value||null; newSheet(true); }
+  if(t.id==='f-parent'&&sheetId){ const p=P(sheetId), v=t.value||null; if(v&&Projets.parentPossible(P(v),p,S.projects)) p.parent=v; else delete p.parent; save(); toast(v?'Rangé sous '+P(v).name:'Au premier niveau'); detail(sheetId); }
+  if(t.id==='f-prevu'&&sheetId){ const p=P(sheetId); if(t.value) p.prevu=t.value; else delete p.prevu; save(); toast(t.value?'Prévu dès le '+fmt(t.value):'En cours'); detail(sheetId); }
+  if(t.dataset.repTag&&ui.rep){ ui.rep.tags[t.dataset.repTag].mode=t.value; const id=t.dataset.repTag; Object.keys(ui.rep.projs).forEach(pid=>{ const x=ui.rep.projs[pid], p=P(pid); if(!p||!(p.tags||[]).includes(id)) return; if(t.value==='none'){ if(x.parent==='tag:'+id) x.parent=''; } else if(!x.parent||x.parent.startsWith('tag:')) x.parent=t.value==='new'?'tag:'+id:(t.value===pid?'':t.value); }); repriseSheet(); }
+  if(t.dataset.repTagnat&&ui.rep){ ui.rep.tags[t.dataset.repTagnat].nature=t.value; repriseSheet(); }
+  if(t.dataset.repP&&ui.rep){ const x=ui.rep.projs[t.dataset.repP]; x.parent=t.value; if(!t.value&&!x.nature) x.nature='perso'; repriseSheet(); }
+  if(t.dataset.repPnat&&ui.rep){ ui.rep.projs[t.dataset.repPnat].nature=t.value; }
   if(t.dataset.tagname){const tg=T(t.dataset.tagname), v=t.value.trim(); if(tg&&v){tg.name=v; save(); toast('Tag renommé');}}
 });
 document.addEventListener('beforeinput',e=>{ if(vracGuard&&e.target&&e.target.id==='f-vrac'&&Date.now()<vracGuard.until){ e.preventDefault(); } },true);
@@ -1546,17 +1676,23 @@ function rowsOf(st){ const r={};
   ['petites','autre'].forEach(k=>(st.lists[k]||[]).forEach(v=>{ r['v:'+v.id]=Object.assign({},v,{list:k}); }));
   st.offs.forEach(o=>{ r['o:'+o.id]=o; });
   if(st.order&&Object.keys(st.order).length) r['m:order']=st.order;
+  if(st.reprise) r['m:reprise']=st.reprise;
   return r; }
 function fromRows(map){ const st=emptyS(), num=id=>Number(String(id).replace(/\D/g,''))||0;
   Object.keys(map).forEach(k=>{ let d; try{ d=JSON.parse(map[k]); }catch(e){ return; } if(!d) return; const t=k[0];
     if(t==='p'){ ['weeks','days','tags','tasks'].forEach(f=>{ if(!Array.isArray(d[f])) d[f]=[]; }); const OLD={h4:1,j2:2,w1:5,m1:20}; if(OLD[d.size]!=null){ if(d.dur==null) d.dur=OLD[d.size]; d.size='proj'; } if(!d.size) d.size='proj'; st.projects.push(d); }
-    else if(t==='t') st.tags.push(d); else if(t==='o') st.offs.push(d); else if(k==='m:order') st.order=d;
+    else if(t==='t') st.tags.push(d); else if(t==='o') st.offs.push(d); else if(k==='m:order') st.order=d; else if(k==='m:reprise') st.reprise=d;
     else if(t==='v'){ const L=d.list||'inbox', it=Object.assign({},d); delete it.list; (L==='inbox'?st.inbox:(st.lists[L]||(st.lists[L]=[]))).push(it); } });
   st.projects.sort((a,b)=>num(a.id)-num(b.id)); st.tags.sort((a,b)=>(a.o||0)-(b.o||0)); st.inbox.sort((a,b)=>num(a.id)-num(b.id));
   ['petites','autre'].forEach(k=>st.lists[k].sort((a,b)=>num(a.id)-num(b.id))); st.offs.sort((a,b)=>String(a.s).localeCompare(String(b.s)));
   return st; }
 function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull,email:EMAIL})); }catch(e){} }
-function save(){ if(!UID) return; const cur=rowsOf(S); let ch=false;
+let seen={}, quiet=false; /* quiet : enregistrer sans compter comme une activité (reprise, rangements automatiques) */
+const canonP=p=>canon(Object.assign({},p,{touche:undefined}));
+function markSeen(){ seen={}; S.projects.forEach(p=>{ seen[p.id]=canonP(p); }); }
+function save(){ if(!UID) return;
+  S.projects.forEach(p=>{ const c=canonP(p); if(!quiet){ if(seen[p.id]==null){ if(!p.touche) p.touche=todayS; } else if(seen[p.id]!==c) p.touche=todayS; } seen[p.id]=canonP(p); });
+  const cur=rowsOf(S); let ch=false;
   for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ prev[k]=v; dirty.add(k); ch=true; } }
   for(const k in prev){ if(!(k in cur)){ delete prev[k]; dirty.add(k); ch=true; } }
   if(ch){ persist(); schedulePush(); setSync(); } }
@@ -1589,7 +1725,7 @@ async function pull(full){
       if(data.length<1000) break; from+=1000;
     }
     lastPull=maxTs; persist();
-    if(changed){ S=fromRows(prev); migratePetites(); migrateLater(); render(); }
+    if(changed){ S=fromRows(prev); markSeen(); migratePetites(); migrateLater(); render(); }
     lastOk=Date.now(); syncErr=''; setSync(); return true;
   }catch(e){ syncErr=(e&&e.message)||String(e); setSync(); return false; }
 }
@@ -1605,10 +1741,10 @@ async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
-  S=fromRows(prev); booted=true; render(); setSync();
+  S=fromRows(prev); markSeen(); booted=true; render(); setSync();
   const ok=await pull(!c);
   if(migratePetites()|migrateLater()) render();
-  if(ok&&!c&&!Object.keys(prev).length){ S.tags=DEFAULT_TAGS.map(([id,name],i)=>({id,name,o:i})); save(); render(); }
+  if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; save(); render(); } /* nouveau compte : plus de tags, des projets parents */
   push();
 }
 async function startApp(){

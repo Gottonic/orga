@@ -25,7 +25,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |
 | `marche/` | l'app Marché (liste de courses), avec sa police (Caveat) et ses icônes |
 | `mine/` | l'app Mine (travail pro), avec sa police (Big Shoulders Stencil), ses icônes et `lib/qrcode.js` (générateur de codes QR, licence MIT) |
-| `commun/` | ce que les apps partagent : `supabase.js`, `ampoule.js` (bugs et idées), polices |
+| `commun/` | ce que les apps partagent : `supabase.js`, `projets.js` (règles de la fiche projet commune), `ampoule.js` (bugs et idées), `cadre.css` et `cadre.js` (en-tête), polices |
 | `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`), `mine.sql` (Mine : table `mine_rows`) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
@@ -81,6 +81,13 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   (voir les explications en haut de `commun/ampoule.js`), puis ajouter son nom et son style dans `APPS` et `THEMES`.
 
 ## Bon à savoir (Établi)
+
+- **Fiche projet commune** (14.11.2026, `commun/projets.js`) : tout est un projet, de 4 h à ∞.
+  - Un projet peut être **rangé sous** un autre (deux niveaux au plus) et il est **perso ou pro** (un sous-projet suit son parent, sauf s'il dit autre chose).
+  - États : **Idée** (pas décidé), **Prévu** (« Prévu à partir du » : il passe en cours tout seul ce jour-là, ou dès qu'il est placé au planning), **En cours**, **Archivé** (terminé ou abandonné, avec une ligne pour dire pourquoi). Archiver un projet archive aussi ses sous-projets.
+  - Onglet Projets : filtres En cours, Non planifiés, Prévus, Idées, Archivés ; compteur ; les projets ∞ dans une rangée à part (ils ne comptent pas dans les projets en cours) ; tri « Par parent ».
+  - **Projets qui dorment** : un projet en cours qui n'a pas bougé depuis 4 mois (et n'a rien de prévu au planning) apparaît en haut du Récap, avec Terminé, Abandonné, Prévu plus tard, Redevient une idée ou Il avance encore. Le champ `touche` garde la date de la dernière modification.
+  - Les **tags** sont remplacés par les projets parents : l'écran « Nouvelle organisation » (onglet Projets) propose un rangement, télécharge une sauvegarde, puis enregistre (ligne `m:reprise`). Les tags restent dans les données mais ne s'affichent plus.
 
 - Le petit symbole à côté du numéro de semaine indique l'état : ✓ tout est enregistré,
   ↻ envoi en cours, « hors ligne », ⚠ problème (toucher pour les détails).
