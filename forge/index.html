@@ -30,8 +30,8 @@
   --tomato:#D9614A; --coral:#E8505B; --sage:#8DBA88; --tan:#CDA47B; --stone:#B8B4AE;
   /* phases = une flamme de plus en plus chaude : rouge pâle → rouge → orange → blanc → vert → bleu (le spécifique, la plus chaude) ; le reste anthracite */
   /* délavées comme le moodboard : même luminosité et même intensité (OKLCH L 0.72, C ≈ 0.10), seule la teinte change */
-  --ph-hypertrophie:#D78BA0; --ph-force:#E08B74; --ph-puissance:#D39655; --ph-contraste:#E2D6C2; --ph-vitesse:#7EB580; --ph-specifique:#6AADDA;
-  --anth:#595451; --ph-saison:var(--anth); --ph-transition:var(--anth); --ph-maintien:var(--anth);
+  --ph-hypertrophie:#D78BA0; --ph-force:#E08B74; --ph-puissance:#D39655; --ph-contraste:#E2D6C2; --ph-vitesse:#7EB580; --ph-specifique:#83AAC7;
+  --anth:#6A6562; --ph-saison:var(--anth); --ph-transition:var(--anth); --ph-maintien:var(--anth);
   --good:#8DBA88; --bad:#E8505B; --on-ph:#1A1714;
   --f-display:"Unbounded","Space Grotesk",system-ui,sans-serif;
   --f-body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -761,7 +761,9 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .srow.col .btn:hover{border-color:var(--on-ph)}
 .srow.col .btn.primary{background:var(--on-ph);border-color:var(--on-ph);color:var(--sc)}
 .srow.anth{background:var(--anth)}
-.srow.anth .tag{background:rgba(255,255,255,.08)}
+.srow.anth .tag{background:rgba(255,255,255,.12);color:var(--ink)}
+.srow.anth .tag.opt{background:none;border-color:rgba(239,227,204,.4)}
+.srow.anth .muted{color:rgba(239,227,204,.78)}
 .srow.anth .btn{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
 .srow.anth .btn.primary{background:var(--accent);border-color:var(--accent)}
 .srow.done{background:var(--surface);box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--sc) 75%,transparent)}
