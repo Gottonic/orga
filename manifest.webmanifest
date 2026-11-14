@@ -1,14 +1,14 @@
 {
   "name": "Locus",
   "short_name": "Locus",
-  "description": "Mes apps : l’Établi, la Banque, la Forge, le Marché, la Mine.",
+  "description": "Mes apps : l’Établi, la Banque, la Forge, le Marché, la Mine, la Bibliothèque.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#F3F1E7",
-  "theme_color": "#4A4458",
+  "background_color": "#4A4458",
+  "theme_color": "#413B4F",
   "icons": [
     {
       "src": "icons/icon-192.png",

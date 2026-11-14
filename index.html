@@ -1,79 +1,72 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-lieu="locus">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Locus</title>
-<meta name="theme-color" content="#4A4458">
+<meta name="theme-color" content="#413B4F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<style>
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(commun/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
-:root{
-  color-scheme:light;
-  --paper:#F3F1E7; --cell:#FFFFFF; --ink:#1E1E1E; --muted:#6B6A62; --line:#CFCCBF; --band:#4A4458; --band-ink:#FFFFFF; --hl:#FFECB0;
-  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-}
-*{box-sizing:border-box;border-radius:0}
-html,body{height:100%}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--band)}
-:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--band);color:var(--band-ink)}
-.top .in{max-width:760px;margin:0 auto;padding:9px max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.top h1{margin:0;font-size:1.05rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.top .sub{font-family:var(--mono);font-size:.78rem;opacity:.75}
-main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
-.tuiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;list-style:none;margin:0;padding:0}
-.tuiles li{display:flex}
-.tuile{flex:1;display:flex;flex-direction:column;gap:12px;min-height:132px;padding:14px;background:var(--t-bg,var(--cell));border:1px solid var(--line);color:var(--t-ink,var(--ink));text-decoration:none}
-.tuile:hover{border-color:var(--ink)}
-.tuile:active{filter:brightness(.92)}
-.tuile .logo{width:52px;height:52px;flex:none;display:grid;place-items:center;background:var(--band);color:var(--band-ink);font:700 1.6rem/1 var(--body)}
-.tuile .logo img{width:52px;height:52px;display:block}
-.tuile .nom{font-weight:700;font-size:1.1rem}
-.tuile .etat{margin-top:auto;font-family:var(--mono);font-size:.75rem;opacity:.75}
-@font-face{font-family:"Bricolage Grotesque";font-weight:700;font-style:normal;font-display:swap;src:url(commun/fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
-.vt-acc{display:flex;gap:8px;margin:0 0 16px}
-.vt-acc input{flex:1;min-width:0;border:1px solid #CFCCBF;background:#fff;padding:12px;font:inherit}
-.vt-acc button{border:0;background:#7A2E3A;color:#fff;font:700 1.2rem/1 inherit;width:48px}
-p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
-</style>
 <link rel="stylesheet" href="commun/cadre.css">
+<link rel="stylesheet" href="commun/lieux.css">
+<style>
+/* Accueil de Locus : charte du 15.11 (commun/CHARTE.md). Chaque tuile porte le lieu de son app (data-lieu) :
+   fond, texte et plaque du picto viennent de commun/lieux.css. */
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{max-width:760px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.oh .oh-orga .ic{width:20px;height:20px;vertical-align:0}
+.oh .oh-b .ic{width:21px;height:21px;stroke-width:1.8;stroke-linecap:square;stroke-linejoin:miter}
+.vt-acc{display:flex;gap:8px;margin:0 0 16px}
+.vt-acc input{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);padding:11px 16px;font:inherit;font-size:15px}
+.vt-acc input::placeholder{color:var(--ink-3)}
+.vt-acc button{border:0;background:var(--accent);color:var(--on-acc);border-radius:var(--pill);width:48px;display:grid;place-items:center;cursor:pointer}
+.vt-acc button .ic{width:20px;height:20px}
+.tuiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;list-style:none;margin:0;padding:0}
+.tuiles li{display:flex}
+.tuile{flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:118px;padding:13px;border-radius:18px;
+  background:var(--page);color:var(--on-page);text-decoration:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-page) 10%,transparent)}
+.tuile:hover{box-shadow:inset 0 0 0 2px var(--accent)}
+.tuile:active{filter:brightness(.94)}
+.tuile .nom{display:block;font:700 15px/1.15 var(--f-display);letter-spacing:-.02em}
+.tuile .eyebrow{display:block;margin-top:3px;color:var(--on-page-2);font-size:10.5px}
+@media (min-width:600px){.tuiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tuile{min-height:132px}}
+p.pied{margin:26px 0 0;color:var(--on-page-2);font-size:13px}
+</style>
 </head>
 <body>
-<header class="oh" style="--oh-bg:#4A4458;--oh-ink:#F3F1E7"><div class="oh-bar"><span class="oh-orga"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></span><h1 class="oh-nom">Locus</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><a class="oh-b" href="reglages/" aria-label="Réglages de Locus"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a></div></header>
+<header class="oh"><div class="oh-bar"><span class="oh-orga"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></span><h1 class="oh-nom">Locus</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><a class="oh-b" href="reglages/" aria-label="Réglages de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></a></div></header>
 <main>
-  <form class="vt-acc" action="bibliotheque/" method="get" autocomplete="off"><input name="note" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button type="submit" aria-label="Noter">+</button></form>
+  <form class="vt-acc" action="bibliotheque/" method="get" autocomplete="off"><input name="note" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button type="submit" aria-label="Noter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg></button></form>
   <ul class="tuiles" aria-label="Mes apps">
-    <li><a class="tuile" href="etabli/" style="--t-bg:#FAF3E0;--t-ink:#2B2722">
-      <span class="logo"><img src="etabli/icons/icon-192.png" alt=""></span>
-      <span class="nom">L’Établi</span>
+    <li><a class="tuile" href="etabli/" data-lieu="etabli">
+      <span class="plaque"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M1 4.5h18M3 4.5v11M17 4.5v11M3 10.5h14"/></svg></span>
+      <span><span class="nom">L’Établi</span><span class="eyebrow">projets</span></span>
     </a></li>
-    <li><a class="tuile" href="banque/" style="--t-bg:#1E3A5F;--t-ink:#FFFFFF">
-      <span class="logo"><img src="banque/icons/icon-192.png" alt=""></span>
-      <span class="nom">La Banque</span>
+    <li><a class="tuile" href="banque/" data-lieu="banque">
+      <span class="plaque"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 11.5a7 7 0 0 1 14 0zM3 15.5h14"/></svg></span>
+      <span><span class="nom">La Banque</span><span class="eyebrow">finances</span></span>
     </a></li>
-    <li><a class="tuile" href="forge/" style="--t-bg:#14110E;--t-ink:#EFE3CC">
-      <span class="logo"><img src="forge/icons/icon-192.png" alt=""></span>
-      <span class="nom">La Forge</span>
+    <li><a class="tuile" href="forge/" data-lieu="forge">
+      <span class="plaque"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17l7-7 7 7M3 10l7-7 7 7"/></svg></span>
+      <span><span class="nom">La Forge</span><span class="eyebrow">entraînement</span></span>
     </a></li>
-    <li><a class="tuile" href="marche/" style="--t-bg:#2E6B4E;--t-ink:#FFFFFF">
-      <span class="logo"><img src="marche/icons/icon-192.png" alt=""></span>
-      <span class="nom">Le Marché</span>
+    <li><a class="tuile" href="marche/" data-lieu="marche">
+      <span class="plaque"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v12H2zM2 10h16"/></svg></span>
+      <span><span class="nom">Le Marché</span><span class="eyebrow">courses</span></span>
     </a></li>
-    <li><a class="tuile" href="mine/" style="--t-bg:#C68A2E;--t-ink:#231C17">
-      <span class="logo"><img src="mine/icons/icon-192.png" alt=""></span>
-      <span class="nom">La Mine</span>
+    <li><a class="tuile" href="mine/" data-lieu="mine">
+      <span class="plaque"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M1 6.5c5-5 13-5 18 0M10 3v14.5"/></svg></span>
+      <span><span class="nom">La Mine</span><span class="eyebrow">travail pro</span></span>
     </a></li>
-    <li><a class="tuile" href="bibliotheque/" style="--t-bg:#7A2E3A;--t-ink:#FFFFFF">
-      <span class="logo"><img src="bibliotheque/icons/icon-192.png" alt=""></span>
-      <span class="nom">La Bibliothèque</span>
+    <li><a class="tuile" href="bibliotheque/" data-lieu="bibliotheque">
+      <span class="plaque"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 2.5v15M6.5 2.5v15M10.5 2.5v15M13.5 3l4 14.5"/></svg></span>
+      <span><span class="nom">La Bibliothèque</span><span class="eyebrow">notes, journal</span></span>
     </a></li>
   </ul>
   <p class="pied">Une seule app à installer : les autres s'ouvrent depuis ces tuiles, chacune avec son propre style.</p>

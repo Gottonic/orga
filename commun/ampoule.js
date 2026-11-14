@@ -25,7 +25,7 @@
   const ATK = '"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif';
   const PAPIER = { f: '#F3F1E7', c: '#FFFFFF', i: '#1E1E1E', m: '#6B6A62', l: '#CFCCBF', a: '#3C3C3C', ai: '#FFFFFF', s: '#FFECB0', r: '0px', p: '0px', font: ATK, titre: ATK };
   const THEMES = {
-    orga: Object.assign({}, PAPIER, { a: '#4A4458', ai: '#F3F1E7' }),
+    orga: { f: '#4A4458', c: '#5A536A', i: '#F3F1E7', m: '#D8D2E5', l: '#6E6780', a: '#C3B6DF', ai: '#2A2535', s: '#3E3949', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }, /* charte du 15.11 (lieu Locus) */
     etabli: PAPIER,
     banque: { f: '#F4F5F7', c: '#FFFFFF', i: '#17181B', m: '#5C6270', l: '#E2E5EA', a: '#F0B54A', ai: '#1A1406', s: '#FBEFD6', r: '20px', p: '99px', font: ATK, titre: '"Bricolage Grotesque",' + ATK },
     marche: { f: '#F5EEDF', c: '#FFFCF5', i: '#24211B', m: '#6F6656', l: '#E6DBC6', a: '#2E6B4E', ai: '#FFFFFF', s: '#E2EEE4', r: '14px', p: '99px', font: ATK, titre: ATK },

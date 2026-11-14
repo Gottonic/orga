@@ -201,3 +201,11 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   `CONSEIL :`, `PROJETS : nom ; nom`) : les objectifs vont au journal de la semaine, les projets reçoivent la semaine au planning de l'Établi.
 - **Heures de GDT dans la Mine** (lecture seule) : onglet Heures, lues dans l'app GDT avec la connexion GDT de la Banque (Réglages › GDT, même navigateur) ;
   un résumé par semaine (`regl.gdtHeures`) est repris par `locus_lundi` (`heures_gdt_par_semaine`).
+
+## Design commun (15.11.2026)
+
+La charte est dans `commun/CHARTE.md`. Toutes les apps prennent les polices et les formes de la Forge, et des pictos au trait. Chacune garde son ambiance de couleurs : c'est un lieu.
+- `commun/lieux.css` : une page l'adopte avec `<html data-lieu="…">` et ce fichier. Il fournit les jetons `--page`, `--surface`, `--ink`, `--accent`, `--on-acc`… et habille l'en-tête commun.
+- `commun/pictos.js` : `Pictos.svg('mine')` et `Pictos.plaque('mine')`.
+- Logos des apps : leur picto sur la couleur d'accent du lieu (`*/icons/`, avec `logo.svg`).
+- Fait : l'accueil Locus. Les autres apps suivront une par une.

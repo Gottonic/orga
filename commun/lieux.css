@@ -1,0 +1,105 @@
+/* Locus — charte commune (15.11.2026) : polices et formes de la Forge, une ambiance de couleurs par lieu.
+   Voir commun/CHARTE.md. Une page l'adopte avec :
+     <html lang="fr" data-lieu="mine">  +  <link rel="stylesheet" href="../commun/lieux.css">
+   Jetons communs (même nom partout, valeurs par lieu) :
+     --page        fond de l'écran            --on-page / --on-page-2   texte posé directement sur le fond
+     --head        fond de l'en-tête          --on-head                 texte de l'en-tête
+     --surface     cartes                     --surface-2               cartes dans les cartes, survol
+     --line        filets                     --ink / --ink-2 / --ink-3 texte des cartes : principal, secondaire, discret
+     --accent      onglet actif, bouton principal, plaque des pictos     --on-acc   texte posé sur l'accent
+     --accent-soft fond teinté (mise en avant)                          --accent-ink  accent lisible comme texte (liens)
+     --good --bad --warn                      états (texte), lisibles sur les cartes
+   Formes : cartes très arrondies (--r 20px), boutons et onglets en pilule (99px), pas d'ombres, filets fins,
+   hachures diagonales pour « en pause / décharge », pointillés pour « provisoire ». */
+
+@font-face{font-family:"Unbounded";font-weight:500;font-display:swap;src:url(fonts/unbounded-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Unbounded";font-weight:700;font-display:swap;src:url(fonts/unbounded-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Space Grotesk";font-weight:400;font-display:swap;src:url(fonts/space-grotesk-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Space Grotesk";font-weight:500;font-display:swap;src:url(fonts/space-grotesk-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Space Grotesk";font-weight:600;font-display:swap;src:url(fonts/space-grotesk-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Space Grotesk";font-weight:700;font-display:swap;src:url(fonts/space-grotesk-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:600;font-display:swap;src:url(fonts/jetbrains-mono-latin-600-normal.woff2) format("woff2")}
+
+:root{
+  --f-display:"Unbounded","Space Grotesk",system-ui,sans-serif;
+  --f-body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:20px; --r-s:12px; --pill:99px;
+}
+
+/* ---------- les lieux ---------- */
+/* Locus, l'accueil : lilas profond, le lieu du milieu (ni trop clair ni trop sombre) */
+[data-lieu="locus"]{color-scheme:dark;
+  --page:#4A4458;--on-page:#F3F1E7;--on-page-2:#C9C2D8;--head:#413B4F;--on-head:#F3F1E7;
+  --surface:#5A536A;--surface-2:#665F77;--line:#6E6780;--ink:#F3F1E7;--ink-2:#DCD6E6;--ink-3:#D8D2E5;
+  --accent:#C3B6DF;--on-acc:#2A2535;--accent-soft:#3E3949;--accent-ink:#DCD3F0;
+  --good:#B6E3BA;--bad:#FFC6C9;--warn:#F6D58A}
+/* La Forge : feu et acier, le vert pour contrebalancer (référence, inchangée) */
+[data-lieu="forge"]{color-scheme:dark;
+  --page:#1A1714;--on-page:#EFE3CC;--on-page-2:#8F8372;--head:#14110E;--on-head:#EFE3CC;
+  --surface:#25201C;--surface-2:#332C26;--line:#3D352E;--ink:#EFE3CC;--ink-2:#C4B6A0;--ink-3:#8F8372;
+  --accent:#8DBA88;--on-acc:#1A1714;--accent-soft:#1F2B20;--accent-ink:#BEDCB9;
+  --good:#8DBA88;--bad:#E8505B;--warn:#F2B957;
+  --braise:#DB754B;--acier:#B8B4AE}
+/* La Banque : lampe de banquier, vert bouteille et laiton */
+[data-lieu="banque"]{color-scheme:dark;
+  --page:#15302A;--on-page:#F2ECDC;--on-page-2:#9DB3A9;--head:#102620;--on-head:#F2ECDC;
+  --surface:#1E3E36;--surface-2:#274B42;--line:#2F5449;--ink:#F2ECDC;--ink-2:#CFD9D2;--ink-3:#A9BDB4;
+  --accent:#D6B15E;--on-acc:#1E1606;--accent-soft:#33331F;--accent-ink:#E8CC8A;
+  --good:#8FCB9B;--bad:#F08A8A;--warn:#F2C566}
+/* La Mine : granit clair, gris bleuté, pierres précieuses pour les états */
+[data-lieu="mine"]{color-scheme:light;
+  --page:#DCE1E6;--on-page:#1D2833;--on-page-2:#53606D;--head:#CDD4DB;--on-head:#1D2833;
+  --surface:#F7F9FB;--surface-2:#EAEEF2;--line:#C3CAD2;--ink:#1D2833;--ink-2:#3C4856;--ink-3:#53606D;
+  --accent:#4E3A86;--on-acc:#F6F2FF;--accent-soft:#E4DEF3;--accent-ink:#4E3A86;
+  --good:#2E7D4F;--bad:#B3261E;--warn:#8A5A00;
+  --diamant:#A6E8F2;--emeraude:#6FCF97;--topaze:#F0C566;--rubis:#F07A85;--amethyste:#C2A8F0;--on-gemme:#1E2326}
+/* Le Marché : étal au soleil, vert céleri, tomate, carotte */
+[data-lieu="marche"]{color-scheme:light;
+  --page:#D7E6C3;--on-page:#1E3324;--on-page-2:#4F6650;--head:#CADDB3;--on-head:#1E3324;
+  --surface:#F8F5EA;--surface-2:#EDE8D8;--line:#BFD1A8;--ink:#1E3324;--ink-2:#2F4A35;--ink-3:#4F6650;
+  --accent:#B83C28;--on-acc:#FFF5EE;--accent-soft:#F6DCD3;--accent-ink:#A33522;
+  --good:#2E7D4F;--bad:#B3261E;--warn:#8A5A00;
+  --carotte:#E8913A;--feuille:#3F7A4A}
+/* L'Établi : bois huilé, graphite et jaune du mètre ruban, rouge du crayon de charpentier */
+[data-lieu="etabli"]{color-scheme:light;
+  --page:#CDB893;--on-page:#262321;--on-page-2:#54493A;--head:#C2AC85;--on-head:#262321;
+  --surface:#E9DDC6;--surface-2:#DDCFB3;--line:#B9A57F;--ink:#262321;--ink-2:#3E3830;--ink-3:#54493A;
+  --accent:#2F2C29;--on-acc:#F2C230;--accent-soft:#F2C230;--accent-ink:#262321;
+  --good:#2E6B3F;--bad:#A8321F;--warn:#7A5200;
+  --metre:#F2C230;--crayon:#C2452D}
+/* La Bibliothèque : reliure, murs bordeaux, pages claires, dorure */
+[data-lieu="bibliotheque"]{color-scheme:light;
+  --page:#6E2733;--on-page:#F9E9E4;--on-page-2:#E0B9B6;--head:#5E1F2A;--on-head:#F9E9E4;
+  --surface:#F7EAE6;--surface-2:#EEDAD4;--line:#D9BFB8;--ink:#2E1418;--ink-2:#5A3A3F;--ink-3:#795359;
+  --accent:#E8C27A;--on-acc:#3A1A10;--accent-soft:#5E1F2A;--accent-ink:#7A2E3A;
+  --good:#276B43;--bad:#B3261E;--warn:#8A5A00;
+  --dorure:#9A6E28;--bordeaux:#7A2E3A}
+
+/* ---------- base commune (seulement sur les pages qui ont data-lieu) ---------- */
+html[data-lieu]{background:var(--page)}
+html[data-lieu] body{background:var(--page);color:var(--on-page);font-family:var(--f-body);letter-spacing:.005em;-webkit-font-smoothing:antialiased}
+html[data-lieu] ::selection{background:var(--accent);color:var(--on-acc)}
+
+/* l'en-tête commun (cadre.css) habillé à la Forge */
+html[data-lieu] .oh{background:var(--head);color:var(--on-head);font-family:var(--f-body)}
+html[data-lieu] .oh .oh-bar{box-shadow:none}
+html[data-lieu] .oh .oh-nom{font:700 1.05rem/1.1 var(--f-display);letter-spacing:-.02em}
+html[data-lieu] .oh .oh-sub{font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.1em;font-size:.7rem;opacity:.8}
+html[data-lieu] .oh .ot{background:var(--head);border-bottom:1px solid var(--line)}
+html[data-lieu] .oh .ot .ot-t{font:600 .92rem/1.1 var(--f-body);color:color-mix(in srgb,var(--on-head) 62%,transparent)}
+html[data-lieu] .oh .ot .ot-t:hover{color:var(--on-head)}
+html[data-lieu] .oh .ot .ot-t[aria-current="page"],html[data-lieu] .oh .ot .ot-t.on{color:var(--on-head);border-bottom-color:var(--accent)}
+html[data-lieu] .oh .ot .ot-t:focus-visible{outline-color:var(--on-head)}
+
+/* pictos au trait : grille 20×20, traits de 1,8, bouts carrés, angles vifs (voir commun/pictos.js) */
+.ic{width:1.05em;height:1.05em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:square;stroke-linejoin:miter;vertical-align:-.16em;flex:none}
+/* la plaque : un picto posé sur un petit carré arrondi de la couleur de l'accent (logos, séances…) */
+.plaque{display:inline-grid;place-items:center;flex:none;width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--on-acc)}
+.plaque .ic{width:20px;height:20px;vertical-align:0}
+
+/* petites étiquettes mono, façon terminal */
+.eyebrow{font-family:var(--f-mono);font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:.12em}
+/* motifs */
+.hachures{background-image:repeating-linear-gradient(135deg,transparent 0 8px,color-mix(in srgb,var(--ink) 10%,transparent) 8px 9px)}
