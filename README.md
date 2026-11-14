@@ -6,6 +6,7 @@ Mes apps perso, réunies derrière un menu à tuiles. Une seule app à installer
 
 - Accueil : https://gottonic.github.io/orga/
 - **L’Établi** — mes projets, semaine par semaine : https://gottonic.github.io/orga/etabli/
+- **La Bibliothèque** — vide-tête, notes des projets, journal (remplace Workflowy) : https://gottonic.github.io/orga/bibliotheque/
 - **La Banque** — mes comptes et mes dépenses (ex-« Cash ») : https://gottonic.github.io/orga/banque/
 - **La Forge** — mon entraînement parkour (ex-« Carnet ») : https://gottonic.github.io/orga/forge/
 - **Le Marché** — ma liste de courses, rangée par magasin : https://gottonic.github.io/orga/marche/
@@ -26,7 +27,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `marche/` | l'app Marché (liste de courses), avec sa police (Caveat) et ses icônes |
 | `mine/` | l'app Mine (travail pro), avec sa police (Big Shoulders Stencil), ses icônes et `lib/qrcode.js` (générateur de codes QR, licence MIT) |
 | `commun/` | ce que les apps partagent : `supabase.js`, `projets.js` (règles de la fiche projet commune), `ampoule.js` (bugs et idées), `cadre.css` et `cadre.js` (en-tête), polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`), `mine.sql` (Mine : table `mine_rows`) |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`), `mine.sql` (Mine : table `mine_rows`), `biblio.sql` (Bibliothèque : table `biblio_rows`), `fichiers.sql` (dossiers de projet) |
 | `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
@@ -173,3 +174,18 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 - **Contacts** : clients et fournisseurs ; leur adresse va sur les documents et dans la QR-facture.
 - Données : table `mine_rows` (une ligne par activité `a:`, mandat `m:`, contact `c:`, heure `h:`, document `d:`,
   lien vers la Banque `l:`, réglages `s:reglages`, chrono en cours `s:chrono`). ⚙ Réglages → Exporter.
+
+## Bon à savoir (Bibliothèque)
+
+- **Étape 4 du plan (14.11.2026)** : `bibliotheque/`, table `biblio_rows` (`supabase/biblio.sql`, à lancer une fois). Une ligne de notes = `n:<id>`
+  `{id, p, o, t, d, x, a, c}` : parent (ligne ou racine `vide`, `p:<projet>`, `d:<domaine>`, `j:<AAAA-Wss>`), ordre, texte, note dessous, fait, archivée le, repliée.
+  `w:<semaine>` = note de la semaine sur 10 ; `s:reprise` = reprise faite.
+- **Vide-tête** : une seule boîte d'entrée. On y écrit depuis la Bibliothèque, le champ de l'accueil de Locus (`bibliotheque/?note=…`) et le vrac de l'Établi
+  (file d'attente `etabli-vide-<utilisateur>`, envoyée dans `biblio_rows`). « → » range une idée dans un projet, un domaine ou le journal de la semaine.
+- **Projets** : l'arbre commun (domaines › projets de l'Établi, archives en filtre) ; chaque page a ses notes. Modèle facultatif Plan / À faire / Ressources / Journal.
+  Dans l'Établi, « 📚 Notes dans la Bibliothèque » ouvre la page du projet ou du domaine.
+- **Éditeur** : Entrée (nouvelle ligne, coupe au curseur), Tab / Maj+Tab (emboîter), Maj+Entrée (note sous la ligne), Ctrl+Entrée (fait),
+  Alt+↑/↓ (déplacer), Ctrl+↑/↓ (plier), Retour arrière sur une ligne vide (la supprime) ; clic sur la puce = plier, double-clic = zoomer ; barre d'outils en bas
+  sur le téléphone (⇤ ⇥ ↑ ↓ ✓ 📝 🗄 ×). Les liens d'une ligne s'affichent à droite, cliquables. Coller plusieurs lignes = une ligne chacune.
+- **Journal** : une page par semaine, note sur 10. **Chercher** : dans toutes les lignes et notes (et les noms de projets).
+- **Reprise** (bandeau du vide-tête) : copie les feuilles de notes de l'Établi (projets et domaines, gardées aussi dans l'Établi) et déménage son « En vrac ».

@@ -1141,9 +1141,9 @@ function vVrac(){
   const box=key=>{const L=LISTS[key], items=S.lists[key], done=items.filter(v=>v.d).length;
     return `<div class="sechead">${L.emoji} ${L.name}<span>${items.length}</span></div><ul class="vlist vrac">${items.map(v=>`<li class="${v.d?'done':''}">${key==='petites'?`<input type="checkbox" class="vchk" data-act="petiteDone" data-v="${v.id}" ${v.d?'checked':''} aria-label="Fait">`:''}<button class="vt" data-act="item" data-src="${key}" data-v="${v.id}">${esc(v.t)}</button><span class="vgo">›</span></li>`).join('')||'<li class="empty">Vide.</li>'}</ul>${done?`<button class="linkbtn" style="margin-top:6px" data-act="clearDone">Effacer les ${done} tâche${done>1?'s':''} faite${done>1?'s':''}</button>`:''}`;};
   $view.innerHTML=`<form class="inline vadd" data-act="addVrac"><input class="input" id="f-vrac" placeholder="Une idée, un truc à ne pas oublier…" autocomplete="off" aria-label="Noter en vrac"><button class="btn" type="submit">+</button></form>
-  <div class="sechead">À trier<span>${S.inbox.length}</span></div>
-  <ul class="vlist vrac">${S.inbox.map(v=>`<li><button class="vt" data-act="item" data-src="inbox" data-v="${v.id}">${esc(v.t)}</button><span class="vgo">›</span></li>`).join('')||'<li class="empty">Tout est trié.</li>'}</ul>
-  ${S.inbox.length?'<p class="note">Touche une ligne pour la ranger.</p>':''}
+  <div class="sechead">Vide-tête<span>dans la Bibliothèque</span></div>
+  <ul class="vlist vrac"><li><a class="vt" style="text-decoration:none;color:inherit" href="../bibliotheque/#vide"><b>📚 Ouvrir le vide-tête et ranger</b></a><span class="vgo">›</span></li></ul>
+  ${S.inbox.length?`<div class="sechead">Ancien vrac<span>${S.inbox.length}</span></div><ul class="vlist vrac">${S.inbox.map(v=>`<li><button class="vt" data-act="item" data-src="inbox" data-v="${v.id}">${esc(v.t)}</button><span class="vgo">›</span></li>`).join('')}</ul><p class="note">La Bibliothèque les reprend (Vide-tête › Reprendre).</p>`:''}
   ${(()=>{const L=petitesList().slice(0,4), n=nPetites(); return `<div class="sechead">📝 Petites tâches<span>${n}</span></div><ul class="vlist vrac">${L.map(o=>`<li><button class="vt" data-act="dom" data-id="${o.h.id}">${esc(o.x.t)} <span class="ptsec">${esc(domName(o.h))}</span></button><span class="vgo">›</span></li>`).join('')}<li><button class="vt" data-act="minis"><b>${n>4?'Voir les '+n+' petites tâches':'Ouvrir les petites tâches'}</b></button><span class="vgo">›</span></li></ul>`;})()}${laterBox()}`;
 }
 function itemSheet(src,vid,mode){
@@ -1324,7 +1324,7 @@ function domainSheet(id,msg){
   <div class="field"><span class="lbl">Projets · ${openP.length}</span>${openP.length?`<div class="picklist">${openP.map(pbtn).join('')}</div>`:'<p class="note" style="margin:0">Aucun projet ouvert.</p>'}${closed?'':`<button class="btn ghost" data-act="newInDom">+ Projet dans ce domaine</button>`}
   ${done.length?`<details class="more"><summary>Archivés · ${done.length}</summary><div class="picklist">${done.map(pbtn).join('')}</div></details>`:''}</div>
   ${tasksBlock(d,closed,'tâche')}
-  <div class="field"><span class="lbl">Notes</span>${nN?`<button class="notesprev" data-act="notes">${d.notes.filter(x=>x.t).slice(0,3).map(x=>`<span style="padding-left:${x.l*14}px">• ${esc(x.t)}</span>`).join('')}<b>Ouvrir les notes · ${nN} ligne${nN>1?'s':''}</b></button>`:`<button class="btn ghost" data-act="notes">+ Feuille de notes</button>`}</div>
+  <div class="field"><span class="lbl">Notes</span><a class="btn ghost" style="text-align:center;text-decoration:none" href="../bibliotheque/#d:${d.id}">📚 Notes dans la Bibliothèque</a></div>
   ${d.auto||closed?'':`<div class="field"><label for="f-dname">Nom</label><input class="input" id="f-dname" autocomplete="off" autocorrect="off" value="${esc(d.name)}"></div>
   <div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="domColor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
   ${d.auto?'':closed?`<button class="btn ghost" data-act="domReopen">Rouvrir le domaine</button>`:msg==='arch'?`<div class="danger"><div>Archiver <b>${esc(domName(d))}</b> ? ${openP.length?`Ses ${openP.length} projet${openP.length>1?'s':''} ouvert${openP.length>1?'s':''} ${openP.length>1?'seront archivés':'sera archivé'} comme terminé${openP.length>1?'s':''}.`:''}</div><div class="actions"><button class="btn ghost" data-act="dom" data-id="${d.id}">Annuler</button><button class="btn" data-act="domArchOk">Archiver</button></div></div>`:`<button class="btn ghost" data-act="domArch">Archiver le domaine…</button>`}
@@ -1446,6 +1446,13 @@ async function copierJustificatifs(){
   return n; }
 function fichiersChanges(){ if($scrim.hidden) { if(ui.view==='projets') render(); return; } if(sheetKey==='atrier') aTrierSheet(); else if(sheetId&&P(sheetId)&&sheetKey==='d:'+sheetId){ const y=$sheet.scrollTop; detail(sheetId); $sheet.scrollTop=y; } }
 
+/* Vide-tête : ce qu'on note en vrac va dans la Bibliothèque (table biblio_rows, racine « vide »), étape 4 */
+function versVide(t){ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7), K='etabli-vide-'+UID; let L=[]; try{ L=JSON.parse(localStorage.getItem(K)||'[]'); }catch(e){}
+  L.push({key:'n:'+id,data:{id,p:'vide',o:-Date.now()/1000,t,cree:todayS}}); try{ localStorage.setItem(K,JSON.stringify(L)); }catch(e){} envoyerVide(); }
+async function envoyerVide(){ if(!sb||!UID||!navigator.onLine) return; const K='etabli-vide-'+UID; let L=[]; try{ L=JSON.parse(localStorage.getItem(K)||'[]'); }catch(e){} if(!L.length) return;
+  try{ const {error}=await sb.from('biblio_rows').upsert(L.map(x=>({user_id:UID,key:x.key,data:x.data,deleted:false})),{onConflict:'user_id,key'}); if(error) throw error;
+    let M=[]; try{ M=JSON.parse(localStorage.getItem(K)||'[]'); }catch(e){} localStorage.setItem(K,JSON.stringify(M.filter(x=>!L.some(y=>y.key===x.key)))); }catch(e){} }
+
 /* Fiche projet */
 let lastDetail=null;
 function detail(id,msg){
@@ -1472,7 +1479,7 @@ function detail(id,msg){
   ${p.later?'':prevuField(p)}
   ${kids.length?'':`<div class="field"><label class="lbl" for="f-parent">Domaine</label>${domSelect('f-parent',p.parent||'')}</div>`}
   <div class="field"><span class="lbl">Perso ou pro</span>${natPick(natureOf(p),null,'nat')}</div>`}
-  <div class="field"><span class="lbl">Notes</span>${p.notes&&p.notes.some(x=>x.t)?`<button class="notesprev" data-act="notes">${p.notes.filter(x=>x.t).slice(0,3).map(x=>`<span style="padding-left:${x.l*14}px">• ${esc(x.t)}</span>`).join('')}<b>Ouvrir les notes · ${p.notes.filter(x=>x.t).length} ligne${p.notes.filter(x=>x.t).length>1?'s':''}</b></button>`:`<button class="btn ghost" data-act="notes">+ Feuille de notes</button>`}</div>
+  <div class="field"><span class="lbl">Notes</span><a class="btn ghost" style="text-align:center;text-decoration:none" href="../bibliotheque/#p:${p.id}">📚 Notes dans la Bibliothèque</a></div>
   ${dossierBlock(p,closed)}
   <details class="more" ${p.why?'open':''}><summary>Pourquoi, couleur</summary>
   <div class="field"><label for="f-why">Pourquoi ce projet</label><textarea class="input" id="f-why" data-field="why" ${closed?'disabled':''}>${esc(p.why)}</textarea></div>
@@ -1543,7 +1550,7 @@ function summary(){
   const pt=petitesList(); L.push('','PETITES TÂCHES (dans les domaines)'); if(pt.length) pt.forEach(o=>L.push('- '+o.x.t+' ('+o.h.name+(o.sec?' › '+o.sec:'')+')')); else L.push('- aucune');
   const pv2=S.projects.filter(p=>!isMini(p)&&Projets.etat(p,todayS)==='prevu').sort((x,y)=>x.prevu.localeCompare(y.prevu)); L.push('','PRÉVUS PLUS TARD'); if(pv2.length) pv2.forEach(p=>L.push('- '+p.emoji+' '+p.name+' (dès le '+fmt(p.prevu)+' '+p.prevu.slice(0,4)+')')); else L.push('- aucun');
   const dm=S.projects.filter(p=>Projets.dort(p,todayS)); L.push('','PROJETS QUI DORMENT (rien depuis plus de 4 mois)'); if(dm.length) dm.forEach(p=>L.push('- '+(p.emoji?p.emoji+' ':'')+p.name+' (rien depuis '+Math.floor(Projets.depuis(p,todayS)/30)+' mois)')); else L.push('- aucun');
-  L.push('','EN VRAC, À TRIER'); if(S.inbox.length) S.inbox.forEach(v=>L.push('- '+v.t)); else L.push('- rien');
+  L.push('','EN VRAC, À TRIER'); if(S.inbox.length) S.inbox.forEach(v=>L.push('- '+v.t)); else L.push('- voir le vide-tête de la Bibliothèque');
   const dorment=S.projects.filter(p=>Projets.dort(p,todayS)).sort((x,y)=>(Projets.depuis(y,todayS)||0)-(Projets.depuis(x,todayS)||0));
   const dortHtml=dorment.length?`<div class="alert"><div><b>${dorment.length} projet${dorment.length>1?'s dorment':' dort'}</b> depuis plus de 4 mois. ${dorment.length>1?'Que deviennent-ils ?':'Que devient-il ?'}</div>${dorment.map(p=>`<div class="dort"><b>${p.emoji?p.emoji+' ':''}${esc(p.name)} <small>· rien depuis ${Math.floor(Projets.depuis(p,todayS)/30)} mois</small></b><div class="dbtns"><button data-act="dortFin" data-id="${p.id}" data-v="termine">Terminé</button><button data-act="dortFin" data-id="${p.id}" data-v="abandonne">Abandonné</button><button data-act="dortPrevu" data-id="${p.id}">Prévu plus tard</button><button data-act="dortIdee" data-id="${p.id}">Redevient une idée</button><button data-act="dortGo" data-id="${p.id}">Il avance encore</button></div></div>`).join('')}</div>`:'';
   openSheet(`<div class="shead"><h2>Recap<small>à coller dans la conversation</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
@@ -1614,7 +1621,7 @@ function quickVrac(){
   sheetId=null; ctx=null;
   openSheet(`<div class="shead"><h2>Noter en vrac<small>${S.inbox.length?S.inbox.length+' déjà à trier':'boîte vide'}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
    <form class="inline vadd" style="margin:0" data-act="addVracQ"><input class="input" id="q-vrac" placeholder="Une idée, un truc à ne pas oublier…" autocomplete="off" aria-label="Noter en vrac"><button class="btn" type="submit">+</button></form>
-   <p class="note" style="margin:0">Tu le rangeras plus tard dans l'onglet En vrac.</p></div>`,'qv');
+   <p class="note" style="margin:0">Il va dans le vide-tête de la Bibliothèque, où tu le rangeras plus tard.</p></div>`,'qv');
   setTimeout(()=>{const i=document.getElementById('q-vrac'); if(i) try{i.focus();}catch(e){}},60);
 }
 function offsSheet(){
@@ -1878,9 +1885,9 @@ document.addEventListener('input',e=>{const t=e.target;
   if(t.id==='n-name'&&draft){draft.name=t.value; if(!draft.picked){let s='✨'; for(const [re,em] of SUGG){ if(re.test(t.value)){s=em; break;} } draft.emoji=s; const b=document.getElementById('nemo'); if(b) b.textContent=s;}}
 });
 document.addEventListener('submit',e=>{e.preventDefault(); const f=e.target.dataset.act;
-  if(f==='addVrac'){const i=document.getElementById('f-vrac'), v=i.value.trim(); if(!v) return; S.inbox.push({id:'v'+Date.now(),t:v}); save(); render(); const n=document.getElementById('f-vrac'); if(n) try{n.focus();}catch(e){} toast('Noté en vrac');}
+  if(f==='addVrac'){const i=document.getElementById('f-vrac'), v=i.value.trim(); if(!v) return; versVide(v); i.value=''; render(); const n=document.getElementById('f-vrac'); if(n) try{n.focus();}catch(e){} toast('Noté dans le vide-tête');}
   if(f==='addMini'){ const i=document.getElementById('f-mini'), v=i.value.trim(); if(!v) return; S.projects.push(newMini(v)); save(); render(); minisSheet(); const n=document.getElementById('f-mini'); if(n) try{n.focus();}catch(err){} toast('Mini projet ajouté'); }
-  if(f==='addVracQ'){const i=document.getElementById('q-vrac'), v=i.value.trim(); if(!v) return; S.inbox.push({id:'v'+Date.now(),t:v}); save(); render(); toast('Noté en vrac'); closeSheet();}
+  if(f==='addVracQ'){const i=document.getElementById('q-vrac'), v=i.value.trim(); if(!v) return; versVide(v); render(); toast('Noté dans le vide-tête'); closeSheet();}
   if(f==='addOff'){let a=document.getElementById('o-s').value, b=document.getElementById('o-e').value||a; if(!a) return; if(b<a){const x=a; a=b; b=x;} S.offs.push({id:'o'+Date.now(),s:a,e:b,l:document.getElementById('o-l').value.trim()||'Congé'}); save(); render(); offsSheet(); toast('Ajouté au planning');}
   if(f==='addTask'){const v=document.getElementById('f-task').value.trim(); if(!v) return; const h=H(sheetId); if(/^#/.test(v)){ const t2=v.replace(/^#+\s*/,''); if(t2) h.tasks.push({t:t2,s:true}); } else { h.tasks.push({t:v,d:false}); sinkDone(h); } save(); refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-task'); if(n) try{n.focus();}catch(err){} },40);}
   if(f==='addPetite'){const i=document.getElementById('f-petite'), v=i.value.trim(); if(!v) return; const sel=document.getElementById('f-pdom'); const h=(sel&&H(sel.value))||autresD(); ui.ptDom=h.id; h.tasks.push({t:v,d:false}); sinkDone(h); save(); petitesSheet(); setTimeout(()=>{ const n=document.getElementById('f-petite'); if(n) try{n.focus();}catch(err){} },40);}
@@ -2029,7 +2036,7 @@ async function enter(user){
   if(FB) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges);
   if(migratePetites()|migrateLater()) render();
   if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; S.domaines={le:todayS}; save(); render(); } /* nouveau compte : domaines et projets dès le départ */
-  push();
+  push(); envoyerVide();
 }
 async function startApp(){
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('../sw.js',{scope:'../'}); }catch(e){} }
@@ -2039,7 +2046,7 @@ async function startApp(){
   let session=null; try{ session=(await sb.auth.getSession()).data.session; }catch(e){}
   if(session&&session.user) await enter(session.user); else showLogin();
   sb.auth.onAuthStateChange((ev,sess)=>{ if(ev==='SIGNED_OUT'&&UID){ UID=null; showLogin(); } });
-  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); if(FB) FB.tirer().then(()=>{ FB.pousser(); return syncFichiers(); }).then(fichiersChanges); });
+  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); envoyerVide(); if(FB) FB.tirer().then(()=>{ FB.pousser(); return syncFichiers(); }).then(fichiersChanges); });
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&FB&&UID) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges); });
   addEventListener('offline',()=>setSync());
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'&&MINI){ histDrop((histSheet?1:0)+(histView?1:0)); histSheet=false; histView=false; $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; ui.view='mini'; try{ document.activeElement&&document.activeElement.blur(); }catch(e){} render(); window.scrollTo(0,0); } });
