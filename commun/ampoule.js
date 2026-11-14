@@ -26,7 +26,7 @@
   const PAPIER = { f: '#F3F1E7', c: '#FFFFFF', i: '#1E1E1E', m: '#6B6A62', l: '#CFCCBF', a: '#3C3C3C', ai: '#FFFFFF', s: '#FFECB0', r: '0px', p: '0px', font: ATK, titre: ATK };
   const THEMES = {
     orga: { f: '#4A4458', c: '#5A536A', i: '#F3F1E7', m: '#D8D2E5', l: '#6E6780', a: '#C3B6DF', ai: '#2A2535', s: '#3E3949', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }, /* charte du 15.11 (lieu Locus) */
-    etabli: PAPIER,
+    etabli: { f: '#CDB893', c: '#E9DDC6', i: '#262321', m: '#54493A', l: '#B9A57F', a: '#2F2C29', ai: '#F2C230', s: '#F6DF8E', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif' }, /* charte du 15.11 : bois huilé */
     banque: { f: '#F4F5F7', c: '#FFFFFF', i: '#17181B', m: '#5C6270', l: '#E2E5EA', a: '#F0B54A', ai: '#1A1406', s: '#FBEFD6', r: '20px', p: '99px', font: ATK, titre: '"Bricolage Grotesque",' + ATK },
     marche: { f: '#F5EEDF', c: '#FFFCF5', i: '#24211B', m: '#6F6656', l: '#E6DBC6', a: '#2E6B4E', ai: '#FFFFFF', s: '#E2EEE4', r: '14px', p: '99px', font: ATK, titre: ATK },
     bibliotheque: { f: '#F7EAE6', c: '#FFFAF8', i: '#2E1418', m: '#795359', l: '#E6D0CA', a: '#7A2E3A', ai: '#FFF6EC', s: '#F2DEDA', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif' }, /* charte du 15.11 : pages de la reliure */
