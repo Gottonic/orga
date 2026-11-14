@@ -776,27 +776,31 @@ function carteChrono(){
   const sel=ui.chronoM&&S.mands[ui.chronoM]&&S.mands[ui.chronoM].etat!=='fini'?ui.chronoM:ms[0].id;
   return `<section class="chrono" aria-label="Chronomètre"><div class="cap">Chronomètre · sur quel mandat ?</div><div class="chips">${ms.slice(0,8).map(m=>`<button class="chip coul${m.id===sel?' on':''}" style="--c:${act(m.activite).couleur}" data-act="chrono-m" data-id="${m.id}" aria-pressed="${m.id===sel}">${esc(act(m.activite).emoji)} ${esc(m.nom)}</button>`).join('')}</div><button class="btn" data-act="chrono-go" data-id="${sel}">▶ Démarrer</button></section>`;
 }
-/* Heures de Gamins de Talus (lecture seule) : lues dans l'app GDT (autre Supabase), avec la connexion GDT de la Banque
-   (Banque › Réglages › GDT, même navigateur). Rien n'est écrit dans GDT. Un résumé par semaine est gardé dans les réglages
-   de la Mine (regl.gdtHeures), pour le pont du lundi. */
+/* Heures de Gamins de Talus (lecture seule). Par le lien privé de GDT (fonction mes_heures, clé dans regl.gdtCle, synchronisée) :
+   marche sur tous les appareils, sans connexion GDT. La clé se crée une fois avec la connexion GDT de la Banque (même navigateur),
+   automatiquement ou depuis les Réglages. Rien n'est écrit dans GDT. Un résumé par semaine est gardé dans regl.gdtHeures (pont du lundi). */
 const GDT_URL='https://faouvytsqxridrwffrth.supabase.co', GDT_KEY='sb_publishable_EQKYeWZcBAPl_PjuMdfQjw_iRrc_7ak';
 let gsb=null, GH={L:[],err:'',le:null};
 try{ const c=JSON.parse(localStorage.getItem('mine-gdt-heures')||'null'); if(c&&c.L) GH=c; }catch(e){}
 function gdtClient(){ if(!gsb&&window.supabase&&window.supabase.createClient) gsb=window.supabase.createClient(GDT_URL,GDT_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'banque-gdt-auth'}}); return gsb; }
-async function gdtHeures(){
-  if(!navigator.onLine) return; const c=gdtClient(); if(!c) return;
-  try{ const {data:sd}=await c.auth.getSession(), ses=sd&&sd.session; if(!ses){ GH.err='connexion'; return; }
-    const {data:mb,error:e1}=await c.from('membres').select('personne').eq('user_id',ses.user.id); if(e1) throw e1;
-    const me=mb&&mb[0]&&mb[0].personne; if(!me){ GH.err='membre'; return; }
-    const depuis=plusJours(today(),-400), L=[];
-    for(let de=0;;de+=1000){ const {data,error}=await c.from('rows').select('key,data,deleted').like('key','h:%').order('key').range(de,de+999); if(error) throw error;
-      (data||[]).forEach(r=>{ const d=r.data; if(r.deleted||!d||d.personne!==me||d.off||!(d.date>=depuis)) return; const hrs=parseFloat(String(d.heures==null?'':d.heures).replace(',','.')); if(hrs>0) L.push({date:d.date,min:Math.round(hrs*60),note:d.note||''}); });
-      if(!data||data.length<1000) break; }
+/* Créer (ou remplacer) la clé avec la connexion GDT de cet appareil. Renvoie la clé, ou lance une erreur lisible. */
+async function gdtCleNouvelle(){ const c=gdtClient(); if(!c) throw new Error('GDT indisponible');
+  const {data:sd}=await c.auth.getSession(); if(!sd||!sd.session) throw new Error('GDT n’est pas connecté dans la Banque sur cet appareil');
+  const {data,error}=await c.rpc('lien_heures_nouveau'); if(error) throw new Error(/lien_heures_nouveau|function/i.test(error.message||'')?'le lien n’est pas encore installé dans GDT (SQL du 14.11)':error.message);
+  if(!data) throw new Error('pas de clé reçue'); S.regl.gdtCle=String(data); save(); return S.regl.gdtCle; }
+async function gdtLire(cle){ const r=await fetch(GDT_URL+'/rest/v1/rpc/mes_heures?cle='+encodeURIComponent(cle),{headers:{apikey:GDT_KEY,Accept:'application/json'}});
+  const j=await r.json().catch(()=>null); if(!r.ok){ const m=(j&&j.message)||('erreur '+r.status); throw Object.assign(new Error(m),{cle:/clé inconnue/.test(m)}); } return j; }
+async function gdtHeures(auto){
+  if(!navigator.onLine||!UID) return;
+  try{ let cle=S.regl.gdtCle;
+    if(!cle){ if(!auto){ GH.err='connexion'; return; } try{ cle=await gdtCleNouvelle(); }catch(e){ GH.err='connexion'; GH.detail=e.message; render(); return; } }
+    const j=await gdtLire(cle), L=[];
+    (j&&j.heures||[]).forEach(d=>{ const hrs=parseFloat(String(d.heures==null?'':d.heures).replace(',','.')); if(hrs>0&&d.date) L.push({date:d.date,min:Math.round(hrs*60),note:d.note||''}); });
     GH={L,err:'',le:new Date().toISOString()}; try{ localStorage.setItem('mine-gdt-heures',JSON.stringify(GH)); }catch(e){}
     const sem={}; L.forEach(x=>{ if(x.date<plusJours(today(),-60)) return; const key=plusJours(lundi(x.date),3).slice(0,4)+'-W'+String(semNum(x.date)).padStart(2,'0'); sem[key]=(sem[key]||0)+x.min; });
     const avant=JSON.stringify((S.regl.gdtHeures||{}).sem||{}); if(avant!==JSON.stringify(sem)){ S.regl.gdtHeures={sem,le:today()}; save(); }
     render();
-  }catch(e){ GH.err=(e&&e.message)||String(e); } }
+  }catch(e){ GH.err=e.cle?'cle':'reseau'; GH.detail=(e&&e.message)||String(e); render(); } }
 const gdtSemaine=(l0,l6)=>GH.L.filter(x=>x.date>=l0&&x.date<=l6);
 
 function vHeures(){
@@ -806,8 +810,8 @@ function vHeures(){
   h+=`<div class="semnav"><button data-act="sem" data-n="-1" aria-label="Semaine précédente">‹</button><div><b>Semaine ${semNum(l0)}</b><span>${fJour(l0)} – ${fJour(l6)}</span></div><button data-act="sem" data-n="1" aria-label="Semaine suivante" ${ui.sem>=0?'disabled':''}>›</button></div>`;
   const gs=gdtSemaine(l0,l6), gtot=gs.reduce((s2,x)=>s2+x.min,0);
   h+=`<div class="semtot"><span class="cap">Total de la semaine</span><b class="mono">${fH(tot)}</b>${gtot?`<span class="meta">+ ${fH(gtot)} GDT</span>`:''}${ui.sem?'<button class="lien" data-act="sem0">Revenir à cette semaine</button>':''}</div>`;
-  if(gs.length) h+=`<section class="bloc"><div class="bh"><h3>🥕 Gamins de Talus</h3><span class="meta">${fH(gtot)} · lu dans l’app GDT</span></div>${gs.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="ligne-r"><span>${cap1(fJourLong(x.date))}${x.note?` <span class="meta">· ${esc(x.note)}</span>`:''}</span><b class="mono">${fH(x.min)}</b></div>`).join('')}</section>`;
-  else if(GH.err==='connexion') h+=`<p class="aide">Les heures de GDT s’affichent ici quand GDT est connecté dans la Banque (Réglages › GDT) sur cet appareil.</p>`;
+  if(gs.length) h+=`<section class="bloc"><div class="bh"><h3>🥕 Gamins de Talus</h3><span class="meta">${fH(gtot)} · lu dans GDT</span></div>${gs.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="ligne-r"><span>${cap1(fJourLong(x.date))}${x.note?` <span class="meta">· ${esc(x.note)}</span>`:''}</span><b class="mono">${fH(x.min)}</b></div>`).join('')}</section>`;
+  else if(GH.err==='connexion'||GH.err==='cle') h+=`<p class="aide">${GH.err==='cle'?'Le lien vers tes heures GDT ne marche plus (clé remplacée ?).':'Les heures de GDT ne sont pas encore reliées.'} <button class="lien" data-act="reglages">Réglages › Gamins de Talus</button></p>`;
   if(!hs.length) h+=`<div class="vide">Aucune heure notée cette semaine.<br>Lance le chrono, ou touche + pour noter après coup.</div>`;
   else {
     for(let i=6;i>=0;i--){ const d=plusJours(l0,i), dj=hs.filter(x=>x.date===d).sort((a,b)=>(b.cree||'').localeCompare(a.cree||'')); if(!dj.length) continue;
@@ -1174,9 +1178,17 @@ function vReglages(){ const r=R(); ed={k:'regl'};
   +f('tarif','Tarif horaire par défaut, CHF','',' inputmode="decimal"')+f('tva','Mention TVA','Non assujetti à la TVA.')+f('pied','Phrase de fin','Merci pour votre confiance.')
   +`<label class="sw"><input type="checkbox" id="r-arr" ${r.arrondi?'checked':''}><span><b>Arrondir les totaux aux 5 centimes</b><small>Comme le liquide en Suisse.</small></span></label>`
   +`<button class="btn" data-act="sauver-regl" style="margin-top:14px">Enregistrer</button>`
+  +gdtReglHtml()
   +`<div class="sec">App</div><div class="ligne-r"><span>Compte</span><span>${esc(EMAIL)}</span></div><div class="ligne-r"><span>Synchro</span><span>${esc(st)} ${esc(tip)}</span></div><div class="ligne-r"><span>Contenu</span><span>${pl(Object.keys(S.mands).length,'mandat')} · ${pl(Object.keys(S.conts).length,'contact')} · ${pl(Object.keys(S.docs).length,'document')}</span></div><div class="ligne-r"><span>Banque</span><span>${bPret?pl(Object.keys(B.tx).length,'opération Pro','opérations Pro'):bErr?'⚠ '+esc(bErr):'chargement…'}</span></div>`
   +`<div class="row-btns" style="margin-top:10px"><button class="btn2" data-act="synchro">Synchroniser</button><button class="btn2" data-act="export">Exporter (JSON)</button><button class="btn2" data-act="logout">Se déconnecter</button></div>`);
 }
+function gdtReglHtml(){ const cle=S.regl.gdtCle, etat=!cle?'Pas encore relié':GH.err==='cle'?'⚠ La clé ne marche plus':GH.err==='reseau'?'⚠ '+(GH.detail||'Erreur'):GH.le?'✓ Relié · lu '+fDate(GH.le.slice(0,10)):'Relié';
+  return `<div class="sec">🥕 Gamins de Talus</div><p class="aide">Tes heures GDT, en lecture seule, par un lien privé de GDT : visibles sur tous tes appareils. La clé se crée une fois sur un appareil où GDT est connecté dans la Banque.</p>`
+  +`<div class="ligne-r"><span>Lien</span><span>${esc(etat)}</span></div>${GH.err==='connexion'&&GH.detail?`<p class="aide">${esc(GH.detail)}</p>`:''}`
+  +`<div class="row-btns" style="margin-top:8px"><button class="btn2" data-act="gdt-cle">${cle?'Nouvelle clé':'Relier maintenant'}</button>${cle?'<button class="btn2" data-act="gdt-lire">Relire</button><button class="btn2" data-act="gdt-copier">Copier le lien</button>':''}</div>`; }
+async function gdtCleAction(){ if(S.regl.gdtCle&&!confirm('Créer une nouvelle clé ? L’ancien lien (par ex. dans la tâche du lundi) ne marchera plus.')) return;
+  try{ await gdtCleNouvelle(); toast('Heures GDT reliées'); await gdtHeures(); }catch(e){ toast('Pas possible : '+e.message); } if(ed&&ed.k==='regl') vReglages(); }
+function gdtLien(){ return GDT_URL+'/rest/v1/rpc/mes_heures?cle='+S.regl.gdtCle; }
 function sauverRegl(){ const g=k=>val('r-'+k).trim(); const iban=ibanNet(g('iban'));
   if(iban&&!ibanOk(iban)){ toast('Cet IBAN ne semble pas valable : vérifie-le'); focus1('r-iban'); return; }
   S.regl=Object.assign({},S.regl,{nom:g('nom'),rue:g('rue'),npa:g('npa'),lieu:g('lieu'),email:g('email'),tel:g('tel'),site:g('site'),iban,delai:num(g('delai'))||30,validite:num(g('validite'))||30,tarif:num(g('tarif'))||0,tva:g('tva'),pied:g('pied'),arrondi:coche('r-arr'),pays:S.regl.pays||'CH'});
@@ -1310,6 +1322,9 @@ document.addEventListener('click',e=>{
     case 'sup-heure': { if(!ed.conf){ lireHeure(); ed.conf=true; vHeure(); break; } const s=snap(); delete S.heures[ed.id]; save(); fermer(); render(); toast('Heures supprimées','Annuler',()=>restaurer(s)); break; }
     case 'sem': ui.sem=Math.min(0,ui.sem+(+b.dataset.n)); render(); break;
     case 'sem0': ui.sem=0; render(); break;
+    case 'gdt-cle': gdtCleAction(); break;
+    case 'gdt-lire': gdtHeures().then(()=>{ if(ed&&ed.k==='regl') vReglages(); toast(GH.err?'Pas possible : '+(GH.detail||GH.err):'Heures GDT relues'); }); break;
+    case 'gdt-copier': { const t=`curl -s "${gdtLien()}" -H "apikey: ${GDT_KEY}"`; (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Lien copié'),()=>prompt('Le lien :',t)); break; }
     case 'chrono-m': ui.chronoM=id; render(); break;
     case 'chrono-go': if(!$scrim.hidden) fermer(); chronoStart(id); break;
     case 'chrono-stop': chronoStop(false); break;
@@ -1411,9 +1426,9 @@ async function enter(user){
   try{ if(window.Dossier) FB=Dossier.base(sb,UID); }catch(e){ FB=null; }
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(!booted) return; if(relierDepuisProjets()) save(); render(); });
   booted=true; render(); setSync();
-  await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);
+  const [,tire]=await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);
   if(relierDepuisProjets()) save(); render();
-  push(); PB.pousser(); gdtHeures();
+  push(); PB.pousser(); gdtHeures(tire===true); /* clé créée seulement si les réglages sont à jour */
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{
   e.preventDefault(); const mail=document.getElementById('l-mail').value.trim(), pass=document.getElementById('l-pass').value;
