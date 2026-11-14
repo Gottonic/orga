@@ -865,8 +865,6 @@ const phVar = p => p ? "var(--ph-" + (PHASES[p.type] ? p.type : "transition") + 
 /* texte sur une couleur de phase : foncé sur les flammes, crème sur l'anthracite */
 const PH_HOT = ["hypertrophie","force","puissance","contraste","vitesse","specifique"];
 const phOn = p => "var(--on-ph)";
-/* couleur d'une carte de séance, d'après son type (le parkour = le spécifique) */
-const SESS_PH = { hypertrophie:"hypertrophie", force:"force", puissance:"puissance", contraste:"contraste", vitesse:"vitesse", parkour:"specifique" };
 const fmtMin = m => m >= 60 ? Math.floor(m/60) + " h" + (m % 60 ? " " + String(m % 60).padStart(2,"0") : "") : m + " min";
 const phName = p => p ? (p.name || PHASES[p.type]?.label || "") : "";
 const blocksSorted = () => Object.entries(S.data.blocks || {}).map(([id,b]) => ({id,...b})).filter(b => b.start && b.end).sort((a,b) => a.start < b.start ? -1 : 1);
@@ -1455,9 +1453,10 @@ function sessRow(wk, s, log, hint){
   const steps = guided(s) ? runSteps(s, st) : []; const inRun = !st.done && st.run && steps.length;
   const status = st.done ? `<span class="sstat ok">Faite ✓${st.date ? " · " + dayShort(st.date) : ""}</span>`
     : inRun ? `<span class="sstat run">En cours · ${Math.min(st.run.i, steps.length)}/${steps.length}</span>` : "";
-  /* séances Haut et Bas : la phase de leur cycle cette semaine ; les autres : leur type (parkour = spécifique) */
+  /* couleur des cycles pour les séances Haut et Bas seulement (la phase de leur cycle cette semaine) ; parkour en vert ;
+     tout le reste (maintien, endurance, VO2max, tests, séances de vacances, séances ajoutées…) gris, comme le maintien */
   const trk = s.id === "s-haut" ? "haut" : s.id === "s-bas" ? "bas" : s.track || null; const wo = trk && weekById(wk);
-  const tph = wo ? phaseOf(wo, trk) : null; const sph = trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : SESS_PH[s.kind];
+  const tph = wo ? phaseOf(wo, trk) : null; const sph = trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : s.kind === "parkour" ? "specifique" : null;
   return `<article class="srow ${st.done ? "done" : "col"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
       <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
