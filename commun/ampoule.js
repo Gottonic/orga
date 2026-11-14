@@ -27,10 +27,10 @@
   const THEMES = {
     orga: { f: '#4A4458', c: '#5A536A', i: '#F3F1E7', m: '#D8D2E5', l: '#6E6780', a: '#C3B6DF', ai: '#2A2535', s: '#3E3949', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }, /* charte du 15.11 (lieu Locus) */
     etabli: { f: '#CDB893', c: '#E9DDC6', i: '#262321', m: '#54493A', l: '#B9A57F', a: '#2F2C29', ai: '#F2C230', s: '#F6DF8E', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif' }, /* charte du 15.11 : bois huilé */
-    banque: { f: '#F4F5F7', c: '#FFFFFF', i: '#17181B', m: '#5C6270', l: '#E2E5EA', a: '#F0B54A', ai: '#1A1406', s: '#FBEFD6', r: '20px', p: '99px', font: ATK, titre: '"Bricolage Grotesque",' + ATK },
-    marche: { f: '#F5EEDF', c: '#FFFCF5', i: '#24211B', m: '#6F6656', l: '#E6DBC6', a: '#2E6B4E', ai: '#FFFFFF', s: '#E2EEE4', r: '14px', p: '99px', font: ATK, titre: ATK },
+    banque: { f: '#15302A', c: '#1E3E36', i: '#F2ECDC', m: '#A9BDB4', l: '#2F5449', a: '#D6B15E', ai: '#1E1606', s: '#33331F', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }, /* charte du 15.11 : lampe de banquier */
+    marche: { f: '#D7E6C3', c: '#F8F5EA', i: '#1E3324', m: '#4F6650', l: '#BFD1A8', a: '#B83C28', ai: '#FFF5EE', s: '#F6DCD3', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif' }, /* charte du 15.11 : étal au soleil */
     bibliotheque: { f: '#F7EAE6', c: '#FFFAF8', i: '#2E1418', m: '#795359', l: '#E6D0CA', a: '#7A2E3A', ai: '#FFF6EC', s: '#F2DEDA', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif' }, /* charte du 15.11 : pages de la reliure */
-    mine: { f: '#ECE7DF', c: '#FFFFFF', i: '#2B2420', m: '#6E655C', l: '#D8D0C4', a: '#2B2420', ai: '#FFFFFF', s: '#F6E7CC', r: '0px', p: '0px', font: ATK, titre: '"Big Shoulders Stencil Display",' + ATK },
+    mine: { f: '#DCE1E6', c: '#F7F9FB', i: '#1D2833', m: '#53606D', l: '#C3CAD2', a: '#4E3A86', ai: '#F6F2FF', s: '#E4DEF3', r: '20px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif' }, /* charte du 15.11 : granit clair */
     forge: { f: '#1A1714', c: '#25201C', i: '#EFE3CC', m: '#8F8372', l: '#3D352E', a: '#8DBA88', ai: '#1A1714', s: '#1F2B20', r: '22px', p: '99px', font: '"Space Grotesk",system-ui,sans-serif', titre: 'Unbounded,"Space Grotesk",sans-serif', sombre: true }
   };
   const T = THEMES[APP] || PAPIER;

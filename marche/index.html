@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-lieu="marche">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Le Marché</title>
-<meta name="theme-color" content="#2E6B4E">
+<meta name="theme-color" content="#CADDB3">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="../manifest.webmanifest">
@@ -16,15 +16,15 @@
 @font-face{font-family:"Caveat";font-weight:700;font-style:normal;font-display:swap;src:url(fonts/caveat-latin-700-normal.woff2) format("woff2")}
 /* Marché : un étal de marché — papier kraft, auvents rayés, ardoise à la craie (titres en Caveat), vert épicerie */
 :root{
-  color-scheme:light;
-  --bg:#F5EEDF; --card:#FFFCF5; --creme:#FFF8EA; --line:#E6DBC6; --line2:#CDBE9F; --text:#24211B; --muted:#6F6656;
-  --vert:#2E6B4E; --vert2:#1F4D37; --vertpale:#E2EEE4; --tomate:#C8462C; --tomatepale:#FBE4DC; --moutpale:#FBEFCF; --neutre:#8A8170;
-  --shadow:0 1px 0 rgba(80,60,20,.06),0 2px 6px rgba(80,60,20,.09);
-  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif; --craie:"Caveat","Atkinson Hyperlegible",cursive;
+  /* charte du 15.11 (commun/CHARTE.md) : étal au soleil, céleri, cagette, tomate pour l'action ; --line vient du lieu */
+  --bg:var(--page); --card:var(--surface); --creme:var(--surface-2); --line2:#A9BE91; --text:var(--ink); --muted:var(--ink-3);
+  --vert:var(--accent); --vert2:#9A3220; --vertpale:var(--accent-soft); --tomate:var(--bad); --tomatepale:#F6D4CF; --moutpale:#F8E3C4; --neutre:#6F7F66;
+  --shadow:none;
+  --body:var(--f-body); --craie:var(--f-display);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg) radial-gradient(rgba(120,90,40,.055) 1px,transparent 1.2px) 0 0/7px 7px;color:var(--text);font:16px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg) radial-gradient(rgba(30,51,36,.05) 1px,transparent 1.2px) 0 0/7px 7px;color:var(--text);font:16px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 button:disabled{cursor:default;opacity:.35}
@@ -185,7 +185,7 @@ textarea.in{height:auto;min-height:76px;padding:10px 12px;resize:vertical;line-h
 .ligne-r{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.95rem}
 .ligne-r span:first-child{color:var(--muted)}
 
-.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:26;width:60px;height:60px;border:0;border-radius:18px;background:var(--vert);color:#fff;display:grid;place-items:center;box-shadow:0 6px 16px rgba(31,77,55,.38)}
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:26;width:60px;height:60px;border:0;border-radius:18px;background:var(--vert);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 3px var(--page)}
 @media (min-width:800px){.fab{right:calc(50% - 380px + 16px)}}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom,0px));z-index:50;width:max-content;max-width:calc(100% - 28px);background:#24211B;color:#fff;border-radius:12px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);font-size:.95rem}
 .toast span{padding:6px 0}
@@ -199,12 +199,23 @@ textarea.in{height:auto;min-height:76px;padding:10px 12px;resize:vertical;line-h
 .lbox label{font-size:.86rem;font-weight:700;color:var(--muted);margin-top:4px}
 .lbox .btn{margin-top:10px}
 .err{color:var(--tomate);margin:4px 0 0!important}
+
+/* ===== Charte du 15.11 : typo de la Forge, étiquettes mono ===== */
+body{letter-spacing:.005em;-webkit-font-smoothing:antialiased}
+.titre{font-size:1.5rem;letter-spacing:-.025em;margin:6px 0 -6px}
+.cap{font-family:var(--f-mono);font-weight:400;letter-spacing:.12em;font-size:.7rem}
+.st-in h2{font-size:1.1rem;letter-spacing:-.02em;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vide .gros{font-size:1.3rem;letter-spacing:-.02em}
+.mag-nom{font-size:1rem;letter-spacing:-.02em}
+.sh h2{font-size:1.2rem;letter-spacing:-.02em}
+.lbox h1{font-size:1.6rem;letter-spacing:-.02em}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
+<link rel="stylesheet" href="../commun/lieux.css">
 </head>
 <body>
 <div id="login" class="login" hidden><form class="lbox" id="loginForm"><img class="logo" src="icons/icon-192.png" alt=""><h1>Le Marché</h1><p>Connecte-toi avec ton compte Locus.</p><label for="l-mail">Adresse e-mail</label><input class="in" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="in" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit">Se connecter</button><p class="err" id="l-err" hidden></p></form></div>
-<header class="oh" style="--oh-bg:#2E6B4E;--oh-ink:#FFFFFF;--oh-acc:#2E6B4E"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">Le Marché</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+<header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">Le Marché</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="liste">Liste</button><button class="ot-t" data-tab="basiques">Basiques</button><button class="ot-t" data-tab="mijote">À mijoter</button><button class="ot-t" data-tab="magasins">Magasins</button></nav></header>
 <main id="view" aria-live="polite"></main>
 <button class="fab" id="fab" data-act="plus" aria-label="Ajouter un article"><svg class="i" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>

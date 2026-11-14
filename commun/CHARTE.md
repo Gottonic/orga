@@ -58,5 +58,13 @@ Du plus sombre au plus clair : Forge, Banque, Locus, Marché, Établi, Mine. La 
      - Les intertitres et les choix actifs sont en graphite avec le jaune du mètre. Le rouge du crayon marque l'urgent.
      - Les projets gardent leurs couleurs et leurs émojis.
      - Les pictos remplacent les émojis d'interface : petites tâches, idées, à trier, notes, échéance, congés, choix du vrac.
-2. Puis app par app, chacune dans sa conversation ou ici : la page reçoit `data-lieu`, charge `lieux.css`, remplace ses couleurs propres par les jetons, passe ses titres en Unbounded et ses émojis d'interface en pictos. Le thème de l'ampoule (`commun/ampoule.js`, THEMES) suit.
+   - La Mine, faite le 15.11 :
+     - Le fond est en granit clair, avec un léger grain.
+     - Les états sont en pastilles de pierres : diamant pour en cours, émeraude pour payé, topaze pour envoyé, rubis pour en retard, améthyste pour la prospection.
+     - Le diamant sert au bouton d'action et au chrono. L'améthyste sert aux choix actifs et au bouton +.
+     - Les filons de couleur des activités restent.
+   - La Banque, faite le 15.11 : vert bouteille et laiton. Les catégories gardent leurs couleurs, et le vert et le rouge restent pour les entrées et les sorties.
+   - Le Marché, fait le 15.11 : fond céleri, cartes cagette, tomate pour l'action.
+   - Les Réglages restent comme ils sont (choix de Nicolas). La Forge garde ses couleurs ; seuls les pictos de son en-tête ont changé.
+2. Ensuite, pour toute nouvelle page ou app, chacune dans sa conversation ou ici : la page reçoit `data-lieu`, charge `lieux.css`, remplace ses couleurs propres par les jetons, passe ses titres en Unbounded et ses émojis d'interface en pictos. Le thème de l'ampoule (`commun/ampoule.js`, THEMES) suit.
 3. La Forge garde ses couleurs. Elle peut adopter les jetons quand ça l'arrange.
