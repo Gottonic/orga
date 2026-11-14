@@ -39,6 +39,8 @@ p{margin:0}
 .btn.prim{background:var(--band);border-color:var(--band);color:#fff}
 .btn:active{background:var(--hl)}
 .btn.prim:active{background:var(--ink)}
+.ok{border-left:4px solid #2E6B4E;padding:8px 10px;background:#E6F1EA;font-size:.92rem}
+.contenu{font-family:var(--mono);font-size:.82rem;color:var(--muted);margin:0;padding-left:18px}
 .alerte{border-left:4px solid var(--warn);padding:8px 10px;background:#FBEDE8;font-size:.92rem}
 :focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 </style>
@@ -52,6 +54,12 @@ p{margin:0}
     <div id="place"><p class="note">Chargement…</p></div>
     <p class="note">Plan gratuit : 500 Mo de base de données pour ORGA, 1 Go de fichiers et 5 Go de trafic par mois pour tout le compte Supabase (GDT compris s'il est dans la même organisation). Le trafic se voit seulement dans le tableau de bord de Supabase.</p>
     <div class="btns"><button class="btn" type="button" id="actualiser">Actualiser</button><a class="btn" href="https://supabase.com/dashboard/project/rzcpjsffpvuvbdtqymms" target="_blank" rel="noopener">Ouvrir Supabase</a></div>
+  </section>
+  <section aria-labelledby="t-dossier">
+    <h2 id="t-dossier">Dossier sur l'ordinateur (test)</h2>
+    <p class="note">Essai : ORGA peut-elle écrire dans un dossier de ton ordinateur, et s'en souvenir d'une ouverture à l'autre ?</p>
+    <div id="dossier"><p class="note">…</p></div>
+    <div class="btns" id="dossier-btns"></div>
   </section>
   <section aria-labelledby="t-compte">
     <h2 id="t-compte">Compte</h2>
@@ -147,6 +155,70 @@ if(window.supabase&&window.supabase.createClient){
 } else $('place').innerHTML='<p class="note">Impossible de charger la connexion. Recharge la page.</p>';
 version();
 addEventListener('online',charger);
+
+/* ---------- Dossier sur l'ordinateur (test) ----------
+   Le navigateur donne accès à un dossier choisi une fois (File System Access, Chromium sur ordinateur).
+   La « poignée » du dossier est gardée dans IndexedDB ; à chaque ouverture, on regarde si l'accès est
+   encore accordé sans rien demander : c'est ce que le test vérifie. */
+const IDB={ db:null,
+  ouvrir(){ return this.db||(this.db=new Promise((ok,ko)=>{ const r=indexedDB.open('orga-dossier',1); r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error); })); },
+  async lire(k){ const db=await this.ouvrir(); return new Promise((ok,ko)=>{ const q=db.transaction('h').objectStore('h').get(k); q.onsuccess=()=>ok(q.result); q.onerror=()=>ko(q.error); }); },
+  async ecrire(k,v){ const db=await this.ouvrir(); return new Promise((ok,ko)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').put(v,k); t.oncomplete=()=>ok(); t.onerror=()=>ko(t.error); }); },
+  async effacer(k){ const db=await this.ouvrir(); return new Promise((ok,ko)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').delete(k); t.oncomplete=()=>ok(); t.onerror=()=>ko(t.error); }); }
+};
+const D={ racine:null, infos:null, aLOuverture:'', resultat:'' };
+const btnsDossier=(l)=>{ $('dossier-btns').innerHTML=l.map(([id,txt,prim])=>`<button class="btn${prim?' prim':''}" type="button" data-dossier="${id}">${txt}</button>`).join(''); };
+async function contenuDossier(){
+  const l=[]; try{ for await (const [nom,h] of D.racine.entries()){ l.push((h.kind==='directory'?'📁 ':'📄 ')+nom); if(l.length>=12) break; } }catch(e){ return ''; }
+  return l.length?`<ul class="contenu">${l.sort().map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="note">Le dossier est vide.</p>';
+}
+async function dessinerDossier(){
+  if(!('showDirectoryPicker' in window)){
+    $('dossier').innerHTML='<p class="alerte">Ce navigateur ne permet pas d\'écrire dans un dossier de l\'ordinateur (il faut Vivaldi, Chromium ou Chrome sur l\'ordinateur ; pas sur le téléphone).</p>'; btnsDossier([]); return;
+  }
+  if(!D.racine){ $('dossier').innerHTML='<p class="note">Aucun dossier choisi. Crée par exemple un dossier « ORGA » dans tes Documents, puis choisis-le.</p>'+(D.resultat||''); btnsDossier([['choisir','Choisir le dossier',1]]); return; }
+  let perm='prompt'; try{ perm=await D.racine.queryPermission({mode:'readwrite'}); }catch(e){}
+  const i=D.infos||{};
+  const etat=perm==='granted'?'<p class="ok">✓ Accès accordé.</p>':'<p class="alerte">L\'accès doit être redonné (un clic).</p>';
+  const ouverture=D.aLOuverture==='granted'?'<p class="ok">✓ À l\'ouverture de cette page, l\'accès était <b>encore là</b>, sans rien demander : le navigateur s\'en souvient.</p>'
+    :D.aLOuverture?'<p class="alerte">À l\'ouverture de cette page, le navigateur <b>a oublié</b> l\'accès : il faudrait le redonner à chaque fois (un clic).</p>':'';
+  $('dossier').innerHTML=`<p>Dossier : <b>${esc(D.racine.name)}</b> · choisi le ${esc(quand(i.choisi))}</p>${ouverture}${etat}
+    ${i.dernier?`<p class="note">Dernier test écrit le ${esc(quand(i.dernier))} (${i.n||0} en tout).</p>`:''}${D.resultat||''}
+    ${perm==='granted'?`<p class="note">Contenu :</p>${await contenuDossier()}`:''}
+    <p class="note">Pour le test complet : écris un fichier, ferme complètement l'app ORGA, rouvre-la et reviens ici. La ligne « À l'ouverture » dira si l'accès a été gardé.</p>`;
+  btnsDossier(perm==='granted'?[['tester','Écrire un fichier de test',1],['choisir','Changer de dossier'],['oublier','Oublier le dossier']]:[['redonner','Redonner l\'accès',1],['oublier','Oublier le dossier']]);
+}
+async function testerDossier(){
+  const t0=new Date(), i=D.infos||{}; i.n=(i.n||0)+1; i.dernier=t0.toISOString();
+  const txt=`Test ORGA\nÉcrit le : ${t0.toLocaleString('fr-CH')}\nNavigateur : ${navigator.userAgent}\nTest n° ${i.n} depuis le choix du dossier\n`;
+  const etapes=[];
+  try{
+    const sous=await D.racine.getDirectoryHandle('Test ORGA',{create:true}); etapes.push('dossier « Test ORGA » créé');
+    const f=await sous.getFileHandle('test.txt',{create:true}); const w=await f.createWritable(); await w.write(txt); await w.close(); etapes.push('fichier test.txt écrit');
+    const relu=await (await f.getFile()).text(); if(relu!==txt) throw new Error('la relecture ne donne pas le même texte'); etapes.push('fichier relu');
+    D.infos=i; await IDB.ecrire('infos',i);
+    D.resultat=`<p class="ok">✓ Test réussi : ${etapes.join(', ')}. Tu peux l'ouvrir dans le dossier « ${esc(D.racine.name)}/Test ORGA ».</p>`;
+  }catch(e){ D.resultat=`<p class="alerte">Échec après : ${esc(etapes.join(', ')||'rien')}. (${esc(e.message||e.name||e)})</p>`; }
+  dessinerDossier();
+}
+$('dossier-btns').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-dossier]'); if(!b) return; const a=b.dataset.dossier;
+  try{
+    if(a==='choisir'){
+      const h=await window.showDirectoryPicker({id:'orga',mode:'readwrite',startIn:'documents'});
+      D.racine=h; D.infos={choisi:new Date().toISOString(),n:0}; D.aLOuverture=''; await IDB.ecrire('racine',h); await IDB.ecrire('infos',D.infos);
+      await testerDossier(); return;
+    }
+    if(a==='redonner'){ const p=await D.racine.requestPermission({mode:'readwrite'}); D.resultat=p==='granted'?'':'<p class="alerte">Accès refusé.</p>'; }
+    if(a==='tester'){ await testerDossier(); return; }
+    if(a==='oublier'){ await IDB.effacer('racine'); await IDB.effacer('infos'); D.racine=null; D.infos=null; D.aLOuverture=''; D.resultat='<p class="note">Dossier oublié (rien n\'a été effacé sur l\'ordinateur).</p>'; }
+  }catch(err){ if(err&&err.name==='AbortError') return; D.resultat=`<p class="alerte">${esc(err.message||err.name||err)}</p>`; }
+  dessinerDossier();
+});
+(async()=>{
+  try{ D.racine=await IDB.lire('racine')||null; D.infos=await IDB.lire('infos')||null; if(D.racine){ try{ D.aLOuverture=await D.racine.queryPermission({mode:'readwrite'}); }catch(e){ D.aLOuverture='prompt'; } } }catch(e){}
+  dessinerDossier();
+})();
 })();
 </script>
 <script src="../commun/ampoule.js" data-app="orga"></script>
