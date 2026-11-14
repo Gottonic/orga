@@ -245,7 +245,26 @@ function vJournal(){
   <div class="semaine"><button data-act="wk" data-d="-1" aria-label="Semaine précédente">‹</button><b>${esc(wkLabel(k))}</b><button data-act="wk" data-d="1" aria-label="Semaine suivante">›</button>${k!==wkKey(new Date())?'<button class="lien" data-act="wk" data-d="0">cette semaine</button>':''}</div>
   <div><p class="cap" style="margin-bottom:6px">Ma semaine sur 10</p><div class="dix">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button data-act="dix" data-n="${i}" aria-pressed="${w.n===i}">${i}</button>`).join('')}</div></div>
   <p class="cap">Objectifs, notes, ce que je retiens</p>
-  ${editeur('j:'+k)}`; }
+  ${editeur('j:'+k)}
+  <div class="row"><button class="btn2" data-act="collerClaude">Coller le bloc de la séance du lundi</button></div>`; }
+/* Étape 5 : le bloc rendu par Claude en fin de séance du lundi. Format :
+     LOCUS
+     OBJECTIF PRINCIPAL : …   OBJECTIF SECONDAIRE : …   CONSEIL : …   (une ligne chacun)
+     PROJETS : nom ; nom ; …   (projets de l'Établi choisis pour la semaine)
+   Les objectifs vont dans le journal de la semaine ; les projets reçoivent la semaine au planning de l'Établi. */
+function collerSheet(){ const k=ui.wk||wkKey(new Date());
+  $sheet.innerHTML=`<div class="sh"><h3>Bloc de la séance</h3><button class="btn2" data-act="fermer">Fermer</button></div>
+  <p class="note">Colle ici le bloc « LOCUS » que Claude t'a donné à la fin de la séance du lundi. Il va dans la semaine ${esc(wkLabel(k))}.</p>
+  <textarea class="in" id="i-bloc" rows="8" placeholder="LOCUS&#10;OBJECTIF PRINCIPAL : …&#10;OBJECTIF SECONDAIRE : …&#10;CONSEIL : …&#10;PROJETS : … ; …"></textarea>
+  <button class="btn" data-act="appliquerBloc">Ajouter au journal et au planning</button>`; $scrim.hidden=false; setTimeout(()=>{ const t=document.getElementById('i-bloc'); if(t) t.focus(); },30); }
+function appliquerBloc(txt){
+  const k=ui.wk||wkKey(new Date()), root='j:'+k, L=String(txt||'').split(/\n+/).map(x=>x.trim()).filter(Boolean); let nObj=0; const places=[], inconnus=[];
+  for(const l of L){ const m=l.match(/^[-•*\s]*(objectif principal|objectif secondaire|conseil(?: perso)?|point d'attention|projets?)\s*[:：]\s*(.+)$/i); if(!m) continue; const cle=plain(m[1]), v=m[2].trim();
+    if(cle.startsWith('projet')){ v.split(/\s*[;,]\s*/).filter(Boolean).forEach(nom=>{ const q=plain(nom).replace(/^\S*\s/,x=>/\p{Extended_Pictographic}/u.test(x)?'':x).trim();
+        const P=PB?PB.liste().filter(p=>!p.closed):[], p=P.find(x=>plain(x.name)===q)||P.find(x=>plain(x.name).startsWith(q)||q.startsWith(plain(x.name)));
+        if(!p){ inconnus.push(nom); return; } if(!(p.weeks||[]).includes(k)){ p.weeks=(p.weeks||[]).concat([k]).sort(); delete p.later; PB.ecrire(p); } places.push(p.name); }); }
+    else { const lab=cle.startsWith('objectif principal')?'🎯 ':cle.startsWith('objectif secondaire')?'◎ ':'💡 '; nouvelle(root,ordreFin(root),lab+v); nObj++; } }
+  fermer(); render(); toast(nObj+' ligne'+(nObj>1?'s':'')+' au journal'+(places.length?' · '+places.length+' projet'+(places.length>1?'s':'')+' au planning':'')+(inconnus.length?' · introuvable : '+inconnus.join(', '):'')); }
 function vChercher(){
   const q=plain(ui.q).trim(), R=q.length<2?[]:Object.values(N).filter(n=>(ui.arch||!n.a)&&(plain(n.t).includes(q)||plain(n.d).includes(q))).slice(0,80);
   const mk=t=>{ const s=esc(t), i=plain(t).indexOf(q); return i<0||q.length<2?s:esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length)); };
@@ -352,6 +371,8 @@ document.addEventListener('click',e=>{
   if(a==='classer'){ classerSheet(id); return; }
   if(a==='classerVers'){ const n=N[id], r=el.dataset.r; if(!n) return; n.p=r; n.o=ordreFin(r); ecrireN(n); fermer(); render(); toast('Rangé dans '+nomRacine(r)); return; }
   if(a==='fermer'){ fermer(); return; }
+  if(a==='collerClaude'){ collerSheet(); return; }
+  if(a==='appliquerBloc'){ const t=document.getElementById('i-bloc'); appliquerBloc(t?t.value:''); return; }
   if(a==='aller'){ if(el.dataset.r){ aller('projets',el.dataset.r); return; } const n=N[id]; if(!n) return; const r=racineDe(n);
     if(n.a) ui.arch=true; const tab=r==='vide'?'vide':r&&r.startsWith('j:')?'journal':'projets'; if(tab==='journal') ui.wk=r.slice(2);
     ui.tab=tab; ui.page=tab==='projets'?r:null; ui.zoom=N[n.p]?n.p:null; refaire(n.id,0); return; }

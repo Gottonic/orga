@@ -1618,7 +1618,9 @@ function summary(){
   const dorment=S.projects.filter(p=>Projets.dort(p,todayS)).sort((x,y)=>(Projets.depuis(y,todayS)||0)-(Projets.depuis(x,todayS)||0));
   const dortHtml=dorment.length?`<div class="alert"><div><b>${dorment.length} projet${dorment.length>1?'s dorment':' dort'}</b> depuis plus de 4 mois. ${dorment.length>1?'Que deviennent-ils ?':'Que devient-il ?'}</div>${dorment.map(p=>`<div class="dort"><b>${p.emoji?p.emoji+' ':''}${esc(p.name)} <small>· rien depuis ${Math.floor(Projets.depuis(p,todayS)/30)} mois</small></b><div class="dbtns"><button data-act="dortFin" data-id="${p.id}" data-v="termine">Terminé</button><button data-act="dortFin" data-id="${p.id}" data-v="abandonne">Abandonné</button><button data-act="dortPrevu" data-id="${p.id}">Prévu plus tard</button><button data-act="dortIdee" data-id="${p.id}">Redevient une idée</button><button data-act="dortGo" data-id="${p.id}">Il avance encore</button></div></div>`).join('')}</div>`:'';
   openSheet(`<div class="shead"><h2>Recap<small>à coller dans la conversation</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
-  ${dortHtml}<pre class="sum" id="sumtxt">${esc(L.join('\n'))}</pre><button class="btn" data-act="copySum">Copier le texte</button></div>`,'recap');
+  ${dortHtml}<pre class="sum" id="sumtxt">${esc(L.join('\n'))}</pre><button class="btn" data-act="copySum">Copier le texte</button>
+  <details class="more"><summary>Lien pour la séance du lundi</summary><p class="note" style="margin:0">La tâche planifiée du lundi peut lire ce résumé toute seule (projets, heures de la Mine, vide-tête, journal), par un lien privé en lecture seule. Créer un lien remplace l'ancien.</p><div id="lienLundi"></div><button class="btn ghost" data-act="lienLundi">Créer le lien</button></details></div>`,'recap');
+  recapPlus(L);
 }
 function bravo(p){
   const big=durOf(p)>=20;
@@ -1753,6 +1755,30 @@ document.addEventListener('contextmenu',e=>{ if(e.target.closest&&e.target.close
 let tt; function toast(m){const t=document.getElementById('toast'); t.textContent=m; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,2200);}
 function syncForm(){const a=document.getElementById('f-amount'),n=document.getElementById('f-note'),d=document.getElementById('f-date'); if(a) ui.amount=a.value; if(n) ui.note=n.value; if(d) ui.date=d.value;}
 function placeWeekly(p,k){ if(p.weeks.includes(k)) return true; if(!canAdd(p,k,'s')) return false; p.weeks.push(k); p.weeks.sort(); save(); return true; }
+/* Pour Claude (étape 5) : le Récap ajoute ce qui vit dans les autres lieux (Mine, Bibliothèque), lu en ligne */
+async function recapPlus(L){
+  if(!sb||!UID||!navigator.onLine) return; const X=[];
+  const now=new Date(), d7=new Date(now); d7.setDate(d7.getDate()-7); const lim=iso(d7), sp=wkAdd(CUR,-1);
+  try{ const {data:hs}=await sb.from('mine_rows').select('key,data').like('key','h:%').eq('deleted',false).gte('data->>date',lim);
+    if(hs&&hs.length){ const {data:ms}=await sb.from('mine_rows').select('data').like('key','m:%').eq('deleted',false); const nom={}; (ms||[]).forEach(r=>{ if(r.data) nom[r.data.id]=r.data.nom; });
+      const par={}; hs.forEach(r=>{ const d=r.data; if(!d||d.date<lim) return; const k=nom[d.mandat]||'?'; par[k]=(par[k]||0)+(+d.min||0); });
+      X.push('','HEURES PRO (7 derniers jours, la Mine)'); Object.entries(par).sort((a,b)=>b[1]-a[1]).forEach(([k,m])=>X.push('- '+k+' : '+nf(m/60)+' h')); } }catch(e){}
+  try{ const {data:bs,error}=await sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).in('data->>p',['vide','j:'+sp,'j:'+CUR]); if(error) throw error;
+    const top=k=>(bs||[]).map(r=>r.data).filter(d=>d&&d.p===k&&!d.a).sort((a,b)=>a.o-b.o);
+    const vt=top('vide'); X.push('','VIDE-TÊTE (la Bibliothèque, à ranger)'); if(vt.length) vt.forEach(d=>X.push('- '+d.t+(d.cree?' ('+fmt(d.cree)+')':''))); else X.push('- vide');
+    const {data:w}=await sb.from('biblio_rows').select('data').eq('key','w:'+sp).eq('deleted',false); const note=w&&w[0]&&w[0].data?w[0].data.n:null;
+    const jp=top('j:'+sp); X.push('','JOURNAL DE LA SEMAINE '+wkNum(sp)+(note?' (note : '+note+'/10)':'')); if(jp.length) jp.forEach(d=>X.push('- '+d.t)); else X.push('- rien noté'); }catch(e){}
+  const due=open().filter(p=>p.due&&days(p.due)>=0&&days(p.due)<=21).sort((a,b)=>a.due.localeCompare(b.due));
+  if(due.length){ X.push('','ÉCHÉANCES (3 semaines)'); due.forEach(p=>X.push('- '+p.emoji+' '+p.name+' : '+fmt(p.due))); }
+  if(!X.length) return; const pre=document.getElementById('sumtxt'); if(!pre||sheetKey!=='recap') return;
+  const i=L.indexOf('EN VRAC, À TRIER'); const M=i>0?L.slice(0,i-1).concat(X):L.concat(X); pre.textContent=M.join('\n'); }
+async function lienLundi(){ const box=document.getElementById('lienLundi'); if(!box) return;
+  if(!sb||!navigator.onLine){ box.innerHTML='<p class="note">Il faut du réseau.</p>'; return; }
+  try{ const {data,error}=await sb.rpc('locus_cle_nouvelle'); if(error) throw error; if(!data) throw new Error('pas de clé reçue');
+    const url=SB_URL+'/rest/v1/rpc/locus_lundi?cle='+data;
+    box.innerHTML=`<p class="note" style="margin:0">Le lien (secret, à coller dans la tâche du lundi, comme celui du calendrier GDT) :</p><pre class="sum" id="lienTxt">curl -s "${esc(url)}" -H "apikey: ${esc(SB_KEY)}"</pre><button class="btn ghost" data-act="copyLien">Copier</button><p class="note" style="margin:0">La tâche doit pouvoir joindre rzcpjsffpvuvbdtqymms.supabase.co (domaine à autoriser, comme celui de GDT).</p>`;
+  }catch(e){ box.innerHTML='<p class="note">Impossible : '+esc((e&&e.message)||e)+(/locus_cle_nouvelle/.test(String(e&&e.message))?' — lance d\'abord supabase/lundi.sql.':'')+'</p>'; } }
+
 function afterCreate(p){
   if(ctx&&ctx.parentFor&&H(ctx.parentFor)){ const par=ctx.parentFor; toast(p.emoji+' '+p.name+' · dans '+H(par).name); refresh(par); return; }
   if(p.later){ toast(p.emoji+' '+p.name+' · rangé en idée'); closeSheet(); return; }
@@ -1910,6 +1936,8 @@ document.addEventListener('click',e=>{
   else if(a==='finType'){ ui.finType=el.dataset.v; closeFlow(sheetId); }
   else if(a==='reopen'){const p=P(sheetId); delete p.closed; delete p.fin; save(); toast('Projet rouvert'); detail(p.id);}
   else if(a==='color'){const p=P(sheetId); p.color=el.dataset.c; save(); detail(sheetId);}
+  else if(a==='lienLundi'){ el.disabled=true; lienLundi().then(()=>{ el.disabled=false; el.textContent='Créer un nouveau lien'; }); }
+  else if(a==='copyLien'){const s=document.getElementById('lienTxt'); copy(s.textContent,s);}
   else if(a==='copySum'){const s=document.getElementById('sumtxt'); copy(s.textContent,s);}
 });
 document.addEventListener('change',e=>{

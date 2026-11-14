@@ -189,3 +189,13 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   sur le téléphone (⇤ ⇥ ↑ ↓ ✓ 📝 🗄 ×). Les liens d'une ligne s'affichent à droite, cliquables. Coller plusieurs lignes = une ligne chacune.
 - **Journal** : une page par semaine, note sur 10. **Chercher** : dans toutes les lignes et notes (et les noms de projets).
 - **Reprise** (bandeau du vide-tête) : copie les feuilles de notes de l'Établi (projets et domaines, gardées aussi dans l'Établi) et déménage son « En vrac ».
+
+## Le pont du lundi (étape 5, 14.11.2026)
+
+- **Récap de l'Établi** : en plus des projets, il ajoute (lu en ligne) les heures pro des 7 derniers jours (Mine), le vide-tête et le journal de la semaine passée
+  (Bibliothèque) et les échéances des 3 semaines. « Copier le texte » pour le coller dans la séance.
+- **Lien privé** (`supabase/lundi.sql`, à lancer une fois) : Récap › « Lien pour la séance du lundi » crée une clé (Supabase ne garde que son empreinte, table
+  `locus_cles`) ; la fonction `locus_lundi(cle)` renvoie en lecture seule projets ouverts, domaines, heures, factures ouvertes, vide-tête et journal.
+  La tâche planifiée la lit avec `curl` (le domaine du Supabase de Locus doit être autorisé). Créer un nouveau lien invalide l'ancien.
+- **Retour de la séance** : Bibliothèque › Journal › « Coller le bloc de la séance du lundi » (`LOCUS`, `OBJECTIF PRINCIPAL :`, `OBJECTIF SECONDAIRE :`,
+  `CONSEIL :`, `PROJETS : nom ; nom`) : les objectifs vont au journal de la semaine, les projets reçoivent la semaine au planning de l'Établi.
