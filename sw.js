@@ -1,6 +1,6 @@
 /* ORGA : un seul service worker pour l'accueil et toutes les apps (l'Établi, la Banque, la Forge, le Marché, la Mine…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-14-04';
+const VERSION = 'orga-2026-11-14-05';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -11,13 +11,12 @@ const SHELL = [
   'banque/', 'banque/icons/icon-192.png',
   'commun/fonts/bricolage-grotesque-latin-600-normal.woff2', 'commun/fonts/bricolage-grotesque-latin-700-normal.woff2',
   'forge/', 'forge/icons/icon-192.png', 'forge/icons/apple-touch-icon.png',
-  'forge/fonts/bricolage-grotesque-latin-600-normal.woff2',
-  'forge/fonts/bricolage-grotesque-latin-700-normal.woff2',
-  'forge/fonts/bricolage-grotesque-latin-800-normal.woff2',
-  'forge/fonts/figtree-latin-400-normal.woff2',
-  'forge/fonts/figtree-latin-500-normal.woff2',
-  'forge/fonts/figtree-latin-600-normal.woff2',
-  'forge/fonts/figtree-latin-700-normal.woff2',
+  'forge/fonts/unbounded-latin-500-normal.woff2',
+  'forge/fonts/unbounded-latin-700-normal.woff2',
+  'forge/fonts/space-grotesk-latin-400-normal.woff2',
+  'forge/fonts/space-grotesk-latin-500-normal.woff2',
+  'forge/fonts/space-grotesk-latin-600-normal.woff2',
+  'forge/fonts/space-grotesk-latin-700-normal.woff2',
   'forge/fonts/jetbrains-mono-latin-400-normal.woff2',
   'forge/fonts/jetbrains-mono-latin-500-normal.woff2',
   'marche/', 'marche/icons/icon-192.png', 'marche/icons/apple-touch-icon.png',
