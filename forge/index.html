@@ -774,6 +774,21 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .pe-cols button.auto{padding-left:10px}
 .pe-cols button.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .pe-cols button:focus-visible{outline:2px solid var(--accent)}
+/* pictos au trait ; celui de la séance sur une petite plaque noire, dans la couleur de la séance */
+.ic{width:1.05em;height:1.05em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:square;stroke-linejoin:miter;vertical-align:-.16em;flex:none}
+.semo{display:inline-flex;align-items:center;justify-content:center;width:31px;height:26px;border-radius:8px;background:#1A1714;color:var(--sc,var(--accent));margin-right:9px;vertical-align:-5px;flex:none;font-size:15px;box-shadow:inset 0 0 0 1px rgba(239,227,204,.06)}
+.semo .ic{width:17px;height:17px;vertical-align:0}
+.srow.done .semo{box-shadow:inset 0 0 0 1px var(--line)}
+.fx{display:inline-flex}
+.fx .ic{width:15px;height:15px}
+.bv-ic .ic{width:68px;height:68px;stroke-width:1.3;color:var(--accent)}
+.pe-types button .ic{width:16px;height:16px}
+.pe-emo button{color:var(--ink)}
+.pe-emo button .ic{width:20px;height:20px}
+.pe-emo button.on{background:#1A1714;color:var(--accent);border-color:var(--accent)}
+.chip .ic{width:14px;height:14px}
+.nomat-note .ic,.tipb-h .ic{width:16px;height:16px;margin-right:2px}
+.pe-chk .ic{width:15px;height:15px}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -1288,7 +1303,7 @@ function tile(w, now, today){
   const evs = eventsOf(w); const pr = weekProgress(w.id); const dl = isDeload(w); const b = blockOf(w);
   const pos = b ? blockWeeks(b).indexOf(w.id) + 1 : 0;
   const cls = ["wk", w.sun < today ? "past" : "", w.id === now ? "now" : "", dl ? "deload" : ""].join(" ");
-  const chips = (isTestWeek(w.id) ? `<span class="chip test">Tests</span>` : "") + (nomatWeek(w.id) ? `<span class="chip">🎒</span>` : "") + evs.slice(0,2).map(e => `<span class="chip ${esc(e.type)}" title="${esc(EVT[e.type]||"")} · ${esc(e.title)}">${esc(e.title || EVT[e.type])}</span>`).join("") + ctxChips(w.id);
+  const chips = (isTestWeek(w.id) ? `<span class="chip test">Tests</span>` : "") + (nomatWeek(w.id) ? `<span class="chip">${ico("voyage")}</span>` : "") + evs.slice(0,2).map(e => `<span class="chip ${esc(e.type)}" title="${esc(EVT[e.type]||"")} · ${esc(e.title)}">${esc(e.title || EVT[e.type])}</span>`).join("") + ctxChips(w.id);
   const bands = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return `<span class="band ${p ? "" : "none"}" style="--ph:${phVar(p)};--on:${phOn(p)}"><b>${short}</b><span>${p ? esc(PHASES[p.type]?.short || phName(p)) : "—"}</span></span>`; }).join("");
   return `<button class="${cls}" data-action="open-week" data-week="${w.id}">
     <span class="top"><span class="n">${wkLabel(w.id)}</span>${pr.planned && tracked(w.id) ? `<span class="num prog">${pr.done}/${pr.planned}</span>` : ""}</span>
@@ -1348,7 +1363,7 @@ function vWeek(){
       <h2>${wkLabel(w.id)} · ${fmtRange(w.mon,w.sun)} ${w.sun.getUTCFullYear()}</h2></div>
     <div class="row">${pills}
       ${isTestWeek(w.id) ? `<span class="chip test"><b>Tests</b></span>` : ""}
-      <button class="chip nomat ${nomatWeek(w.id) ? "on" : ""}" aria-pressed="${nomatWeek(w.id)}" data-action="nomat">🎒 ${nomatWeek(w.id) ? "Sans matériel" : "Sans matériel ?"}</button>
+      <button class="chip nomat ${nomatWeek(w.id) ? "on" : ""}" aria-pressed="${nomatWeek(w.id)}" data-action="nomat">${ico("voyage")} ${nomatWeek(w.id) ? "Sans matériel" : "Sans matériel ?"}</button>
       ${evs.map(e => `<span class="chip ${esc(e.type)}">${e.title && e.title !== EVT[e.type] ? `<b>${esc(EVT[e.type]||"")}</b> ${esc(e.title)}` : `<b>${esc(EVT[e.type] || e.title)}</b>`}</span>`).join("")}
       <button class="btn small ghost" data-action="ev-here" data-start="${ds(w.mon)}">+ Événement</button>
     </div>
@@ -1358,11 +1373,11 @@ function vWeek(){
   ${w.id === now ? alertsPanel() : ""}
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="between"><h3>Séances</h3>${total ? `<span class="muted" style="font-size:12.5px">≈ ${fmtMin(total)}${free ? " + parkour libre" : ""}</span>` : ""}</div>
-    ${nomatWeek(w.id) ? `<p class="nomat-note">🎒 Semaine sans matériel : les séances en salle sont remplacées par la séance voyage (à faire 2 à 3 fois).</p>` : ""}
+    ${nomatWeek(w.id) ? `<p class="nomat-note">${ico("voyage")} Semaine sans matériel : les séances en salle sont remplacées par la séance voyage (à faire 2 à 3 fois).</p>` : ""}
     <div class="slist">${sessions}</div>
     ${Object.entries(log.moved || {}).map(([sid, m]) => `<div class="moved-row"><span>↪ <b>${esc(m.title || sid)}</b> reportée en ${wkLabel(m.to)}</span><span class="row"><button class="btn small ghost" data-action="open-week" data-week="${m.to}">Voir</button><button class="btn small ghost" data-action="mv-undo" data-sid="${esc(sid)}">Annuler</button></span></div>`).join("")}
     <button class="btn" data-action="pe-snew">+ Nouvelle séance</button>
-    ${fx ? `<p class="muted" style="margin:0;font-size:12.5px">⚡ très exigeante pour le système nerveux · 🔥 grosses courbatures probables</p>` : ""}
+    ${fx ? `<p class="muted" style="margin:0;font-size:12.5px">${ico("nerv")} très exigeante pour le système nerveux · ${ico("doms")} grosses courbatures probables</p>` : ""}
     ${extrasPanel(log)}
     ${plan.sessions.length ? `<details class="missed"><summary>Une séance ratée ?</summary><ul>
       <li>Pas de rattrapage en doublant : si tu peux encore la placer cette semaine, garde 48 h avec l'autre séance lourde (bas, haut, parkour high). Sinon, laisse tomber.</li>
@@ -1398,7 +1413,7 @@ function feelSheet(){
   const o = S.ui.ov; const s = planOf(S.week).sessions.find(x => x.id === o.sid); if (!s) return "";
   const st = ((S.data.logs[S.week] || {}).sessions || {})[s.id] || {};
   return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="fl-t"><div class="scrim" data-action="ov-close"></div>
-    <div class="sheet"><div class="sh-head"><div><span class="eyebrow">Séance faite ✓</span><h2 id="fl-t"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div><button class="x" data-action="ov-close" aria-label="Fermer">✕</button></div>
+    <div class="sheet" style="--sc:${sessSc(S.week, s)}"><div class="sh-head"><div><span class="eyebrow">Séance faite ✓</span><h2 id="fl-t"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div><button class="x" data-action="ov-close" aria-label="Fermer">✕</button></div>
       <div class="sh-body feelbody" data-sk="feel"><p class="muted" style="margin:0">Comment c'était ? Ça sert au suivi et aux alertes.</p>${feelForm(s.id, st)}
         <div class="field"><label for="fl-note">Note (facultatif)</label><input id="fl-note" type="text" data-snote="${esc(s.id)}" value="${esc(st.note || "")}"></div></div>
       <div class="sh-foot two"><button class="btn" data-action="ov-close">Passer</button><button class="btn primary big" data-action="ov-close">Enregistrer</button></div></div></div>`;
@@ -1442,9 +1457,41 @@ function alertLighten(sid, id){
   alertDismiss(id); toast("« " + ps.title + " » de " + wkLabel(target) + " : une série de moins par exercice.");
 }
 /* ---------- séances : liste, fenêtre « Afficher », séance guidée ---------- */
-const fxIcons = s => (s.nerv ? `<span class="fx" title="Très exigeante pour le système nerveux">⚡<span class="sr">Très exigeante pour le système nerveux</span></span>` : "") + (s.doms ? `<span class="fx" title="Grosses courbatures probables">🔥<span class="sr">Grosses courbatures probables</span></span>` : "");
-const SESS_EMOJI = { "s-haut":"💪", "s-bas":"🦵", "s-pk1":"👟", "s-pk2":"👟", "s-endu":"🚴", "s-vo2":"🫁", "s-tests":"📏", "s-voyage":"🎒" };
-const sessEmoji = s => s.emoji || SESS_EMOJI[s.id] || ({ parkour:"👟", endurance:"🚴", intervalles:"🫁", test:"📏", vitesse:"🚀", plyo:"🦘", mobilite:"🧘", contraste:"🔄", puissance:"💥", autre:"🤸" })[s.kind] || (/haut/i.test(s.title || "") ? "💪" : /bas|jambe/i.test(s.title || "") ? "🦵" : "🏋️");
+const fxIcons = s => (s.nerv ? `<span class="fx" title="Très exigeante pour le système nerveux">${ico("nerv")}<span class="sr">Très exigeante pour le système nerveux</span></span>` : "") + (s.doms ? `<span class="fx" title="Grosses courbatures probables">${ico("doms")}<span class="sr">Grosses courbatures probables</span></span>` : "");
+/* ===== Pictos au trait (remplacent les émojis, 14.11) : grille 20×20, traits fins, angles droits ===== */
+const ICONS = {
+  haut:'<path d="M3 3h14M10 17V7M6 11l4-4 4 4"/>',
+  bas:'<path d="M3 17h14M10 3v10M6 9l4 4 4-4"/>',
+  parkour:'<path d="M2 16h4M14 16h4M4 16c2-12 10-12 12 0"/><circle cx="10" cy="5" r="1.4"/>',
+  endurance:'<path d="M1 11h4l2-5 3 9 2-6 2 2h5"/>',
+  vo2:'<path d="M3 17v-6M7 17V5M11 17V9M15 17V3"/>',
+  test:'<circle cx="10" cy="10" r="5"/><path d="M10 1v5M10 14v5M1 10h5M14 10h5"/>',
+  voyage:'<path d="M5 7h10v10H5zM8 7V4h4v3M5 11h10"/>',
+  force:'<path d="M2 10h16M4 7v6M6.5 5v10M13.5 5v10M16 7v6"/>',
+  volume:'<path d="M2 16h16M4 12h12M6 8h8M8 4h4"/>',
+  puissance:'<path d="M10 2v4M10 14v4M2 10h4M14 10h4M4.3 4.3l2.9 2.9M12.8 12.8l2.9 2.9M15.7 4.3l-2.9 2.9M7.2 12.8l-2.9 2.9"/>',
+  contraste:'<path d="M3 7h13M12 3l4 4-4 4M17 13H4M8 9l-4 4 4 4"/>',
+  vitesse:'<path d="M2 6h6M2 10h9M2 14h6M12 4l6 6-6 6"/>',
+  plyo:'<path d="M2 16c1.5-11 4.5-11 6 0 1.2-7 3.8-7 5 0 .8-4 2.8-4 3.6 0M1 17h18"/>',
+  mobilite:'<path d="M16 11a6 6 0 1 1-2-5.2M15 2v4h-4"/>',
+  grimpe:'<path d="M2 17h4v-4h4V9h4V5h4"/>',
+  autre:'<path d="M10 2l8 8-8 8-8-8z"/>',
+  nerv:'<path d="M11.5 1 4 11h5.5L8 19l8-11h-5.5z"/>',
+  doms:'<path d="M10 18.5c-3.6 0-6-2.4-6-6 0-3.6 3.4-5 3.4-10 2.6 1.3 5 3.8 5 7.4 1-.9 1.3-2.2 1.3-3.6 2.3 1.6 2.3 3.9 2.3 6.2 0 3.6-2.4 6-6 6z"/>',
+  tip:'<path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/>',
+  trash:'<path d="M3 5h14M8 5V2.5h4V5M5 5l1 12.5h8L15 5M8.5 8.5v6M11.5 8.5v6"/>',
+  bravo:'<circle cx="10" cy="10" r="8"/><path d="M6 10.2l2.8 2.8 5.2-6"/>',
+  warn:'<path d="M10 2 18.5 17h-17zM10 8v4M10 14v1"/>'
+};
+const ico = (k, cls) => ICONS[k] ? `<svg class="ic ${cls || ""}" viewBox="0 0 20 20" aria-hidden="true">${ICONS[k]}</svg>` : "";
+/* anciens émojis gardés dans les données (s.emoji) → picto */
+const EMO_IC = { "💪":"haut", "🦵":"bas", "👟":"parkour", "🚴":"endurance", "🫁":"vo2", "📏":"test", "🎒":"voyage", "🏋️":"force", "🏋":"force", "🤸":"autre", "🧗":"grimpe", "🧘":"mobilite", "💥":"puissance", "🔄":"contraste", "🚀":"vitesse", "🦘":"plyo" };
+const KIND_IC = { parkour:"parkour", endurance:"endurance", intervalles:"vo2", test:"test", vitesse:"vitesse", plyo:"plyo", mobilite:"mobilite", contraste:"contraste", puissance:"puissance", force:"force", hypertrophie:"volume", autre:"autre" };
+const SESS_IC = { "s-haut":"haut", "s-bas":"bas", "s-pk1":"parkour", "s-pk2":"parkour", "s-endu":"endurance", "s-vo2":"vo2", "s-tests":"test", "s-voyage":"voyage" };
+const PE_ICONS = ["haut","bas","parkour","endurance","vo2","test","voyage","force","volume","puissance","contraste","vitesse","plyo","mobilite","grimpe","autre"];
+const sessIc = s => (s.icon && ICONS[s.icon] ? s.icon : null) || EMO_IC[s.emoji] || SESS_IC[s.id] || ({ intervalles:"vo2", test:"test", parkour:"parkour", endurance:"endurance", vitesse:"vitesse", plyo:"plyo", mobilite:"mobilite", contraste:"contraste", puissance:"puissance", hypertrophie:"volume", autre:"autre" })[s.kind] || (/haut/i.test(s.title || "") ? "haut" : /bas|jambe/i.test(s.title || "") ? "bas" : "force");
+/* le picto de séance, sur sa petite plaque noire */
+const sessEmoji = s => ico(sessIc(s));
 /* Dernière séance ⚡ faite (cette semaine ou la précédente), pour garder 48 h entre deux séances intenses. */
 function lastNervDate(wk){
   const w = weekById(wk); if (!w) return null; let best = null;
@@ -1456,19 +1503,24 @@ function lastNervDate(wk){
 function nervHint(wk){
   if (wk !== currentWeekId()) return ""; const d = lastNervDate(wk); if (!d) return "";
   const days = Math.round((todayUTC() - pd(d)) / 86400000);
-  return days <= 0 ? "Tu as déjà fait une séance ⚡ aujourd'hui : celle-ci plutôt dans 2 jours." : days === 1 ? "Séance ⚡ hier : idéalement à partir de demain." : "";
+  return days <= 0 ? "Tu as déjà fait une séance exigeante (éclair) aujourd'hui : celle-ci plutôt dans 2 jours." : days === 1 ? "Séance exigeante (éclair) hier : idéalement à partir de demain." : "";
 }
 const dayShort = d => { const x = pd(d); return DAYS[(x.getUTCDay() + 6) % 7].toLowerCase() + " " + x.getUTCDate(); };
+/* couleur d'une séance : celle choisie dans l'éditeur (s.color) ; sinon séances Haut et Bas = la phase de leur cycle cette semaine ;
+   sinon le type (force, puissance… ; parkour en vert) ; tout le reste (maintien, endurance, VO2max, tests…) gris → null */
+function sessPh(wk, s){
+  if (s.color) return s.color === "gris" ? null : s.color;
+  const trk = s.id === "s-haut" ? "haut" : s.id === "s-bas" ? "bas" : s.track || null; const wo = trk && weekById(wk);
+  const tph = wo ? phaseOf(wo, trk) : null;
+  return trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : SESS_PH[s.kind] || null;
+}
+const sessSc = (wk, s) => { const k = sessPh(wk, s); return k ? "var(--ph-" + k + ")" : "var(--anth)"; };
 function sessRow(wk, s, log, hint){
   const st = (log.sessions && log.sessions[s.id]) || {};
   const steps = guided(s) ? runSteps(s, st) : []; const inRun = !st.done && st.run && steps.length;
   const status = st.done ? `<span class="sstat ok">Faite ✓${st.date ? " · " + dayShort(st.date) : ""}</span>`
     : inRun ? `<span class="sstat run">En cours · ${Math.min(st.run.i, steps.length)}/${steps.length}</span>` : "";
-  /* couleur : celle choisie dans l'éditeur (s.color) ; sinon séances Haut et Bas = la phase de leur cycle cette semaine ;
-     sinon le type (force, puissance… ; parkour en vert) ; tout le reste (maintien, endurance, VO2max, tests…) gris */
-  const trk = s.id === "s-haut" ? "haut" : s.id === "s-bas" ? "bas" : s.track || null; const wo = trk && weekById(wk);
-  const tph = wo ? phaseOf(wo, trk) : null;
-  const sph = s.color ? (s.color === "gris" ? null : s.color) : trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : SESS_PH[s.kind] || null;
+  const sph = sessPh(wk, s);
   return `<article class="srow ${st.done ? "done" : "col"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
       <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
@@ -1581,7 +1633,7 @@ function showSheet(wk, s, log){
       <div class="mv-weeks">${nexts.map(x => `<button class="btn" data-action="mv-to" data-sid="${esc(s.id)}" data-wk="${x}">${wkLabel(x)} · ${fmtD(weekById(x).mon)}</button>`).join("")}</div>
       <button class="btn ghost" data-action="mv-close">Annuler</button></div></div>` : "";
   return `<div class="ov" role="dialog" aria-modal="true" aria-labelledby="sh-title"><div class="scrim" data-action="${E ? "ed-cancel" : "ov-close"}"></div>
-    <div class="sheet"><div class="sh-head"><div>${E ? `<span class="eyebrow">Modifier · ${wkLabel(wk)}</span>` : `<div class="row">${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>`}<h2 id="sh-title"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div>
+    <div class="sheet" style="--sc:${sessSc(wk, s)}"><div class="sh-head"><div>${E ? `<span class="eyebrow">Modifier · ${wkLabel(wk)}</span>` : `<div class="row">${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>`}<h2 id="sh-title"><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h2></div>
       <div class="row" style="flex-wrap:nowrap">${E ? "" : `<button class="btn small" data-action="pe-sess" data-sid="${esc(s.id)}">Modifier</button>`}<button class="x" data-action="${E ? "ed-cancel" : "ov-close"}" aria-label="${E ? "Annuler les modifications" : "Fermer"}">✕</button></div></div>
       <div class="sh-body" data-sk="sh-${esc(s.id)}">${s.note ? `<p class="sh-note">${esc(s.note)}</p>` : ""}${body}</div>${foot}${mvAsk}</div></div>`;
 }
@@ -1994,15 +2046,14 @@ const STYPES = [
   { k:"autre", l:"Autre", e:"🤸", def:{ sets:3, reps:"8" }, g:{ kind:"simple" }, tips:[] },
 ];
 const stype = k => STYPES.find(t => t.k === k) || STYPES.find(t => t.k === "autre");
-const PE_EMOJIS = ["💪","🦵","👟","🚴","🫁","📏","🎒","🏋️","🤸","🧗","🧘","💥","🔄","🚀","🦘"];
 /* charge écrite dans le programme ↔ nombre */
 const loadKg = it => /kg/i.test(it.load || "") ? (numRange(it.load) || [null])[0] : null;
 const setLoadKg = (it, v) => { const lest = /^\s*\+/.test(it.load || ""); const main = /\/\s*main/.test(it.load || ""); it.load = (lest ? "+" : "") + fmtNum(v, 2).replace(/ /g, "") + " kg" + (main ? " / main" : ""); };
 function peSessView(){
   const P = S.pe; const s = P.sd; const inBlock = P.mode === "block"; const T = stype(s.kind);
   const tipsOpen = P.tips !== false;
-  const types = `<div class="pe-types" role="group" aria-label="Type de séance">${STYPES.map(t => `<button class="${s.kind === t.k ? "on" : ""}" aria-pressed="${s.kind === t.k}" data-action="pe-type" data-k="${t.k}"><span>${t.e}</span>${t.l}</button>`).join("")}</div>`;
-  const tips = T.tips.length ? `<div class="tipb ${tipsOpen ? "" : "shut"}"><button class="tipb-h" data-action="pe-tips" aria-expanded="${tipsOpen}"><span>💡 Construire une séance ${esc(T.l.toLowerCase())}</span><span class="chev" aria-hidden="true"></span></button>
+  const types = `<div class="pe-types" role="group" aria-label="Type de séance">${STYPES.map(t => `<button class="${s.kind === t.k ? "on" : ""}" aria-pressed="${s.kind === t.k}" data-action="pe-type" data-k="${t.k}">${ico(KIND_IC[t.k] || "autre")}${t.l}</button>`).join("")}</div>`;
+  const tips = T.tips.length ? `<div class="tipb ${tipsOpen ? "" : "shut"}"><button class="tipb-h" data-action="pe-tips" aria-expanded="${tipsOpen}"><span>${ico("tip")} Construire une séance ${esc(T.l.toLowerCase())}</span><span class="chev" aria-hidden="true"></span></button>
     ${tipsOpen ? `<ul>${T.tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul><p>Nouveaux exercices : ${T.def.sets} × ${esc(T.def.reps)}${T.def.rest ? ", pause " + esc(T.def.rest) : ""}${T.def.step ? ", +" + fmtNum(T.def.step, 1) + " kg par semaine" : ""}.</p>` : ""}</div>` : "";
   let L = 0;
   const groups = (s.blocks || []).map((g, gi) => {
@@ -2020,7 +2071,7 @@ function peSessView(){
       : rows.map((r, xi) => r + (xi < rows.length - 1 ? pz(restSec((g.items[xi] || {}).rest) || g._set || 0) : "")).join("");
     return `<div class="pe-g">
       <div class="pe-gh">${letter ? `<span class="ssl" aria-hidden="true">${letter}</span>` : ""}<input type="text" class="pe-gname" data-pe="g:name" data-g="${gi}" value="${esc(g.name || "")}" placeholder="${g._kind === "contraste" ? "Contraste " + letter : grp ? "Superset " + letter : "Groupe simple"}" aria-label="Nom du groupe">
-        <div class="pe-act"><button data-action="pe-gmove" data-g="${gi}" data-d="-1" aria-label="Monter le groupe" ${gi ? "" : "disabled"}>↑</button><button data-action="pe-gmove" data-g="${gi}" data-d="1" aria-label="Descendre le groupe" ${gi < s.blocks.length - 1 ? "" : "disabled"}>↓</button><button class="${conf ? "danger" : ""}" data-action="pe-gdel" data-g="${gi}" aria-label="Supprimer le groupe">${conf ? "Supprimer ?" : "🗑"}</button></div></div>
+        <div class="pe-act"><button data-action="pe-gmove" data-g="${gi}" data-d="-1" aria-label="Monter le groupe" ${gi ? "" : "disabled"}>↑</button><button data-action="pe-gmove" data-g="${gi}" data-d="1" aria-label="Descendre le groupe" ${gi < s.blocks.length - 1 ? "" : "disabled"}>↓</button><button class="${conf ? "danger" : ""}" data-action="pe-gdel" data-g="${gi}" aria-label="Supprimer le groupe">${conf ? "Supprimer ?" : ico("trash")}</button></div></div>
       <div class="seg pe-kind" role="group" aria-label="Type de groupe">${kinds.map(([k, l]) => `<button class="${g._kind === k ? "on" : ""}" aria-pressed="${g._kind === k}" data-action="pe-gkind" data-g="${gi}" data-k="${k}">${l}</button>`).join("")}</div>
       <p class="pe-help">${help}</p>
       <div class="pe-ptitle">Pauses</div>${pauses}
@@ -2060,10 +2111,10 @@ function peSessView(){
       <button class="btn" data-action="pe-gadd">+ Nouveau groupe</button>
       <details class="pe-more" ${P.moreOpen ? "open" : ""}><summary>Réglages de la séance</summary>
         <div class="pe-grid"><div class="field"><span class="lbl">Durée</span><div class="ed-s"><button data-action="pe-smin" data-d="-5" aria-label="5 minutes de moins">−</button><b>${s.min ? fmtMin(s.min) : "libre"}</b><button data-action="pe-smin" data-d="5" aria-label="5 minutes de plus">+</button></div></div></div>
-        <div class="field"><span class="lbl">Émoji</span><div class="pe-emo">${PE_EMOJIS.map(e => `<button class="${sessEmoji(s) === e ? "on" : ""}" data-action="pe-emoji" data-v="${e}" aria-label="Émoji ${e}">${e}</button>`).join("")}</div></div>
+        <div class="field"><span class="lbl">Picto</span><div class="pe-emo">${PE_ICONS.map(k => `<button class="${sessIc(s) === k ? "on" : ""}" aria-pressed="${sessIc(s) === k}" data-action="pe-emoji" data-v="${k}" aria-label="Picto ${k}">${ico(k)}</button>`).join("")}</div></div>
         <div class="pe-flags">
-          <label class="pe-chk"><input type="checkbox" data-pe="s:nerv" ${s.nerv ? "checked" : ""}><span>⚡ Exigeante pour le système nerveux</span></label>
-          <label class="pe-chk"><input type="checkbox" data-pe="s:doms" ${s.doms ? "checked" : ""}><span>🔥 Grosses courbatures</span></label>
+          <label class="pe-chk"><input type="checkbox" data-pe="s:nerv" ${s.nerv ? "checked" : ""}><span>${ico("nerv")} Exigeante pour le système nerveux</span></label>
+          <label class="pe-chk"><input type="checkbox" data-pe="s:doms" ${s.doms ? "checked" : ""}><span>${ico("doms")} Grosses courbatures</span></label>
           <label class="pe-chk"><input type="checkbox" data-pe="s:optional" ${s.optional ? "checked" : ""}><span>Optionnelle<small>Ne compte pas dans le suivi.</small></span></label>
           <label class="pe-chk"><input type="checkbox" data-pe="s:gym" ${needsGym(s) ? "checked" : ""}><span>Demande la salle<small>Cachée les semaines sans matériel.</small></span></label>
           <label class="pe-chk"><input type="checkbox" data-pe="s:nomatOnly" ${nomatOnly(s) ? "checked" : ""}><span>Seulement sans matériel<small>Visible uniquement les semaines sans matériel (séance voyage).</small></span></label>
@@ -2303,7 +2354,7 @@ function peAction(a, b){
     case "pe-color": if (b.dataset.v === "auto") delete s.color; else s.color = b.dataset.v; break;
     case "pe-tips": P.tips = P.tips === false; break;
     case "pe-smin": s.min = Math.max(0, (s.min || 0) + +b.dataset.d) || undefined; if (!s.min) delete s.min; P.moreOpen = true; break;
-    case "pe-emoji": s.emoji = b.dataset.v; P.moreOpen = true; break;
+    case "pe-emoji": s.icon = b.dataset.v; delete s.emoji; P.moreOpen = true; break;
     case "pe-gadd": { const T = stype(s.kind); const r0 = restSec(T.def.rest) || 90; s.blocks.push({ name: "", items: [], _kind: T.g.kind, _between: T.g.between || 0, _after: T.g.after || r0, _set: r0, _next: T.g.after || r0, _dirty: true }); break; }
     case "pe-gmove": { const i = +b.dataset.g, j = i + +b.dataset.d; if (j >= 0 && j < s.blocks.length) [s.blocks[i], s.blocks[j]] = [s.blocks[j], s.blocks[i]]; P.openX = null; break; }
     case "pe-gdel": { const k = "g:" + b.dataset.g; if (P.confirm !== k) P.confirm = k; else { s.blocks.splice(+b.dataset.g, 1); P.confirm = null; P.openX = null; } break; }
@@ -2494,7 +2545,7 @@ function runView(){
     foot = `<button class="btn" data-action="run-plus">+15 s</button><button class="btn primary big" data-action="run-next">Passer la pause</button>`;
   } else {
     const fin = (log.sessions && log.sessions[s.id]) || {};
-    body = `<div class="run-body mid bravo" data-sk="bravo"><div class="bv-ic" aria-hidden="true">🎉</div><h2 class="run-h">Bravo !</h2><p class="bv-t">${esc(s.title)}</p>
+    body = `<div class="run-body mid bravo" data-sk="bravo"><div class="bv-ic" aria-hidden="true">${ico("bravo")}</div><h2 class="run-h">Bravo !</h2><p class="bv-t">${esc(s.title)}</p>
       <p class="muted">${[fin.nSets ? fin.nSets + " série" + (fin.nSets > 1 ? "s" : "") : "", fin.dur ? fmtMin(Math.max(1, fin.dur)) : ""].filter(Boolean).join(" · ")}</p>
       ${feelForm(s.id, fin)}
       <div class="field bv-note"><label for="bv-note">Note (facultatif)</label><input id="bv-note" type="text" data-snote="${esc(s.id)}" value="${esc(fin.note || "")}"></div></div>`;
