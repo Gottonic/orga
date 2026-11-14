@@ -1811,10 +1811,40 @@ function vTags(){
   const {n,net}=usageTag(), td=today(), L=Object.values(S.tags).sort((a,b)=>(!!a.archive-!!b.archive)||String(b.du||'').localeCompare(String(a.du||''))||a.nom.localeCompare(b.nom));
   let h=navRetour('Étiquettes','reglages','<button class="btn sm" data-act="ntag" style="width:auto">+ Nouvelle</button>')+'<p class="note">Les catégories disent à quoi sert l’argent, les étiquettes donnent le contexte (un voyage, un projet). Avec des dates et l’ajout automatique, chaque saisie et chaque import de la période reçoit l’étiquette.</p>';
   if(!L.length) return h+'<p class="empty">Aucune étiquette.</p>';
+  if(tpMsg){ h+='<p class="note" role="status" style="font-weight:700;color:var(--pos)">'+esc(tpMsg)+'</p>'; tpMsg=''; }
+  if(PB&&tpCandidats().length) h+='<section class="card"><p style="margin:0 0 10px"><b>Étiquettes de projet → projets de l’Établi.</b> Une opération peut maintenant être reliée à un projet : les étiquettes de type Projet ou Événement font doublon. Le projet dit <i>pour quoi</i>, l’étiquette <i>quand</i> ou <i>avec qui</i> (voyages, partage).</p><button class="btn" data-act="tproj">Passer ces étiquettes en projets</button></section>';
   h+='<section class="card">'+L.map(g=>{ const enc=g.actif&&g.du&&g.au&&td>=g.du&&td<=g.au;
     return '<button class="crow'+(g.archive?' off':'')+'" data-etag="'+esc(g.id)+'"><span class="cn">#'+esc(g.nom)+'<span class="note"> '+[genreNom(g.genre),g.du?(g.au&&g.au!==g.du?dDate(g.du)+' → '+dDate(g.au):dDate(g.du)):'',g.actif?'auto':'',g.archive?'masquée':''].filter(Boolean).map(esc).join(' · ')+'</span>'+(enc?' <span class="tg">en cours</span>':'')+'</span><span class="cv"><b class="num">'+fmt(r2(net[g.id]||0))+'</b><span class="note">'+(n[g.id]||0)+' op.</span></span></button>'; }).join('')+'</section>';
   return h;
 }
+/* Étiquettes de projet → projets de l'Établi (14.11) : les opérations sont reliées au projet, l'étiquette est masquée */
+let tp=null;
+const normT=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function tpCandidats(){ return Object.values(S.tags).filter(g=>!g.archive&&g.genre!=='voyage'&&g.genre!=='partage'); }
+function tpInit(){ const L=PB?PB.liste().filter(p=>p.size!=='mini'):[], R={};
+  tpCandidats().forEach(g=>{ const n=normT(g.nom), m=L.find(p=>normT(p.name)===n)||L.find(p=>n.length>=4&&(normT(p.name).includes(n)||n.includes(normT(p.name))));
+    R[g.id]=m?m.id:(g.genre==='projet'||g.genre==='événement')?'new':''; });
+  return R; }
+function vTagsProjets(){ if(!tp) tp=tpInit(); const {n}=usageTag(), L=PB?projetsChoix():[];
+  const opts=(gid,cur)=>{ const g=S.tags[gid]; let grp=null, o='<option value=""'+(!cur?' selected':'')+'>garder l’étiquette</option><option value="new"'+(cur==='new'?' selected':'')+'>créer le projet « '+esc(g.nom)+' »</option>';
+    L.forEach(({p,d})=>{ const k=p.closed?'Archivés':d?(d.emoji?d.emoji+' ':'')+d.name:'Autres projets'; if(k!==grp){ if(grp!==null) o+='</optgroup>'; o+='<optgroup label="'+esc(k)+'">'; grp=k; } o+='<option value="'+esc(p.id)+'"'+(cur===p.id?' selected':'')+'>'+esc((p.emoji?p.emoji+' ':'')+p.name)+'</option>'; });
+    return o+(grp!==null?'</optgroup>':''); };
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Étiquettes → projets</h2></div>';
+  h+='<p class="note">Pour chaque étiquette, choisis son projet de l’Établi. Ses opérations y sont reliées (sauf celles déjà reliées à un autre projet, qui gardent l’étiquette), puis l’étiquette est masquée, pas effacée. Un projet créé ici va dans « Autres projets » ; si sa dernière dépense date de plus de 6 mois, il est créé archivé.</p>';
+  h+=tpCandidats().map(g=>'<div class="field"><label class="lbl" for="tp-'+esc(g.id)+'">#'+esc(g.nom)+' <span class="note">'+esc(genreNom(g.genre))+' · '+(n[g.id]||0)+' op.</span></label><select class="sel" id="tp-'+esc(g.id)+'" data-tp="'+esc(g.id)+'">'+opts(g.id,tp[g.id])+'</select></div>').join('');
+  h+='<button class="btn" data-act="tprojOk">Relier et masquer les étiquettes</button>';
+  ouvrir(h); }
+function tpAppliquer(){ if(!tp||!PB) return; let nOps=0, nTags=0; const lim=isoD(new Date(Date.now()-182*864e5));
+  for(const gid of Object.keys(tp)){ let pid=tp[gid]; const g=S.tags[gid]; if(!pid||!g) continue;
+    const ops=Object.values(S.tx).filter(t=>(t.tags||[]).includes(gid));
+    if(pid==='new'){ const der=ops.map(t=>t.date).sort().pop()||today(), p=Projets.nouveau({name:g.nom,emoji:g.genre==='événement'?'🏆':'✨',nature:'perso',touche:der});
+      if(der<lim){ p.closed=der; p.fin={type:'termine',raison:'repris de l’étiquette #'+g.nom+' de la Banque'}; } PB.ecrire(p); pid=p.id; }
+    let reste=0;
+    for(const t of ops){ if(t.projet&&t.projet!==pid){ reste++; continue; } t.projet=pid; t.tags=t.tags.filter(x=>x!==gid); nOps++; }
+    if(!reste){ g.archive=true; g.actif=false; nTags++; } }
+  tp=null; tpMsg=nTags+' étiquette'+(nTags>1?'s':'')+' masquée'+(nTags>1?'s':'')+' · '+nOps+' opération'+(nOps>1?'s':'')+' reliée'+(nOps>1?'s':'')+' à leur projet.'; save(); fermer(); render(); }
+let tpMsg='';
+
 let et=null;
 function lireTag(){ const g=id=>document.getElementById(id); if(!et) return; if(g('g-nom')) et.nom=g('g-nom').value; if(g('g-du')) et.du=g('g-du').value; if(g('g-au')) et.au=g('g-au').value; if(g('g-auto')) et.actif=g('g-auto').checked; if(g('g-arch')) et.archive=g('g-arch').checked; if(g('g-fus')) et.fus=g('g-fus').value; }
 function vTag(){
@@ -2196,6 +2226,8 @@ document.addEventListener('click',e=>{
   else if(a==='exportcopie') copierExport();
   else if(a==='catsave') enregistrerCat();
   else if(a==='catsuppr'){ const C=ec&&S.cats[ec.id]; if(C&&confirm('Supprimer « '+catChemin(C.id)+' » ?')){ delete S.cats[C.id]; save(); fermer(); render(); } }
+  else if(a==='tproj'){ tp=null; vTagsProjets(); }
+  else if(a==='tprojOk') tpAppliquer();
   else if(a==='ntag'){ et={id:null,nom:'',genre:'voyage',du:'',au:'',actif:false,archive:false}; sheetErr=''; vTag(); }
   else if(a==='tagsave') enregistrerTag();
   else if(a==='tagsuppr'){ const G=et&&S.tags[et.id]; if(G&&confirm('Supprimer #'+G.nom+' ? Elle sera retirée de toutes ses opérations.')){ retirerTag(G.id,null); save(); fermer(); render(); } }
@@ -2242,6 +2274,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
+  if(t.dataset&&t.dataset.tp&&tp){ tp[t.dataset.tp]=t.value; return; }
   if(t.id==='f-periode'){ ui.periode=t.value; ui.limite=150; render(); }
   else if(t.id==='f-compte'){ ui.fCompte=t.value; render(); }
   else if(t.id==='f-cat'){ ui.fCat=t.value; render(); }
