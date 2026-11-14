@@ -1,64 +1,63 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-lieu="bibliotheque">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>La Bibliothèque</title>
-<meta name="theme-color" content="#7A2E3A">
+<meta name="theme-color" content="#5E1F2A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
-/* La Bibliothèque : papier ivoire, encre brune, reliure bordeaux ; titres en serif comme un dos de livre */
+/* La Bibliothèque : charte du 15.11 (commun/CHARTE.md) : une reliure. Murs bordeaux (le fond), pages claires (le contenu),
+   dorure pour l'accent ; polices et formes de la Forge. Les jetons du lieu viennent de commun/lieux.css. */
 :root{
-  color-scheme:light;
-  --bg:#FBF7EF; --card:#FFFDF8; --line:#E9E0CF; --line2:#D5C8AE; --text:#2A2420; --muted:#75695C; --bord:#7A2E3A; --bord2:#5C1F2A; --bordpale:#F4E4E3; --hl:#FFF1C9;
-  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif; --serif:Georgia,"Times New Roman",serif; --mono:ui-monospace,"JetBrains Mono",monospace;
+  --bg:var(--surface); --card:#FFFAF8; --line:#E6D0CA; --line2:#D9BFB8; --text:var(--ink); --muted:var(--ink-3); --bord:var(--bordeaux); --bord2:#5C1F2A; --bordpale:#F2DEDA; --hl:#F8E7C2;
+  --body:var(--f-body); --serif:var(--f-display); --mono:var(--f-mono);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--page);color:var(--text);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 [hidden]{display:none!important}
 :focus-visible{outline:3px solid var(--bord);outline-offset:2px}
-main{max-width:820px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-right,0px)) calc(120px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
-h2.titre{margin:6px 0 0;font:700 1.7rem/1.15 var(--serif);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+main{max-width:820px;margin:12px auto calc(110px + env(safe-area-inset-bottom,0px));padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px;background:var(--surface);color:var(--ink);border-radius:var(--r);min-height:60vh}
+@media (max-width:860px){main{margin-left:max(8px,env(safe-area-inset-left,0px));margin-right:max(8px,env(safe-area-inset-right,0px))}}
+h2.titre{margin:4px 0 0;font:700 1.45rem/1.15 var(--serif);letter-spacing:-.025em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 h2.titre small{font:400 .9rem var(--body);color:var(--muted)}
-.cap{font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:6px 0 -6px}
+.cap{font:400 .7rem/1.3 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:6px 0 -6px}
 .note{color:var(--muted);font-size:.88rem;margin:0}
-.carte{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
-.alerte{background:var(--bordpale);border:1px solid #E3C4C2;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
-.btn{border:0;background:var(--bord);color:#fff;font-weight:700;border-radius:6px;padding:11px 16px}
-.btn2{border:1px solid var(--line2);background:var(--card);border-radius:6px;padding:9px 14px;font-weight:700}
-.lien{border:0;background:none;color:var(--bord);font-weight:700;padding:4px 0;text-align:left}
+.carte{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.alerte{background:var(--bordpale);border:1px solid #E3C4C2;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.btn{border:0;background:var(--bord);color:#FFF6EC;font-weight:600;border-radius:var(--pill);padding:10px 18px}
+.btn2{border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);padding:8px 16px;font-weight:600}
+.lien{border:0;background:none;color:var(--bord);font-weight:600;padding:4px 0;text-align:left}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.in{width:100%;border:1px solid var(--line2);background:#fff;border-radius:6px;padding:11px 12px}
+.in{width:100%;border:1px solid var(--line2);background:#fff;border-radius:12px;padding:11px 14px}
 .capture{display:flex;gap:8px}
 .capture .in{flex:1}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line2);background:var(--card);border-radius:999px;padding:5px 12px;font-size:.88rem}
 a.chip{color:inherit;text-decoration:none}
-.chip[aria-pressed="true"]{background:var(--bord);border-color:var(--bord);color:#fff}
+.chip[aria-pressed="true"]{background:var(--bord);border-color:var(--bord);color:#FFF6EC}
 /* arbre des projets */
 .dom{margin-top:8px}
-.dom>button{display:flex;gap:8px;align-items:baseline;width:100%;border:0;background:none;text-align:left;padding:8px 0 4px;font:700 1.15rem var(--serif);border-bottom:2px solid var(--text)}
+.dom>button{display:flex;gap:8px;align-items:baseline;width:100%;border:0;background:none;text-align:left;padding:8px 0 4px;font:700 1.02rem var(--serif);letter-spacing:-.02em;border-bottom:2px solid var(--text)}
 .dom>button small{font:400 .8rem var(--mono);color:var(--muted);margin-left:auto}
 .plist{list-style:none;margin:0;padding:0}
 .plist button{display:flex;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:9px 4px}
 .plist button:hover{background:var(--card)}
-.plist .nm{flex:1;font-weight:700}
+.plist .nm{flex:1;font-weight:600}
 .plist .et{font-size:.75rem;font-family:var(--mono);color:var(--muted)}
 .plist .nb{font-size:.75rem;font-family:var(--mono);color:var(--muted);min-width:3ch;text-align:right}
 .plist .arch .nm{color:var(--muted);font-weight:400}
 .fil{display:flex;gap:4px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
-.fil button{border:0;background:none;padding:0;color:var(--bord);font-weight:700}
+.fil button{border:0;background:none;padding:0;color:var(--bord);font-weight:600}
 /* l'éditeur en arbre */
-.ol{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 6px 10px}
+.ol{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 6px 10px}
 .ln{display:grid;grid-template-columns:22px 1fr auto;column-gap:4px;align-items:start;padding-left:calc(var(--lv,0) * 22px)}
 .ln .bul{width:22px;height:30px;border:0;background:none;padding:0;color:var(--muted);font-size:1rem;line-height:30px;text-align:center;border-radius:4px}
 .ln .bul.has{color:var(--text)}
@@ -69,50 +68,54 @@ a.chip{color:inherit;text-decoration:none}
 .ln.fait>textarea{text-decoration:line-through;color:var(--muted)}
 .ln.archi{opacity:.5}
 .ln .lk{display:flex;gap:2px;align-items:center}
-.ln .lk a{color:var(--bord);text-decoration:none;font-weight:700;padding:4px 5px;border-radius:4px}
+.ln .lk a{color:var(--bord);text-decoration:none;font-weight:600;padding:4px 5px;border-radius:4px}
 .ln .lk a:hover{background:var(--bordpale)}
-.ln .go{border:1px solid var(--line2);background:var(--card);border-radius:4px;padding:2px 7px;font-size:.8rem;margin-top:3px;color:var(--bord);font-weight:700}
+.ln .go{border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);padding:2px 9px;font-size:.8rem;margin-top:3px;color:var(--bord);font-weight:600}
 .ol .vide{color:var(--muted);padding:8px 10px;margin:0}
-.outils{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--text)}
-.outils button{border:0;background:#3E3631;color:#fff;border-radius:6px;min-width:42px;height:40px;font-size:1rem;padding:0 8px}
+.outils{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--head)}
+.outils button{border:0;background:var(--bordeaux);color:var(--on-page);border-radius:10px;min-width:42px;height:40px;padding:0 8px;display:grid;place-items:center}
+.outils .ic{width:20px;height:20px;vertical-align:0}
 .semaine{display:flex;align-items:center;gap:8px}
-.semaine b{font:700 1.25rem var(--serif)}
-.semaine button{border:1px solid var(--line2);background:var(--card);border-radius:6px;width:40px;height:40px;font-size:1.1rem}
+.semaine b{font:700 1.1rem var(--serif);letter-spacing:-.02em}
+.semaine button .ic{width:18px;height:18px;vertical-align:0}
+.btn.plus{width:48px;padding:0;display:grid;place-items:center}.btn.plus .ic{width:20px;height:20px;vertical-align:0}
+.semaine button{display:grid;place-items:center;flex:none;border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);width:40px;height:40px;font-size:1.1rem}
 .dix{display:flex;gap:4px;flex-wrap:wrap}
-.dix button{width:36px;height:36px;border:1px solid var(--line2);background:var(--card);border-radius:6px;font-weight:700}
-.dix button[aria-pressed="true"]{background:var(--bord);border-color:var(--bord);color:#fff}
+.dix button{width:36px;height:36px;border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);font:600 .9rem var(--mono)}
+.dix button[aria-pressed="true"]{background:var(--bord);border-color:var(--bord);color:#FFF6EC}
 .res{list-style:none;margin:0;padding:0}
 .res button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 4px}
 .res small{display:block;color:var(--muted);font-size:.8rem}
 .res mark{background:var(--hl)}
 /* fenêtre et messages */
-.scrim{position:fixed;inset:0;background:rgba(30,20,15,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:12px 12px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
-@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:12px}}
+.scrim{position:fixed;inset:0;background:rgba(40,10,16,.55);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:var(--r) var(--r) 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:var(--r)}}
 .sh{display:flex;align-items:center;gap:10px}
-.sh h3{flex:1;margin:0;font:700 1.25rem var(--serif)}
-.pick{list-style:none;margin:0;padding:0;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+.sh h3{flex:1;margin:0;font:700 1.1rem var(--serif);letter-spacing:-.02em}
+.pick{list-style:none;margin:0;padding:0;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
 .pick button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 12px}
-.pick .g{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:8px 12px 2px;font-weight:700}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));background:var(--text);color:#fff;padding:10px 16px;border-radius:6px;z-index:50;max-width:90vw;font-size:.92rem}
-.fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border:0;border-radius:8px;background:var(--bord);color:#fff;display:grid;place-items:center;box-shadow:0 3px 10px rgba(60,20,20,.3);z-index:20}
-.fab svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.pick .g{font:400 .7rem var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em;padding:8px 12px 2px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:10px 18px;border-radius:var(--pill);z-index:50;max-width:90vw;font-size:.92rem}
+.fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border:0;border-radius:18px;background:var(--accent);color:var(--on-acc);display:grid;place-items:center;box-shadow:0 0 0 3px var(--page);z-index:20}
+.fab .ic{width:24px;height:24px;vertical-align:0}
 body.edit .fab{display:none}
-.login{position:fixed;inset:0;background:var(--bg);z-index:60;display:grid;place-items:center;padding:20px}
-.lbox{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px}
-.lbox .logo{width:72px;height:72px;border-radius:0}
-.lbox h1{margin:0;font:700 1.6rem var(--serif)}
+.login{position:fixed;inset:0;background:var(--page);z-index:60;display:grid;place-items:center;padding:20px}
+.lbox{width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px;background:var(--surface);color:var(--ink);border-radius:var(--r);padding:22px}
+.lbox .logo{width:64px;height:64px;border-radius:16px}
+.lbox h1{margin:0;font:700 1.4rem var(--serif);letter-spacing:-.025em}
 .err{color:#9B1C1C}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
+<link rel="stylesheet" href="../commun/lieux.css">
 </head>
 <body>
 <div id="login" class="login" hidden><form class="lbox" id="loginForm"><img class="logo" src="icons/icon-192.png" alt=""><h1>La Bibliothèque</h1><p>Connecte-toi avec ton compte Locus.</p><label for="l-mail">Adresse e-mail</label><input class="in" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="in" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit">Se connecter</button><p class="err" id="l-err" hidden></p></form></div>
-<header class="oh" style="--oh-bg:#7A2E3A;--oh-ink:#FFFFFF;--oh-acc:#7A2E3A"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+<header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="projets">Projets</button><button class="ot-t" data-tab="journal">Journal</button><button class="ot-t" data-tab="chercher">Chercher</button></nav></header>
 <main id="view" aria-live="polite"></main>
-<button class="fab" id="fab" data-act="capter" aria-label="Noter dans le vide-tête"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-<div class="outils" id="outils" hidden><button data-tool="out" aria-label="Désindenter">⇤</button><button data-tool="in" aria-label="Indenter">⇥</button><button data-tool="up" aria-label="Monter">↑</button><button data-tool="down" aria-label="Descendre">↓</button><button data-tool="done" aria-label="Fait">✓</button><button data-tool="note" aria-label="Note sous la ligne">📝</button><button data-tool="arch" aria-label="Archiver la ligne">🗄</button><button data-tool="del" aria-label="Supprimer la ligne">×</button></div>
+<button class="fab" id="fab" data-act="capter" aria-label="Noter dans le vide-tête"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg></button>
+<div class="outils" id="outils" hidden><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
@@ -192,7 +195,7 @@ function nbLignes(root){ return Object.values(N).filter(n=>!n.a&&racineDe(n)===r
 function visibles(root){ const out=[]; const go=(p,lv)=>enfants(p).forEach(n=>{ out.push({n,lv}); if(!n.c) go(n.id,lv+1); }); go(root,0); return out; }
 
 /* =============================== Pages =============================== */
-function nomRacine(r){ if(r==='vide') return '📥 Vide-tête'; if(r.startsWith('j:')) return '📓 '+wkLabel(r.slice(2));
+function nomRacine(r){ if(r==='vide') return 'Vide-tête'; if(r.startsWith('j:')) return 'Journal · '+wkLabel(r.slice(2));
   if(r.startsWith('p:')){ const p=PB&&PB.get(r.slice(2)); return p?(p.emoji?p.emoji+' ':'')+p.name:'Projet'; }
   if(r.startsWith('d:')){ const d=r==='d:autres'?Projets.autres():PB&&PB.domaine(r.slice(2)); return d?(d.emoji?d.emoji+' ':'')+d.name:'Domaine'; } return r; }
 const LIEN=/(https?:\/\/[^\s<>"]+)/g;
@@ -216,7 +219,7 @@ const editing=()=>{ const a=document.activeElement; return !!(a&&a.classList&&a.
 function vVide(){
   const n=enfants('vide').length;
   return `<h2 class="titre">Vide-tête <small>${n?n+' à ranger':'tout est rangé'}</small></h2>
-  <form class="capture" id="f-capture" autocomplete="off"><input class="in" id="i-capture" placeholder="Une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="btn" type="submit">+</button></form>
+  <form class="capture" id="f-capture" autocomplete="off"><input class="in" id="i-capture" placeholder="Une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="btn plus" type="submit" aria-label="Noter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg></button></form>
   ${REG.reprise?'':reprisePanneau()}
   ${editeur('vide')}
   <p class="note">→ range une idée dans un projet, un domaine ou le journal (le lundi, par exemple). Tab et Maj+Tab pour emboîter, Entrée pour une nouvelle ligne.</p>`; }
@@ -229,7 +232,7 @@ function vProjets(){
   let h=`<h2 class="titre">Projets <small>les notes de chaque domaine et de chaque projet</small></h2><div class="chips"><button class="chip" data-act="archP" aria-pressed="${ui.archP}">Archives</button></div>`;
   if(!PB||!PB.pret()) h+='<p class="note">Les projets de l’Établi se chargent…</p>';
   h+=D.map(d=>groupe('d:'+d.id,(d.emoji?d.emoji+' ':'')+d.name+(d.closed?' (archivé)':''),P.filter(p=>p.parent===d.id))).join('');
-  const autres=P.filter(p=>!p.parent||!ids.has(p.parent)); h+=groupe('d:autres','📦 Autres projets',autres);
+  const autres=P.filter(p=>!p.parent||!ids.has(p.parent)); h+=groupe('d:autres','Autres projets',autres);
   return h; }
 function vPage(){
   const r=ui.page; let titre=nomRacine(r), sous='';
@@ -242,7 +245,7 @@ function vPage(){
 function vJournal(){
   const k=ui.wk||(ui.wk=wkKey(new Date())), w=W[k]||{};
   return `<h2 class="titre">Journal</h2>
-  <div class="semaine"><button data-act="wk" data-d="-1" aria-label="Semaine précédente">‹</button><b>${esc(wkLabel(k))}</b><button data-act="wk" data-d="1" aria-label="Semaine suivante">›</button>${k!==wkKey(new Date())?'<button class="lien" data-act="wk" data-d="0">cette semaine</button>':''}</div>
+  <div class="semaine"><button data-act="wk" data-d="-1" aria-label="Semaine précédente"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4l-6 6 6 6"/></svg></button><b>${esc(wkLabel(k))}</b><button data-act="wk" data-d="1" aria-label="Semaine suivante"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 4l6 6-6 6"/></svg></button>${k!==wkKey(new Date())?'<button class="lien" data-act="wk" data-d="0">cette semaine</button>':''}</div>
   <div><p class="cap" style="margin-bottom:6px">Ma semaine sur 10</p><div class="dix">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button data-act="dix" data-n="${i}" aria-pressed="${w.n===i}">${i}</button>`).join('')}</div></div>
   <p class="cap">Objectifs, notes, ce que je retiens</p>
   ${editeur('j:'+k)}
@@ -331,7 +334,7 @@ function classerSheet(id,q){
   const n=N[id]; if(!n) return; q=q||''; const qq=plain(q);
   const D=PB?PB.domaines().filter(d=>!d.closed&&!d.auto).sort((a,b)=>a.name.localeCompare(b.name,'fr')):[], P=PB?PB.liste().filter(p=>!p.closed&&p.size!=='mini').sort((a,b)=>a.name.localeCompare(b.name,'fr')):[];
   const ok=t=>!qq||plain(t).includes(qq);
-  let L=`<li><button data-act="classerVers" data-id="${id}" data-r="j:${wkKey(new Date())}">📓 Journal de cette semaine</button></li>`;
+  let L=`<li><button data-act="classerVers" data-id="${id}" data-r="j:${wkKey(new Date())}">Journal de cette semaine</button></li>`;
   D.forEach(d=>{ const ps=P.filter(p=>p.parent===d.id&&ok(p.name)); if(!ok(d.name)&&!ps.length) return; L+=`<li class="g">${esc(d.name)}</li><li><button data-act="classerVers" data-id="${id}" data-r="d:${d.id}">${esc((d.emoji?d.emoji+' ':'')+d.name)} <span class="note">(le domaine)</span></button></li>`+ps.map(p=>`<li><button data-act="classerVers" data-id="${id}" data-r="p:${p.id}">&nbsp;&nbsp;${esc((p.emoji?p.emoji+' ':'')+p.name)}</button></li>`).join(''); });
   const au=P.filter(p=>(!p.parent||!D.some(d=>d.id===p.parent))&&ok(p.name)); if(au.length) L+=`<li class="g">Autres projets</li>`+au.map(p=>`<li><button data-act="classerVers" data-id="${id}" data-r="p:${p.id}">${esc((p.emoji?p.emoji+' ':'')+p.name)}</button></li>`).join('');
   $sheet.innerHTML=`<div class="sh"><h3>Ranger</h3><button class="btn2" data-act="fermer">Fermer</button></div><p style="margin:0"><b>${esc(n.t||'…')}</b></p>

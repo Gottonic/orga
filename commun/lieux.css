@@ -92,6 +92,8 @@ html[data-lieu] .oh .ot .ot-t{font:600 .92rem/1.1 var(--f-body);color:color-mix(
 html[data-lieu] .oh .ot .ot-t:hover{color:var(--on-head)}
 html[data-lieu] .oh .ot .ot-t[aria-current="page"],html[data-lieu] .oh .ot .ot-t.on{color:var(--on-head);border-bottom-color:var(--accent)}
 html[data-lieu] .oh .ot .ot-t:focus-visible{outline-color:var(--on-head)}
+html[data-lieu] .oh .oh-orga .ic{width:20px;height:20px;vertical-align:0}
+html[data-lieu] .oh .oh-b .ic{width:21px;height:21px;stroke-width:1.8;stroke-linecap:square;stroke-linejoin:miter}
 
 /* pictos au trait : grille 20×20, traits de 1,8, bouts carrés, angles vifs (voir commun/pictos.js) */
 .ic{width:1.05em;height:1.05em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:square;stroke-linejoin:miter;vertical-align:-.16em;flex:none}

@@ -18,7 +18,22 @@
     plus: '<path d="M10 3v14M3 10h14"/>',
     reglages: '<circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/>',
     idee: '<path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/>',
-    retour: '<path d="M12 4l-6 6 6 6"/>'
+    retour: '<path d="M12 4l-6 6 6 6"/>',
+    suivant: '<path d="M8 4l6 6-6 6"/>',
+    /* éditeur, listes */
+    retrait: '<path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/>',
+    emboiter: '<path d="M17 3v14M3 10h10M9 6l4 4-4 4"/>',
+    monter: '<path d="M10 17V4M5 9l5-5 5 5"/>',
+    descendre: '<path d="M10 3v13M5 11l5 5 5-5"/>',
+    fait: '<path d="M3 10.5l4.5 4.5L17 5"/>',
+    note: '<path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/>',
+    archiver: '<path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/>',
+    supprimer: '<path d="M4 4l12 12M16 4 4 16"/>',
+    entree: '<path d="M2 11h5l1.5 3h3L13 11h5M2 11l3-8h10l3 8v6H2z"/>',
+    journal: '<path d="M4 2h12v16H4zM7.5 2v16"/>',
+    autres: '<path d="M10 2l8 8-8 8-8-8z"/>',
+    sync: '<path d="M16 11a6 6 0 1 1-2-5.2M15 2v4h-4"/>',
+    alerte: '<path d="M10 2 18.5 17h-17zM10 8v4M10 14v1"/>'
   };
   const svg = (k, cls) => P[k] ? `<svg class="ic${cls ? ' ' + cls : ''}" viewBox="0 0 20 20" aria-hidden="true">${P[k]}</svg>` : '';
   window.Pictos = { P, svg, plaque: (k, cls) => `<span class="plaque${cls ? ' ' + cls : ''}">${svg(k)}</span>` };
