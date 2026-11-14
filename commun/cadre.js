@@ -7,8 +7,12 @@
   function appliquer() {
     const h = document.querySelector('header.oh'); if (!h) return;
     const c = getComputedStyle(h).backgroundColor; if (!c || c === 'rgba(0, 0, 0, 0)') return;
-    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+    /* la nouvelle balise d'abord, puis on enlève les anciennes : sans balise, même un instant, Android reprend la couleur
+       de l'icône de l'app (dorée pour la Bibliothèque, par exemple) et la garde parfois */
+    const anciennes = [...document.querySelectorAll('meta[name="theme-color"]')];
+    if (anciennes.length === 1 && anciennes[0].content === c) return;
     const m = document.createElement('meta'); m.name = 'theme-color'; m.content = c; document.head.appendChild(m);
+    anciennes.forEach((x) => x.remove());
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', appliquer); else appliquer();
   addEventListener('pageshow', appliquer);
