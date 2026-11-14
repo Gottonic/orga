@@ -142,6 +142,9 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   (`a.domaine`) où vont ses nouveaux mandats. Un projet pro rangé dans ce domaine devient un mandat de l'activité (si une seule
   activité y range ses mandats). Les autres projets pro sans mandat s'affichent en haut de l'onglet Mandats : choisir l'activité,
   ou « pas un mandat » (`regl.horsMine`). Les anciens liens `a.projet` sont repris tout seuls.
+- **Argent et heures d'un projet** (14.11.2026, étape 2) : dans la Banque, « + Projet » relie une opération à un projet de l'Établi (champ `projet` de l'opération, perso ou pro).
+  La fiche d'un projet dans l'Établi affiche « Argent et heures », lu en ligne dans la Banque (opérations reliées, plus celles rattachées à son mandat)
+  et dans la Mine (heures, facturé, encaissé) ; le dernier aperçu est gardé pour le hors ligne (`etabli-apercu-<utilisateur>`).
 
 - **Mandats** : le travail pro rangé par activité (les « filons » : GDT, Isolation, Fertik, Parkour, Petits travaux,
   comme les sous-catégories Pro de la Banque). Un mandat = un chantier, un cours, une commande : son client, son état

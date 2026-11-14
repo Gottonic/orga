@@ -1336,6 +1336,41 @@ function ndomBack(nd){ const r=ui.ndom&&ui.ndom.ret; ui.ndom=null;
   else if(r&&r.pid&&P(r.pid)){ if(nd){ P(r.pid).parent=nd.id; save(); } detail(r.pid); }
   else if(nd) domainSheet(nd.id); else closeSheet(); }
 
+/* Argent et heures d'un projet, lus dans la Banque (opérations reliées au projet) et la Mine (son mandat) — étape 2 */
+let apercuMem=null;
+const apercuK=()=>'etabli-apercu-'+UID;
+function apercuGet(id){ if(!apercuMem){ try{ apercuMem=JSON.parse(localStorage.getItem(apercuK())||'{}')||{}; }catch(e){ apercuMem={}; } } return apercuMem[id]||null; }
+function apercuSet(id,a){ apercuGet(id); apercuMem[id]=a; try{ localStorage.setItem(apercuK(),JSON.stringify(apercuMem)); }catch(e){} }
+const chf=v=>Number(v||0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const estProCat=c=>c==='pro'||String(c||'').startsWith('pro.');
+function apercuHtml(a){ if(!a) return ''; const L=[];
+  if(a.mandat) L.push(`<p style="margin:0">⛏️ <b>${esc(a.mandat)}</b> · ${nf((a.min||0)/60)} h · facturé ${chf(a.fact)} · encaissé ${chf(a.enc)}</p>`);
+  if(a.n) L.push(`<p style="margin:0">🏦 ${a.n} opération${a.n>1?'s':''} · dépenses <b>${chf(-a.dep)}</b>${a.rec?` · recettes <b>${chf(a.rec)}</b>`:''} · net ${chf(a.dep+a.rec)} CHF</p>`);
+  return L.length?`<div class="field"><span class="lbl">Argent et heures <small style="font-weight:400;text-transform:none;letter-spacing:0">· lus dans ${a.mandat?'la Mine et ':''}la Banque</small></span>${L.join('')}</div>`:''; }
+async function chargerApercu(p){
+  const show=a=>{ const b=document.getElementById('apercu'); if(b&&sheetId===p.id) b.innerHTML=apercuHtml(a); };
+  show(apercuGet(p.id));
+  if(!sb||!UID||!navigator.onLine) return;
+  try{
+    const A={n:0,dep:0,rec:0}, vus=new Set();
+    const ajoute=(t,proSeul)=>{ if(!t||vus.has(t.id)) return; vus.add(t.id); const L=t.parts&&t.parts.length?t.parts:[{montant:t.montant,cat:t.cat}]; let v=0; L.forEach(l=>{ if(!proSeul||estProCat(l.cat)) v+=+l.montant||0; }); if(!v) return; A.n++; if(v<0) A.dep+=v; else A.rec+=v; };
+    const {data:tx,error}=await sb.from('cash_rows').select('key,data').eq('kind','tx').eq('deleted',false).eq('data->>projet',p.id); if(error) throw error;
+    (tx||[]).forEach(r=>ajoute(r.data,false));
+    if(natureOf(p)==='pro'){
+      const {data:ms}=await sb.from('mine_rows').select('key,data').like('key','m:%').eq('deleted',false).eq('data->>projet',p.id);
+      const m=(ms||[]).map(r=>r.data).find(Boolean);
+      if(m){ A.mandat=m.nom; A.fact=0; A.enc=0;
+        const {data:hs}=await sb.from('mine_rows').select('data').like('key','h:%').eq('deleted',false).eq('data->>mandat',m.id);
+        A.min=(hs||[]).reduce((x,r)=>x+((r.data&&+r.data.min)||0),0);
+        const {data:ds}=await sb.from('mine_rows').select('data').like('key','d:%').eq('deleted',false).eq('data->>mandat',m.id);
+        (ds||[]).forEach(r=>{ const d=r.data; if(!d||d.type!=='facture') return; const tot=Math.round((d.lignes||[]).reduce((x,l)=>x+(+l.qte||0)*(+l.prix||0),0)*20)/20; if(d.etat==='envoyee'||d.etat==='payee') A.fact+=tot; if(d.etat==='payee') A.enc+=tot; });
+        const {data:ls}=await sb.from('mine_rows').select('key').like('key','l:%').eq('deleted',false).eq('data->>mandat',m.id);
+        const keys=(ls||[]).map(r=>'t:'+r.key.slice(2));
+        for(let i=0;i<keys.length;i+=100){ const {data:t2}=await sb.from('cash_rows').select('key,data').eq('kind','tx').eq('deleted',false).in('key',keys.slice(i,i+100)); (t2||[]).forEach(r=>ajoute(r.data,true)); } } }
+    A.le=todayS; apercuSet(p.id,A); show(A);
+  }catch(e){ /* hors ligne ou table absente : on garde le dernier aperçu */ }
+}
+
 /* Fiche projet */
 let lastDetail=null;
 function detail(id,msg){
@@ -1347,6 +1382,7 @@ function detail(id,msg){
   <div><span class="state st-${st}">${stName(p)}</span>${proHtml(p)}${urgHtml(p)} ${par?`<button class="tchip" style="margin-left:4px" data-act="${isDom(par)?'dom':'open'}" data-id="${par.id}">↑ ${par.emoji?par.emoji+' ':''}${esc(par.name)}</button>`:''}</div>
   ${closed?`<div class="bilan"><span class="lbl">${p.fin&&p.fin.type==='abandonne'?'Abandonné':'Terminé'} le ${fmt(p.closed)}</span>${p.fin&&p.fin.raison?`<p><b>Pourquoi.</b> ${esc(p.fin.raison)}</p>`:''}${p.bilan&&p.bilan.learn?`<p><b>Ce que j'en retire.</b> ${esc(p.bilan.learn)}</p>`:''}${p.bilan&&p.bilan.diff?`<p><b>À refaire autrement.</b> ${esc(p.bilan.diff)}</p>`:''}${!(p.bilan&&(p.bilan.learn||p.bilan.diff))&&!(p.fin&&p.fin.raison)?'<p>Pas de bilan noté.</p>':''}</div>`:''}
   ${msg&&msg!=='del'?msg:''}
+  <div id="apercu">${apercuHtml(apercuGet(p.id))}</div>
   ${tasksBlock(p,closed,'tâche')}
   ${kids.length?`<div class="field"><span class="lbl">Sous-projets · ${kids.filter(k=>!k.closed).length}</span>${kids.length?`<div class="picklist">${kids.map(k=>`<button class="pickbtn" style="${pv(k)}" data-act="open" data-id="${k.id}"><span class="sw">${k.emoji||'·'}</span><span class="tx"><b>${esc(k.name)}</b><span class="meta"><span>${stName(k)}</span>${proHtml(k)}${k.due?`<span>⏱ ${fmt(k.due)}</span>`:''}</span></span></button>`).join('')}</div>`:''}<p class="note" style="margin:0">Ancienne organisation : ce projet deviendra un domaine (Projets › « Passer aux domaines »).</p></div>`:''}
   ${p.later&&!closed?`<div class="laterbox"><b>💭 Idée</b><span>Ce projet n'est pas encore décidé : il n'apparaît ni au planning ni dans les projets en cours.</span><button class="btn" data-act="laterOut">C'est décidé : le passer en cours</button></div>`:''}
@@ -1370,6 +1406,7 @@ function detail(id,msg){
   ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Archiver le projet…</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">💭 Redevient une idée</button>`}`}
   ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, archive-le plutôt.${kids.length?' Ses '+kids.length+' sous-projet'+(kids.length>1?'s':'')+' passeront au premier niveau.':''}</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
   </div>`,'d:'+id);
+  chargerApercu(p);
 }
 
 /* Placement */

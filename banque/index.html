@@ -349,9 +349,15 @@ button.rk-row:hover{background:#F6F7F9}
 <input type="file" id="f-just" accept=".zip,application/zip,application/x-zip-compressed" hidden>
 <input type="file" id="f-yuh" accept=".csv,.xlsx,text/csv,text/comma-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 <script src="../commun/supabase.js"></script>
+<script src="../commun/projets.js"></script>
 <script>
 'use strict';
 /* =============================== Données =============================== */
+/* Projets de l'Établi (commun/projets.js, étape 2 du plan) : une opération peut être reliée à un projet, perso ou pro (champ t.projet) */
+let PB=null;
+function projetsChoix(){ if(!PB) return []; const D={}; PB.domaines().forEach(d=>{ D[d.id]=d; });
+  return PB.liste().filter(p=>p.size!=='mini').map(p=>({p,d:p.parent&&D[p.parent]?D[p.parent]:null})).sort((a,b)=>(!!a.p.closed-!!b.p.closed)||String(a.d?a.d.name:'~').localeCompare(String(b.d?b.d.name:'~'),'fr')||a.p.name.localeCompare(b.p.name,'fr')); }
+function projetNom(id){ const p=PB&&id?PB.get(id):null; return p?(p.emoji?p.emoji+' ':'')+p.name:''; }
 const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC', TABLE='cash_rows';
 const KIND={c:'compte',k:'categorie',g:'tag',t:'tx',d:'dette',s:'reglage',r:'regle',b:'budget',o:'objectif',v:'valeur',f:'document',i:'import'};
 const VIR='autres.virement-interne', AJU='autres.ajustement-de-solde';
@@ -540,7 +546,7 @@ function opLi(t,sansDate){
   const titre=vir?'Virement':(parts?'Partagé':catNom(t.cat));
   const autre=S.comptes[t.autre]?S.comptes[t.autre].nom:(t.autre||'?');
   const sous=vir?((t.montant<0?'vers ':'depuis ')+autre):((t.tiers?t.tiers+' · ':'')+(parts?t.parts.map(p=>catNom(p.cat)).join(' + '):(S.comptes[t.compte]?S.comptes[t.compte].nom:'')));
-  const tags=(t.tags||[]).map(g=>'<span class="tg">'+esc(S.tags[g]?S.tags[g].nom:g)+'</span>').join('')+(t.docs&&t.docs.length?'<span class="clip" data-voirdoc="'+esc(t.docs[0])+'" title="Voir le justificatif">📎'+(t.docs.length>1?t.docs.length:'')+'</span>':'');
+  const tags=(t.projet&&projetNom(t.projet)?'<span class="tg">'+esc(projetNom(t.projet))+'</span>':'')+(t.tags||[]).map(g=>'<span class="tg">'+esc(S.tags[g]?S.tags[g].nom:g)+'</span>').join('')+(t.docs&&t.docs.length?'<span class="clip" data-voirdoc="'+esc(t.docs[0])+'" title="Voir le justificatif">📎'+(t.docs.length>1?t.docs.length:'')+'</span>':'');
   const col=vir?'#9CA3AF':parts?'#6B7280':couleur(t.cat), d=vir?P.swap:parts?P.split:icCat(t.cat);
   return '<li><button class="op" data-tx="'+esc(t.id)+'"><span class="ic" style="background:'+col+'">'+svg(d,22,'#fff')+'</span><span class="mid"><span class="ti"><span class="tt">'+esc(titre)+'</span>'+tags+'</span><span class="sub">'+esc(sous)+'</span></span><span class="end"><span class="mt '+(vir?'':t.montant<0?'neg':'pos')+'">'+fmt(t.montant,true)+'</span><span class="ac">'+(sansDate?esc(S.comptes[t.compte]?S.comptes[t.compte].nom:''):esc(dateCourte(t.date)))+'</span></span></button></li>';
 }
@@ -945,14 +951,14 @@ function fermer(){ if(draft&&draft.newId&&!S.tx[draft.newId]&&draft.docs&&draft.
 function dernierCompte(){ return (S.regl.dernierCompte&&S.comptes[S.regl.dernierCompte])?S.regl.dernierCompte:(comptesTri()[0]||{}).id; }
 function nouvelleSaisie(){
   if(!comptesTri().length){ ouvrir('<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Saisie</h2></div><p class="note">Commence par charger tes données de départ (Réglages) : c’est là que tes comptes sont créés.</p>'); return; }
-  draft={id:null,type:'depense',montant:'',compte:dernierCompte(),vers:null,cat:null,maitre:null,tags:tagsActifs(today()),date:today(),tiers:'',note:'',parts:null,voirTiers:false,voirNote:false,docs:[]};
+  draft={id:null,type:'depense',montant:'',compte:dernierCompte(),vers:null,cat:null,maitre:null,tags:tagsActifs(today()),date:today(),tiers:'',note:'',parts:null,voirTiers:false,voirNote:false,docs:[],projet:null,voirProjet:false};
   sheetErr=''; vSaisie(); focusMontant();
 }
 function editer(id){
   const t=S.tx[id]; if(!t) return;
   const vir=estVir(t), banque=['yuh','bas'].includes(t.source), src=vir&&t.montant>0&&t.lien&&S.tx[t.lien]&&!banque?S.tx[t.lien]:t;
   draft={id:src.id,type:vir?'virement':(t.montant<0?'depense':'revenu'),montant:String(Math.abs(t.montant)),compte:src.compte,vers:vir?src.autre:null,cat:vir?null:t.cat,maitre:vir?null:maitreDe(t.cat),
-    tags:(t.tags||[]).slice(),date:t.date,tiers:t.tiers||'',note:t.note||'',parts:t.parts?t.parts.map(p=>({montant:String(Math.abs(p.montant)),cat:p.cat})):null,source:t.source,orig:t.orig||null,signe:t.montant<0?-1:1,voirTiers:!!t.tiers,voirNote:!!t.note,docs:(t.docs||[]).slice(),mine:t.mine||null};
+    tags:(t.tags||[]).slice(),date:t.date,tiers:t.tiers||'',note:t.note||'',parts:t.parts?t.parts.map(p=>({montant:String(Math.abs(p.montant)),cat:p.cat})):null,source:t.source,orig:t.orig||null,signe:t.montant<0?-1:1,voirTiers:!!t.tiers,voirNote:!!t.note,docs:(t.docs||[]).slice(),mine:t.mine||null,projet:t.projet||null,voirProjet:!!t.projet};
   sheetErr=''; vSaisie();
 }
 const TITRES={depense:'Saisie',revenu:'Saisie',virement:'Saisie'};
@@ -967,7 +973,7 @@ function vSaisie(){
     :'<label class="montant"><b class="sg" id="s-sg" style="color:'+coul+'">'+sgn+'</b><input class="m-in" id="s-montant" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0" value="'+esc(d.montant)+'" aria-label="Montant en CHF" style="color:'+coul+'"><span>CHF</span></label>';
   if(d.orig) h+='<p class="note" style="text-align:center;margin-top:-8px">Montant d’origine : '+esc(d.orig)+'</p>';
   const banque=fixe&&d.source!=='miroir';
-  if(fixe) h+='<p class="note" style="text-align:center;margin-top:-6px">'+esc(S.comptes[d.compte]?S.comptes[d.compte].nom:d.compte)+' · '+esc(dLong(d.date))+(d.type==='virement'&&S.comptes[d.vers]?(d.signe>0?' ← ':' → ')+esc(S.comptes[d.vers].nom):'')+'<br>Ligne de ton relevé : seules la catégorie, les étiquettes et la note se modifient.</p>';
+  if(fixe) h+='<p class="note" style="text-align:center;margin-top:-6px">'+esc(S.comptes[d.compte]?S.comptes[d.compte].nom:d.compte)+' · '+esc(dLong(d.date))+(d.type==='virement'&&S.comptes[d.vers]?(d.signe>0?' ← ':' → ')+esc(S.comptes[d.vers].nom):'')+'<br>Ligne de ton relevé : seules la catégorie, les étiquettes, la note et le projet se modifient.</p>';
   if(banque&&d.type==='virement') h+='<div class="field"><span class="lbl">'+(d.signe>0?'Arrive de':'Part vers')+'</span><div class="pills scroll">'+cs.filter(c=>c.id!==d.compte).map(c=>'<button class="pill" data-vers="'+esc(c.id)+'" aria-pressed="'+(d.vers===c.id)+'">'+(d.vers===c.id?'':icCompte(c))+esc(c.nom)+'</button>').join('')+'</div><div class="pills"><button class="pill dash" data-act="pasvir">Ce n’est pas un virement</button></div></div>';
   const choix=fixe?[]:cs.filter(c=>d.type==='virement'||groupeDe(c)!=='invest'||c.id===d.compte);
   if(!fixe){
@@ -988,9 +994,13 @@ function vSaisie(){
       }
     } else h+=vParts();
   }
-  h+='<div class="pills">'+(d.voirTiers?'':'<button class="pill dash" data-act="voirTiers">+ Bénéficiaire</button>')+(d.voirNote?'':'<button class="pill dash" data-act="voirNote">+ Note</button>')+(d.type!=='virement'&&!d.parts?'<button class="pill dash" data-act="partager">+ Partager</button>':'')+(banque&&d.type!=='virement'?'<button class="pill dash" data-act="estvir">C’est un virement entre mes comptes</button>':'')+'</div>';
+  h+='<div class="pills">'+(d.voirTiers?'':'<button class="pill dash" data-act="voirTiers">+ Bénéficiaire</button>')+(d.voirNote?'':'<button class="pill dash" data-act="voirNote">+ Note</button>')+(d.type!=='virement'&&PB&&!d.voirProjet?'<button class="pill dash" data-act="voirProjet">+ Projet</button>':'')+(d.type!=='virement'&&!d.parts?'<button class="pill dash" data-act="partager">+ Partager</button>':'')+(banque&&d.type!=='virement'?'<button class="pill dash" data-act="estvir">C’est un virement entre mes comptes</button>':'')+'</div>';
   if(d.voirTiers) h+='<div class="field"><label class="lbl" for="s-tiers">'+(d.type==='revenu'?'De qui':'Où, à qui')+'</label><input class="input" id="s-tiers" list="l-tiers" value="'+esc(d.tiers)+'" autocomplete="off"><datalist id="l-tiers">'+[...new Set(Object.values(S.tx).filter(t=>t.source!=='miroir').map(t=>t.tiers).filter(Boolean))].sort().slice(0,500).map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist></div>';
   if(d.voirNote) h+='<div class="field"><label class="lbl" for="s-note">Note</label><input class="input" id="s-note" value="'+esc(d.note)+'"></div>';
+  if(d.voirProjet&&d.type!=='virement'){ const L=projetsChoix(); let grp=null, o='';
+    L.forEach(({p,d:dm})=>{ const g=p.closed?'Archivés':dm?(dm.emoji?dm.emoji+' ':'')+dm.name:'Autres projets'; if(g!==grp){ if(grp!==null) o+='</optgroup>'; o+='<optgroup label="'+esc(g)+'">'; grp=g; } o+='<option value="'+esc(p.id)+'"'+(d.projet===p.id?' selected':'')+'>'+esc((p.emoji?p.emoji+' ':'')+p.name)+(p.nature==='pro'?' (pro)':'')+'</option>'; });
+    if(grp!==null) o+='</optgroup>';
+    h+='<div class="field"><label class="lbl" for="s-projet">Projet de l’Établi</label><select class="sel" id="s-projet"><option value="">— Aucun —</option>'+o+'</select><p class="note">L’opération compte dans l’argent du projet (fiche du projet dans l’Établi).</p></div>'; }
   h+=etiquettesSaisie(d);
   h+=docsSaisie(d);
   if(d.mine&&d.mine.mandat) h+='<p class="note">⛏️ Mandat : '+esc(d.mine.mandat)+' (la Mine la rattache)</p>';
@@ -1027,7 +1037,7 @@ function vParts(){
 function lireChamps(){
   const d=draft; if(!d) return; const g=id=>document.getElementById(id);
   if(g('s-montant')) d.montant=g('s-montant').value.replace(/[^0-9.,]/g,'');
-  if(g('s-date')) d.date=g('s-date').value||today(); if(g('s-tiers')) d.tiers=g('s-tiers').value; if(g('s-note')) d.note=g('s-note').value;
+  if(g('s-date')) d.date=g('s-date').value||today(); if(g('s-tiers')) d.tiers=g('s-tiers').value; if(g('s-note')) d.note=g('s-note').value; if(g('s-projet')) d.projet=g('s-projet').value||null;
   document.querySelectorAll('[data-part-m]').forEach(i=>{ d.parts[+i.dataset.partM].montant=i.value; });
   document.querySelectorAll('[data-part-c]').forEach(s=>{ d.parts[+s.dataset.partC].cat=s.value||null; });
 }
@@ -1054,7 +1064,8 @@ function enregistrer(){
     if(old&&estVir(old)&&old.lien&&S.tx[old.lien]) delete S.tx[old.lien];
     S.tx[id]=Object.assign({},old||{}, {id,date:d.date,compte:d.compte,montant:sg*r2(m),tiers:(d.tiers||'').trim(),cat,parts,tags:d.tags,note:(d.note||'').trim(),autre:null,lien:null,source:old?old.source:'saisie',cree:old&&old.cree||now});
   }
-  const tid=d.id||d.newId; if(tid&&S.tx[tid]){ if(d.docs&&d.docs.length){ S.tx[tid].docs=d.docs.slice(); d.docs.forEach(x=>{ if(S.docs[x]) S.docs[x].tx=tid; }); } else delete S.tx[tid].docs; }
+  const tid=d.id||d.newId; if(tid&&S.tx[tid]){ if(d.type!=='virement'&&d.projet) S.tx[tid].projet=d.projet; else delete S.tx[tid].projet; }
+  if(tid&&S.tx[tid]){ if(d.docs&&d.docs.length){ S.tx[tid].docs=d.docs.slice(); d.docs.forEach(x=>{ if(S.docs[x]) S.docs[x].tx=tid; }); } else delete S.tx[tid].docs; }
   S.regl.dernierCompte=d.compte; save(); fermer(); render();
 }
 function supprimerTx(t){
@@ -2202,6 +2213,7 @@ document.addEventListener('click',e=>{
   else if(a==='voirTiers'){ lireChamps(); draft.voirTiers=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-tiers'); if(i) i.focus(); },30); }
   else if(a==='etiqplus'){ lireChamps(); draft.toutesEtiq=true; vSaisie(); }
   else if(a==='etiqmoins'){ lireChamps(); draft.toutesEtiq=false; vSaisie(); }
+  else if(a==='voirProjet'){ lireChamps(); draft.voirProjet=true; vSaisie(); }
   else if(a==='voirNote'){ lireChamps(); draft.voirNote=true; vSaisie(); setTimeout(()=>{ const i=document.getElementById('s-note'); if(i) i.focus(); },30); }
   else if(a==='partager'){ lireChamps(); const m=num(draft.montant)||0; draft.parts=[{montant:m?String(m):'',cat:draft.cat},{montant:'',cat:null}]; vSaisie(); }
   else if(a==='partajout'){ lireChamps(); const tot=num(draft.montant)||0, s=draft.parts.reduce((x,p)=>x+(num(p.montant)||0),0); draft.parts.push({montant:tot-s>0?String(r2(tot-s)):'',cat:null}); vSaisie(); }
@@ -2289,6 +2301,7 @@ async function enter(user){
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
   S=fromRows(prev); booted=true; render(); setSync();
+  try{ if(window.Projets&&sb){ PB=Projets.base(sb,UID); PB.tirer(); } }catch(e){ PB=null; }
   await pull(!c); if(!Object.keys(S.cats).length){ semerCategories(); save(); render(); }
   push(); setTimeout(envoyerDocs,2500);
   if(gdtCfg().me) setTimeout(()=>syncGdt(false),1500);
@@ -2306,7 +2319,7 @@ async function start(){
   let session=null; try{ session=(await sb.auth.getSession()).data.session; }catch(e){}
   if(session&&session.user) await enter(session.user); else showLogin();
   sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT'&&UID){ UID=null; showLogin(); } });
-  addEventListener('online',()=>{ setSync(); pull().then(()=>push()).then(()=>envoyerDocs()); });
+  addEventListener('online',()=>{ setSync(); pull().then(()=>push()).then(()=>envoyerDocs()); if(PB){ PB.tirer(); } });
   addEventListener('offline',()=>setSync());
   document.addEventListener('visibilitychange',()=>{ if(!UID) return; if(document.visibilityState==='visible') pull().then(()=>push()); else push(); });
   setInterval(()=>{ if(UID&&document.visibilityState==='visible') pull(); },60000);
