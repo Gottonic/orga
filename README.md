@@ -145,6 +145,12 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 - **Argent et heures d'un projet** (14.11.2026, étape 2) : dans la Banque, « + Projet » relie une opération à un projet de l'Établi (champ `projet` de l'opération, perso ou pro).
   La fiche d'un projet dans l'Établi affiche « Argent et heures », lu en ligne dans la Banque (opérations reliées, plus celles rattachées à son mandat)
   et dans la Mine (heures, facturé, encaissé) ; le dernier aperçu est gardé pour le hors ligne (`etabli-apercu-<utilisateur>`).
+- **Dossiers de projet** (14.11.2026, étape 3, `commun/dossier.js`, `supabase/fichiers.sql` à lancer une fois) : les fichiers vivent sur l'ordinateur,
+  dans le dossier Locus choisi dans Réglages (Vivaldi, app installée, « Autoriser à chaque visite ») : `Projets/<domaine>/<projet>/`, `À trier/`, `Archives/<année>/`.
+  La fiche d'un projet : « Créer le dossier du projet », liste des fichiers (fiches de la table `fichiers`, lisibles partout), « Envoyer un fichier ».
+  Sans accès au dossier (téléphone), le fichier part dans le stockage `transit` (50 Mo au plus) et descend dans le bon dossier à la prochaine ouverture
+  de Locus sur l'ordinateur, puis il est effacé de Supabase. 📥 À trier (onglet Projets) : « Ranger dans… » déplace un fichier dans le dossier d'un projet.
+  Archiver un projet déplace son dossier dans `Archives/<année>/`. Les fichiers ajoutés à la main dans un dossier de projet sont repris à chaque ouverture.
 
 - **Mandats** : le travail pro rangé par activité (les « filons » : GDT, Isolation, Fertik, Parkour, Petits travaux,
   comme les sous-catégories Pro de la Banque). Un mandat = un chantier, un cours, une commande : son client, son état

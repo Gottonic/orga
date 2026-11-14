@@ -320,6 +320,15 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .addrow .inline{flex:1 1 auto;min-width:0;margin:0;display:flex}
 .addrow .inline .input{flex:1;min-width:0;width:auto}
 .addrow>.btn.ghost{flex:none;width:auto;padding-inline:12px;font-size:.85rem;white-space:nowrap}
+.files{list-style:none;margin:0;padding:0;border:1px solid var(--line);background:var(--cell)}
+.files li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--line)}
+.files li:first-child{border-top:0}
+.files .fn{flex:1;min-width:0;border:0;background:none;text-align:left;padding:0;font-weight:700;overflow-wrap:anywhere}
+.files .fm{font-family:var(--mono);font-size:.72rem;color:var(--muted);white-space:nowrap}
+.files select{max-width:46%;padding:4px 6px;border:1px solid var(--ink);background:var(--cell);font-size:.82rem}
+.fup{position:relative;overflow:hidden;cursor:pointer;text-align:center}
+.fup input{position:absolute;inset:0;opacity:0;cursor:pointer}
+code.fpath{font-family:var(--mono);font-size:.78rem;overflow-wrap:anywhere}
 .pchip.add{background:transparent;color:var(--ink);border:2px dashed var(--line)}
 .pchip.dom{border-color:var(--ink)}
 .pchip.dom.closed{opacity:.55}
@@ -639,6 +648,7 @@ body.kbd .oh .ot .ot-t .kb{position:static;margin-left:4px}
 
 <script src="../commun/supabase.js"></script>
 <script src="../commun/projets.js"></script>
+<script src="../commun/dossier.js"></script>
 <script>
 (function(){
 const MAXN=3, MAXS=2, MAXW=3, MAXT=5, URG=21, KEY='etabli-maquette-v4';
@@ -1005,12 +1015,12 @@ function vProjets(){
      if(p.__g){ const nu=mOpen.filter(urgent).length, fd=mOpen.map(x=>x.due).filter(Boolean).sort()[0]; return pre+`<tr data-act="minis" class="mgrp" style="--pc:${MINI_COLOR};--pt:#1E1E1E"><td class="pcell"><div class="in"><span class="sw" style="font-family:var(--mono);font-size:.8rem;font-weight:600">(${mOpen.length})</span><span class="nm"><span>Mini projets</span></span></div></td><td class="st">Liste</td><td>${starsHtml(mBest.imp)}</td><td>${fd?fmt(fd)+' '+parse(fd).getFullYear():''} ${nu?`<span class="urg">${nu} URGENT</span>`:''}</td><td style="font-family:var(--mono)">Mini</td><td></td></tr>`; }
      return pre+row(p); }).join('');
   }
-  $view.innerHTML=`${needReprise()?`<div class="alert" style="margin-bottom:12px"><div><b>Nouvelle organisation.</b> Les tags laissent la place aux projets parents : un projet peut en contenir d'autres (Isolation › Grenier Marly), et chacun est perso ou pro. Je te propose un rangement, tu le vérifies avant que rien ne change.</div><button class="btn" data-act="reprise">Ranger mes projets</button></div>`:''}${needDomaines()?`<div class="alert" style="margin-bottom:12px"><div><b>Passer aux domaines.</b> Les projets qui en contiennent d'autres deviennent des <b>domaines</b> : ils rangent, sans perso/pro, état ni temps. Les projets gardent leur perso/pro, et les mini projets deviennent des petites tâches. Tu vérifies avant que rien ne change.</div><button class="btn" data-act="dreprise">Passer aux domaines</button></div>`:''}
+  $view.innerHTML=`${needReprise()?`<div class="alert" style="margin-bottom:12px"><div><b>Nouvelle organisation.</b> Les tags laissent la place aux projets parents : un projet peut en contenir d'autres (Isolation › Grenier Marly), et chacun est perso ou pro. Je te propose un rangement, tu le vérifies avant que rien ne change.</div><button class="btn" data-act="reprise">Ranger mes projets</button></div>`:''}${fsEtat==='prompt'?`<div class="alert" style="margin-bottom:12px"><div><b>Dossier Locus.</b> Le navigateur demande ton accord pour écrire dans le dossier de l'ordinateur (un clic).</div><button class="btn" data-act="fsAuth">Redonner l'accès</button></div>`:''}${needDomaines()?`<div class="alert" style="margin-bottom:12px"><div><b>Passer aux domaines.</b> Les projets qui en contiennent d'autres deviennent des <b>domaines</b> : ils rangent, sans perso/pro, état ni temps. Les projets gardent leur perso/pro, et les mini projets deviennent des petites tâches. Tu vérifies avant que rien ne change.</div><button class="btn" data-act="dreprise">Passer aux domaines</button></div>`:''}
   <div class="ctrl"><div class="seg"><button data-act="sort" data-s="prio" aria-pressed="${sort==='prio'}">Par priorité</button><button data-act="sort" data-s="etat" aria-pressed="${sort==='etat'}">Par état</button><button data-act="sort" data-s="parent" aria-pressed="${sort==='parent'}">Par domaine</button></div>
   <div class="chips">${F.map(([k,l])=>`<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div></div>
   <p class="cnt">En cours : <b>${nCours}</b> · Prévus : ${nPrevu} · Idées : ${nIdee}</p>
   ${(()=>{ const ds=S.domains.filter(d=>!d.auto&&(f==='fini'?true:!d.closed)).sort((a,b)=>(!!a.closed-!!b.closed)||a.name.localeCompare(b.name,'fr')); if(!S.domaines&&!ds.length) return ''; const nP=d=>domProjects(d.id).filter(p=>!p.closed).length, na=domProjects(AUTRES).filter(p=>!p.closed).length;
-    return `<div class="infrow"><span class="lbl">Domaines <small>· ils rangent tes projets, tes petites tâches et tes notes</small></span><div class="pchips">${ds.map(d=>`<button class="pchip dom${d.closed?' closed':''}" style="${pv(d)}" data-act="dom" data-id="${d.id}">${d.emoji} ${esc(d.name)}${nP(d)?' · '+nP(d):''}</button>`).join('')}<button class="pchip dom" style="${pv(autresD())}" data-act="dom" data-id="${AUTRES}">📦 Autres${na?' · '+na:''}</button><button class="pchip add" data-act="newDom">+ Domaine</button><button class="pchip add" data-act="minis">📝 Petites tâches · ${nPetites()}</button></div></div>`; })()}
+    return `<div class="infrow"><span class="lbl">Domaines <small>· ils rangent tes projets, tes petites tâches et tes notes</small></span><div class="pchips">${ds.map(d=>`<button class="pchip dom${d.closed?' closed':''}" style="${pv(d)}" data-act="dom" data-id="${d.id}">${d.emoji} ${esc(d.name)}${nP(d)?' · '+nP(d):''}</button>`).join('')}<button class="pchip dom" style="${pv(autresD())}" data-act="dom" data-id="${AUTRES}">📦 Autres${na?' · '+na:''}</button><button class="pchip add" data-act="newDom">+ Domaine</button><button class="pchip add" data-act="minis">📝 Petites tâches · ${nPetites()}</button>${FB?`<button class="pchip add" data-act="atrier">📥 À trier · ${fichiersDe(Dossier.A_TRIER).length}</button>`:''}</div></div>`; })()}
   ${inf.length?`<div class="infrow"><span class="lbl">∞ Toujours là <small>· sans fin, ils ne comptent pas dans les projets en cours</small></span><div class="pchips">${inf.map(p=>{ const n=kidsOf(p.id).filter(k=>!k.closed).length; return `<button class="pchip" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${n?' · '+n:''}</button>`; }).join('')}</div></div>`:''}
   <div class="tablebox" style="margin-top:12px"><table class="ptable"><thead><tr><th class="pth">Projet</th><th>État</th><th>Importance</th><th>Échéance</th><th>${f==='prevu'?'Début':'Taille'}</th><th>Domaine</th></tr></thead>
   <tbody>${body||'<tr class="qrow"><td class="empty" colspan="6"><span class="quad">Aucun projet ici.</span></td></tr>'}</tbody></table></div>
@@ -1371,6 +1381,41 @@ async function chargerApercu(p){
   }catch(e){ /* hors ligne ou table absente : on garde le dernier aperçu */ }
 }
 
+/* Dossiers de projet (étape 3) : fichiers sur l'ordinateur, fiches dans Supabase (commun/dossier.js) */
+let FB=null, fsEtat='non';
+const fTaille=n=>n<1024?n+' o':n<1048576?Math.round(n/1024)+' Ko':(n/1048576).toFixed(1).replace('.',',')+' Mo';
+const fDate=ms=>{ try{ const d=new Date(ms); return d.getDate()+' '+MOIS[d.getMonth()]+' '+d.getFullYear(); }catch(e){ return ''; } };
+function fichiersDe(chemin){ return FB&&chemin?Dossier.dans(FB,chemin).sort((a,b)=>(a.chemin+'/'+a.nom).localeCompare(b.chemin+'/'+b.nom,'fr')):[]; }
+function fsNote(){ return fsEtat==='absent'?'<p class="note" style="margin:0">Choisis ton dossier Locus sur l\'ordinateur (Réglages de Locus, roue dentée de l\'accueil) : les fichiers y arriveront.</p>'
+  :fsEtat==='prompt'?'<button class="btn ghost" data-act="fsAuth">Redonner l\'accès au dossier Locus</button>':''; }
+function filesList(L,base,ranger){ return L.length?`<ul class="files">${L.map(x=>{ const sous=x.chemin.length>base.length?x.chemin.slice(base.length+1)+'/':'';
+  return `<li><button class="fn" data-act="fopen" data-f="${x.id}">${esc(sous+x.nom)}</button><span class="fm">${x.etat==='transit'?'⏳ en route':fTaille(x.taille||0)+' · '+fDate(x.modif)}</span>${ranger?`<select data-fvers="${x.id}" aria-label="Ranger ${esc(x.nom)}"><option value="">Ranger dans…</option>${S.projects.filter(p=>!p.closed&&!isMini(p)).sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(p=>`<option value="${p.id}">${esc((p.emoji?p.emoji+' ':'')+p.name)}</option>`).join('')}</select>`:''}</li>`; }).join('')}</ul>`:''; }
+function dossierBlock(p,closed){
+  if(!p.dossier) return closed?'':`<div class="field"><span class="lbl">Dossier</span><button class="btn ghost" data-act="mkDossier">Créer le dossier du projet</button><p class="note" style="margin:0">Il ira dans Locus/${esc(Dossier.cheminProjet(p,domOf(p)))} sur l'ordinateur.</p></div>`;
+  const L=fichiersDe(p.dossier);
+  return `<div class="field"><span class="lbl">Dossier · ${L.length} fichier${L.length>1?'s':''}</span><code class="fpath">Locus/${esc(p.dossier)}</code>${filesList(L,p.dossier,false)}
+   <label class="btn ghost fup">Envoyer un fichier<input type="file" multiple data-fup="${p.id}" aria-label="Envoyer un fichier dans le dossier du projet"></label>${fsNote()}</div>`; }
+function aTrierSheet(){
+  sheetId=null; ctx=null; const L=fichiersDe(Dossier.A_TRIER);
+  openSheet(`<div class="shead"><h2>📥 À trier<small>fichiers sans projet · ${L.length}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  ${filesList(L,Dossier.A_TRIER,true)||'<p class="empty">Rien à trier.</p>'}
+  <label class="btn ghost fup">Envoyer un fichier<input type="file" multiple data-fup="__trier" aria-label="Envoyer un fichier à trier"></label>${fsNote()}
+  <p class="note" style="margin:0">Locus/À trier sur l'ordinateur. « Ranger dans… » le déplace dans le dossier du projet (sur l'ordinateur, à la prochaine ouverture de Locus).</p></div>`,'atrier'); }
+async function syncFichiers(){
+  if(!FB) return; fsEtat=await Dossier.etat(); if(fsEtat!=='granted') return;
+  let ch=false;
+  for(const p of S.projects){ if(!p.dossier) continue;
+    if(p.closed&&!p.dossier.startsWith('Archives/')){ const vers=Dossier.cheminArchive(p.dossier,String(p.closed).slice(0,4));
+      try{ if(await Dossier.existe(p.dossier)) await Dossier.deplacerDossier(p.dossier,vers);
+        Dossier.dans(FB,p.dossier).forEach(x=>{ const g=Object.assign({},x,{chemin:vers+x.chemin.slice(p.dossier.length),id:Dossier.idDe(vers+x.chemin.slice(p.dossier.length),x.nom)}); FB.oublier(x.id); FB.ecrire(g); });
+        p.dossier=vers; ch=true; }catch(e){} }
+    else if(!p.closed){ try{ await Dossier.dossier(p.dossier,true); }catch(e){} } }
+  if(ch){ quiet=true; save(); quiet=false; }
+  const B=await Dossier.synchro(sb,UID,FB,[...S.projects.filter(p=>p.dossier).map(p=>p.dossier),Dossier.A_TRIER]);
+  if(B&&(B.ranges||B.deplaces)) toast('📁 '+(B.ranges?B.ranges+' fichier'+(B.ranges>1?'s':'')+' arrivé'+(B.ranges>1?'s':''):'')+(B.ranges&&B.deplaces?' · ':'')+(B.deplaces?B.deplaces+' rangé'+(B.deplaces>1?'s':''):''));
+  if(B&&B.erreurs.length) toast('⚠ '+B.erreurs[0]); }
+function fichiersChanges(){ if($scrim.hidden) { if(ui.view==='projets') render(); return; } if(sheetKey==='atrier') aTrierSheet(); else if(sheetId&&P(sheetId)&&sheetKey==='d:'+sheetId){ const y=$sheet.scrollTop; detail(sheetId); $sheet.scrollTop=y; } }
+
 /* Fiche projet */
 let lastDetail=null;
 function detail(id,msg){
@@ -1398,9 +1443,9 @@ function detail(id,msg){
   ${kids.length?'':`<div class="field"><label class="lbl" for="f-parent">Domaine</label>${domSelect('f-parent',p.parent||'')}</div>`}
   <div class="field"><span class="lbl">Perso ou pro</span>${natPick(natureOf(p),null,'nat')}</div>`}
   <div class="field"><span class="lbl">Notes</span>${p.notes&&p.notes.some(x=>x.t)?`<button class="notesprev" data-act="notes">${p.notes.filter(x=>x.t).slice(0,3).map(x=>`<span style="padding-left:${x.l*14}px">• ${esc(x.t)}</span>`).join('')}<b>Ouvrir les notes · ${p.notes.filter(x=>x.t).length} ligne${p.notes.filter(x=>x.t).length>1?'s':''}</b></button>`:`<button class="btn ghost" data-act="notes">+ Feuille de notes</button>`}</div>
-  <details class="more" ${p.why?'open':''}><summary>Pourquoi, dossier, couleur</summary>
+  ${dossierBlock(p,closed)}
+  <details class="more" ${p.why?'open':''}><summary>Pourquoi, couleur</summary>
   <div class="field"><label for="f-why">Pourquoi ce projet</label><textarea class="input" id="f-why" data-field="why" ${closed?'disabled':''}>${esc(p.why)}</textarea></div>
-  <div class="field"><span class="lbl">Dossier sur l'ordi</span>${p.folder?`<div class="folder"><code id="fpath">${esc(folderPath(p))}</code><button data-act="copyPath">Copier</button></div>`:`<button class="btn ghost" data-act="mkFolder">Créer un dossier pour ce projet</button>`}</div>
   ${closed?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
   </details>
   ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Archiver le projet…</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">💭 Redevient une idée</button>`}`}
@@ -1626,6 +1671,10 @@ document.addEventListener('click',e=>{
   const a=el.dataset.act, id=el.dataset.id;
   if(a==='task'||a==='ptask'||a==='petiteDone'||a==='miniChk') return;
   if(a==='open') detail(id);
+  else if(a==='mkDossier'){ const p=P(sheetId); if(!p) return; p.dossier=Dossier.cheminProjet(p,domOf(p)); save(); toast('📁 Locus/'+p.dossier+(fsEtat==='granted'?'':' · créé à la prochaine ouverture sur l\'ordinateur')); syncFichiers().then(fichiersChanges); detail(p.id); }
+  else if(a==='fopen'){ const x=FB&&FB.get(el.dataset.f); if(!x) return; if(x.etat==='transit'){ toast('En route vers l\'ordinateur'); return; } if(fsEtat!=='granted'){ toast('Le fichier est sur l\'ordinateur'); return; } Dossier.lire(x.chemin,x.nom).then(fi=>{ const u=URL.createObjectURL(fi); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),60000); }).catch(()=>toast('Fichier introuvable : il a peut-être été déplacé')); }
+  else if(a==='fsAuth'){ Dossier.autoriser().then(r=>{ fsEtat=r; if(r==='granted') syncFichiers().then(fichiersChanges); else toast('Accès refusé'); }); }
+  else if(a==='atrier') aTrierSheet();
   else if(a==='dom') domainSheet(id);
   else if(a==='newDom'){ newDomSheet(null); }
   else if(a==='ndomBack') ndomBack(null);
@@ -1755,7 +1804,7 @@ document.addEventListener('click',e=>{
   else if(a==='back') refresh(sheetId);
   else if(a==='closeDo'){const p=P(sheetId), type=ui.finType||'termine', g=x=>document.getElementById(x); p.fin={type}; if(type==='abandonne'){ const r=g('f-raison'); if(r&&r.value.trim()) p.fin.raison=r.value.trim(); } else p.bilan={learn:g('f-learn')?g('f-learn').value.trim():'',diff:g('f-diff')?g('f-diff').value.trim():''};
     const arch=x=>{ x.weeks=x.weeks.filter(w=>w<=CUR); x.days=x.days.filter(d=>d<=todayS); x.closed=todayS; delete x.prevu; };
-    arch(p); kidsOf(p.id).filter(k=>!k.closed).forEach(k=>{ arch(k); k.fin={type,raison:'archivé avec '+p.name}; }); ui.finType=null; save(); detail(p.id); if(type==='termine') bravo(p);}
+    arch(p); kidsOf(p.id).filter(k=>!k.closed).forEach(k=>{ arch(k); k.fin={type,raison:'archivé avec '+p.name}; }); ui.finType=null; save(); detail(p.id); if(type==='termine') bravo(p); if(p.dossier) syncFichiers().then(fichiersChanges);}
   else if(a==='finType'){ ui.finType=el.dataset.v; closeFlow(sheetId); }
   else if(a==='reopen'){const p=P(sheetId); delete p.closed; delete p.fin; save(); toast('Projet rouvert'); detail(p.id);}
   else if(a==='color'){const p=P(sheetId); p.color=el.dataset.c; save(); detail(sheetId);}
@@ -1779,6 +1828,13 @@ document.addEventListener('change',e=>{
   if(t.dataset.repTagnat&&ui.rep){ ui.rep.tags[t.dataset.repTagnat].nature=t.value; repriseSheet(); }
   if(t.dataset.repP&&ui.rep){ const x=ui.rep.projs[t.dataset.repP]; x.parent=t.value; if(!t.value&&!x.nature) x.nature='perso'; repriseSheet(); }
   if(t.dataset.repPnat&&ui.rep){ ui.rep.projs[t.dataset.repPnat].nature=t.value; }
+  if(t.dataset.fup&&t.files&&t.files.length){ const pid=t.dataset.fup, files=[...t.files]; let p=null, chemin=Dossier.A_TRIER;
+    if(pid!=='__trier'){ p=P(pid); if(!p) return; if(!p.dossier){ p.dossier=Dossier.cheminProjet(p,domOf(p)); save(); } chemin=p.dossier; }
+    (async()=>{ let n=0; for(const fi of files){ try{ await Dossier.envoyer(sb,UID,FB,chemin,fi,p?p.id:null); n++; }catch(e){ toast('⚠ '+fi.name+' : '+((e&&e.message)||e)); } }
+      if(n) toast('📁 '+n+' fichier'+(n>1?'s':'')+(fsEtat==='granted'?' dans Locus/'+chemin:' envoyé'+(n>1?'s':'')+' · il'+(n>1?'s':'')+' arrivera'+(n>1?'nt':'')+' sur l\'ordinateur')); fichiersChanges(); })();
+    return; }
+  if(t.dataset.fvers&&FB){ const x=FB.get(t.dataset.fvers), p=P(t.value); if(!x||!p) return; if(!p.dossier){ p.dossier=Dossier.cheminProjet(p,domOf(p)); save(); }
+    FB.ecrire(Object.assign({},x,{vers:p.dossier,projet:p.id})); toast(x.nom+' → '+p.name); syncFichiers().then(fichiersChanges); return; }
   if(t.dataset.drepKeep&&ui.drep){ ui.drep.par[t.dataset.drepKeep].keep=t.checked; }
   if(t.dataset.drepTop&&ui.drep){ ui.drep.tops[t.dataset.drepTop].dom=t.value==='d'; dRepriseSheet(); }
   if(t.dataset.drepMini&&ui.drep){ ui.drep.minis[t.dataset.drepMini]=t.value; }
@@ -1936,8 +1992,11 @@ async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
-  S=fromRows(prev); markSeen(); booted=true; render(); setSync();
+  S=fromRows(prev); markSeen(); booted=true;
+  try{ if(window.Dossier){ FB=Dossier.base(sb,UID); FB.surChangement(()=>{ if(booted) fichiersChanges(); }); fsEtat=await Dossier.etat(); } }catch(e){ FB=null; }
+  render(); setSync();
   const ok=await pull(!c);
+  if(FB) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges);
   if(migratePetites()|migrateLater()) render();
   if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; S.domaines={le:todayS}; save(); render(); } /* nouveau compte : domaines et projets dès le départ */
   push();
@@ -1950,7 +2009,8 @@ async function startApp(){
   let session=null; try{ session=(await sb.auth.getSession()).data.session; }catch(e){}
   if(session&&session.user) await enter(session.user); else showLogin();
   sb.auth.onAuthStateChange((ev,sess)=>{ if(ev==='SIGNED_OUT'&&UID){ UID=null; showLogin(); } });
-  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); });
+  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); if(FB) FB.tirer().then(()=>{ FB.pousser(); return syncFichiers(); }).then(fichiersChanges); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&FB&&UID) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges); });
   addEventListener('offline',()=>setSync());
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'&&MINI){ histDrop((histSheet?1:0)+(histView?1:0)); histSheet=false; histView=false; $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; ui.view='mini'; try{ document.activeElement&&document.activeElement.blur(); }catch(e){} render(); window.scrollTo(0,0); } });
   document.addEventListener('visibilitychange',()=>{ if(!UID) return; if(document.visibilityState==='visible') pull().then(()=>push()); else push(); });

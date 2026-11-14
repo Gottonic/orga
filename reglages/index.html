@@ -56,8 +56,8 @@ p{margin:0}
     <div class="btns"><button class="btn" type="button" id="actualiser">Actualiser</button><a class="btn" href="https://supabase.com/dashboard/project/rzcpjsffpvuvbdtqymms" target="_blank" rel="noopener">Ouvrir Supabase</a></div>
   </section>
   <section aria-labelledby="t-dossier">
-    <h2 id="t-dossier">Dossier sur l'ordinateur (test)</h2>
-    <p class="note">Essai : Locus peut-elle écrire dans un dossier de ton ordinateur, et s'en souvenir d'une ouverture à l'autre ?</p>
+    <h2 id="t-dossier">Dossier Locus sur l'ordinateur</h2>
+    <p class="note">Le dossier où Locus range les fichiers de tes projets (Projets/&lt;domaine&gt;/&lt;projet&gt;, À trier, Archives). À choisir une fois, sur l'ordinateur, avec Locus ouverte comme app installée, puis « Autoriser à chaque visite ».</p>
     <div id="dossier"><p class="note">…</p></div>
     <div class="btns" id="dossier-btns"></div>
   </section>
@@ -78,8 +78,8 @@ p{margin:0}
 'use strict';
 const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC';
 const MO=1024*1024, LIM_BASE=500*MO, LIM_FICHIERS=1024*MO, CACHE='orga-espace';
-const TABLES={rows:'📐 L’Établi',cash_rows:'🏦 La Banque',carnet:'🔥 La Forge',marche_rows:'🧺 Le Marché',mine_rows:'⛏️ La Mine',idees:'💡 Ampoule'};
-const DOSSIERS={'cash-documents':'🏦 La Banque : documents','carnet':'🔥 La Forge : images','idees':'💡 Ampoule : captures'};
+const TABLES={rows:'📐 L’Établi',cash_rows:'🏦 La Banque',carnet:'🔥 La Forge',marche_rows:'🧺 Le Marché',mine_rows:'⛏️ La Mine',idees:'💡 Ampoule',fichiers:'📁 Fiches des fichiers'};
+const DOSSIERS={'cash-documents':'🏦 La Banque : documents','carnet':'🔥 La Forge : images','idees':'💡 Ampoule : captures','transit':'📁 Fichiers en route vers l’ordinateur'};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=(v,d)=>new Intl.NumberFormat('fr-CH',{maximumFractionDigits:d,minimumFractionDigits:0}).format(v);
@@ -176,7 +176,7 @@ async function dessinerDossier(){
   if(!('showDirectoryPicker' in window)){
     $('dossier').innerHTML='<p class="alerte">Ce navigateur ne permet pas d\'écrire dans un dossier de l\'ordinateur (il faut Vivaldi, Chromium ou Chrome sur l\'ordinateur ; pas sur le téléphone).</p>'; btnsDossier([]); return;
   }
-  if(!D.racine){ $('dossier').innerHTML='<p class="note">Aucun dossier choisi. Crée par exemple un dossier « Locus » dans tes Documents, puis choisis-le.</p>'+(D.resultat||''); btnsDossier([['choisir','Choisir le dossier',1]]); return; }
+  if(!D.racine){ $('dossier').innerHTML='<p class="note">Aucun dossier choisi. Choisis ton dossier « Locus ».</p>'+(D.resultat||''); btnsDossier([['choisir','Choisir le dossier Locus',1]]); return; }
   let perm='prompt'; try{ perm=await D.racine.queryPermission({mode:'readwrite'}); }catch(e){}
   const i=D.infos||{};
   const etat=perm==='granted'?'<p class="ok">✓ Accès accordé.</p>':'<p class="alerte">L\'accès doit être redonné (un clic).</p>';
@@ -187,19 +187,18 @@ async function dessinerDossier(){
   $('dossier').innerHTML=`<p>Dossier : <b>${esc(D.racine.name)}</b> · choisi le ${esc(quand(i.choisi))}</p>${mode}${ouverture}${etat}
     ${i.dernier?`<p class="note">Dernier test écrit le ${esc(quand(i.dernier))} (${i.n||0} en tout).</p>`:''}${D.resultat||''}
     ${perm==='granted'?`<p class="note">Contenu :</p>${await contenuDossier()}`:''}
-    <p class="note">Pour le test complet : écris un fichier, ferme complètement l'app Locus, rouvre-la et reviens ici. La ligne « À l'ouverture » dira si l'accès a été gardé.</p>`;
-  btnsDossier(perm==='granted'?[['tester','Écrire un fichier de test',1],['choisir','Changer de dossier'],['oublier','Oublier le dossier']]:[['redonner','Redonner l\'accès',1],['oublier','Oublier le dossier']]);
+    <p class="note">La ligne « À l'ouverture » dit si le navigateur se souvient de l'accès d'une ouverture à l'autre.</p>`;
+  btnsDossier(perm==='granted'?[['tester','Vérifier le dossier',1],['choisir','Changer de dossier'],['oublier','Oublier le dossier']]:[['redonner','Redonner l\'accès',1],['oublier','Oublier le dossier']]);
 }
 async function testerDossier(){
   const t0=new Date(), i=D.infos||{}; i.n=(i.n||0)+1; i.dernier=t0.toISOString();
-  const txt=`Test ORGA\nÉcrit le : ${t0.toLocaleString('fr-CH')}\nNavigateur : ${navigator.userAgent}\nTest n° ${i.n} depuis le choix du dossier\n`;
   const etapes=[];
   try{
-    const sous=await D.racine.getDirectoryHandle('Test ORGA',{create:true}); etapes.push('dossier « Test ORGA » créé');
-    const f=await sous.getFileHandle('test.txt',{create:true}); const w=await f.createWritable(); await w.write(txt); await w.close(); etapes.push('fichier test.txt écrit');
-    const relu=await (await f.getFile()).text(); if(relu!==txt) throw new Error('la relecture ne donne pas le même texte'); etapes.push('fichier relu');
+    for(const n of ['Projets','À trier','Archives']){ await D.racine.getDirectoryHandle(n,{create:true}); }
+    etapes.push('Projets, À trier et Archives sont là');
+    const f=await D.racine.getFileHandle('.locus',{create:true}); const w=await f.createWritable(); await w.write('Dossier Locus, vérifié le '+t0.toISOString()+'\n'); await w.close(); etapes.push('écriture vérifiée');
     D.infos=i; await IDB.ecrire('infos',i);
-    D.resultat=`<p class="ok">✓ Test réussi : ${etapes.join(', ')}. Tu peux l'ouvrir dans le dossier « ${esc(D.racine.name)}/Test ORGA ».</p>`;
+    D.resultat=`<p class="ok">✓ Prêt : ${etapes.join(', ')}.</p>`;
   }catch(e){ D.resultat=`<p class="alerte">Échec après : ${esc(etapes.join(', ')||'rien')}. (${esc(e.message||e.name||e)})</p>`; }
   dessinerDossier();
 }
