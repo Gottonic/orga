@@ -607,6 +607,8 @@ details.more .field{margin-top:10px}
 .quad{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
 .quad i{width:12px;height:12px;display:inline-block;border:1px solid var(--ink)}
 .swatches{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.shstrip{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid var(--ink);margin-top:6px}
+.shstrip span{padding:6px 2px;text-align:center;font-family:var(--mono);font-size:.72rem;font-weight:700}
 .swatches button{aspect-ratio:1;border:2px solid transparent;background:var(--sw);max-width:100%}
 .swatches button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--cell)}
 pre.sum{white-space:pre-wrap;font-family:var(--mono);font-size:.8rem;background:var(--cell);border:1px solid var(--ink);padding:14px;margin:0;overflow-wrap:anywhere}
@@ -652,7 +654,7 @@ body.kbd .oh .ot .ot-t .kb{position:static;margin-left:4px}
 <script>
 (function(){
 const MAXN=3, MAXS=2, MAXW=3, MAXT=5, URG=21, KEY='etabli-maquette-v4';
-const COLORS=['#F0A35E','#F5CF4E','#E0574F','#F07F9E','#9A6BD1','#4A86D9','#3FB6C8','#5BAE5B','#A9A63A','#A2703F','#5E6B7A','#2B2B2B','#3F51B5','#7FD1AE'];
+const COLORS=['#F0A35E','#F5CF4E','#E0574F','#F07F9E','#9A6BD1','#4A86D9','#3FB6C8','#5BAE5B','#A9A63A','#A2703F','#5E6B7A','#2B2B2B','#3F51B5','#7FD1AE','#E65100','#C2185B','#6A1B9A','#1565C0','#00897B','#2E7D32','#827717'];
 const SIZES={mini:{l:'Mini',sub:'moins de 4 h · liste à part',unit:'none',min:0},h4:{l:'+4 h',sub:'petit · sur un jour',unit:'day',min:4},j2:{l:'+2 jours',sub:'1 case · sur des jours',unit:'day',min:16},w1:{l:'+1 semaine',sub:'1 case par semaine',unit:'week',min:40},m1:{l:'+1 mois',sub:'à découper en étapes',unit:'week',min:160}};
 const STATE={later:'Idée',prevu:'Prévu',cours:'En cours',proch:'Prochaine semaine',plan:'Planifié',attente:'À planifier',perm:'∞ Perpétuel',fini:'Terminé'};
 const IMP={1:'secondaire',2:'normal',3:'important'};
@@ -660,22 +662,24 @@ const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.',
 const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const JR=['lun','mar','mer','jeu','ven','sam','dim'];
 const EMOJIS=[
- ['Chantier','🪵🔨🪚🧱🏠🪜🔧🛠️🚪🪟🧰🏗️📐📏🧹🔩⛏️🪛🧲🔌🪣🧯🏚️🛖🪤⚒️'],
- ['Technique','⚡🔋💡🔦⚙️🧪🔬📡🖥️💻⌨️🖨️📱🔐🔑🧮💾🛰️🔭🧰🌡️'],
- ['Jardin','🥕🍠🎃🥬🌱🧺🚜🌾🍅🥔🧅🌻🪴🌿🍃🌽🥒🫑🍆🧄🥦🍓🍐🍇🍒🍎🍋🫘🌰'],
- ['Animaux','🐝🐓🐄🐑🐖🐐🐎🐇🐕🐈🦆🐟🐞🦋🐸🦊🦉🐌🪱🐛🐦'],
- ['Nature','🌳🌲⛰️🏔️🌊🏞️🌋🌧️❄️☀️🌈🍂🍁🌸🌙⭐🌍💧🔥🪨🌵'],
- ['Corps et sport','🤸🏃🚴🏆🏄🧗💪🧘🏊🥇🎯⛷️🏂🤾🥾🛹🏋️🚣🏓⚽🏀🥊🧠🫀'],
- ['Voyage','✈️🚐🏕️🗺️🚆⛺🎒🧳🚲🛶⛵🚗🚌🛤️🏝️🏖️🧭🛂🚀🚡🗻🏰'],
- ['Pays','🇨🇭🇸🇪🇫🇷🇮🇹🇩🇪🇪🇸🇵🇹🇳🇴🇫🇮🇩🇰🇬🇧🇮🇪🇮🇸🇳🇱🇧🇪🇦🇹🇬🇷🇲🇦🇯🇵🇺🇸🇨🇦🇲🇽🇧🇷'],
- ['Admin et argent','💰📋📅🧾✉️📦📞🗂️🏦📝📊📈💳🪙📮🗃️📎🖊️📌⏰⏳🗓️📵🧷'],
- ['Apprendre','🎓📚📖✏️💬🗣️🔍🧩♟️🎲📜🏫🗒️💭🔎📓'],
- ['Cuisine','🍽️🍳🥘🍲🥗🍞🥐🧀🍕🍝🍜🥟🍫🧁🎂🍪🥧🫙🧂🍯🥚🍔🌮'],
- ['Boissons','🍺🍷🥂🍾🧃☕🍵🧋🥤🍹🫖🧉'],
- ['Fête et gens','🎉🎊🎈🎁🥳💃🕺👥🤝❤️💌👶🫶🙌👋🎪🎆🪩🏡'],
- ['Création','🎥🎨🎵📸🎤🎭🎸🎹🥁🎬🧵🪡🧶✂️🖌️🖍️📽️🎞️🎙️📻🪕🎷'],
- ['Maison','🛏️🛋️🪑🚿🛁🧼🧽🕯️🧸🪞🚽🧊🪟🧦👕🧥🔒🪴'],
- ['Symboles','✨💥✅❌⚠️🔴🟠🟡🟢🔵🟣⚫⚪🟥🟧🟨🟩🟦🟪⬛💎🌀♻️🔄💯❓❗🏁🚩']
+ ['Chantier','🪵🔨🪚🧱🏠🪜🔧🛠️🚪🪟🧰🏗️📐📏🧹🔩⛏️🪛🧲🔌🪣🧯🏚️🛖🪤⚒️🦺👷🚧🏭🧑‍🔧🔗⛓️🪝🧑‍🏭🏘️🏢🛞'],
+ ['Technique','⚡🔋💡🔦⚙️🧪🔬📡🖥️💻⌨️🖨️📱🔐🔑🧮💾🛰️🔭🧰🌡️🖱️💿📀🔊🎧📷🔌🤖👾🕹️🧬⚗️🪫📟☎️📺⏱️'],
+ ['Jardin','🥕🍠🎃🥬🌱🧺🚜🌾🍅🥔🧅🌻🪴🌿🍃🌽🥒🫑🍆🧄🥦🍓🍐🍇🍒🍎🍋🫘🌰🍄🌶️🫐🍉🍑🥝🍊🍌🥑🍏🌷🌹🌼💐🪻🪺🫛'],
+ ['Animaux','🐝🐓🐄🐑🐖🐐🐎🐇🐕🐈🦆🐟🐞🦋🐸🦊🦉🐌🪱🐛🐦🦔🐿️🦡🦌🐻🐺🦅🦢🐢🐍🦎🐠🐬🐳🦀🐙🐜🕷️🐾🦫🦦🐮🐷🐔🐣'],
+ ['Nature','🌳🌲⛰️🏔️🌊🏞️🌋🌧️❄️☀️🌈🍂🍁🌸🌙⭐🌍💧🔥🪨🌵⛅🌤️⛈️🌪️🌫️☁️🌬️🌞🌝🌕🌑☄️🪐🌌🏜️🏕️🪸🪷🌴🎋🍀☘️'],
+ ['Corps et sport','🤸🏃🚴🏆🏄🧗💪🧘🏊🥇🎯⛷️🏂🤾🥾🛹🏋️🚣🏓⚽🏀🥊🧠🫀🥈🥉🏅🎽🛼⛸️🤺🏸🎾🏐🏉🥋🪂🧗‍♀️🤹🦵🦶👟🩹😴💤'],
+ ['Voyage','✈️🚐🏕️🗺️🚆⛺🎒🧳🚲🛶⛵🚗🚌🛤️🏝️🏖️🧭🛂🚀🚡🗻🏰🚂🚢⛴️🛳️🚁🛵🏍️🚙🛻🚜⛽🗼🗽🕌⛩️🏯🌉🎡🎢🛣️📍'],
+ ['Pays','🇨🇭🇸🇪🇫🇷🇮🇹🇩🇪🇪🇸🇵🇹🇳🇴🇫🇮🇩🇰🇬🇧🇮🇪🇮🇸🇳🇱🇧🇪🇦🇹🇬🇷🇲🇦🇯🇵🇺🇸🇨🇦🇲🇽🇧🇷🇱🇺🇵🇱🇨🇿🇭🇷🇸🇮🇹🇷🇮🇳🇨🇳🇹🇭🇻🇳🇮🇩🇦🇺🇳🇿🇦🇷🇨🇱🇵🇪🇿🇦🇰🇪🇪🇺'],
+ ['Admin et argent','💰📋📅🧾✉️📦📞🗂️🏦📝📊📈💳🪙📮🗃️📎🖊️📌⏰⏳🗓️📵🧷📉💵💶💸🏷️🗳️⚖️🖋️📇📁📂🗄️📬📨📤📥🔖🧮✒️📃📄'],
+ ['Travail et pro','💼👔🤝🏪🏬🛒🧑‍💼🧑‍🌾🧑‍🍳🧑‍🏫🧑‍🎨🧑‍💻📣📢🪧🎟️🎫🏷️🛍️📰🗞️🔔🧑‍🤝‍🧑'],
+ ['Apprendre','🎓📚📖✏️💬🗣️🔍🧩♟️🎲📜🏫🗒️💭🔎📓📕📗📘📙🧑‍🎓🖍️📐🧾🌐🔤🔢🗯️'],
+ ['Cuisine','🍽️🍳🥘🍲🥗🍞🥐🧀🍕🍝🍜🥟🍫🧁🎂🍪🥧🫙🧂🍯🥚🍔🌮🥨🥯🥞🧇🥓🍖🍗🥩🌭🍟🥪🌯🫔🥙🧆🍛🍣🍱🍙🍚🥠🍰🍩🍦🍨🍧🍮🍬🍭🫕🥫🔪🥄🍴'],
+ ['Boissons','🍺🍷🥂🍾🧃☕🍵🧋🥤🍹🫖🧉🍻🥃🍸🍶🥛🧊🍼'],
+ ['Fête et gens','🎉🎊🎈🎁🥳💃🕺👥🤝❤️💌👶🫶🙌👋🎪🎆🪩🏡🎇🧨🎀🎂👪👨‍👩‍👧👫👬👭🧑‍🤝‍🧑💑💏👵👴🧒👧👦🙏🤗😊😎🤩🥰😂🫡'],
+ ['Création','🎥🎨🎵📸🎤🎭🎸🎹🥁🎬🧵🪡🧶✂️🖌️🖍️📽️🎞️🎙️📻🪕🎷🎺🎻🪗🪘🎼🎶🖼️🗿🏺📐✍️📹🎮🧱🪆'],
+ ['Maison','🛏️🛋️🪑🚿🛁🧼🧽🕯️🧸🪞🚽🧊🪟🧦👕🧥🔒🪴🧺🧻🪥🧴🪒🔑🗝️🛎️🪜🧯🚪🏠🏡🛖⛺👖👗👟🥾🧢🧤🧣'],
+ ['Santé et soin','🩺💊🩹🧘‍♀️🛀💆🧖🦷👓🕶️🌿🍵😌🫁🫂'],
+ ['Symboles','✨💥✅❌⚠️🔴🟠🟡🟢🔵🟣⚫⚪🟥🟧🟨🟩🟦🟪⬛💎🌀♻️🔄💯❓❗🏁🚩♾️⭐🌟💫⚡🔺🔻🔶🔷🔸🔹➕➖✖️➗🆕🆗🆒🔝🔜🔚⏩⏪🎯📍🔰⛔🚫💤💡❤️🧡💛💚💙💜🖤🤍🤎']
 ];
 const SUGG=[[/talus|gdt|maraîch|maraich/i,'🥕'],[/patate|courge|légume|recolt|récolt|potager|cultur|semis|plant/i,'🌱'],[/patate/i,'🍠'],[/carotte/i,'🥕'],[/marché|vente|panier/i,'🧺'],[/isol|ouate/i,'🧱'],[/plancher|combles|bois|osb/i,'🪵'],[/toit|maison|studio/i,'🏠'],[/parkour|compet|compét|entraîn/i,'🤸'],[/voyage|vacances|suède|trip/i,'✈️'],[/van|maxus|camion/i,'🚐'],[/factur|compta|impôt|admin/i,'🧾'],[/site|web|ordi|pc/i,'💻'],[/fête|anniv|soirée/i,'🎉'],[/film|vidéo|musée/i,'🎥'],[/bière|brass/i,'🍺'],[/choco|chacao|cacao/i,'🍫'],[/resto|repas|cuisine/i,'🍽️'],[/formation|cours|apprendre/i,'🎓'],[/ferme/i,'🏡'],[/instagram|écran|téléphone/i,'📵']];
 
@@ -753,6 +757,16 @@ const nf=v=>Number(v).toLocaleString('fr-CH',{maximumFractionDigits:1});
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function ink(hex){const h=hex.replace('#',''); const r=parseInt(h.slice(0,2),16)/255,g=parseInt(h.slice(2,4),16)/255,b=parseInt(h.slice(4,6),16)/255; const L=x=>x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4); return .2126*L(r)+.7152*L(g)+.0722*L(b)>.33?'#1E1E1E':'#FFFFFF';}
 const pv=p=>`--pc:${p.color};--pt:${ink(p.color)}`;
+/* Couleurs par domaine : un projet prend la teinte de son domaine, plus claire s'il est court, plus intense s'il est long (∞ = le plus intense) */
+function hexHsl(hex){ const h=hex.replace('#',''); let r=parseInt(h.slice(0,2),16)/255,g=parseInt(h.slice(2,4),16)/255,b=parseInt(h.slice(4,6),16)/255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2; let H=0,S=0; if(mx!==mn){ const d=mx-mn; S=l>.5?d/(2-mx-mn):d/(mx+mn); H=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4; H*=60; } return [H,S*100,l*100]; }
+function hslHex(h,s,l){ s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return '#'+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('').toUpperCase(); }
+function shade(base,dur,perm,key){ const [h,s,l]=hexHsl(base); let n=0; for(const c of String(key||'')) n=(n*31+c.charCodeAt(0))%997; const H=(h+((n%9)-4)*1.6+360)%360;
+  if(perm) return hslHex(H,Math.min(100,s*1.05),Math.max(10,l*.78));
+  const t=Math.max(0,Math.min(1,Math.log2(Math.max(dur||1,.5)/.5)/Math.log2(80))); return hslHex(H,s*(.55+.45*t),91+(l-91)*t); }
+const domColorOf=pid=>{ if(!pid||pid===Projets.AUTRES) return null; const d=(S.domains||[]).find(x=>x.id===pid); return d&&d.color?d.color:null; };
+const projColor=p=>{ const b=domColorOf(p.parent); return b?shade(b,durOf(p),isPerm(p),p.id):null; };
+function recolor(){ let ch=false; (S&&S.projects||[]).forEach(p=>{ const c=projColor(p); if(c&&p.color!==c){ p.color=c; ch=true; } }); return ch; }
+const shadeStrip=base=>`<div class="shstrip">${[[.5,'4 h'],[2,'2 j'],[5,'1 sem.'],[20,'1 mois'],[0,'∞']].map(([d,l])=>{ const c=d?shade(base,d,false,''):shade(base,0,true,''); return `<span style="background:${c};color:${ink(c)}">${l}</span>`; }).join('')}</div>`;
 const P=id=>S.projects.find(p=>p.id===id);
 const T=id=>S.tags.find(t=>t.id===id);
 /* Fiche projet commune (commun/projets.js) : parent, perso/pro, états */
@@ -825,7 +839,7 @@ const ui={view:'planning',wk:CUR,filter:'ouverts',sort:'prio',tag:null,tagSel:[]
 try{const h=(location.hash||'').slice(1); if(VIEWS.includes(h)) ui.view=h;}catch(e){}
 
 const $view=document.getElementById('view');
-function render(){
+function render(){ recolor();
   const c=inWeek(CUR);
   document.getElementById('sub').textContent='S'+wkNum(CUR);
   document.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.view===ui.view) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); });
@@ -1279,12 +1293,14 @@ function tagPick(sel,act){return `<div class="pchips">${S.tags.map(t=>`<button c
 function dueHint(due,dur){ if(!due) return 'Pas d\'échéance, pas d\'urgence.'; dur=dur||0; const n=days(due); if(n<0) return 'Échéance dépassée : urgent.'; const L=urgLimit(dur); if(L==null) return 'À '+n+' jour'+(n>1?'s':'')+(n<=7?' : urgent (dernière semaine).':' : urgent dans la dernière semaine.'); const w=workdaysUntil(due); return 'À '+w+' jour'+(w>1?'s':'')+' ouvrable'+(w>1?'s':'')+(w<=L?' : urgent':' : pas encore urgent')+' (urgent dès '+L+' j ouvrables, 3 × la durée).'; }
 
 /* Création express */
+function nColor(){ const d=draft; if(!d) return '#B8B4AE'; const b=domColorOf(d.parent); return b?shade(b,d.dur,d.size==='perm','new'):d.color; }
+function nPreview(){ const r=document.querySelector('.namerow'); if(r&&draft) r.style.setProperty('--pc',nColor()); }
 function newSheet(keep){
   if(!keep||!draft) draft={name:'',emoji:'✨',picked:false,color:COLORS[Math.floor(Math.random()*COLORS.length)],size:'proj',dur:5,imp:2,due:'',tags:[],why:'',etat:'encours',prevu:'',parent:(ctx&&ctx.parentFor)||null,nature:'perso'};
   if(ctx&&ctx.size==='s'&&!keep) draft.dur=1;
   const d=draft;
   openSheet(`<div class="shead"><h2>Nouveau projet<small>${ctx&&ctx.fromCell?((ui.cellMode||'j')==='j'?'pour le '+fmt(ctx.cell):'pour la semaine '+wkNum(ctx.k)):ctx&&ctx.k?'pour la semaine '+wkNum(ctx.k):'il ira dans « À planifier »'}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
-   <div class="namerow" style="--pc:${d.color}">${d.size==='mini'?'':`<button class="emobtn" data-act="emojiPick" data-for="new" aria-label="Choisir un émoji" id="nemo">${d.emoji}</button>`}<input class="input" id="n-name" autocomplete="off" autocorrect="off" placeholder="Ex. Monter le tunnel de semis" value="${esc(d.name)}" aria-label="Nom du projet"></div>
+   <div class="namerow" style="--pc:${nColor()}">${d.size==='mini'?'':`<button class="emobtn" data-act="emojiPick" data-for="new" aria-label="Choisir un émoji" id="nemo">${d.emoji}</button>`}<input class="input" id="n-name" autocomplete="off" autocorrect="off" placeholder="Ex. Monter le tunnel de semis" value="${esc(d.name)}" aria-label="Nom du projet"></div>
    <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(d.size,d.dur,'ndur')}</div>
    <div class="field"><span class="lbl">Importance</span>${starPick(d.imp,'nimp')}</div>
    ${d.size==='perm'?'':`<div class="field"><label for="n-due">Échéance (facultatif)</label><div class="duerow"><input class="input" type="date" id="n-due" value="${d.due}"><button data-act="nodue">Aucune</button></div><p class="duehint" id="n-duehint">${dueHint(d.due,d.size==='mini'?0:d.dur)}</p></div>`}
@@ -1294,7 +1310,7 @@ function newSheet(keep){
    ${d.size==='mini'?'':`
    <details class="more"><summary>Plus de détails</summary>
     <div class="field"><label for="n-why">Pourquoi ce projet</label><input class="input" id="n-why" value="${esc(d.why)}" placeholder="Ce que tu veux en retirer"></div>
-    <div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="ncolor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
+    ${domColorOf(d.parent)?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="ncolor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
    </details>`}
    <button class="btn" data-act="create">Créer${ctx?' et placer':''}</button></div>`,'new');
   if(!keep) setTimeout(()=>{const n=document.getElementById('n-name'); if(n) try{n.focus();}catch(e){}},60);
@@ -1326,7 +1342,7 @@ function domainSheet(id,msg){
   ${tasksBlock(d,closed,'tâche')}
   <div class="field"><span class="lbl">Notes</span><a class="btn ghost" style="text-align:center;text-decoration:none" href="../bibliotheque/#d:${d.id}">📚 Notes dans la Bibliothèque</a></div>
   ${d.auto||closed?'':`<div class="field"><label for="f-dname">Nom</label><input class="input" id="f-dname" autocomplete="off" autocorrect="off" value="${esc(d.name)}"></div>
-  <div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="domColor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
+  <div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="domColor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div>${d.color?shadeStrip(d.color):''}<p class="note" style="margin:4px 0 0">Ses projets prennent cette couleur : plus claire s'ils sont courts, plus intense s'ils sont longs.</p></div>`}
   ${d.auto?'':closed?`<button class="btn ghost" data-act="domReopen">Rouvrir le domaine</button>`:msg==='arch'?`<div class="danger"><div>Archiver <b>${esc(domName(d))}</b> ? ${openP.length?`Ses ${openP.length} projet${openP.length>1?'s':''} ouvert${openP.length>1?'s':''} ${openP.length>1?'seront archivés':'sera archivé'} comme terminé${openP.length>1?'s':''}.`:''}</div><div class="actions"><button class="btn ghost" data-act="dom" data-id="${d.id}">Annuler</button><button class="btn" data-act="domArchOk">Archiver</button></div></div>`:`<button class="btn ghost" data-act="domArch">Archiver le domaine…</button>`}
   ${d.auto?'':msg==='del'?`<div class="danger"><div>Supprimer le domaine <b>${esc(domName(d))}</b> ? ${ps.length?`Ses ${ps.length} projet${ps.length>1?'s':''} ${ps.length>1?'iront':'ira'} dans Autres projets.`:''}${d.tasks.length||nN?' Ses tâches et ses notes seront perdues.':''}</div><div class="actions"><button class="btn ghost" data-act="dom" data-id="${d.id}">Annuler</button><button class="btn warn" data-act="domDelOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="domDel">Supprimer le domaine</button>`}
   </div>`,'dom:'+id);
@@ -1483,7 +1499,7 @@ function detail(id,msg){
   ${dossierBlock(p,closed)}
   <details class="more" ${p.why?'open':''}><summary>Pourquoi, couleur</summary>
   <div class="field"><label for="f-why">Pourquoi ce projet</label><textarea class="input" id="f-why" data-field="why" ${closed?'disabled':''}>${esc(p.why)}</textarea></div>
-  ${closed?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
+  ${closed?'':domColorOf(p.parent)?`<div class="field"><span class="lbl">Couleur</span><p class="note" style="margin:0">Celle du domaine ${esc(domName(D(p.parent)))}, selon la durée : plus claire pour un projet court, plus intense pour un long.</p>${shadeStrip(domColorOf(p.parent))}</div>`:`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
   </details>
   ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Archiver le projet…</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">💭 Redevient une idée</button>`}`}
   ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, archive-le plutôt.${kids.length?' Ses '+kids.length+' sous-projet'+(kids.length>1?'s':'')+' passeront au premier niveau.':''}</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
@@ -1812,7 +1828,7 @@ document.addEventListener('click',e=>{
   else if(a==='clearDue'){P(sheetId).due=null; save(); detail(sheetId);}
   else if(a==='tag'){const p=P(sheetId), t=el.dataset.t; p.tags=p.tags.includes(t)?p.tags.filter(x=>x!==t):[...p.tags,t]; save(); detail(sheetId);}
   else if(a==='nsize'){syncDraft(); draft.size=el.dataset.s; newSheet(true);}
-  else if(a==='durStep'){ const inp=el.parentNode.querySelector('input'), cur=parseFloat(String(inp.value).replace(',','.'))||0; let nv=cur+Number(el.dataset.d); if(nv<1) nv=1; nv=Math.round(nv*10)/10; inp.value=nv; if(el.dataset.for==='ndur'){ const was=draft.size; syncDraft(); if(draft.size!==was) newSheet(true); } else { const p=P(sheetId); applyDur(p,nv); save(); detail(sheetId); } }
+  else if(a==='durStep'){ const inp=el.parentNode.querySelector('input'), cur=parseFloat(String(inp.value).replace(',','.'))||0; let nv=cur+Number(el.dataset.d); if(nv<1) nv=1; nv=Math.round(nv*10)/10; inp.value=nv; if(el.dataset.for==='ndur'){ const was=draft.size; syncDraft(); if(draft.size!==was) newSheet(true); else nPreview(); } else { const p=P(sheetId); applyDur(p,nv); save(); detail(sheetId); } }
   else if(a==='ndur'){ const di=document.querySelector('[data-durother=ndur]'); if(di) di.value=''; syncDraft(); if(el.dataset.v==='mini') draft.size=draft.size==='mini'?'proj':'mini'; if(el.dataset.v==='perm') draft.size=draft.size==='perm'?'proj':'perm'; newSheet(true);}
   else if(a==='dur'){const p=P(sheetId); applyDur(p,el.dataset.v); save(); detail(sheetId);}
   else if(a==='nimp'){syncDraft(); draft.imp=Number(el.dataset.n); newSheet(true);}
@@ -1851,7 +1867,7 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.act==='task'){const p=H(sheetId), x=p.tasks[Number(t.dataset.i)]; x.d=t.checked; sinkDone(p); save(); setTimeout(()=>refresh(sheetId),180); return;}
   if(t.dataset.act==='ptask'){const h=H(t.dataset.d), x=h&&h.tasks[Number(t.dataset.i)]; if(x){ x.d=t.checked; sinkDone(h); save(); setTimeout(()=>petitesSheet(),250); } return;}
-  if(t.dataset.durother){ const v=parseFloat(String(t.value).replace(',','.')); if(!(v>0)) return; if(t.dataset.durother==='ndur'){ const was=draft.size; syncDraft(); if(draft.size!==was) setTimeout(()=>{ if(draft&&sheetKey==='new') newSheet(true); },180); } else { const p=P(sheetId); applyDur(p,v); save(); detail(sheetId); } return; }
+  if(t.dataset.durother){ const v=parseFloat(String(t.value).replace(',','.')); if(!(v>0)) return; if(t.dataset.durother==='ndur'){ const was=draft.size; syncDraft(); nPreview(); if(draft.size!==was) setTimeout(()=>{ if(draft&&sheetKey==='new') newSheet(true); },180); } else { const p=P(sheetId); applyDur(p,v); save(); detail(sheetId); } return; }
   if(t.dataset.act==='miniChk'){ const p=P(t.dataset.id); if(p){ p.closed=todayS; save(); setTimeout(()=>{ minisSheet(); toast('✓ '+p.name); },250); } return; }
   if(t.dataset.act==='petiteDone'){const v=S.lists.petites.find(x=>x.id===t.dataset.v); if(v){v.d=t.checked; save(); render();} return;}
   if(t.id==='f-item'&&ctx&&ctx.vid){const v=itemArr(ctx.src).find(x=>x.id===ctx.vid); if(v&&t.value.trim()){v.t=t.value.trim(); save();} }
@@ -1976,9 +1992,9 @@ function fromRows(map){ const st=emptyS(), num=id=>Number(String(id).replace(/\D
   return st; }
 function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull,email:EMAIL})); }catch(e){} }
 let seen={}, quiet=false; /* quiet : enregistrer sans compter comme une activité (reprise, rangements automatiques) */
-const canonP=p=>canon(Object.assign({},p,{touche:undefined}));
+const canonP=p=>canon(Object.assign({},p,{touche:undefined,color:undefined}));
 function markSeen(){ seen={}; S.projects.forEach(p=>{ seen[p.id]=canonP(p); }); }
-function save(){ if(!UID) return;
+function save(){ if(!UID) return; recolor();
   S.projects.forEach(p=>{ const c=canonP(p); if(!quiet){ if(seen[p.id]==null){ if(!p.touche) p.touche=todayS; } else if(seen[p.id]!==c) p.touche=todayS; } seen[p.id]=canonP(p); });
   const cur=rowsOf(S); let ch=false;
   for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ prev[k]=v; dirty.add(k); ch=true; } }
@@ -2035,6 +2051,7 @@ async function enter(user){
   const ok=await pull(!c);
   if(FB) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges);
   if(migratePetites()|migrateLater()) render();
+  if(recolor()){ quiet=true; save(); quiet=false; render(); }
   if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; S.domaines={le:todayS}; save(); render(); } /* nouveau compte : domaines et projets dès le départ */
   push(); envoyerVide();
 }
