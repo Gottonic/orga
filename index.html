@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ORGA</title>
-<meta name="theme-color" content="#3C3C3C">
+<title>Locus</title>
+<meta name="theme-color" content="#4A4458">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
@@ -16,7 +16,7 @@
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(commun/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
 :root{
   color-scheme:light;
-  --paper:#F3F1E7; --cell:#FFFFFF; --ink:#1E1E1E; --muted:#6B6A62; --line:#CFCCBF; --band:#3C3C3C; --band-ink:#FFFFFF; --hl:#FFECB0;
+  --paper:#F3F1E7; --cell:#FFFFFF; --ink:#1E1E1E; --muted:#6B6A62; --line:#CFCCBF; --band:#4A4458; --band-ink:#FFFFFF; --hl:#FFECB0;
   --body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box;border-radius:0}
@@ -44,7 +44,7 @@ p.pied{margin:28px 0 0;color:var(--muted);font-size:.85rem}
 <link rel="stylesheet" href="commun/cadre.css">
 </head>
 <body>
-<header class="oh" style="--oh-bg:#3C3C3C;--oh-ink:#FFFFFF"><div class="oh-bar"><span class="oh-orga"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></span><h1 class="oh-nom">ORGA</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><a class="oh-b" href="reglages/" aria-label="Réglages d'ORGA"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a></div></header>
+<header class="oh" style="--oh-bg:#4A4458;--oh-ink:#F3F1E7"><div class="oh-bar"><span class="oh-orga"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></span><h1 class="oh-nom">Locus</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button><a class="oh-b" href="reglages/" aria-label="Réglages de Locus"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a></div></header>
 <main>
   <ul class="tuiles" aria-label="Mes apps">
     <li><a class="tuile" href="etabli/" style="--t-bg:#FAF3E0;--t-ink:#2B2722">

@@ -1,6 +1,6 @@
 {
-  "name": "ORGA",
-  "short_name": "ORGA",
+  "name": "Locus",
+  "short_name": "Locus",
   "description": "Mes apps : l’Établi, la Banque, la Forge, le Marché, la Mine.",
   "lang": "fr",
   "start_url": "./",
@@ -8,7 +8,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#F3F1E7",
-  "theme_color": "#3C3C3C",
+  "theme_color": "#4A4458",
   "icons": [
     {
       "src": "icons/icon-192.png",

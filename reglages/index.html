@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Réglages · ORGA</title>
-<meta name="theme-color" content="#3C3C3C">
+<title>Réglages · Locus</title>
+<meta name="theme-color" content="#4A4458">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="../manifest.webmanifest">
@@ -14,7 +14,7 @@
 @font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
 :root{color-scheme:light;
-  --paper:#F3F1E7; --cell:#FFFFFF; --ink:#1E1E1E; --muted:#6B6A62; --line:#CFCCBF; --band:#3C3C3C; --hl:#FFECB0; --warn:#C8462C;
+  --paper:#F3F1E7; --cell:#FFFFFF; --ink:#1E1E1E; --muted:#6B6A62; --line:#CFCCBF; --band:#4A4458; --hl:#FFECB0; --warn:#C8462C;
   --body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
 *{box-sizing:border-box;border-radius:0}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
@@ -47,17 +47,17 @@ p{margin:0}
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
 <body>
-<header class="oh" style="--oh-bg:#3C3C3C;--oh-ink:#FFFFFF"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil ORGA"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="currentColor"/><rect x="9" y="1" width="6" height="6" fill="currentColor"/><rect x="1" y="9" width="6" height="6" fill="currentColor"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".45"/></svg></a><h1 class="oh-nom">Réglages</h1><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button></div></header>
+<header class="oh" style="--oh-bg:#4A4458;--oh-ink:#F3F1E7"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">Réglages</h1><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button></div></header>
 <main>
   <section aria-labelledby="t-place">
     <h2 id="t-place">Place sur Supabase</h2>
     <div id="place"><p class="note">Chargement…</p></div>
-    <p class="note">Plan gratuit : 500 Mo de base de données pour ORGA, 1 Go de fichiers et 5 Go de trafic par mois pour tout le compte Supabase (GDT compris s'il est dans la même organisation). Le trafic se voit seulement dans le tableau de bord de Supabase.</p>
+    <p class="note">Plan gratuit : 500 Mo de base de données pour Locus, 1 Go de fichiers et 5 Go de trafic par mois pour tout le compte Supabase (GDT compris s'il est dans la même organisation). Le trafic se voit seulement dans le tableau de bord de Supabase.</p>
     <div class="btns"><button class="btn" type="button" id="actualiser">Actualiser</button><a class="btn" href="https://supabase.com/dashboard/project/rzcpjsffpvuvbdtqymms" target="_blank" rel="noopener">Ouvrir Supabase</a></div>
   </section>
   <section aria-labelledby="t-dossier">
     <h2 id="t-dossier">Dossier sur l'ordinateur (test)</h2>
-    <p class="note">Essai : ORGA peut-elle écrire dans un dossier de ton ordinateur, et s'en souvenir d'une ouverture à l'autre ?</p>
+    <p class="note">Essai : Locus peut-elle écrire dans un dossier de ton ordinateur, et s'en souvenir d'une ouverture à l'autre ?</p>
     <div id="dossier"><p class="note">…</p></div>
     <div class="btns" id="dossier-btns"></div>
   </section>
@@ -176,18 +176,18 @@ async function dessinerDossier(){
   if(!('showDirectoryPicker' in window)){
     $('dossier').innerHTML='<p class="alerte">Ce navigateur ne permet pas d\'écrire dans un dossier de l\'ordinateur (il faut Vivaldi, Chromium ou Chrome sur l\'ordinateur ; pas sur le téléphone).</p>'; btnsDossier([]); return;
   }
-  if(!D.racine){ $('dossier').innerHTML='<p class="note">Aucun dossier choisi. Crée par exemple un dossier « ORGA » dans tes Documents, puis choisis-le.</p>'+(D.resultat||''); btnsDossier([['choisir','Choisir le dossier',1]]); return; }
+  if(!D.racine){ $('dossier').innerHTML='<p class="note">Aucun dossier choisi. Crée par exemple un dossier « Locus » dans tes Documents, puis choisis-le.</p>'+(D.resultat||''); btnsDossier([['choisir','Choisir le dossier',1]]); return; }
   let perm='prompt'; try{ perm=await D.racine.queryPermission({mode:'readwrite'}); }catch(e){}
   const i=D.infos||{};
   const etat=perm==='granted'?'<p class="ok">✓ Accès accordé.</p>':'<p class="alerte">L\'accès doit être redonné (un clic).</p>';
   const ouverture=D.aLOuverture==='granted'?'<p class="ok">✓ À l\'ouverture de cette page, l\'accès était <b>encore là</b>, sans rien demander : le navigateur s\'en souvient.</p>'
     :D.aLOuverture?'<p class="alerte">À l\'ouverture de cette page, le navigateur <b>a oublié</b> l\'accès : il faudrait le redonner à chaque fois (un clic).</p>':'';
   const appli=['standalone','window-controls-overlay','minimal-ui','fullscreen'].some(m=>{ try{ return matchMedia('(display-mode: '+m+')').matches; }catch(e){ return false; } });
-  const mode=appli?'<p class="note">Ouvert comme <b>app installée</b> ✓</p>':'<p class="alerte">Ouvert dans un <b>onglet</b> du navigateur, pas comme app installée : le navigateur garde moins facilement l\'accès. Ouvre ORGA depuis son icône d\'app.</p>';
+  const mode=appli?'<p class="note">Ouvert comme <b>app installée</b> ✓</p>':'<p class="alerte">Ouvert dans un <b>onglet</b> du navigateur, pas comme app installée : le navigateur garde moins facilement l\'accès. Ouvre Locus depuis son icône d\'app.</p>';
   $('dossier').innerHTML=`<p>Dossier : <b>${esc(D.racine.name)}</b> · choisi le ${esc(quand(i.choisi))}</p>${mode}${ouverture}${etat}
     ${i.dernier?`<p class="note">Dernier test écrit le ${esc(quand(i.dernier))} (${i.n||0} en tout).</p>`:''}${D.resultat||''}
     ${perm==='granted'?`<p class="note">Contenu :</p>${await contenuDossier()}`:''}
-    <p class="note">Pour le test complet : écris un fichier, ferme complètement l'app ORGA, rouvre-la et reviens ici. La ligne « À l'ouverture » dira si l'accès a été gardé.</p>`;
+    <p class="note">Pour le test complet : écris un fichier, ferme complètement l'app Locus, rouvre-la et reviens ici. La ligne « À l'ouverture » dira si l'accès a été gardé.</p>`;
   btnsDossier(perm==='granted'?[['tester','Écrire un fichier de test',1],['choisir','Changer de dossier'],['oublier','Oublier le dossier']]:[['redonner','Redonner l\'accès',1],['oublier','Oublier le dossier']]);
 }
 async function testerDossier(){

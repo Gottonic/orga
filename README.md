@@ -1,6 +1,8 @@
-# ORGA
+# Locus
 
 Mes apps perso, réunies derrière un menu à tuiles. Une seule app à installer.
+
+*Locus* (« le lieu » en latin) remplace le nom « ORGA » depuis le 14.11.2026 : seul l'affichage a changé (titres, en-têtes, nom de l'app installée, logo : un cercle avec un point au centre et cinq points autour, sur prune `#4A4458`). Les noms techniques restent : dépôt `Gottonic/orga`, adresse, session `orga-auth`, caches `orga-…`, table `idees`. La source du logo est `icons/logo.svg`.
 
 - Accueil : https://gottonic.github.io/orga/
 - **L’Établi** — mes projets, semaine par semaine : https://gottonic.github.io/orga/etabli/
@@ -17,7 +19,7 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 
 | Dossier | Contenu |
 |---|---|
-| `/` | accueil ORGA (`index.html`), `manifest.webmanifest`, `sw.js` (hors ligne pour toutes les apps), icônes |
+| `/` | accueil de Locus (`index.html`), `manifest.webmanifest`, `sw.js` (hors ligne pour toutes les apps), icônes |
 | `etabli/` | l'app Établi |
 | `banque/` | l'app Banque (`cash/` redirige vers elle) |
 | `forge/` | l'app Forge, avec son programme (`programme.json`), ses polices et ses icônes |

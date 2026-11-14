@@ -20,12 +20,12 @@
   const APP = D.app || 'orga';
   const SB_URL = 'https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY = 'sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC';
   const TABLE = 'idees', LS = 'orga-idees';
-  const APPS = { orga: 'ORGA', etabli: 'L’Établi', banque: 'La Banque', forge: 'La Forge', marche: 'Le Marché', mine: 'La Mine' };
+  const APPS = { orga: 'Locus', etabli: 'L’Établi', banque: 'La Banque', forge: 'La Forge', marche: 'Le Marché', mine: 'La Mine' };
   const TYPES = [['bug', '🐞', 'Bug'], ['idee', '💡', 'Idée']];
   const ATK = '"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif';
   const PAPIER = { f: '#F3F1E7', c: '#FFFFFF', i: '#1E1E1E', m: '#6B6A62', l: '#CFCCBF', a: '#3C3C3C', ai: '#FFFFFF', s: '#FFECB0', r: '0px', p: '0px', font: ATK, titre: ATK };
   const THEMES = {
-    orga: PAPIER,
+    orga: Object.assign({}, PAPIER, { a: '#4A4458', ai: '#F3F1E7' }),
     etabli: PAPIER,
     banque: { f: '#F4F5F7', c: '#FFFFFF', i: '#17181B', m: '#5C6270', l: '#E2E5EA', a: '#F0B54A', ai: '#1A1406', s: '#FBEFD6', r: '20px', p: '99px', font: ATK, titre: '"Bricolage Grotesque",' + ATK },
     marche: { f: '#F5EEDF', c: '#FFFCF5', i: '#24211B', m: '#6F6656', l: '#E6DBC6', a: '#2E6B4E', ai: '#FFFFFF', s: '#E2EEE4', r: '14px', p: '99px', font: ATK, titre: ATK },
@@ -258,7 +258,7 @@ details[open] summary{margin-bottom:6px}
       corps = groupes.length ? groupes.map(([a, g]) => `<p class="app">${esc(APPS[a] || a)} · ${g.length}</p><div class="liste">${g.map(ligne).join('')}</div>`).join('') : '<p class="vide">Rien en attente, dans aucune app. 🌿</p>';
     } else corps = ouv.length ? `<div class="liste">${ouv.map(ligne).join('')}</div>` : '<p class="vide">Rien en attente. 🌿</p>';
     return `<div class="head"><h2>💡 Bugs et idées<span class="sous">${tout ? 'Toutes les apps' : esc(APPS[APP] || APP) + ' · ce qui ne marche pas, ce qui manque'}</span></h2><button type="button" class="x" data-act="fermer" aria-label="Fermer">✕</button></div>
-      ${APP === 'orga' ? `<div class="seg"><button type="button" class="chip${!V.tout ? ' on' : ''}" data-act="vue" data-tout="0">ORGA</button><button type="button" class="chip${V.tout ? ' on' : ''}" data-act="vue" data-tout="1">Toutes les apps</button></div>` : ''}
+      ${APP === 'orga' ? `<div class="seg"><button type="button" class="chip${!V.tout ? ' on' : ''}" data-act="vue" data-tout="0">Locus</button><button type="button" class="chip${V.tout ? ' on' : ''}" data-act="vue" data-tout="1">Toutes les apps</button></div>` : ''}
       ${tout ? '' : `<form class="ajout-form" data-form="ajout"><div class="chips">${TYPES.map(([k, e, n]) => `<button type="button" class="chip${V.type === k ? ' on' : ''}" data-act="type" data-k="${k}">${e} ${n}</button>`).join('')}</div>
         <div class="ajout" style="margin-top:8px"><input type="text" name="titre" id="titre" placeholder="${V.type === 'bug' ? 'Ce qui ne marche pas…' : 'Ton idée, une nouvelle fonction…'}" autocomplete="off" enterkeyhint="done" aria-label="Titre"><button class="plus" type="submit" aria-label="Ajouter">+</button></div>
         <div class="caps" style="margin-top:8px">${V.attente.map(capHtml).join('')}</div>${joindreHtml(V.attente.length)}
