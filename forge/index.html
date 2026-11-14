@@ -767,6 +767,13 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .srow.anth .btn.primary{background:var(--accent);border-color:var(--accent)}
 .srow.done{background:var(--surface);box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--sc) 75%,transparent)}
 .srow.done h3{color:var(--ink-2)}
+/* choix de la couleur d'une séance */
+.pe-cols{display:flex;flex-wrap:wrap;gap:5px}
+.pe-cols button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:600}
+.pe-cols button i{width:16px;height:16px;border-radius:99px;background:var(--c)}
+.pe-cols button.auto{padding-left:10px}
+.pe-cols button.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.pe-cols button:focus-visible{outline:2px solid var(--accent)}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -865,6 +872,10 @@ const phVar = p => p ? "var(--ph-" + (PHASES[p.type] ? p.type : "transition") + 
 /* texte sur une couleur de phase : foncé sur les flammes, crème sur l'anthracite */
 const PH_HOT = ["hypertrophie","force","puissance","contraste","vitesse","specifique"];
 const phOn = p => "var(--on-ph)";
+/* couleur d'une séance d'après son type, quand elle ne suit pas un cycle (le parkour = le spécifique) */
+const SESS_PH = { hypertrophie:"hypertrophie", force:"force", puissance:"puissance", contraste:"contraste", vitesse:"vitesse", parkour:"specifique" };
+/* couleurs qu'on peut choisir pour une séance */
+const SESS_COLORS = [["hypertrophie","Hypertrophie"],["force","Force"],["puissance","Puissance"],["contraste","French contrast"],["vitesse","Vitesse"],["specifique","Parkour"],["gris","Gris"]];
 const fmtMin = m => m >= 60 ? Math.floor(m/60) + " h" + (m % 60 ? " " + String(m % 60).padStart(2,"0") : "") : m + " min";
 const phName = p => p ? (p.name || PHASES[p.type]?.label || "") : "";
 const blocksSorted = () => Object.entries(S.data.blocks || {}).map(([id,b]) => ({id,...b})).filter(b => b.start && b.end).sort((a,b) => a.start < b.start ? -1 : 1);
@@ -1453,10 +1464,11 @@ function sessRow(wk, s, log, hint){
   const steps = guided(s) ? runSteps(s, st) : []; const inRun = !st.done && st.run && steps.length;
   const status = st.done ? `<span class="sstat ok">Faite ✓${st.date ? " · " + dayShort(st.date) : ""}</span>`
     : inRun ? `<span class="sstat run">En cours · ${Math.min(st.run.i, steps.length)}/${steps.length}</span>` : "";
-  /* couleur des cycles pour les séances Haut et Bas seulement (la phase de leur cycle cette semaine) ; parkour en vert ;
-     tout le reste (maintien, endurance, VO2max, tests, séances de vacances, séances ajoutées…) gris, comme le maintien */
+  /* couleur : celle choisie dans l'éditeur (s.color) ; sinon séances Haut et Bas = la phase de leur cycle cette semaine ;
+     sinon le type (force, puissance… ; parkour en vert) ; tout le reste (maintien, endurance, VO2max, tests…) gris */
   const trk = s.id === "s-haut" ? "haut" : s.id === "s-bas" ? "bas" : s.track || null; const wo = trk && weekById(wk);
-  const tph = wo ? phaseOf(wo, trk) : null; const sph = trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : s.kind === "parkour" ? "specifique" : null;
+  const tph = wo ? phaseOf(wo, trk) : null;
+  const sph = s.color ? (s.color === "gris" ? null : s.color) : trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : SESS_PH[s.kind] || null;
   return `<article class="srow ${st.done ? "done" : "col"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
       <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
@@ -2037,6 +2049,10 @@ function peSessView(){
       ${P.src && P.src.col === "weeks" ? `<p class="pe-help">Ces changements valent pour ${esc(P.where)}.</p>` : P.src && P.src.col === "content" ? `<p class="pe-help">Ces changements valent pour ${esc(P.where)}.</p>` : ""}
       <div class="field"><label for="pe-stitle">Titre</label><input id="pe-stitle" type="text" data-pe="s:title" value="${esc(s.title || "")}" placeholder="ex. Force bas du corps"></div>
       <div class="field"><span class="lbl">Type de séance</span>${types}</div>
+      <div class="field"><span class="lbl">Couleur</span><div class="pe-cols" role="group" aria-label="Couleur de la séance">
+        <button class="auto ${s.color ? "" : "on"}" aria-pressed="${!s.color}" data-action="pe-color" data-v="auto">Auto</button>
+        ${SESS_COLORS.map(([k, l]) => `<button class="${s.color === k ? "on" : ""}" aria-pressed="${s.color === k}" data-action="pe-color" data-v="${k}" style="--c:${k === "gris" ? "var(--anth)" : "var(--ph-" + k + ")"}" title="${l}"><i></i>${l}</button>`).join("")}
+      </div><span class="pe-help">${s.color ? "Couleur choisie pour cette séance." : "Auto : la couleur du cycle pour les séances haut et bas, sinon celle du type de séance ; gris pour le reste."}</span></div>
       ${repBox}
       ${tips}
       <div class="between pe-h"><h3>Exercices</h3><span class="muted" style="font-size:12.5px">⋮⋮ pour déplacer</span></div>
@@ -2284,6 +2300,7 @@ function peAction(a, b){
     case "pe-ssave": peSaveSession(); return;
     case "pe-sdel": if (P.confirm !== "del-sess") P.confirm = "del-sess"; else { if (P.sIdx >= 0) P.sessions.splice(P.sIdx, 1); P.sd = null; P.sIdx = null; P.confirm = null; } break;
     case "pe-type": s.kind = b.dataset.k; P.tips = true; break;
+    case "pe-color": if (b.dataset.v === "auto") delete s.color; else s.color = b.dataset.v; break;
     case "pe-tips": P.tips = P.tips === false; break;
     case "pe-smin": s.min = Math.max(0, (s.min || 0) + +b.dataset.d) || undefined; if (!s.min) delete s.min; P.moreOpen = true; break;
     case "pe-emoji": s.emoji = b.dataset.v; P.moreOpen = true; break;
