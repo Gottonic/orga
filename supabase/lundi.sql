@@ -26,7 +26,7 @@ end $$;
 revoke all on function public.locus_cle_nouvelle() from public, anon;
 grant execute on function public.locus_cle_nouvelle() to authenticated;
 
--- Ce que la séance du lundi lit : projets ouverts et domaines (Établi), heures et factures ouvertes (Mine),
+-- Ce que la séance du lundi lit : projets ouverts et domaines (Établi), heures et factures ouvertes (Mine ; heures GDT par semaine, lues par la Mine),
 -- vide-tête et journal des deux dernières semaines (Bibliothèque). Lecture seule.
 create or replace function public.locus_lundi(cle text) returns jsonb
 language plpgsql stable security definer set search_path = public, extensions as $$
@@ -51,6 +51,7 @@ begin
     'heures', (select coalesce(jsonb_agg(jsonb_build_object('date', h.data->>'date', 'minutes', h.data->'min', 'mandat', m.data->>'nom', 'note', h.data->>'note') order by h.data->>'date'), '[]'::jsonb)
                from public.mine_rows h left join public.mine_rows m on m.user_id = u and m.key = 'm:' || (h.data->>'mandat')
                where h.user_id = u and h.key like 'h:%' and not h.deleted and h.data->>'date' >= depuis),
+    'heures_gdt_par_semaine', (select data->'gdtHeures'->'sem' from public.mine_rows where user_id = u and key = 's:reglages' and not deleted),
     'factures_ouvertes', (select coalesce(jsonb_agg(jsonb_build_object('num', data->>'num', 'date', data->>'date', 'objet', data->>'objet')), '[]'::jsonb)
                from public.mine_rows where user_id = u and key like 'd:%' and not deleted and data->>'type' = 'facture' and data->>'etat' = 'envoyee'),
     'vide_tete', (select coalesce(jsonb_agg(jsonb_build_object('texte', data->>'t', 'note', data->>'d', 'le', data->>'cree') order by (data->>'o')::numeric), '[]'::jsonb)

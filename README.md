@@ -199,3 +199,5 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   La tâche planifiée la lit avec `curl` (le domaine du Supabase de Locus doit être autorisé). Créer un nouveau lien invalide l'ancien.
 - **Retour de la séance** : Bibliothèque › Journal › « Coller le bloc de la séance du lundi » (`LOCUS`, `OBJECTIF PRINCIPAL :`, `OBJECTIF SECONDAIRE :`,
   `CONSEIL :`, `PROJETS : nom ; nom`) : les objectifs vont au journal de la semaine, les projets reçoivent la semaine au planning de l'Établi.
+- **Heures de GDT dans la Mine** (lecture seule) : onglet Heures, lues dans l'app GDT avec la connexion GDT de la Banque (Réglages › GDT, même navigateur) ;
+  un résumé par semaine (`regl.gdtHeures`) est repris par `locus_lundi` (`heures_gdt_par_semaine`).

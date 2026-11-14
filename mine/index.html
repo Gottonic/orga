@@ -776,12 +776,38 @@ function carteChrono(){
   const sel=ui.chronoM&&S.mands[ui.chronoM]&&S.mands[ui.chronoM].etat!=='fini'?ui.chronoM:ms[0].id;
   return `<section class="chrono" aria-label="Chronomètre"><div class="cap">Chronomètre · sur quel mandat ?</div><div class="chips">${ms.slice(0,8).map(m=>`<button class="chip coul${m.id===sel?' on':''}" style="--c:${act(m.activite).couleur}" data-act="chrono-m" data-id="${m.id}" aria-pressed="${m.id===sel}">${esc(act(m.activite).emoji)} ${esc(m.nom)}</button>`).join('')}</div><button class="btn" data-act="chrono-go" data-id="${sel}">▶ Démarrer</button></section>`;
 }
+/* Heures de Gamins de Talus (lecture seule) : lues dans l'app GDT (autre Supabase), avec la connexion GDT de la Banque
+   (Banque › Réglages › GDT, même navigateur). Rien n'est écrit dans GDT. Un résumé par semaine est gardé dans les réglages
+   de la Mine (regl.gdtHeures), pour le pont du lundi. */
+const GDT_URL='https://faouvytsqxridrwffrth.supabase.co', GDT_KEY='sb_publishable_EQKYeWZcBAPl_PjuMdfQjw_iRrc_7ak';
+let gsb=null, GH={L:[],err:'',le:null};
+try{ const c=JSON.parse(localStorage.getItem('mine-gdt-heures')||'null'); if(c&&c.L) GH=c; }catch(e){}
+function gdtClient(){ if(!gsb&&window.supabase&&window.supabase.createClient) gsb=window.supabase.createClient(GDT_URL,GDT_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'banque-gdt-auth'}}); return gsb; }
+async function gdtHeures(){
+  if(!navigator.onLine) return; const c=gdtClient(); if(!c) return;
+  try{ const {data:sd}=await c.auth.getSession(), ses=sd&&sd.session; if(!ses){ GH.err='connexion'; return; }
+    const {data:mb,error:e1}=await c.from('membres').select('personne').eq('user_id',ses.user.id); if(e1) throw e1;
+    const me=mb&&mb[0]&&mb[0].personne; if(!me){ GH.err='membre'; return; }
+    const depuis=plusJours(today(),-400), L=[];
+    for(let de=0;;de+=1000){ const {data,error}=await c.from('rows').select('key,data,deleted').like('key','h:%').order('key').range(de,de+999); if(error) throw error;
+      (data||[]).forEach(r=>{ const d=r.data; if(r.deleted||!d||d.personne!==me||d.off||!(d.date>=depuis)) return; const hrs=parseFloat(String(d.heures==null?'':d.heures).replace(',','.')); if(hrs>0) L.push({date:d.date,min:Math.round(hrs*60),note:d.note||''}); });
+      if(!data||data.length<1000) break; }
+    GH={L,err:'',le:new Date().toISOString()}; try{ localStorage.setItem('mine-gdt-heures',JSON.stringify(GH)); }catch(e){}
+    const sem={}; L.forEach(x=>{ if(x.date<plusJours(today(),-60)) return; const key=plusJours(lundi(x.date),3).slice(0,4)+'-W'+String(semNum(x.date)).padStart(2,'0'); sem[key]=(sem[key]||0)+x.min; });
+    const avant=JSON.stringify((S.regl.gdtHeures||{}).sem||{}); if(avant!==JSON.stringify(sem)){ S.regl.gdtHeures={sem,le:today()}; save(); }
+    render();
+  }catch(e){ GH.err=(e&&e.message)||String(e); } }
+const gdtSemaine=(l0,l6)=>GH.L.filter(x=>x.date>=l0&&x.date<=l6);
+
 function vHeures(){
   let h=alerteTable()+carteChrono();
   const l0=plusJours(lundi(today()),7*ui.sem), l6=plusJours(l0,6), fh=reprises('heures');
   const hs=Object.values(S.heures).filter(x=>x.date>=l0&&x.date<=l6), tot=hs.reduce((s,x)=>s+x.min,0);
   h+=`<div class="semnav"><button data-act="sem" data-n="-1" aria-label="Semaine précédente">‹</button><div><b>Semaine ${semNum(l0)}</b><span>${fJour(l0)} – ${fJour(l6)}</span></div><button data-act="sem" data-n="1" aria-label="Semaine suivante" ${ui.sem>=0?'disabled':''}>›</button></div>`;
-  h+=`<div class="semtot"><span class="cap">Total de la semaine</span><b class="mono">${fH(tot)}</b>${ui.sem?'<button class="lien" data-act="sem0">Revenir à cette semaine</button>':''}</div>`;
+  const gs=gdtSemaine(l0,l6), gtot=gs.reduce((s2,x)=>s2+x.min,0);
+  h+=`<div class="semtot"><span class="cap">Total de la semaine</span><b class="mono">${fH(tot)}</b>${gtot?`<span class="meta">+ ${fH(gtot)} GDT</span>`:''}${ui.sem?'<button class="lien" data-act="sem0">Revenir à cette semaine</button>':''}</div>`;
+  if(gs.length) h+=`<section class="bloc"><div class="bh"><h3>🥕 Gamins de Talus</h3><span class="meta">${fH(gtot)} · lu dans l’app GDT</span></div>${gs.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="ligne-r"><span>${cap1(fJourLong(x.date))}${x.note?` <span class="meta">· ${esc(x.note)}</span>`:''}</span><b class="mono">${fH(x.min)}</b></div>`).join('')}</section>`;
+  else if(GH.err==='connexion') h+=`<p class="aide">Les heures de GDT s’affichent ici quand GDT est connecté dans la Banque (Réglages › GDT) sur cet appareil.</p>`;
   if(!hs.length) h+=`<div class="vide">Aucune heure notée cette semaine.<br>Lance le chrono, ou touche + pour noter après coup.</div>`;
   else {
     for(let i=6;i>=0;i--){ const d=plusJours(l0,i), dj=hs.filter(x=>x.date===d).sort((a,b)=>(b.cree||'').localeCompare(a.cree||'')); if(!dj.length) continue;
@@ -1387,7 +1413,7 @@ async function enter(user){
   booted=true; render(); setSync();
   await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);
   if(relierDepuisProjets()) save(); render();
-  push(); PB.pousser();
+  push(); PB.pousser(); gdtHeures();
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{
   e.preventDefault(); const mail=document.getElementById('l-mail').value.trim(), pass=document.getElementById('l-pass').value;
