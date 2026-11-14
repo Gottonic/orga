@@ -28,7 +28,9 @@
   --mint-soft:#27342A; --mint-ink:#A9D2A4;
   --sun:#F2B957; --sun-soft:#3A2F1C;
   --tomato:#D9614A; --coral:#E8505B; --sage:#8DBA88; --tan:#CDA47B; --stone:#B8B4AE;
-  --ph-hypertrophie:#CDA47B; --ph-force:#D9614A; --ph-puissance:#E0A15E; --ph-specifique:#E8505B; --ph-saison:#EFE3CC; --ph-contraste:#8DBA88; --ph-vitesse:#F2B957; --ph-transition:#A39B90; --ph-maintien:#A39B90;
+  /* phases = une flamme de plus en plus chaude : rouge pâle → rouge → orange → blanc → vert → bleu (le spécifique, la plus chaude) ; le reste anthracite */
+  --ph-hypertrophie:#C9837A; --ph-force:#E0442F; --ph-puissance:#F08A2C; --ph-contraste:#F4EFE6; --ph-vitesse:#6CC47E; --ph-specifique:#4C9CF0;
+  --anth:#3A3734; --ph-saison:var(--anth); --ph-transition:var(--anth); --ph-maintien:var(--anth);
   --good:#8DBA88; --bad:#E8505B; --on-ph:#1A1714;
   --f-display:"Unbounded","Space Grotesk",system-ui,sans-serif;
   --f-body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -239,7 +241,7 @@ textarea{min-height:90px;resize:vertical;line-height:1.45}
 .weekhead{display:flex;flex-direction:column;gap:10px}
 .weeknav{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .weeknav .btn{min-width:44px;justify-content:center}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:var(--ph,var(--surface-2));color:var(--on-ph);font-size:13px;font-weight:600;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:var(--ph,var(--surface-2));color:var(--on,var(--on-ph));font-size:13px;font-weight:600;}
 .pill.none{color:var(--ink-2)}
 .tip{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:18px;background:var(--accent-soft);border-radius:var(--r)}
 .tip .q{font-family:var(--f-display);font-weight:800;font-size:48px;line-height:.8;color:var(--accent);grid-row:span 2}
@@ -747,6 +749,22 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .run-pb,.rc-bar,.t-bar{background:var(--surface-2)}
 .st-set{color:var(--accent)}
 .dlbanner{border-color:var(--ink-3)}
+/* cartes de séance de la couleur de leur flamme ; anthracite pour le reste ; une séance faite s'éteint (contour seulement) */
+.srow.col{background:var(--sc);color:var(--on-ph)}
+.srow.col .muted,.srow.col .sstat{color:rgba(26,23,20,.72)}
+.srow.col .tag{background:rgba(26,23,20,.14);color:var(--on-ph)}
+.srow.col .tag.opt{border-color:rgba(26,23,20,.35);background:none}
+.srow.col .sbadge{background:rgba(26,23,20,.85);color:var(--ink)}
+.srow.col .shint{background:rgba(26,23,20,.85);color:var(--ink)}
+.srow.col .btn{background:rgba(26,23,20,.1);border-color:rgba(26,23,20,.3);color:var(--on-ph)}
+.srow.col .btn:hover{border-color:var(--on-ph)}
+.srow.col .btn.primary{background:var(--on-ph);border-color:var(--on-ph);color:var(--sc)}
+.srow.anth{background:var(--anth)}
+.srow.anth .tag{background:rgba(255,255,255,.08)}
+.srow.anth .btn{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+.srow.anth .btn.primary{background:var(--accent);border-color:var(--accent)}
+.srow.done{background:var(--surface);box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--sc) 75%,transparent)}
+.srow.done h3{color:var(--ink-2)}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -842,6 +860,11 @@ const wkLabel = id => "S" + String(id).slice(6);
 const phasesSorted = () => Object.entries(S.data.phases).map(([id,p]) => ({id,...p, track: p.track || "bas"})).filter(p => p.start && p.end).sort((a,b) => a.start < b.start ? -1 : 1);
 function phaseOf(w, track){ const thu = addDays(w.mon,3); return phasesSorted().find(p => p.track === track && pd(p.start) <= thu && thu <= pd(p.end)) || null; }
 const phVar = p => p ? "var(--ph-" + (PHASES[p.type] ? p.type : "transition") + ")" : "var(--surface-2)";
+/* texte sur une couleur de phase : foncé sur les flammes, crème sur l'anthracite */
+const PH_HOT = ["hypertrophie","force","puissance","contraste","vitesse","specifique"];
+const phOn = p => p && PH_HOT.includes(p.type) ? "var(--on-ph)" : "var(--ink)";
+/* couleur d'une carte de séance, d'après son type (le parkour = le spécifique) */
+const SESS_PH = { hypertrophie:"hypertrophie", force:"force", puissance:"puissance", contraste:"contraste", vitesse:"vitesse", parkour:"specifique" };
 const fmtMin = m => m >= 60 ? Math.floor(m/60) + " h" + (m % 60 ? " " + String(m % 60).padStart(2,"0") : "") : m + " min";
 const phName = p => p ? (p.name || PHASES[p.type]?.label || "") : "";
 const blocksSorted = () => Object.entries(S.data.blocks || {}).map(([id,b]) => ({id,...b})).filter(b => b.start && b.end).sort((a,b) => a.start < b.start ? -1 : 1);
@@ -1255,7 +1278,7 @@ function tile(w, now, today){
   const pos = b ? blockWeeks(b).indexOf(w.id) + 1 : 0;
   const cls = ["wk", w.sun < today ? "past" : "", w.id === now ? "now" : "", dl ? "deload" : ""].join(" ");
   const chips = (isTestWeek(w.id) ? `<span class="chip test">Tests</span>` : "") + (nomatWeek(w.id) ? `<span class="chip">🎒</span>` : "") + evs.slice(0,2).map(e => `<span class="chip ${esc(e.type)}" title="${esc(EVT[e.type]||"")} · ${esc(e.title)}">${esc(e.title || EVT[e.type])}</span>`).join("") + ctxChips(w.id);
-  const bands = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return `<span class="band ${p ? "" : "none"}" style="--ph:${phVar(p)}"><b>${short}</b><span>${p ? esc(PHASES[p.type]?.short || phName(p)) : "—"}</span></span>`; }).join("");
+  const bands = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return `<span class="band ${p ? "" : "none"}" style="--ph:${phVar(p)};--on:${phOn(p)}"><b>${short}</b><span>${p ? esc(PHASES[p.type]?.short || phName(p)) : "—"}</span></span>`; }).join("");
   return `<button class="${cls}" data-action="open-week" data-week="${w.id}">
     <span class="top"><span class="n">${wkLabel(w.id)}</span>${pr.planned && tracked(w.id) ? `<span class="num prog">${pr.done}/${pr.planned}</span>` : ""}</span>
     <span class="d">${fmtRange(w.mon,w.sun)}${pos ? ` · ${pos}/${blockWeeks(b).length}` : ""}</span>
@@ -1300,7 +1323,7 @@ function vWeek(){
   const hint = nervHint(w.id);
   const sessions = sorted.length ? sorted.map(s => sessRow(w.id, s, log, hint)).join("") :
     `<div class="empty"><strong>Pas encore de programme pour cette semaine.</strong> Demande à Claude de la remplir, ou note directement ce que tu as fait dans le journal ci-dessous.</div>`;
-  const pills = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return p ? `<span class="pill" style="--ph:${phVar(p)}">${short} · ${esc(phName(p))}</span>` : ""; }).join("");
+  const pills = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return p ? `<span class="pill" style="--ph:${phVar(p)};--on:${phOn(p)}">${short} · ${esc(phName(p))}</span>` : ""; }).join("");
   const mainS = plan.sessions.filter(s => !s.optional); const total = mainS.reduce((a,s) => a + (s.min || 0), 0); const free = mainS.some(s => !s.min);
   const fx = plan.sessions.some(s => s.nerv || s.doms);
   return `
@@ -1430,7 +1453,10 @@ function sessRow(wk, s, log, hint){
   const steps = guided(s) ? runSteps(s, st) : []; const inRun = !st.done && st.run && steps.length;
   const status = st.done ? `<span class="sstat ok">Faite ✓${st.date ? " · " + dayShort(st.date) : ""}</span>`
     : inRun ? `<span class="sstat run">En cours · ${Math.min(st.run.i, steps.length)}/${steps.length}</span>` : "";
-  return `<article class="srow ${st.done ? "done" : ""}">
+  /* séances Haut et Bas : la phase de leur cycle cette semaine ; les autres : leur type (parkour = spécifique) */
+  const trk = s.id === "s-haut" ? "haut" : s.id === "s-bas" ? "bas" : s.track || null; const wo = trk && weekById(wk);
+  const tph = wo ? phaseOf(wo, trk) : null; const sph = trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : SESS_PH[s.kind];
+  return `<article class="srow ${st.done ? "done" : sph ? "col" : "anth"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
       <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
       <h3><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h3>${s.series ? `<span class="sbadge">${(S.data.series[s.series] || {}).movedFrom ? "↪ reportée de " + wkLabel(S.data.series[s.series].movedFrom) : (S.data.series[s.series] || {}).every ? "↻ ajoutée, répétée" : "ajoutée cette semaine"}</span>` : s.over ? `<span class="sbadge">modifiée cette semaine</span>` : ""}${status}${hint && s.nerv && !st.done ? `<span class="shint">${esc(hint)}</span>` : ""}
