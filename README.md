@@ -122,6 +122,14 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 
 ## Bon à savoir (Mine)
 
+- **Mandats = projets de l'Établi** (14.11.2026, étape 2) : après l'écran « Relier aux projets » (bandeau de l'onglet Mandats,
+  ou ⚙ Gérer les activités), chaque activité est un projet pro ∞ de l'Établi et chaque mandat un projet rangé sous lui
+  (champs `a.projet` et `m.projet`). Le projet garde le nom, l'état (Prospection = Idée, En cours, Terminé = Archivé) et les tâches,
+  les mêmes dans les deux apps ; la Mine garde le client, les heures, les devis, les factures et l'argent.
+  Un nouveau mandat crée son projet ; un projet pro rangé dans l'Établi sous une activité devient un mandat (sauf les activités
+  « aperçu seulement », comme GDT). Noter des heures compte comme une activité du projet (projets qui dorment).
+  Les projets sont lus et écrits par `Projets.base` (`commun/projets.js`, copie locale `locus-projets-<utilisateur>`).
+
 - **Mandats** : le travail pro rangé par activité (les « filons » : GDT, Isolation, Fertik, Parkour, Petits travaux,
   comme les sous-catégories Pro de la Banque). Un mandat = un chantier, un cours, une commande : son client, son état
   (Prospection, En cours, Terminé), ses tâches, ses heures, ses opérations de la Banque, ses devis et factures.

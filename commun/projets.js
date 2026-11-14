@@ -1,9 +1,8 @@
-/* Locus — la fiche projet commune (étape 1 du plan, 14.11.2026).
+/* Locus — la fiche projet commune (étapes 1 et 2 du plan, 14.11.2026).
    Tout est un projet, de 4 h à ∞. Un projet peut en contenir d'autres, sur deux niveaux.
    Chaque projet est perso ou pro (un sous-projet suit son parent, sauf s'il dit autre chose).
-   Les projets vivent dans la table de l'Établi (`rows`, lignes `p:<id>`) ; ce module ne lit ni n'écrit
-   la base : il donne les règles communes, pour l'Établi aujourd'hui et pour la Mine, la Banque
-   et la Bibliothèque ensuite.
+   Les projets vivent dans la table de l'Établi (`rows`, lignes `p:<id>`). Ce module donne les règles
+   communes, et `Projets.base` permet aux autres apps (la Mine) de lire et d'écrire ces projets.
 
    Champs d'un projet (en plus de ceux du planning de l'Établi : weeks, days, size, dur, imp, due…) :
      parent  id du projet qui le contient (facultatif ; un parent n'a jamais lui-même de parent)
@@ -94,5 +93,61 @@
   }
   const depuis = (p, aujourdhui) => { const d = derniereActivite(p, aujourdhui); return d ? jours(d, aujourdhui) : null; };
 
-  window.Projets = { ETATS, FINS, DORT_JOURS, etat, nature, parentDe, enfants, racinePro, parentPossible, estInfini, estMini, places, derniereActivite, dort, depuis, lundi };
+  /* Projet neuf, avec tous les champs que l'Établi attend */
+  function nouveau(o) {
+    return Object.assign({ id: 'p' + Date.now() + String(Math.floor(Math.random() * 10)), emoji: '', color: '#C68A2E', name: '', size: 'proj', dur: 5, imp: 2, due: null,
+      tags: [], weeks: [], days: [], why: '', next: '', folder: null, tasks: [], touche: iso(new Date()) }, o || {});
+  }
+
+  /* Lire et écrire les projets depuis une autre app que l'Établi (la Mine…) : même table `rows`,
+     lignes `p:<id>`, copie locale `locus-projets-<utilisateur>`, envoi dès que le réseau le permet.
+     L'Établi reçoit ces changements à sa prochaine synchro. */
+  function base(sb, uid) {
+    const LS = 'locus-projets-' + uid;
+    let st = { prev: {}, dirty: [], last: null };
+    try { const c = JSON.parse(localStorage.getItem(LS) || 'null'); if (c && c.prev) st = Object.assign(st, c); } catch (e) {}
+    const ecoute = []; let envoi = false, minuterie = null, erreur = '';
+    const garder = () => { try { localStorage.setItem(LS, JSON.stringify(st)); } catch (e) {} };
+    const lire = (v) => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
+    const liste = () => Object.keys(st.prev).filter((k) => k.startsWith('p:')).map((k) => lire(st.prev[k])).filter(Boolean);
+    const get = (id) => (id ? lire(st.prev['p:' + id]) : null);
+    const prevenir = () => ecoute.forEach((f) => { try { f(); } catch (e) {} });
+    async function tirer(tout) {
+      if (!sb || !navigator.onLine) return false;
+      try {
+        const depuisLe = tout ? null : st.last; let max = st.last, de = 0, ch = false;
+        for (;;) {
+          let q = sb.from('rows').select('key,data,deleted,updated_at').like('key', 'p:%').order('updated_at', { ascending: true }).range(de, de + 999);
+          if (depuisLe) q = q.gte('updated_at', depuisLe);
+          const { data, error } = await q; if (error) throw error;
+          (data || []).forEach((r) => {
+            if (!max || r.updated_at > max) max = r.updated_at;
+            if (st.dirty.includes(r.key)) return;
+            if (r.deleted || r.data == null) { if (r.key in st.prev) { delete st.prev[r.key]; ch = true; } }
+            else { const v = JSON.stringify(r.data); if (st.prev[r.key] !== v) { st.prev[r.key] = v; ch = true; } }
+          });
+          if (!data || data.length < 1000) break; de += 1000;
+        }
+        st.last = max; erreur = ''; garder(); if (ch) prevenir(); return true;
+      } catch (e) { erreur = (e && e.message) || String(e); return false; }
+    }
+    async function pousser() {
+      if (envoi || !st.dirty.length || !sb || !navigator.onLine) return;
+      envoi = true; const keys = st.dirty.slice(0, 100), sent = {};
+      const rows = keys.map((k) => { sent[k] = st.prev[k]; return k in st.prev ? { user_id: uid, key: k, data: JSON.parse(st.prev[k]), deleted: false } : { user_id: uid, key: k, data: null, deleted: true }; });
+      try {
+        const { error } = await sb.from('rows').upsert(rows, { onConflict: 'user_id,key' }); if (error) throw error;
+        st.dirty = st.dirty.filter((k) => !(keys.includes(k) && st.prev[k] === sent[k])); erreur = ''; garder();
+      } catch (e) { erreur = (e && e.message) || String(e); clearTimeout(minuterie); minuterie = setTimeout(pousser, 15000); envoi = false; return; }
+      envoi = false; if (st.dirty.length) { clearTimeout(minuterie); minuterie = setTimeout(pousser, 300); }
+    }
+    function ecrire(p) {
+      if (!p || !p.id) return; const k = 'p:' + p.id;
+      st.prev[k] = JSON.stringify(p); if (!st.dirty.includes(k)) st.dirty.push(k);
+      garder(); prevenir(); clearTimeout(minuterie); minuterie = setTimeout(pousser, 600);
+    }
+    return { liste, get, tirer, pousser, ecrire, surChangement: (f) => ecoute.push(f), erreur: () => erreur, enAttente: () => st.dirty.length, pret: () => !!st.last || Object.keys(st.prev).length > 0 };
+  }
+
+  window.Projets = { ETATS, FINS, DORT_JOURS, etat, nature, parentDe, enfants, racinePro, parentPossible, estInfini, estMini, places, derniereActivite, dort, depuis, lundi, nouveau, base };
 })();

@@ -41,6 +41,13 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .cap{font-size:.74rem;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.08em}
 .meta{font-size:.84rem;color:var(--gris)}
 .aide{margin:0;font-size:.86rem;color:var(--gris)}
+.lien-p{border:2px solid var(--roche);background:var(--carte);box-shadow:var(--ombre);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.lien-p p{margin:0}
+.rel{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;border:1.5px solid var(--trait2);background:var(--carte);padding:8px 10px;border-left:6px solid var(--c,var(--trait2))}
+.rel .nm{flex:1 1 170px;font-weight:700;min-width:0}
+.rel .nm small{display:block;font-weight:400;color:var(--gris);font-size:.8rem}
+.rel select{max-width:100%;height:40px;border:1.5px solid var(--trait2);background:var(--carte);padding:0 6px}
+.projet-l{font-size:.85rem;color:var(--gris)}
 .alerte{background:var(--rougepale);color:#6E1A25;border:1.5px solid var(--rouge);padding:12px 14px;font-size:.92rem}
 .alerte b{display:block}
 .info{background:var(--orpale);border:1.5px solid var(--or);padding:10px 12px;font-size:.92rem}
@@ -365,6 +372,7 @@ table.dl tfoot tr.tot td{border-top:1.2pt solid #000;font-weight:700;font-size:1
 <div id="print" aria-hidden="true"></div>
 <datalist id="unites"><option value="h"><option value="pce"><option value="forfait"><option value="jour"><option value="m"><option value="m²"><option value="km"></datalist>
 <script src="../commun/supabase.js"></script>
+<script src="../commun/projets.js"></script>
 <script src="lib/qrcode.js"></script>
 <script>
 'use strict';
@@ -385,6 +393,7 @@ const CISEAUX='m 0.764814,4.283977 c 0.337358,0.143009 0.862476,-0.115279 0.7751
 function vide(){ return {acts:{},mands:{},conts:{},heures:{},docs:{},liens:{},regl:{},chrono:null}; }
 let S=vide();
 let B={cats:{},tx:{},docs:{}}, bLast=null, bErr='', bPret=false; /* copie en lecture seule des opérations Pro de la Banque */
+let PB=null; /* projets de l'Établi (commun/projets.js) */
 let sb=null, UID=null, EMAIL='', prev={}, dirty=new Set(), lastPull=null, pushing=false, pushTimer=null, saveTimer=null, syncErr='', booted=false;
 const ui={tab:lsGet('mine-tab')||'mandats', filtre:lsGet('mine-filtre')||'', pile:[], sem:0, seg:'factures', an:new Date().getFullYear(), q:'', finis:{}, tf:false, toutH:false, chronoM:'', vieux:false, ignorePop:0, payees:false, annulees:false};
 if(!['mandats','heures','factures','contacts','bilan'].includes(ui.tab)) ui.tab='mandats';
@@ -497,6 +506,68 @@ function chiffres(m){
   const res=r2(encaisse+autres+dep);
   return {min,minNF,nf,valNF:r2(minNF/60*tarifDe(m)),facture,encaisse,attente:r2(facture-encaisse),dep:r2(dep),autres:r2(autres),res,parH:min?r2(res/(min/60)):null,tx,retard:fs.some(enRetard)};
 }
+
+/* =============================== Projets de l'Établi (fiche projet commune) =============================== */
+/* Un mandat est un projet de l'Établi (champ m.projet), une activité un projet pro ∞ (champ a.projet).
+   Le projet garde le nom, l'état et les tâches ; la Mine garde le client, les heures, les documents et l'argent. */
+const proj=id=>PB&&id?PB.get(id):null;
+const projDe=m=>m&&m.projet?proj(m.projet):null;
+const relie=()=>!!S.regl.projets;
+function etatDeProjet(p){ if(p.closed) return 'fini'; if(p.later) return 'piste'; return 'cours'; }
+function ecrireProjet(p){ p.touche=today(); PB.ecrire(p); }
+function etatVersProjet(p,e){ if(!p) return;
+  if(e==='fini'){ if(!p.closed){ p.closed=today(); p.fin=p.fin||{type:'termine'}; delete p.prevu; } }
+  else { delete p.closed; delete p.fin; if(e==='piste') p.later=true; else delete p.later; } }
+function tachesDe(m){ const p=projDe(m); return p?(p.tasks||[]).map((x,i)=>({id:'i'+i,t:x.t,fait:!!x.d})):(m.taches||[]); }
+function majTaches(m,f){ const p=projDe(m);
+  if(p){ p.tasks=p.tasks||[]; f(p.tasks,true); const o=p.tasks.filter(x=>!x.d), d=p.tasks.filter(x=>x.d); p.tasks=o.concat(d); ecrireProjet(p); }
+  else { m.taches=m.taches||[]; f(m.taches,false); save(); } }
+function toucherProjet(mid){ const p=projDe(S.mands[mid]); if(p&&p.touche!==today()) ecrireProjet(p); }
+/* ce que l'Établi a changé (nom, état) et les projets pro rangés sous une activité, qui deviennent des mandats */
+function relierDepuisProjets(){ if(!PB||!relie()) return false; let n=0; const L=PB.liste(), get=id=>L.find(x=>x.id===id);
+  for(const m of Object.values(S.mands)){ const p=m.projet&&get(m.projet); if(!p) continue;
+    if(p.name&&m.nom!==p.name){ m.nom=p.name; n++; }
+    const e=etatDeProjet(p); if(m.etat!==e){ m.etat=e; if(e==='fini'&&!m.fin) m.fin=p.closed||today(); n++; } }
+  const actDe={}; Object.values(S.acts).forEach(a=>{ if(a.projet&&!a.archive) actDe[a.projet]=a; });
+  const lies=new Set(Object.values(S.mands).map(m=>m.projet).filter(Boolean));
+  for(const p of L){ if(lies.has(p.id)||p.closed||!p.parent||!actDe[p.parent]||actDe[p.id]) continue; const a=actDe[p.parent]; if(a.ignorer) continue;
+    if(Projets.nature(p,get)!=='pro') continue;
+    const id=uid(); S.mands[id]={id,activite:a.id,nom:p.name,client:'',etat:etatDeProjet(p),debut:today(),fin:'',tarif:'',note:'',taches:[],cree:nowIso(),projet:p.id}; lies.add(p.id); n++; }
+  return n>0; }
+/* écran « Relier aux projets » : proposition, puis validation */
+const MOTS_VIDES=new Set(['pour','avec','dans','chez','des','les','une','sur','projet','mandat']);
+const mots=s=>norm(s).split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!MOTS_VIDES.has(w));
+function liensInit(){ const L=PB?PB.liste():[], tops=L.filter(p=>!p.parent&&!p.closed&&p.size!=='mini'), R={acts:{},mands:{}}, pris=new Set();
+  for(const a of actsTri(true)){ const same=tops.find(p=>norm(p.name)===norm(a.nom)&&Projets.nature(p,proj)==='pro'); R.acts[a.id]=a.projet&&proj(a.projet)?a.projet:a.archive?'':same?same.id:'new'; if(R.acts[a.id]&&R.acts[a.id]!=='new') pris.add(R.acts[a.id]); }
+  for(const m of Object.values(S.mands).sort(triMandat)){ if(m.projet&&proj(m.projet)){ R.mands[m.id]=m.projet; pris.add(m.projet); continue; }
+    const same=L.find(p=>!pris.has(p.id)&&norm(p.name)===norm(m.nom)); if(same){ R.mands[m.id]=same.id; pris.add(same.id); continue; }
+    const w=new Set([...mots(m.nom),...mots(act(m.activite).nom)]); let best=null, sc=0;
+    for(const p of L){ if(pris.has(p.id)||(p.closed&&m.etat!=='fini')) continue; const s2=mots(p.name).filter(x=>w.has(x)).length+(p.size==='mini'?0:.1); if(s2>=1&&s2>sc){ sc=s2; best=p; } }
+    if(best){ R.mands[m.id]=best.id; pris.add(best.id); } else R.mands[m.id]='new'; }
+  return R; }
+function optsProjets(cur,L,nouveau){ const o=L.slice().sort((a,b)=>(!!a.closed-!!b.closed)||a.name.localeCompare(b.name,'fr'));
+  return `<option value="new"${cur==='new'?' selected':''}>${nouveau}</option><option value=""${!cur?' selected':''}>ne pas relier</option>${o.map(p=>`<option value="${p.id}"${cur===p.id?' selected':''}>${esc((p.emoji?p.emoji+' ':'')+p.name)}${p.size==='perm'?' (∞)':''}${p.closed?' (archivé)':''}</option>`).join('')}`; }
+function vLiens(){ if(!ed||ed.k!=='liens') ed={k:'liens',R:liensInit()}; const R=ed.R, L=PB?PB.liste():[];
+  const tops=L.filter(p=>!p.parent&&p.size!=='mini'), autres=L.filter(p=>p.size!=='perm');
+  const aRows=actsTri(true).map(a=>`<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(a.emoji)} ${esc(a.nom)}<small>activité${a.ignorer?' · aperçu seulement':''}${a.archive?' · rangée':''}</small></span><select data-lien-a="${a.id}" aria-label="Projet de l'activité ${esc(a.nom)}">${optsProjets(R.acts[a.id],tops,'créer le projet ∞ « '+esc(a.nom)+' »')}</select></div>`).join('');
+  const mRows=Object.values(S.mands).sort(triMandat).map(m=>{ const a=act(m.activite); return `<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(m.nom)}<small>${esc(a.emoji)} ${esc(a.nom)} · ${ETATS[m.etat]}</small></span><select data-lien-m="${m.id}" aria-label="Projet du mandat ${esc(m.nom)}">${optsProjets(R.mands[m.id],autres,'créer le projet « '+esc(m.nom)+' »')}</select></div>`; }).join('');
+  montrer(sh('Relier aux projets')+`<p class="aide">Chaque activité devient un projet pro ∞ de l'Établi, et chaque mandat un projet rangé sous lui. Le projet garde le nom, l'état et les tâches ; la Mine garde le client, les heures, les devis, les factures et l'argent. Si les noms diffèrent, c'est celui du projet de l'Établi qui est gardé (tu peux le changer ensuite, dans l'une ou l'autre app). Vérifie ma proposition : rien ne change avant d'enregistrer, et une sauvegarde de la Mine est téléchargée juste avant.</p>
+  <div class="lbl">Activités</div>${aRows||'<p class="aide">Aucune activité.</p>'}
+  <div class="lbl">Mandats</div>${mRows||'<p class="aide">Aucun mandat.</p>'}
+  <button class="btn" data-act="liens-ok" style="margin-top:12px">Enregistrer les liens</button>`,true); }
+function sauverLiens(){ if(!ed||ed.k!=='liens'||!PB) return; const R=ed.R; exporter(); const all=()=>PB.liste(), get=id=>all().find(x=>x.id===id);
+  for(const a of actsTri(true)){ const v=R.acts[a.id]; if(v==='new'){ const dbl=all().some(x=>!x.parent&&norm(x.name)===norm(a.nom)); const p=Projets.nouveau({emoji:a.emoji,color:a.couleur,name:a.nom+(dbl?' (pro)':''),size:'perm',dur:null,nature:'pro'}); PB.ecrire(p); a.projet=p.id; }
+    else if(v){ a.projet=v; const p=get(v); if(p&&Projets.nature(p,get)!=='pro'){ p.nature='pro'; PB.ecrire(p); } } else delete a.projet; }
+  for(const m of Object.values(S.mands)){ const v=R.mands[m.id], a=S.acts[m.activite], par=a&&a.projet&&a.projet!==v?a.projet:null; let p=null;
+    if(v==='new'){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom}); }
+    else if(v){ p=get(v); } else { delete m.projet; continue; }
+    if(!p) continue;
+    if(par&&!Projets.enfants(p.id,all()).length&&p.id!==par) p.parent=par;
+    if(p.parent&&Projets.nature(get(p.parent)||{},get)==='pro') delete p.nature; else p.nature='pro';
+    const txt=new Set((p.tasks||[]).map(x=>norm(x.t))); p.tasks=p.tasks||[]; for(const t of m.taches||[]) if(!txt.has(norm(t.t))) p.tasks.push({t:t.t,d:!!t.fait});
+    if(m.etat==='fini') etatVersProjet(p,'fini'); else if(m.etat==='cours'&&p.later&&!p.closed) delete p.later;
+    PB.ecrire(p); m.projet=p.id; }
+  S.regl.projets={le:today()}; relierDepuisProjets(); save(); ed=null; fermer(); render(); toast('Mandats reliés aux projets de l’Établi'); }
 
 /* =============================== Synchro (même principe que les autres apps) =============================== */
 function canon(v){ if(Array.isArray(v)) return '['+v.map(x=>canon(x===undefined?null:x)).join(',')+']'; if(v&&typeof v==='object') return '{'+Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}'; return JSON.stringify(v===undefined?null:v); }
@@ -631,6 +702,7 @@ function aFaire(){
 }
 function vMandats(){
   let h=alerteTable()+chronoBanniere();
+  if(!relie()&&PB&&PB.liste().length) h+=`<section class="lien-p"><p><b>Nouveau : les mandats deviennent des projets de l'Établi.</b> Un mandat a alors un seul nom, un seul état et une seule liste de tâches, dans les deux apps.</p><button class="btn" data-act="liens">Relier aux projets</button></section>`;
   const af=aFaire(); if(af.length) h+=`<section class="afaire" aria-label="À faire"><div class="cap">À faire</div>${af.join('')}</section>`;
   const acts=actsTravail(), tous=Object.values(S.mands);
   if(ui.filtre&&!S.acts[ui.filtre]) ui.filtre='';
@@ -657,7 +729,7 @@ function filon(a,liste){
   return h+'</section>';
 }
 function carteMandat(m){
-  const c=chiffres(m), cl=S.conts[m.client], t=m.taches||[], tf=t.filter(x=>x.fait).length, run=S.chrono&&S.chrono.mandat===m.id, a=act(m.activite);
+  const c=chiffres(m), cl=S.conts[m.client], t=tachesDe(m), tf=t.filter(x=>x.fait).length, run=S.chrono&&S.chrono.mandat===m.id, a=act(m.activite);
   const fl=[]; if(c.minNF) fl.push(`<span class="flag or">${fH(c.minNF)} à facturer</span>`); if(c.attente>0) fl.push(`<span class="flag${c.retard?' rouge':''}">${fCHF(c.attente)} ${c.retard?'en retard':'à encaisser'}</span>`);
   return `<button class="carte${m.etat==='fini'?' fini':''}" style="--c:${a.couleur}" data-act="mandat" data-id="${m.id}"><span class="c1"><b class="cn">${esc(m.nom)}</b><span class="etat e-${m.etat}">${ETATS[m.etat]}</span></span><span class="c2">${cl?esc(cNom(cl)):'<i>sans client</i>'}${m.debut?' · '+fJour(m.debut):''}</span><span class="c3">${run?'<span class="rec">● chrono</span>':''}<span>⏱ ${fH(c.min)}</span>${c.facture?`<span>Facturé ${fCHF(c.facture)}</span>`:''}${t.length?`<span>☑ ${tf}/${t.length}</span>`:''}</span>${fl.length?`<span class="c4">${fl.join('')}</span>`:''}</button>`;
 }
@@ -782,8 +854,8 @@ function vMandat(id){
   if(c.minNF) h+=`<div class="reste"><span><b>${fH(c.minNF)}</b> pas encore facturées${c.valNF?' · '+fCHF(c.valNF):''}</span><button class="btn2" data-act="facturer" data-id="${m.id}">Facturer</button></div>`;
   if(run) h+=carteChrono();
   else h+=`<div class="actions"><button class="btn" data-act="chrono-go" data-id="${m.id}">▶ Chrono</button><button class="btn2" data-act="heure-new" data-id="${m.id}">+ Heures</button><button class="btn2" data-act="doc-new" data-type="devis" data-id="${m.id}">+ Devis</button><button class="btn2" data-act="doc-new" data-type="facture" data-id="${m.id}">+ Facture</button></div>`;
-  const T=m.taches||[], ouv=T.filter(t=>!t.fait), faites=T.filter(t=>t.fait);
-  h+=`<section class="bloc"><div class="bh"><h3>Tâches</h3><span class="meta">${T.length?faites.length+' / '+T.length+' faites':''}</span></div><form class="qa" id="t-form" autocomplete="off"><input id="t-new" class="in" placeholder="Ajouter une tâche…" enterkeyhint="done" autocapitalize="sentences" aria-label="Nouvelle tâche"><button class="btn sq" type="submit" aria-label="Ajouter la tâche">+</button></form>${ouv.map(rowTache).join('')}${faites.length?`<button class="plus-fini" data-act="t-faites" aria-expanded="${ui.tf}">${ui.tf?'▾':'▸'} Faites · ${faites.length}</button>${ui.tf?faites.map(rowTache).join(''):''}`:''}</section>`;
+  const T=tachesDe(m), ouv=T.filter(t=>!t.fait), faites=T.filter(t=>t.fait), pj=projDe(m);
+  h+=`<section class="bloc"><div class="bh"><h3>Tâches</h3><span class="meta">${T.length?faites.length+' / '+T.length+' faites':''}</span></div>${pj?`<p class="projet-l">Les mêmes que dans l'Établi, projet ${esc((pj.emoji?pj.emoji+' ':'')+pj.name)}.</p>`:''}<form class="qa" id="t-form" autocomplete="off"><input id="t-new" class="in" placeholder="Ajouter une tâche…" enterkeyhint="done" autocapitalize="sentences" aria-label="Nouvelle tâche"><button class="btn sq" type="submit" aria-label="Ajouter la tâche">+</button></form>${ouv.map(rowTache).join('')}${faites.length?`<button class="plus-fini" data-act="t-faites" aria-expanded="${ui.tf}">${ui.tf?'▾':'▸'} Faites · ${faites.length}</button>${ui.tf?faites.map(rowTache).join(''):''}`:''}</section>`;
   const hs=heuresDe(m.id), fh=reprises('heures'), vis=ui.toutH?hs:hs.slice(0,6);
   h+=`<section class="bloc"><div class="bh"><h3>Heures</h3><span class="meta">${fH(c.min)}</span></div>${hs.length?`<div>${vis.map(x=>rowHeure(x,true,fh)).join('')}</div>`:'<p class="aide">Aucune heure notée.</p>'}${hs.length>6?`<button class="plus-fini" data-act="tout-h">${ui.toutH?'▾ Moins':'▸ Toutes les heures ('+hs.length+')'}</button>`:''}</section>`;
   h+=`<section class="bloc"><div class="bh"><h3>Banque</h3><span class="meta">${c.tx.length?pl(c.tx.length,'opération'):''}</span></div>${c.tx.map(t=>rowTx(t,m.id)).join('')}${!bPret?`<p class="aide">${bErr?'La Banque n’est pas accessible pour l’instant.':'La Banque se charge…'}</p>`:c.tx.length?'':'<p class="aide">Les dépenses (matériel, déplacements…) et recettes de ce mandat, prises dans la Banque.</p>'}<button class="btn2" data-act="rattacher" data-id="${m.id}">Rattacher des opérations</button></section>`;
@@ -944,7 +1016,11 @@ function sauverMandat(){ lireMandat(); const d=ed.d; if(!d.nom.trim()){ toast('D
   let client=d.client; if(client==='__new'){ const n=d.nclient.trim(); if(n){ const cid=uid(); S.conts[cid]={id:cid,org:'',nom:n,rue:'',npa:'',lieu:'',pays:'CH',email:'',tel:'',note:'',cree:nowIso()}; client=cid; } else client=''; }
   const base=ed.id?S.mands[ed.id]:{id:uid(),taches:[],note:'',cree:nowIso()};
   const m=Object.assign(base,{activite:d.activite,nom:d.nom.trim(),client,etat:d.etat,debut:d.debut,fin:d.fin,tarif:d.tarif.trim()});
-  S.mands[m.id]=m; save(); const neuf=!ed.id;
+  S.mands[m.id]=m;
+  if(relie()&&PB){ let p=projDe(m); const a=S.acts[m.activite];
+    if(!p){ const par=a&&a.projet&&proj(a.projet); p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom}); if(par){ p.parent=par.id; if(Projets.nature(par,proj)!=='pro') p.nature='pro'; } else p.nature='pro'; m.projet=p.id; }
+    p.name=m.nom; etatVersProjet(p,m.etat); ecrireProjet(p); }
+  save(); const neuf=!ed.id;
   if(neuf){ allerPage('mandat',m.id); toast('Mandat ouvert'); } else { fermer(); render(); }
 }
 
@@ -987,13 +1063,13 @@ function vHeure(){ const d=ed.d, f=ed.id&&reprises('heures').get(ed.id), fd=f&&S
 function sauverHeure(){ lireHeure(); const d=ed.d, min=parseDuree(d.duree);
   if(!S.mands[d.mandat]){ toast('Choisis un mandat'); return; } if(!min||min<1){ toast('Durée ? Ex. 2:30'); focus1('e-duree'); return; } if(!d.date){ toast('Quel jour ?'); return; }
   const x=Object.assign(ed.id?S.heures[ed.id]:{id:uid(),src:'saisie',cree:nowIso()},{mandat:d.mandat,date:d.date,min,note:d.note.trim(),fact:d.fact});
-  S.heures[x.id]=x; save(); const neuf=!ed.id; fermer(); render(); if(neuf) toast(fH(min)+' notées sur '+S.mands[d.mandat].nom); }
+  S.heures[x.id]=x; save(); toucherProjet(d.mandat); const neuf=!ed.id; fermer(); render(); if(neuf) toast(fH(min)+' notées sur '+S.mands[d.mandat].nom); }
 
 /* --- activités --- */
 function vActs(){ ed={k:'acts'}; const L=actsTri(true);
   montrer(sh('Activités')+`<p class="aide">Une activité = un filon de ton travail pro, avec sa couleur. Relie-la à sa catégorie Pro de la Banque pour y retrouver ses dépenses et recettes.</p>`
   +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${a.couleur};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${a.ignorer?' · aperçu seulement':''}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
-  +`<button class="btn2" data-act="act-new" style="margin-top:8px">+ Nouvelle activité</button>`);
+  +`<button class="btn2" data-act="act-new" style="margin-top:8px">+ Nouvelle activité</button>`+(PB?`<button class="btn2" data-act="liens" style="margin-top:8px">${relie()?'Revoir les liens avec les projets de l’Établi':'Relier aux projets de l’Établi'}</button>`:''));
 }
 function ouvrirAct(id){ const a=id&&S.acts[id]; ed={k:'act',id:a?id:null,d:a?{...a}:{nom:'',emoji:'⛏️',couleur:MINERAIS[actsTri(true).length%MINERAIS.length][1],cat:'',tarif:'',nomDoc:'',sousTitre:'',iban:'',archive:false,ignorer:false}}; vAct(); if(!a) focus1('e-nom'); }
 function lireAct(){ const d=ed.d; d.nom=val('e-nom').trim(); d.emoji=val('e-emoji').trim()||'⛏️'; d.cat=val('e-cat'); d.tarif=val('e-tarif').trim(); d.nomDoc=val('e-nomdoc').trim(); d.sousTitre=val('e-sous').trim(); d.iban=ibanNet(val('e-iban')); d.archive=coche('e-arch'); d.ignorer=coche('e-ign'); }
@@ -1103,7 +1179,7 @@ function mandatCourant(){ const p=page(); return p&&p.k==='mandat'?S.mands[p.id]
 function docCourant(){ const p=page(); return p&&p.k==='doc'?S.docs[p.id]:null; }
 function chronoStart(mid){ if(!S.mands[mid]) return; if(S.chrono) chronoStop(true); S.chrono={id:'chrono',mandat:mid,debut:nowIso(),note:''}; save(); render(); toast('Chrono lancé : '+S.mands[mid].nom); }
 function chronoStop(silencieux){ const c=S.chrono; if(!c) return; const min=Math.round((Date.now()-new Date(c.debut))/60000); S.chrono=null;
-  if(min>=1&&S.mands[c.mandat]){ const id=uid(); S.heures[id]={id,mandat:c.mandat,date:jourDe(c.debut),min,note:(c.note||'').trim(),fact:true,src:'chrono',cree:nowIso()}; save(); render(); if(!silencieux) toast(fH(min)+' notées sur '+S.mands[c.mandat].nom,'Modifier',()=>ouvrirHeure(id)); }
+  if(min>=1&&S.mands[c.mandat]){ const id=uid(); S.heures[id]={id,mandat:c.mandat,date:jourDe(c.debut),min,note:(c.note||'').trim(),fact:true,src:'chrono',cree:nowIso()}; save(); toucherProjet(c.mandat); render(); if(!silencieux) toast(fH(min)+' notées sur '+S.mands[c.mandat].nom,'Modifier',()=>ouvrirHeure(id)); }
   else { save(); render(); if(!silencieux) toast('Moins d’une minute : rien de noté'); } }
 function bougerLigne(d,lid,k){ const L=d.lignes, i=L.findIndex(l=>l.id===lid), j=i+k; if(i<0||j<0||j>=L.length) return; [L[i],L[j]]=[L[j],L[i]]; save(); render(); }
 function majTotaux(d){ const t=document.getElementById('dt'); if(t) t.textContent=fmt(docTotal(d)); const ar=document.getElementById('d-arr'); if(ar){ ar.hidden=!(R().arrondi&&docBrut(d)!==docTotal(d)); const b=document.getElementById('d-brut'); if(b) b.textContent=fmt(docBrut(d)); }
@@ -1125,6 +1201,8 @@ document.addEventListener('click',e=>{
     case 'filtre': ui.filtre=id||''; lsSet('mine-filtre',ui.filtre); render(); break;
     case 'finis': ui.finis[id]=!ui.finis[id]; render(); break;
     case 'acts': vActs(); break;
+    case 'liens': ed=null; vLiens(); break;
+    case 'liens-ok': sauverLiens(); break;
     case 'act': ouvrirAct(id); break;
     case 'act-new': ouvrirAct(null); break;
     case 'act-haut': { const L=actsTri(true), i=L.findIndex(a=>a.id===id); if(i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; L.forEach((a,k)=>a.ordre=k); save(); vActs(); render(); } break; }
@@ -1138,15 +1216,15 @@ document.addEventListener('click',e=>{
     case 'e-act': lireMandat(); ed.d.activite=id; vMandatEd(); break;
     case 'e-etat': lireMandat(); ed.d.etat=b.dataset.e; vMandatEd(); break;
     case 'sauver-mandat': sauverMandat(); break;
-    case 'm-etat': { const m=mandatCourant(); if(m){ m.etat=b.dataset.e; if(m.etat==='fini'&&!m.fin) m.fin=today(); save(); render(); } break; }
+    case 'm-etat': { const m=mandatCourant(); if(m){ m.etat=b.dataset.e; if(m.etat==='fini'&&!m.fin) m.fin=today(); const p=projDe(m); if(p){ etatVersProjet(p,m.etat); ecrireProjet(p); } save(); render(); } break; }
     case 'm-sup': { const m=S.mands[id]; if(!m) break; const fe=docsDe(id).filter(emise);
       if(fe.length){ toast('Ce mandat a des factures émises : passe-le plutôt en « Terminé »'); break; }
       if(!ed||ed.supM!==id){ ed=ed||{}; ed.supM=id; render(); break; }
       const s=snap(); delete S.mands[id]; Object.values(S.heures).forEach(h=>{ if(h.mandat===id) delete S.heures[h.id]; }); Object.values(S.docs).forEach(d=>{ if(d.mandat===id) delete S.docs[d.id]; }); Object.values(S.liens).forEach(l=>{ if(l.mandat===id) delete S.liens[l.id]; });
       if(S.chrono&&S.chrono.mandat===id) S.chrono=null; ed=null; save(); retour(); toast('« '+m.nom+' » supprimé','Annuler',()=>restaurer(s)); break; }
     case 't-faites': ui.tf=!ui.tf; render(); break;
-    case 'tache': { const m=mandatCourant(); const t=m&&(m.taches||[]).find(x=>x.id===b.dataset.tid); if(t){ t.fait=!t.fait; t.le=t.fait?today():null; save(); render(); } break; }
-    case 't-sup': { const m=mandatCourant(); if(!m) break; const i=(m.taches||[]).findIndex(x=>x.id===b.dataset.tid); if(i<0) break; const [t]=m.taches.splice(i,1); save(); render(); toast('Tâche supprimée','Annuler',()=>{ m.taches.splice(i,0,t); save(); render(); }); break; }
+    case 'tache': { const m=mandatCourant(); if(!m) break; const tid=b.dataset.tid; if(projDe(m)){ const i=+tid.slice(1); majTaches(m,L=>{ if(L[i]) L[i].d=!L[i].d; }); render(); break; } const t=(m.taches||[]).find(x=>x.id===tid); if(t){ t.fait=!t.fait; t.le=t.fait?today():null; save(); render(); } break; }
+    case 't-sup': { const m=mandatCourant(); if(!m) break; if(projDe(m)){ const i=+b.dataset.tid.slice(1); let t=null; majTaches(m,L=>{ t=L.splice(i,1)[0]; }); render(); if(t) toast('Tâche supprimée','Annuler',()=>{ majTaches(m,L=>{ L.splice(i,0,t); }); render(); }); break; } const i=(m.taches||[]).findIndex(x=>x.id===b.dataset.tid); if(i<0) break; const [t]=m.taches.splice(i,1); save(); render(); toast('Tâche supprimée','Annuler',()=>{ m.taches.splice(i,0,t); save(); render(); }); break; }
     case 'm-tache': fermer(); setTimeout(()=>{ const i=document.getElementById('t-new'); if(i){ i.scrollIntoView({block:'center'}); i.focus(); } },120); break;
     case 'tout-h': ui.toutH=!ui.toutH; render(); break;
     case 'contact': ouvrirContact(id); break;
@@ -1215,7 +1293,7 @@ document.addEventListener('click',e=>{
       try{ localStorage.removeItem(CK()); localStorage.removeItem(BK()); }catch(err){} UID=null; sb.auth.signOut().finally(()=>location.reload()); break;
   }
 });
-document.addEventListener('submit',e=>{ if(e.target.id==='t-form'){ e.preventDefault(); const m=mandatCourant(), i=document.getElementById('t-new'), t=i&&i.value.trim(); if(!m||!t) return; m.taches=m.taches||[]; m.taches.push({id:uid(),t,fait:false}); i.value=''; save(); render(); focus1('t-new'); } });
+document.addEventListener('submit',e=>{ if(e.target.id==='t-form'){ e.preventDefault(); const m=mandatCourant(), i=document.getElementById('t-new'), t=i&&i.value.trim(); if(!m||!t) return; if(projDe(m)) majTaches(m,L=>{ L.push({t,d:false}); }); else { m.taches=m.taches||[]; m.taches.push({id:uid(),t,fait:false}); save(); } i.value=''; render(); focus1('t-new'); } });
 document.addEventListener('input',e=>{
   const t=e.target;
   if(t.id==='cq'){ ui.q=t.value; render(); return; }
@@ -1230,6 +1308,8 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{ const t=e.target;
   if(t.id==='df-client'){ const d=docCourant(); if(d){ d.client=t.value; save(); render(); } return; }
+  if(t.dataset&&t.dataset.lienA&&ed&&ed.k==='liens'){ ed.R.acts[t.dataset.lienA]=t.value; return; }
+  if(t.dataset&&t.dataset.lienM&&ed&&ed.k==='liens'){ ed.R.mands[t.dataset.lienM]=t.value; return; }
   if(t.id==='e-client'&&ed&&ed.k==='mandat'){ lireMandat(); vMandatEd(); if(ed.d.client==='__new') focus1('e-ncl'); return; }
   if(t.dataset.df==='date'){ const d=docCourant(); if(d) save(); }
 });
@@ -1250,9 +1330,12 @@ async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
-  bCharger(); S=fromRows(prev); booted=true; render(); setSync();
-  await Promise.all([bPull(!bLast),pull(!c)]);
-  push();
+  bCharger(); S=fromRows(prev);
+  PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(!booted) return; if(relierDepuisProjets()) save(); render(); });
+  booted=true; render(); setSync();
+  await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);
+  if(relierDepuisProjets()) save(); render();
+  push(); PB.pousser();
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{
   e.preventDefault(); const mail=document.getElementById('l-mail').value.trim(), pass=document.getElementById('l-pass').value;
@@ -1267,10 +1350,10 @@ async function start(){
   let session=null; try{ session=(await sb.auth.getSession()).data.session; }catch(e){}
   if(session&&session.user) await enter(session.user); else showLogin();
   sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT'&&UID){ UID=null; showLogin(); } });
-  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); bPull(); });
+  addEventListener('online',()=>{ setSync(); pull().then(()=>push()); bPull(); if(PB){ PB.tirer(); PB.pousser(); } });
   addEventListener('offline',()=>setSync());
-  document.addEventListener('visibilitychange',()=>{ if(!UID) return; if(document.visibilityState==='visible'){ pull().then(()=>push()); bPull(); } else { save(); push(); } });
-  setInterval(()=>{ if(UID&&document.visibilityState==='visible'){ pull(); bPull(); } },60000);
+  document.addEventListener('visibilitychange',()=>{ if(!UID) return; if(document.visibilityState==='visible'){ pull().then(()=>push()); bPull(); if(PB) PB.tirer(); } else { save(); push(); if(PB) PB.pousser(); } });
+  setInterval(()=>{ if(UID&&document.visibilityState==='visible'){ pull(); bPull(); if(PB) PB.tirer(); } },60000);
 }
 render(); start();
 </script>
