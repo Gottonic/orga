@@ -27,8 +27,8 @@ Tout fonctionne hors ligne ; les changements partent dès que le réseau revient
 | `marche/` | l'app Marché (liste de courses), avec sa police (Caveat) et ses icônes |
 | `mine/` | l'app Mine (travail pro), avec sa police (Big Shoulders Stencil), ses icônes et `lib/qrcode.js` (générateur de codes QR, licence MIT) |
 | `commun/` | ce que les apps partagent : `supabase.js`, `projets.js` (règles de la fiche projet commune), `ampoule.js` (bugs et idées), `cadre.css` et `cadre.js` (en-tête), polices |
-| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`), `mine.sql` (Mine : table `mine_rows`), `biblio.sql` (Bibliothèque : table `biblio_rows`), `fichiers.sql` (dossiers de projet) |
-| `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille |
+| `supabase/` | `schema.sql` (Établi), `cash.sql` (Banque : la table s'appelle `cash_rows`), `carnet.sql` (Forge : la table garde l'ancien nom `carnet`), `orga.sql` (socle commun : ampoule 💡, captures, place utilisée — remplace `idees.sql`), pour toutes les apps), `marche.sql` (Marché : table `marche_rows`), `mine.sql` (Mine : table `mine_rows`), `biblio.sql` (Bibliothèque : table `biblio_rows`), `rappel.sql` (rappel du dimanche), `fichiers.sql` (dossiers de projet) |
+| `.github/workflows/` | signal deux fois par semaine pour que Supabase ne se mette pas en veille ; rappel du dimanche de la Bibliothèque (`scripts/rappel-dimanche.mjs`) |
 
 À chaque mise à jour du code, changer `VERSION` en haut de `sw.js`.
 
@@ -179,7 +179,8 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 
 - **Étape 4 du plan (14.11.2026)** : `bibliotheque/`, table `biblio_rows` (`supabase/biblio.sql`, à lancer une fois). Une ligne de notes = `n:<id>`
   `{id, p, o, t, d, x, a, c}` : parent (ligne ou racine `vide`, `p:<projet>`, `d:<domaine>`, `j:<AAAA-Wss>`), ordre, texte, note dessous, fait, archivée le, repliée.
-  `w:<semaine>` = note de la semaine sur 10 ; `s:reprise` = reprise faite.
+  `w:<semaine>` = bilan de la semaine `{calme, energie, prod}` sur 10 (avant le 15.11 : une seule note `n`) ; `s:reprise` = reprise faite ;
+  `s:push-<appareil>` = abonnement aux notifications d'un appareil, avec ses clés VAPID.
 - **Vide-tête** : une seule boîte d'entrée. On y écrit depuis la Bibliothèque, le champ de l'accueil de Locus (`bibliotheque/?note=…`) et le vrac de l'Établi
   (file d'attente `etabli-vide-<utilisateur>`, envoyée dans `biblio_rows`). « → » range une idée dans un projet, un domaine ou le journal de la semaine.
 - **Projets** : l'arbre commun (domaines › projets de l'Établi, archives en filtre) ; chaque page a ses notes. Modèle facultatif Plan / À faire / Ressources / Journal.
@@ -187,7 +188,14 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 - **Éditeur** : Entrée (nouvelle ligne, coupe au curseur), Tab / Maj+Tab (emboîter), Maj+Entrée (note sous la ligne), Ctrl+Entrée (fait),
   Alt+↑/↓ (déplacer), Ctrl+↑/↓ (plier), Retour arrière sur une ligne vide (la supprime) ; clic sur la puce = plier, double-clic = zoomer ; barre d'outils en bas
   sur le téléphone (⇤ ⇥ ↑ ↓ ✓ 📝 🗄 ×). Les liens d'une ligne s'affichent à droite, cliquables. Coller plusieurs lignes = une ligne chacune.
-- **Journal** : une page par semaine, note sur 10. **Chercher** : dans toutes les lignes et notes (et les noms de projets).
+- **Journal** : une page par semaine, bilan sur trois axes (calme, énergie, productivité, chacun sur 10). **Chercher** : dans toutes les lignes et notes (et les noms de projets).
+- **Rappel du dimanche** (Journal › « Activer sur cet appareil ») : le dimanche vers 9 h, `.github/workflows/rappel-dimanche.yml` lit les abonnements par
+  `locus_rappel(cle)` (`supabase/rappel.sql`, secret `LOCUS_CLE` = clé du lien du lundi) et envoie une notification, sauf si le bilan est rempli.
+  La toucher ouvre `bibliotheque/?bilan=1` (trois rangées de 1 à 10 et un mot facultatif). « Run workflow » envoie un essai même si le bilan est rempli.
+  `sw.js` gère `push` et `notificationclick`. Sans services Google, le téléphone a besoin de microG (Cloud Messaging) pour recevoir.
+- **Pas de + flottant** (15.11) : le vide-tête a son champ, l'accueil aussi.
+- **L'adresse ne change pas** en changeant d'onglet ou de page (15.11) : sur Vivaldi Android, chaque changement d'adresse faisait perdre la couleur
+  de la barre d'état. Le `#…` (`#vide`, `#journal`, `#p:<id>`, `#d:<id>`) n'est lu qu'à l'ouverture.
 - **Reprise** (bandeau du vide-tête) : copie les feuilles de notes de l'Établi (projets et domaines, gardées aussi dans l'Établi) et déménage son « En vrac ».
 
 ## Le pont du lundi (étape 5, 14.11.2026)

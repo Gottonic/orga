@@ -1,6 +1,6 @@
 /* ORGA : un seul service worker pour l'accueil et toutes les apps (l'Établi, la Banque, la Forge, le Marché, la Mine…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-15-16';
+const VERSION = 'orga-2026-11-15-17';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -54,4 +54,23 @@ self.addEventListener('fetch', e => {
     if (r.ok) { const cp = r.clone(); caches.open(VERSION).then(c => c.put(cle(req.url), cp)); }
     return r;
   })));
+});
+
+/* Notifications (15.11, Bibliothèque) : le rappel du dimanche matin envoyé par .github/workflows/rappel-dimanche.yml.
+   Message attendu : { title, body, url (depuis la racine, p. ex. « bibliotheque/?bilan=1 »), tag }. */
+self.addEventListener('push', e => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Locus', {
+    body: d.body || '', icon: d.icon || 'bibliotheque/icons/icon-192.png', tag: d.tag || 'locus', renotify: true,
+    data: { url: d.url || './' }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(L => {
+    const c = L.find(x => 'navigate' in x);
+    if (c) return c.navigate(url).then(w => (w || c).focus()).catch(() => self.clients.openWindow(url));
+    return self.clients.openWindow(url);
+  }));
 });

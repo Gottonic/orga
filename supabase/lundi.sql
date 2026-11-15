@@ -27,7 +27,7 @@ revoke all on function public.locus_cle_nouvelle() from public, anon;
 grant execute on function public.locus_cle_nouvelle() to authenticated;
 
 -- Ce que la séance du lundi lit : projets ouverts et domaines (Établi), heures et factures ouvertes (Mine ; heures GDT par semaine, lues par la Mine),
--- vide-tête et journal des deux dernières semaines (Bibliothèque). Lecture seule.
+-- vide-tête et journal des deux dernières semaines (Bibliothèque ; « bilan » = calme, énergie, productivité sur 10, depuis le 15.11). Lecture seule.
 create or replace function public.locus_lundi(cle text) returns jsonb
 language plpgsql stable security definer set search_path = public, extensions as $$
 declare
@@ -58,9 +58,11 @@ begin
                from public.biblio_rows where user_id = u and key like 'n:%' and not deleted and data->>'p' = 'vide' and data->>'a' is null),
     'journal', jsonb_build_object(
        sem_av, jsonb_build_object('note', (select data->'n' from public.biblio_rows where user_id = u and key = 'w:' || sem_av and not deleted),
+                 'bilan', (select jsonb_build_object('calme', data->'calme', 'energie', data->'energie', 'productivite', data->'prod') from public.biblio_rows where user_id = u and key = 'w:' || sem_av and not deleted),
                  'lignes', (select coalesce(jsonb_agg(data->>'t' order by (data->>'o')::numeric), '[]'::jsonb) from public.biblio_rows
                             where user_id = u and key like 'n:%' and not deleted and data->>'p' = 'j:' || sem_av and data->>'a' is null)),
        sem, jsonb_build_object('note', (select data->'n' from public.biblio_rows where user_id = u and key = 'w:' || sem and not deleted),
+                 'bilan', (select jsonb_build_object('calme', data->'calme', 'energie', data->'energie', 'productivite', data->'prod') from public.biblio_rows where user_id = u and key = 'w:' || sem and not deleted),
                  'lignes', (select coalesce(jsonb_agg(data->>'t' order by (data->>'o')::numeric), '[]'::jsonb) from public.biblio_rows
                             where user_id = u and key like 'n:%' and not deleted and data->>'p' = 'j:' || sem and data->>'a' is null)))
   );

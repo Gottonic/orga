@@ -1,0 +1,22 @@
+name: Rappel du dimanche (bilan de la semaine)
+# Le dimanche à 9 h (heure de Zurich), une notification sur chaque appareil abonné dans la Bibliothèque › Journal,
+# sauf si les trois axes de la semaine sont déjà remplis. Deux horaires : GitHub compte en UTC, le script garde le bon.
+# Il faut le secret LOCUS_CLE (Settings › Secrets and variables › Actions) : la clé du lien du lundi (Établi › Récap).
+on:
+  schedule:
+    - cron: '7 7 * * 0'   # 9h07 à Zurich en été
+    - cron: '7 8 * * 0'   # 9h07 à Zurich en hiver
+  workflow_dispatch:       # « Run workflow » pour tester : envoie même si le bilan est rempli
+jobs:
+  rappel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save --no-audit --no-fund --prefix .github/scripts web-push@3
+      - run: node .github/scripts/rappel-dimanche.mjs
+        env:
+          LOCUS_CLE: ${{ secrets.LOCUS_CLE }}
+          HORAIRE: ${{ github.event.schedule }}

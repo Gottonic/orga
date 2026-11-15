@@ -83,13 +83,19 @@ a.chip{color:inherit;text-decoration:none}
 .dix{display:flex;gap:4px;flex-wrap:wrap}
 .dix button{width:36px;height:36px;border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);font:600 .9rem var(--mono)}
 .dix button[aria-pressed="true"]{background:var(--bord);border-color:var(--bord);color:#FFF6EC}
+.axes{display:flex;flex-direction:column;gap:12px}
+.axe .cap{margin:0 0 6px;display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.axe .cap b{font-weight:600;color:var(--ink)}
+.axe .dix{display:grid;grid-template-columns:repeat(10,minmax(0,40px));gap:4px}
+.axe .dix button{width:auto;height:38px;padding:0}
+.rappel{display:flex;flex-direction:column;gap:8px}
 .res{list-style:none;margin:0;padding:0}
 .res button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 4px}
 .res small{display:block;color:var(--muted);font-size:.8rem}
 .res mark{background:var(--hl)}
 /* fenêtre et messages */
 .scrim{position:fixed;inset:0;background:rgba(40,10,16,.55);z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:var(--r) var(--r) 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.sheet{background:var(--bg);color:var(--ink);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:var(--r) var(--r) 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
 @media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:var(--r)}}
 .sh{display:flex;align-items:center;gap:10px}
 .sh h3{flex:1;margin:0;font:700 1.1rem var(--serif);letter-spacing:-.02em}
@@ -97,9 +103,6 @@ a.chip{color:inherit;text-decoration:none}
 .pick button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 12px}
 .pick .g{font:400 .7rem var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em;padding:8px 12px 2px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:10px 18px;border-radius:var(--pill);z-index:50;max-width:90vw;font-size:.92rem}
-.fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border:0;border-radius:18px;background:var(--accent);color:var(--on-acc);display:grid;place-items:center;box-shadow:0 0 0 3px var(--page);z-index:20}
-.fab .ic{width:24px;height:24px;vertical-align:0}
-body.edit .fab{display:none}
 .login{position:fixed;inset:0;background:var(--page);z-index:60;display:grid;place-items:center;padding:20px}
 .lbox{width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px;background:var(--surface);color:var(--ink);border-radius:var(--r);padding:22px}
 .lbox .logo{width:64px;height:64px;border-radius:16px}
@@ -114,7 +117,6 @@ body.edit .fab{display:none}
 <header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="projets">Projets</button><button class="ot-t" data-tab="journal">Journal</button><button class="ot-t" data-tab="chercher">Chercher</button></nav></header>
 <main id="view" aria-live="polite"></main>
-<button class="fab" id="fab" data-act="capter" aria-label="Noter dans le vide-tête"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg></button>
 <div class="outils" id="outils" hidden><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -129,7 +131,10 @@ body.edit .fab{display:none}
    Données : table `biblio_rows`, une ligne par ligne de notes :
      n:<id>  { id, p (parent : id d'une ligne, ou racine 'vide' | 'p:<projet>' | 'd:<domaine>' | 'j:<AAAA-Wss>'), o (ordre),
                t (texte), d (note sous la ligne), x (fait), a (archivée le), c (repliée), cree }
-     w:<AAAA-Wss>  { n (note de la semaine sur 10) }      s:reprise  { le, notes, vrac }
+     w:<AAAA-Wss>  { calme, energie, prod (bilan de la semaine, chacun sur 10 ; 15.11) ; n (ancienne note unique sur 10) }
+     s:reprise  { le, notes, vrac }
+     s:push-<appareil>  { sub (abonnement aux notifications), pub, priv (clés VAPID de cet appareil), appareil, le }
+       → lu par la fonction locus_rappel(cle) (supabase/rappel.sql) pour la notification du dimanche matin (.github/workflows/rappel-dimanche.yml)
    ===================================================================================================== */
 const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC', TABLE='biblio_rows';
 let sb=null, UID=null, booted=false, PB=null;
@@ -148,7 +153,7 @@ function wkAdd(k,n){ const m=wkMon(k); m.setDate(m.getDate()+7*n); return wkKey(
 const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 function wkLabel(k){ const m=wkMon(k), e=new Date(m); e.setDate(e.getDate()+6); return 'S'+Number(k.split('-W')[1])+' · '+m.getDate()+' '+MOIS[m.getMonth()]+' – '+e.getDate()+' '+MOIS[e.getMonth()]+' '+e.getFullYear(); }
 const plain=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
-function toast(m){ $toast.textContent=m; $toast.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>{ $toast.hidden=true; },2600); }
+function toast(m,ms){ $toast.textContent=m; $toast.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>{ $toast.hidden=true; },ms||Math.max(2600,m.length*55)); }
 
 /* =============================== Données et synchro =============================== */
 function canon(v){ if(Array.isArray(v)) return '['+v.map(x=>canon(x===undefined?null:x)).join(',')+']'; if(v&&typeof v==='object') return '{'+Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}'; return JSON.stringify(v===undefined?null:v); }
@@ -246,10 +251,52 @@ function vJournal(){
   const k=ui.wk||(ui.wk=wkKey(new Date())), w=W[k]||{};
   return `<h2 class="titre">Journal</h2>
   <div class="semaine"><button data-act="wk" data-d="-1" aria-label="Semaine précédente"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4l-6 6 6 6"/></svg></button><b>${esc(wkLabel(k))}</b><button data-act="wk" data-d="1" aria-label="Semaine suivante"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 4l6 6-6 6"/></svg></button>${k!==wkKey(new Date())?'<button class="lien" data-act="wk" data-d="0">cette semaine</button>':''}</div>
-  <div><p class="cap" style="margin-bottom:6px">Ma semaine sur 10</p><div class="dix">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button data-act="dix" data-n="${i}" aria-pressed="${w.n===i}">${i}</button>`).join('')}</div></div>
+  <div class="axes">${axesHtml(k)}${w.n&&!AXES.some(x=>w[x[0]])?`<p class="note">Ancienne note : ${w.n}/10</p>`:''}</div>
   <p class="cap">Objectifs, notes, ce que je retiens</p>
   ${editeur('j:'+k)}
-  <div class="row"><button class="btn2" data-act="collerClaude">Coller le bloc de la séance du lundi</button></div>`; }
+  <div class="row"><button class="btn2" data-act="collerClaude">Coller le bloc de la séance du lundi</button></div>
+  ${rappelHtml()}`; }
+/* Bilan de la semaine (15.11) : trois axes sur 10, à la place de la note unique. */
+const AXES=[['calme','Calme','1 stressé · 10 serein'],['energie','Énergie','1 à plat · 10 en pleine forme'],['prod','Productivité','1 rien avancé · 10 très efficace']];
+function axesHtml(k){ const w=W[k]||{};
+  return AXES.map(([a,nom,aide])=>`<div class="axe"><p class="cap"><b>${nom}</b> <span>${aide}</span></p><div class="dix">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button data-act="axe" data-w="${k}" data-a="${a}" data-n="${i}" aria-pressed="${w[a]===i}" aria-label="${nom} ${i} sur 10">${i}</button>`).join('')}</div></div>`).join(''); }
+/* l'écran ouvert par la notification du dimanche (bibliotheque/?bilan=1) */
+function bilanSheet(){ const k=wkKey(new Date());
+  $sheet.innerHTML=`<div class="sh"><h3>Ta semaine</h3><button class="btn2" data-act="fermer">Fermer</button></div><p class="note">${esc(wkLabel(k))}</p>
+  <div class="axes" id="bilan-axes">${axesHtml(k)}</div>
+  <input class="in" id="i-mot" placeholder="Un mot sur la semaine (facultatif)" autocomplete="off">
+  <button class="btn" data-act="bilanFini" data-w="${k}">C’est noté</button>`; $scrim.hidden=false; }
+
+/* ---------- la notification du dimanche matin (Web Push) ----------
+   Chaque appareil crée ses propres clés VAPID et s'abonne ; l'abonnement va dans biblio_rows (s:push-<appareil>).
+   Le dimanche vers 9 h, une action GitHub lit les abonnements par locus_rappel(cle) et envoie la notification,
+   sauf si les trois axes de la semaine sont déjà remplis. Toucher la notification ouvre bibliotheque/?bilan=1. */
+const DEV=(()=>{ try{ let d=localStorage.getItem('biblio-appareil'); if(!d){ d=uid(); localStorage.setItem('biblio-appareil',d); } return d; }catch(e){ return 'x'; } })();
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&window.isSecureContext;
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const ub64=s=>{ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return Uint8Array.from(atob(s),c=>c.charCodeAt(0)); };
+function nomAppareil(){ const u=navigator.userAgent; return /Android/.test(u)?'Android':/Linux/.test(u)?'Ordinateur (Linux)':/Mac/.test(u)?'Mac':/Windows/.test(u)?'Windows':'Appareil'; }
+function rappelHtml(){
+  const moi=REG['push-'+DEV], autres=Object.keys(REG).filter(k=>k.startsWith('push-')&&k!=='push-'+DEV&&REG[k]).length;
+  let etat, btns;
+  if(!pushOk()){ etat='Ce navigateur ne sait pas recevoir de notifications.'; btns=''; }
+  else if(moi&&Notification.permission==='granted'){ etat='Activé sur cet appareil : chaque dimanche vers 9 h, sauf si le bilan est déjà rempli.'; btns='<button class="btn2" data-act="rappelTest">Montrer un exemple</button><button class="lien" data-act="rappelOff">Désactiver</button>'; }
+  else { etat='Une notification le dimanche matin pour noter ta semaine en trois touches.'; btns='<button class="btn" data-act="rappelOn">Activer sur cet appareil</button>'; }
+  return `<div class="carte rappel"><p class="cap" style="margin:0">Rappel du dimanche</p><p class="note">${etat}${autres?` (${autres} autre${autres>1?'s':''} appareil${autres>1?'s':''} abonné${autres>1?'s':''})`:''}</p>${btns?`<div class="row">${btns}</div>`:''}</div>`; }
+async function rappelOn(){
+  if(!pushOk()) throw new Error('notifications non prises en charge ici');
+  const perm=await Notification.requestPermission(); if(perm!=='granted') throw new Error('notifications refusées (autorise-les pour Locus, et pour Vivaldi dans les réglages Android)');
+  const reg=await navigator.serviceWorker.ready;
+  const kp=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+  const pub=b64u(await crypto.subtle.exportKey('raw',kp.publicKey)), priv=(await crypto.subtle.exportKey('jwk',kp.privateKey)).d;
+  const ancien=await reg.pushManager.getSubscription(); if(ancien){ try{ await ancien.unsubscribe(); }catch(e){} }
+  let sub; try{ sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:ub64(pub)}); }
+  catch(e){ throw new Error('le service de notifications du téléphone ne répond pas ('+((e&&e.message)||e)+'). Sans services Google, il faut microG avec « Cloud Messaging » activé'); }
+  const v={sub:sub.toJSON(),pub,priv,appareil:nomAppareil(),le:today()}; REG['push-'+DEV]=v; ecrire('s:push-'+DEV,v); }
+async function rappelOff(){ try{ const reg=await navigator.serviceWorker.ready, s=await reg.pushManager.getSubscription(); if(s) await s.unsubscribe(); }catch(e){}
+  delete REG['push-'+DEV]; ecrire('s:push-'+DEV,null); }
+async function rappelTest(){ const reg=await navigator.serviceWorker.ready;
+  await reg.showNotification('Ta semaine',{body:'Calme, énergie, productivité : trois touches.',icon:'icons/icon-192.png',tag:'bilan',data:{url:'bibliotheque/?bilan=1'}}); }
 /* Étape 5 : le bloc rendu par Claude en fin de séance du lundi. Format :
      LOCUS
      OBJECTIF PRINCIPAL : …   OBJECTIF SECONDAIRE : …   CONSEIL : …   (une ligne chacun)
@@ -281,7 +328,9 @@ function render(){
   $view.innerHTML=ui.tab==='vide'?vVide():ui.tab==='projets'?vProjets():ui.tab==='journal'?vJournal():vChercher();
   apresRendu(); if(ui.tab==='chercher'&&!ui.focus){ const i=document.getElementById('i-q'); if(i&&document.activeElement!==i&&!ui.q) try{ i.focus(); }catch(e){} } }
 function rootActuel(){ return ui.tab==='vide'?'vide':ui.tab==='journal'?'j:'+(ui.wk||wkKey(new Date())):ui.tab==='projets'?ui.page:null; }
-function aller(tab,page,zoom){ ui.tab=tab; ui.page=page||null; ui.zoom=zoom||null; try{ history.replaceState(null,'','#'+(page||tab)); }catch(e){} window.scrollTo(0,0); render(); }
+/* L'adresse ne change pas en changeant d'onglet ou de page : Vivaldi sur Android relit alors la couleur de la barre d'état,
+   ignore la balise theme-color et prend une couleur au hasard dans la page. Le #… de l'adresse n'est lu qu'à l'ouverture. */
+function aller(tab,page,zoom){ ui.tab=tab; ui.page=page||null; ui.zoom=zoom||null; window.scrollTo(0,0); render(); }
 
 /* =============================== Édition =============================== */
 function refaire(focusId,caret,note){ ui.focus=focusId?{id:focusId,caret,note}:null; render(); }
@@ -365,12 +414,17 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return; const a=el.dataset.act, id=el.dataset.id;
   if(a==='bul'){ const n=N[id]; if(!n) return; if(enfants(id).length&&e.detail<2){ clearTimeout(window.__bul); window.__bul=setTimeout(()=>{ n.c=!n.c; if(!n.c) delete n.c; ecrireN(n); refaire(null); },230); } else { clearTimeout(window.__bul); ui.zoom=id; refaire(null); window.scrollTo(0,0); } return; }
   if(a==='zoom'){ ui.zoom=id||null; render(); return; }
-  if(a==='page'){ ui.page=el.dataset.r||null; ui.zoom=null; try{ history.replaceState(null,'','#'+(ui.page||'projets')); }catch(err){} window.scrollTo(0,0); render(); return; }
+  if(a==='page'){ ui.page=el.dataset.r||null; ui.zoom=null; window.scrollTo(0,0); render(); return; }
   if(a==='archP'){ ui.archP=!ui.archP; render(); return; }
   if(a==='arch'){ ui.arch=!ui.arch; render(); return; }
   if(a==='modele'){ const r=rootActuel(); ['Plan','À faire','Ressources','Journal'].forEach((t,i)=>nouvelle(r,ordreFin(r),t)); render(); return; }
   if(a==='wk'){ const d=Number(el.dataset.d); ui.wk=d===0?wkKey(new Date()):wkAdd(ui.wk||wkKey(new Date()),d); ui.zoom=null; render(); return; }
-  if(a==='dix'){ const k=ui.wk||wkKey(new Date()), n=Number(el.dataset.n), w=Object.assign({},W[k]||{}); w.n=w.n===n?undefined:n; W[k]=w; ecrire('w:'+k,w); render(); return; }
+  if(a==='axe'){ const k=el.dataset.w, ax=el.dataset.a, n=Number(el.dataset.n), w=Object.assign({},W[k]||{}); w[ax]=w[ax]===n?undefined:n; W[k]=w; ecrire('w:'+k,w);
+    el.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(w[ax]===Number(b.dataset.n)))); return; }
+  if(a==='bilanFini'){ const k=el.dataset.w, i=document.getElementById('i-mot'), v=i?i.value.trim():''; if(v) nouvelle('j:'+k,ordreFin('j:'+k),v);
+    const w=W[k]||{}, n=AXES.filter(x=>w[x[0]]).length; fermer(); ui.tab='journal'; ui.page=null; ui.wk=k; render(); toast(n===3?'Semaine notée':'Noté ('+n+' axe'+(n>1?'s':'')+' sur 3)'); return; }
+  if(a==='rappelOn'||a==='rappelOff'||a==='rappelTest'){ el.disabled=true; ({rappelOn,rappelOff,rappelTest})[a]().then(()=>{ if(a==='rappelOn') toast('Rappel activé sur cet appareil'); if(a==='rappelOff') toast('Rappel désactivé'); render(); })
+    .catch(err=>{ el.disabled=false; toast('Impossible : '+((err&&err.message)||err)); }); return; }
   if(a==='classer'){ classerSheet(id); return; }
   if(a==='classerVers'){ const n=N[id], r=el.dataset.r; if(!n) return; n.p=r; n.o=ordreFin(r); ecrireN(n); fermer(); render(); toast('Rangé dans '+nomRacine(r)); return; }
   if(a==='fermer'){ fermer(); return; }
@@ -401,7 +455,8 @@ async function enter(user){
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
   charger(); lireHash(); booted=true;
-  try{ const q=new URLSearchParams(location.search), v=(q.get('note')||'').trim(); if(v){ nouvelle('vide',ordreDebut('vide'),v); ui.tab='vide'; ui.page=null; history.replaceState(null,'',location.pathname+'#vide'); setTimeout(()=>toast('Noté dans le vide-tête'),300); } }catch(e){}
+  try{ const q=new URLSearchParams(location.search), v=(q.get('note')||'').trim(); if(v){ nouvelle('vide',ordreDebut('vide'),v); ui.tab='vide'; ui.page=null; history.replaceState(null,'',location.pathname+'#vide'); setTimeout(()=>toast('Noté dans le vide-tête'),300); }
+    if(q.get('bilan')){ ui.tab='journal'; ui.page=null; ui.wk=wkKey(new Date()); setTimeout(bilanSheet,60); } }catch(e){}
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(booted&&!editing()) render(); });
   render(); setSync();
   await Promise.all([pull(!c),PB.tirer()]); if(!editing()) render(); push();
