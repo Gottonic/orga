@@ -203,6 +203,8 @@ tbody tr.qrow{cursor:default}
 #notesbib .nb-bar span{font:400 .7rem/1 var(--mono,monospace);text-transform:uppercase;letter-spacing:.12em;opacity:.8}
 #notesbib .xbtn{color:inherit;border-color:currentColor;background:transparent}
 #notesbib iframe{flex:1;width:100%;border:0;display:block}
+.nbframe{display:block;width:100%;height:120px;border:0;background:transparent;color-scheme:light}
+.nblbl{display:flex;align-items:baseline;gap:10px}.nblbl .linkbtn{margin-left:auto;font-size:.8rem}
 body.nb-open{overflow:hidden}
 .nlist{list-style:none;margin:0;padding:0;border:1px solid var(--bd);background:var(--cell)}
 .nl{display:flex;align-items:center;padding-left:calc(var(--lv) * 22px);border-top:1px solid var(--grid)}
@@ -1345,8 +1347,8 @@ function histPush(kind){ try{ history.pushState({etabli:kind},''); }catch(e){} }
 function histDrop(n){ if(n>0){ skipPop++; try{ history.go(-n); }catch(e){ skipPop--; } } }
 function goView(v){ if(MINI){ if(v==='mini'&&histView){ histView=false; histDrop(1); } else if(v!=='mini'&&ui.view==='mini'&&!histView){ histView=true; histPush('view'); } } ui.view=v; if(v==='semaine') ui.wk=CUR; window.scrollTo(0,0); render(); }
 addEventListener('popstate',()=>{ if(skipPop>0){ skipPop--; return; } if(histNotes){ histNotes=false; notesBibFermer(true); return; } if(histSheet){ histSheet=false; closeSheet(true); return; } if(histView){ histView=false; ui.view='mini'; window.scrollTo(0,0); render(); } });
-function openSheet(html,key){ if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; }
-function closeSheet(fromPop){ ui.edit=false; if(fromPop!==true&&histSheet){ histSheet=false; histDrop(1); } $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; render();}
+function openSheet(html,key){ notesGarder(); if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; notesPlacer(); }
+function closeSheet(fromPop){ ui.edit=false; if(nbFrame){ nbFrame.remove(); nbFrame=null; } if(fromPop!==true&&histSheet){ histSheet=false; histDrop(1); } $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; render();}
 $scrim.addEventListener('click',e=>{if(e.target===$scrim) closeSheet();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$scrim.hidden) closeSheet();});
 
@@ -1588,23 +1590,29 @@ function planSummary(p){ const m=iso(wkMon(CUR)), up=placedOf(p).filter(x=>x.o>=
   return `<span class="pplan">${pic('journal')} ${up.slice(0,3).map(x=>x.c+(x.w===CUR?' (cette sem.)':'')).join(' · ')}${up.length>3?' · +'+(up.length-3):''}</span>`; }
 /* Notes d'un projet (15.11) : elles vivent dans la Bibliothèque (biblio_rows, racine p:<id>) mais ne s'affichent qu'ici :
    aperçu des premières lignes dans la fiche, puis une fenêtre plein écran avec l'éditeur de la Bibliothèque (bibliotheque/?seul=p:<id>). */
-const notesMem={}; let histNotes=false;
-function notesPrevHtml(id){ const L=notesMem[id];
-  if(L===undefined){ notesMem[id]=null; notesCharger(id); }
-  if(!L||!L.length) return `<b>${L&&!L.length?'+ Notes':'Ouvrir les notes'}</b>`;
-  return L.slice(0,3).map(t=>`<span>• ${esc(t)}</span>`).join('')+`<b>Ouvrir les notes${L.length>3?' · '+L.length+' lignes':''}</b>`; }
-async function notesCharger(id){
-  try{ if(!sb||!UID||!navigator.onLine) throw 0;
-    const {data,error}=await sb.from('biblio_rows').select('data').like('key','n:%').eq('deleted',false).eq('data->>p','p:'+id); if(error) throw error;
-    notesMem[id]=(data||[]).map(r=>r.data).filter(n=>n&&!n.a&&n.t).sort((a,b)=>a.o-b.o).map(n=>n.t);
-  }catch(e){ notesMem[id]=null; }
-  const el=document.getElementById('notesprev-'+id); if(el) el.innerHTML=notesPrevHtml(id); }
+/* Notes d'un projet, modifiables dans la fiche (15.11, demande de Nicolas). Elles vivent dans la Bibliothèque (biblio_rows, racine p:<id>) :
+   la fiche contient la Bibliothèque en mode « seul » (bibliotheque/?seul=p:<id>), qui envoie sa hauteur (message biblioH).
+   La fiche est redessinée souvent (openSheet) : on met le cadre de côté avant et on le replace après, avec moveBefore quand le navigateur
+   le permet (le cadre ne se recharge pas, le curseur reste) ; sinon il se recharge, sans rien perdre. « Plein écran » ouvre la même chose en grand. */
+let histNotes=false, nbFrame=null, nbHolder=null;
+function notesGarder(){ if(!nbFrame||!$sheet.contains(nbFrame)) return;
+  if(!nbHolder){ nbHolder=document.createElement('div'); nbHolder.hidden=true; document.body.appendChild(nbHolder); }
+  if(nbHolder.moveBefore) try{ nbHolder.moveBefore(nbFrame,null); return; }catch(e){}
+  nbFrame=null; }
+function notesPlacer(){ const slot=$sheet.querySelector('.nbslot'); if(!slot) return; const id=slot.dataset.nb;
+  if(nbFrame&&nbFrame.dataset.id===id&&nbFrame.isConnected){ if(slot.moveBefore) try{ slot.moveBefore(nbFrame,null); return; }catch(e){} }
+  if(nbFrame) nbFrame.remove();
+  nbFrame=document.createElement('iframe'); nbFrame.className='nbframe'; nbFrame.title='Notes du projet'; nbFrame.dataset.id=id;
+  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; slot.appendChild(nbFrame); }
+addEventListener('message',e=>{ const d=e.data; if(!d||typeof d.biblioH!=='number'||e.origin!==location.origin) return;
+  [nbFrame,document.querySelector('#notesbib iframe')].forEach(f=>{ if(f&&f.classList.contains('nbframe')&&f.contentWindow===e.source) f.style.height=Math.max(60,Math.ceil(d.biblioH))+'px'; }); });
 function notesBib(id){ const p=P(id); let o=document.getElementById('notesbib');
   if(!o){ o=document.createElement('div'); o.id='notesbib'; document.body.appendChild(o); }
   o.innerHTML=`<div class="nb-bar"><button class="xbtn" data-act="notesBibOk">‹ Fiche</button><b>${esc(p?(p.emoji?p.emoji+' ':'')+p.name:'Projet')}</b><span>Notes</span></div><iframe src="../bibliotheque/?seul=p:${id}" title="Notes du projet"></iframe>`;
-  o.dataset.id=id; o.hidden=false; document.body.classList.add('nb-open'); histNotes=true; histPush('notes'); }
+  o.dataset.id=id; o.hidden=false; document.body.classList.add('nb-open'); histNotes=true; histPush('notes');
+  if(nbFrame){ nbFrame.remove(); nbFrame=null; } /* une seule Bibliothèque ouverte à la fois sur ces notes */ }
 function notesBibFermer(fromPop){ const o=document.getElementById('notesbib'); if(!o||o.hidden) return; if(fromPop!==true&&histNotes){ histNotes=false; histDrop(1); } const id=o.dataset.id; o.hidden=true; o.innerHTML=''; document.body.classList.remove('nb-open');
-  delete notesMem[id]; const el=document.getElementById('notesprev-'+id); if(el) el.innerHTML=notesPrevHtml(id); }
+  notesPlacer(); }
 /* ouvrir une fiche depuis une autre app : ../etabli/#p:<id> (la Bibliothèque, par exemple) */
 let hashFait=false;
 function ouvrirHash(){ if(hashFait) return; const h=decodeURIComponent((location.hash||'').slice(1)); if(!h.startsWith('p:')){ hashFait=true; return; }
@@ -1620,7 +1628,7 @@ function detail(id,msg){
   ${msg&&msg!=='del'?msg:''}
   ${p.later&&!closed?`<div class="laterbox"><b>${pic('idee')} Idée</b><span>Pas encore décidé : ni au planning, ni dans les projets en cours.</span><button class="btn" data-act="laterOut">C'est décidé : le passer en cours</button></div>`:''}
   ${tasksBlock(p,closed,'tâche')}
-  <div class="field"><span class="lbl">Notes</span><button class="notesprev" data-act="notesBib" data-id="${p.id}" id="notesprev-${p.id}">${notesPrevHtml(p.id)}</button></div>
+  <div class="field"><span class="lbl nblbl">Notes<button class="linkbtn" data-act="notesBib" data-id="${p.id}">Plein écran</button></span><div class="nbslot" data-nb="${p.id}"></div></div>
   ${p.why?`<p class="pwhy">${esc(p.why)}</p>`:''}
   <div id="apercu">${apercuHtml(apercuGet(p.id))}</div>
   ${p.dossier?dossierBlock(p,closed):''}

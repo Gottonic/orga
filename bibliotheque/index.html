@@ -70,6 +70,10 @@ a.chip{color:inherit;text-decoration:none}
 html.seul .oh{display:none}
 html.seul,html.seul body{background:var(--surface)}
 html.seul main{margin:0 auto;border-radius:0;min-height:100vh;padding-top:10px}
+html.dans,html.dans body{background:transparent!important;height:auto;min-height:0}
+html.dans main{min-height:0;margin:0;padding:0 0 2px;background:transparent;max-width:none}
+html.dans .outils{position:static;border-radius:12px;margin-top:6px;padding:6px}
+html.dans .login{position:static;background:transparent;padding:0}
 .fil{display:flex;gap:4px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
 .fil button{border:0;background:none;padding:0;color:var(--bord);font-weight:600}
 /* l'éditeur en arbre */
@@ -160,6 +164,9 @@ const CK=()=>'biblio-cache-'+UID;
 /* SEUL : la racine montrée seule (bibliotheque/?seul=p:<id>, dans la fenêtre de notes de l'Établi) */
 const SEUL=(()=>{ try{ const v=new URLSearchParams(location.search).get('seul'); return v&&/^[pd]:/.test(v)?v:null; }catch(e){ return null; } })();
 if(SEUL) document.documentElement.classList.add('seul');
+/* DANS : montrée dans la fiche du projet de l'Établi (&dans=fiche) : fond transparent, hauteur au contenu, envoyée à l'Établi */
+const DANS=!!SEUL&&window.parent!==window&&/[?&]dans=/.test(location.search);
+if(DANS) document.documentElement.classList.add('dans');
 const ui={tab:'vide', page:null, zoom:null, arch:false, wk:null, q:'', focus:null, caret:null, archP:false};
 const $view=document.getElementById('view'), $scrim=document.getElementById('scrim'), $sheet=document.getElementById('sheet'), $toast=document.getElementById('toast'), $outils=document.getElementById('outils');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -280,7 +287,7 @@ function vPage(){
   ${editeur(r)}`; }
 /* mode « seul » : les notes d'un projet, montrées dans l'Établi */
 function vSeul(){ const vide=!enfants(SEUL).length;
-  return `<div class="chips"><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button>${vide?'<button class="chip" data-act="modele">+ Plan / À faire / Ressources / Journal</button>':''}</div>${editeur(SEUL)}`; }
+  return `<div class="chips"${DANS&&!vide?' hidden':''}>${DANS?'':`<button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button>`}${vide?'<button class="chip" data-act="modele">+ Plan / À faire / Ressources / Journal</button>':''}</div>${editeur(SEUL)}`; }
 function vJournal(){
   const k=ui.wk||(ui.wk=wkKey(new Date())), w=W[k]||{};
   return `<h2 class="titre">Journal</h2>
@@ -514,6 +521,8 @@ async function start(){
   setInterval(()=>{ if(UID&&document.visibilityState==='visible'&&!editing()) pull(); },60000);
 }
 start();
+if(DANS){ const hauteur=()=>{ try{ parent.postMessage({biblioH:document.body.scrollHeight,seul:SEUL},location.origin); }catch(e){} };
+  try{ new ResizeObserver(hauteur).observe(document.body); }catch(e){} addEventListener('load',hauteur); setTimeout(hauteur,300); }
 </script>
 <script src="../commun/ampoule.js" data-app="bibliotheque"></script>
 <script src="../commun/cadre.js"></script>

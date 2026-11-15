@@ -185,8 +185,9 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   (file d'attente `etabli-vide-<utilisateur>`, envoyée dans `biblio_rows`). « → » range une idée dans un projet, un domaine ou le journal de la semaine.
 - **Notes** (15.11, ex-onglet Projets) : une page libre façon Workflowy (racine `arbre`), avec en tête la ligne « Domaines » (repliable) : chaque domaine
   de l'Établi y a sa page, avec ses notes à lui et la liste de ses projets. **Les notes d'un projet** (racine `p:<id>`, toujours dans `biblio_rows`) **ne
-  s'affichent que dans l'Établi** : aperçu dans la fiche, puis une fenêtre plein écran qui charge `bibliotheque/?seul=p:<id>` (mode « seul » : juste
-  l'éditeur, sans en-tête). Un projet touché dans la Bibliothèque ouvre `../etabli/#p:<id>` (l'Établi ouvre alors sa fiche). « Notes dans la
+  s'affichent que dans l'Établi** : modifiables directement dans la fiche, qui contient `bibliotheque/?seul=p:<id>&dans=fiche` (mode « seul » :
+  juste l'éditeur, fond transparent, hauteur envoyée à l'Établi par le message `biblioH` ; le cadre est gardé d'un rendu à l'autre avec `moveBefore`).
+  « Plein écran » ouvre `?seul=p:<id>` en grand. Un projet touché dans la Bibliothèque ouvre `../etabli/#p:<id>` (l'Établi ouvre alors sa fiche). « Notes dans la
   Bibliothèque » d'un domaine ouvre `bibliotheque/#d:<id>`. « → » range toujours une idée dans un projet, un domaine, Notes ou le journal.
 - **Éditeur** : Entrée (nouvelle ligne, coupe au curseur), Tab / Maj+Tab (emboîter), Maj+Entrée (note sous la ligne), Ctrl+Entrée (fait),
   Alt+↑/↓ (déplacer), Ctrl+↑/↓ (plier), Retour arrière sur une ligne vide (la supprime) ; clic sur la puce = plier, double-clic = zoomer ; barre d'outils en bas
