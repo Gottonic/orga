@@ -126,7 +126,21 @@ main .chip{background:var(--surface);border-color:transparent}
 .rang{display:flex;align-items:center;background:var(--surface-2);border-radius:var(--r-m);padding-left:16px}
 .rang .num{font:600 .75rem/1 var(--f-mono);color:var(--ink-3);width:24px}
 .rang b{flex:1;font-weight:600}
-.rang .ord{flex-direction:row;padding:4px}
+.rang{flex-direction:column;align-items:stretch;padding:0;user-select:none;-webkit-user-select:none;transition:box-shadow .15s}
+.rang-l{display:flex;align-items:center;min-height:54px;padding-left:4px}
+.rang .num{padding-left:2px}
+.poignee{flex:none;width:46px;height:54px;display:grid;place-items:center;color:var(--ink-3);touch-action:none;cursor:grab}
+.poignee .ic{width:18px;height:18px}
+.rang.drag{position:relative;z-index:5;box-shadow:0 10px 24px color-mix(in srgb,var(--ink) 22%,transparent),inset 0 0 0 2px var(--accent);cursor:grabbing}
+.rang .plus{flex:none;width:46px;height:46px;margin-right:4px;border:0;border-radius:50%;background:transparent;color:var(--ink-2);display:grid;place-items:center}
+.rang .plus .ic{width:17px;height:17px;transition:transform .15s}
+.rang.ouvert .plus .ic{transform:rotate(45deg)}
+.rang.ouvert{background:var(--surface)}
+.ray-ed{padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px;user-select:text;-webkit-user-select:text}
+.ray-ed .in{background:var(--surface-2)}
+.ray-art{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:8px}
+.ray-art span{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.ray-art select{flex:none;width:48%;height:40px;font-size:.86rem;border-radius:var(--pill);padding-left:12px;padding-right:30px;background-position:calc(100% - 18px) 17px,calc(100% - 12px) 17px}
 
 /* À mijoter : les envies d'achat qui reposent avant d'aller sur la liste */
 html[data-lieu] .oh .ot .ot-t .ot-n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);font:600 .72rem/1 var(--f-mono)}
@@ -727,12 +741,47 @@ function ouvrirMag(id){ const m=id?S.mags[id]:null;
   ed={k:'mag',id:id||null,conf:false,d:m?{nom:m.nom,types:typesDeMag(m),note:m.note||''}:{nom:'',types:[],note:''}}; vMag(); ouvrir(id?null:'e-nom'); }
 function lireMag(){ if(!ed||ed.k!=='mag') return; if(document.getElementById('e-nom')){ ed.d.nom=val('e-nom'); ed.d.note=val('e-note'); } }
 function vRayonsMag(){
-  const m=S.mags[ed.id], ord=ordreRayons(m.id), autres=mags().filter(x=>x.id!==m.id&&(x.rayons||[]).length);
-  $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin. La liste « Je suis chez ${esc(m.nom)} » le suit.</p>
-  <div class="chips">${autres.map(x=>`<button type="button" class="chip" data-act="ray-copier" data-id="${x.id}">Comme ${esc(x.nom)}</button>`).join('')}<button type="button" class="chip" data-act="ray-copier" data-id="">Ordre par défaut</button></div>
-  <div class="liste-v">${ord.map((id,i)=>`<div class="rang"><span class="num">${i+1}</span><b>${esc(catNom(id))}</b><div class="ord"><button data-act="ray-haut" data-id="${id}" aria-label="Monter ${esc(catNom(id))}" ${i===0?'disabled':''}>${ic('monter')}</button><button data-act="ray-bas" data-id="${id}" aria-label="Descendre ${esc(catNom(id))}" ${i===ord.length-1?'disabled':''}>${ic('descendre')}</button></div></div>`).join('')}</div>
+  const m=S.mags[ed.id], ord=ordreRayons(m.id), autres=mags().filter(x=>x.id!==m.id&&(x.rayons||[]).length), A=arts();
+  const ligne=(id,i)=>{ const ouvert=ed.ouvert===id, c=S.cats[id];
+    let edit='';
+    if(ouvert&&c){ const dans=A.filter(a=>catDe(a)===id).sort(triNom), hors=A.filter(a=>catDe(a)!==id).sort(triNom);
+      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Nom du rayon · pour tous les magasins</div><input class="in" id="r-nom" data-cat="${id}" value="${esc(c.nom)}" autocomplete="off">
+      <div class="lab">Articles dans ce rayon${dans.length?' · '+dans.length:''}</div>
+      ${dans.length?dans.map(a=>`<div class="ray-art"><span>${esc(a.nom)}</span><select class="in r-move" data-art="${a.id}" aria-label="Rayon de ${esc(a.nom)}">${catsTri().map(x=>`<option value="${x.id}"${x.id===id?' selected':''}>${esc(x.nom)}</option>`).join('')}</select></div>`).join(''):'<p class="aide" style="color:var(--ink-3)">Aucun article pour l’instant.</p>'}
+      <div class="row-in"><input class="in" id="r-add" list="r-noms" autocomplete="off" placeholder="Ranger un article ici…"><button type="button" class="btn2" data-act="ray-ajout" data-id="${id}">Ajouter</button></div>
+      <datalist id="r-noms">${hors.map(a=>`<option value="${esc(a.nom)}"></option>`).join('')}</datalist>
+      <p class="aide" style="color:var(--ink-3)">Nom et articles valent pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}. Un nom nouveau sera rangé ici quand tu l’ajouteras.</p></div>`; }
+    return `<div class="rang${ouvert?' ouvert':''}" data-id="${id}"><div class="rang-l"><span class="poignee" aria-label="Glisser pour déplacer ${esc(catNom(id))}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg></span><span class="num">${i+1}</span><b>${esc(catNom(id))}</b><button type="button" class="plus" data-act="ray-plus" data-id="${id}" aria-expanded="${ouvert}" aria-label="${ouvert?'Fermer':'Modifier'} ${esc(catNom(id))}">${ic('plus')}</button></div>${edit}</div>`; };
+  $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin : glisse un rayon par ses trois traits. Le + ouvre son nom et ses articles.</p>
+  ${autres.length?`<div class="chips">${autres.map(x=>`<button type="button" class="chip" data-act="ray-copier" data-id="${x.id}">Même ordre que ${esc(x.nom)}</button>`).join('')}</div>`:''}
+  <div class="liste-v" id="ray-l">${ord.map(ligne).join('')}</div>
   <button class="btn2" data-act="ray-retour">${ic('retour')} Retour au magasin</button>`;
 }
+/* glisser-déposer des rayons (doigt ou souris), par la poignée */
+let drag=null;
+function rafraichirRayons(){ const st=$sheet.scrollTop; vMag(); $sheet.scrollTop=st; }
+$sheet.addEventListener('pointerdown',e=>{
+  const h=e.target.closest('.poignee'); if(!h||!ed||ed.sub!=='rayons') return;
+  const row=h.closest('.rang'), r=row.getBoundingClientRect();
+  drag={row,grab:e.clientY-r.top,ty:0,y:e.clientY,id:e.pointerId,timer:null};
+  row.classList.add('drag'); try{ h.setPointerCapture(e.pointerId); }catch(x){} e.preventDefault();
+  const pas=()=>{ if(!drag) return; const sr=$sheet.getBoundingClientRect(); let d=0;
+    if(drag.y<sr.top+70) d=-10; else if(drag.y>sr.bottom-70) d=10;
+    if(d){ $sheet.scrollTop+=d; placer(); } drag.timer=requestAnimationFrame(pas); };
+  drag.timer=requestAnimationFrame(pas);
+});
+function placer(){
+  const row=drag.row, list=row.parentNode, y=drag.y;
+  let p=row.previousElementSibling; while(p&&y<p.getBoundingClientRect().top+p.offsetHeight/2){ list.insertBefore(row,p); p=row.previousElementSibling; }
+  let n=row.nextElementSibling; while(n&&y>n.getBoundingClientRect().top+n.offsetHeight/2){ list.insertBefore(n,row); n=row.nextElementSibling; }
+  const nat=row.getBoundingClientRect().top-drag.ty; drag.ty=y-drag.grab-nat; row.style.transform=`translateY(${drag.ty}px)`;
+}
+$sheet.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return; drag.y=e.clientY; placer(); e.preventDefault(); });
+function lacher(e){ if(!drag||(e&&e.pointerId!==drag.id)) return; cancelAnimationFrame(drag.timer);
+  const list=drag.row.parentNode, m=S.mags[ed.id]; drag.row.style.transform=''; drag.row.classList.remove('drag'); drag=null;
+  if(m&&list){ const ord=[...list.children].map(x=>x.dataset.id).filter(Boolean); if(ord.join()!==ordreRayons(m.id).join()){ m.rayons=ord; save(); render(); } }
+  rafraichirRayons(); }
+$sheet.addEventListener('pointerup',lacher); $sheet.addEventListener('pointercancel',lacher);
 function vMag(){
   if(ed.sub==='rayons') return vRayonsMag();
   const d=ed.d, nouv=!ed.id, n=nouv?0:arts().filter(a=>(a.ou||[]).includes('m:'+ed.id)).length;
@@ -802,7 +851,6 @@ function sauverCat(){ lireCat(); const d=ed.d, nom=d.nom.trim(); if(!nom){ docum
     const dv=S.cats.divers; if(dv&&dv.ordre<=c.ordre) dv.ordre=c.ordre+1; }
   c.nom=nom; c.mots=motsDe(d.mots); save(); fermer(); render(); }
 function bougerCat(id,dir){ const cs=catsTri(), i=cs.findIndex(c=>c.id===id), j=i+dir; if(i<0||j<0||j>=cs.length) return; [cs[i],cs[j]]=[cs[j],cs[i]]; cs.forEach((c,k)=>{ c.ordre=k; }); save(); render(); }
-function bougerRayonMag(id,dir){ const m=S.mags[ed.id], ord=ordreRayons(m.id), i=ord.indexOf(id), j=i+dir; if(i<0||j<0||j>=ord.length) return; [ord[i],ord[j]]=[ord[j],ord[i]]; m.rayons=ord; save(); render(); vMag(); }
 
 /* --- réglages --- */
 function vReglages(){
@@ -894,11 +942,13 @@ document.addEventListener('click',e=>{
     case 'sup-envie': { if(ed.conf!=='sup'){ ed.conf='sup'; vEnvie(); break; } const e=S.envies[ed.id], s=JSON.stringify(e); delete S.envies[ed.id]; save(); fermer(); render();
       toast('« '+e.nom+' » supprimée','Annuler',()=>{ const x=JSON.parse(s); S.envies[x.id]=x; save(); render(); }); break; }
     case 'mag': ouvrirMag(id); break;
-    case 'ray-ouvrir': lireMag(); ed.sub='rayons'; vMag(); $sheet.scrollTop=0; break;
+    case 'ray-ouvrir': lireMag(); ed.sub='rayons'; ed.ouvert=null; vMag(); $sheet.scrollTop=0; break;
     case 'ray-retour': ed.sub=null; vMag(); $sheet.scrollTop=0; break;
-    case 'ray-haut': bougerRayonMag(id,-1); break;
-    case 'ray-bas': bougerRayonMag(id,1); break;
-    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(id&&S.mags[id]) m.rayons=ordreRayons(id); else delete m.rayons; save(); render(); vMag(); toast(id?'Même ordre que '+S.mags[id].nom:'Ordre par défaut'); break; }
+    case 'ray-plus': ed.ouvert=ed.ouvert===id?null:id; rafraichirRayons(); break;
+    case 'ray-ajout': { const i=document.getElementById('r-add'), nom=(i&&i.value||'').trim().replace(/\s+/g,' '); if(!nom||!S.cats[id]){ if(i) i.focus(); break; }
+      const a=arts().find(x=>norm(x.nom)===norm(nom));
+      apprendre(nom,id); if(a) a.cat=id;
+      save(); render(); rafraichirRayons(); toast(a?'« '+a.nom+' » rangé dans '+catNom(id):'« '+nom+' » ira dans '+catNom(id)+' quand tu l’ajouteras'); break; }    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(!id||!S.mags[id]) break; m.rayons=ordreRayons(id); save(); render(); rafraichirRayons(); toast('Même ordre que '+S.mags[id].nom); break; }
     case 'cat': ouvrirCat(id); break;
     case 'cat-new': ouvrirCat(null); break;
     case 'cat-haut': bougerCat(id,-1); break;
@@ -940,6 +990,10 @@ document.addEventListener('input',e=>{
   else if(t.id==='e-ry'&&ed&&ed.k==='art'){ const n=parseInt(t.value,10); ed.d.rythme=n>0&&n<=730?n:0; $sheet.querySelectorAll('[data-act="rythme"]').forEach(c=>c.classList.toggle('on',t.value===''&&+c.dataset.n===ed.d.rythme)); }
 });
 document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
+  if(ed.sub==='rayons'){
+    if(t.id==='r-nom'){ const c=S.cats[t.dataset.cat], v=t.value.trim(); if(c&&v&&v!==c.nom){ c.nom=v; save(); render(); rafraichirRayons(); } return; }
+    if(t.classList.contains('r-move')){ const a=S.arts[t.dataset.art]; if(a&&S.cats[t.value]){ apprendre(a.nom,t.value); a.cat=t.value; save(); render(); rafraichirRayons(); toast('« '+a.nom+' » → '+catNom(t.value)); } return; }
+  }
   if(ed.k==='art'&&t.id==='e-nom'){ const o=$sheet.querySelector('#e-cat option[value=""]'); if(o) o.textContent='Automatique · '+catNom(deviner(t.value)); }
   if(ed.k==='envie'&&ed.id&&!ed.sub&&['e-nom','e-pq','e-bud'].includes(t.id)){ const en=S.envies[ed.id]; if(!en) return;
     if(t.id==='e-nom'){ const v=t.value.trim().replace(/\s+/g,' '); if(v){ en.nom=v; const h=document.getElementById('sh-titre'); if(h) h.textContent=v; } }
@@ -953,6 +1007,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&ed){
     e.preventDefault();
     if(ed.k==='envie'&&ed.id&&!ed.sub){ e.target.blur(); return; }
+    if(e.target.id==='r-add'){ const b=$sheet.querySelector('[data-act="ray-ajout"]'); if(b) b.click(); return; }
+    if(e.target.id==='r-nom'){ e.target.blur(); return; }
     if(e.target.id==='e-ntype'){ $sheet.querySelector('[data-act="mtype-add"]').click(); return; }
     const s=$sheet.querySelector('.btn[data-act^="sauver"]'); if(s) s.click(); }
 });
