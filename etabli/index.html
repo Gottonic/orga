@@ -623,6 +623,11 @@ details.more .field{margin-top:10px}
 .quad{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
 .quad i{width:12px;height:12px;display:inline-block;border:1px solid var(--bd)}
 .swatches{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cbase{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:340px}
+.cbase button{aspect-ratio:1;padding:0;border:2px solid transparent!important;border-radius:10px!important;background:var(--sw)!important}
+.cbase button[aria-pressed="true"]{border-color:var(--ink)!important;box-shadow:inset 0 0 0 3px var(--cell)}
+.freecol{border:1.5px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;background:var(--cell)}
+.freecol span{border-radius:999px}
 .cgrid{display:grid;grid-template-columns:repeat(11,22px);gap:2px;justify-content:start}
 .cgrid button{width:22px;height:22px;padding:0;border:0!important;border-radius:0!important;background:var(--sw)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 .cgrid button[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px;position:relative;z-index:1}
@@ -830,13 +835,12 @@ function hslHex(h,s,l){ s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1
 function shade(base,dur,perm,key){ const [h,s,l]=hexHsl(base); let n=0; for(const c of String(key||'')) n=(n*31+c.charCodeAt(0))%997; const H=(h+((n%9)-4)*1.6+360)%360;
   if(perm) return hslHex(H,Math.min(100,s*1.05),Math.max(10,l*.78));
   const t=Math.max(0,Math.min(1,Math.log2(Math.max(dur||1,.5)/.5)/Math.log2(80))); return hslHex(H,s*(.55+.45*t),91+(l-91)*t); }
-/* Palette : une ligne par teinte (12 + gris), de gauche à droite du plus clair au plus sombre, la couleur la plus vive au milieu */
-const PAL_H=[0,22,38,52,78,125,162,188,210,232,265,312], PAL_N=11;
-const PAL=(()=>{ const rows=PAL_H.map(h=>Array.from({length:PAL_N},(_,i)=>{ const t=i/(PAL_N-1); return hslHex(h,45+50*(1-Math.abs(t-.5)*2),94-80*t); }));
-  rows.push(Array.from({length:PAL_N},(_,i)=>hslHex(40,8,96-86*(i/(PAL_N-1))))); return rows; })();
-const DOM_COLORS=PAL.flat();
-function colorGrid(cur,act){ const c=String(cur||'').toUpperCase(), inPal=DOM_COLORS.includes(c);
-  return `<div class="cgrid" role="group" aria-label="Couleurs">${DOM_COLORS.map(x=>`<button type="button" style="--sw:${x}" data-act="${act}" data-c="${x}" aria-pressed="${c===x}" aria-label="Couleur ${x}"></button>`).join('')}</div>
+/* Palette : 12 couleurs qui vont avec le bois de l'Établi, bien distinctes ; « Autre couleur… » pour le reste */
+const BASE_COLORS=['#D9583B','#E8892E','#E3B53A','#8C9A3B','#3E7D4F','#7FB08A','#2F7F86','#5B9BD5','#2E4A7D','#7B4A86','#D9799A','#6E4B32'];
+const PAL=[BASE_COLORS];
+const DOM_COLORS=BASE_COLORS;
+function colorGrid(cur,act){ const c=String(cur||'').toUpperCase(), inPal=BASE_COLORS.includes(c);
+  return `<div class="cbase" role="group" aria-label="Couleurs">${BASE_COLORS.map(x=>`<button type="button" style="--sw:${x}" data-act="${act}" data-c="${x}" aria-pressed="${c===x}" aria-label="Couleur ${x}"></button>`).join('')}</div>
   <label class="freecol"><input type="color" data-freecol="${act}" value="${/^#[0-9A-F]{6}$/.test(c)?c.toLowerCase():'#5e6b7a'}"><span style="--sw:${c||'#5E6B7A'}"${inPal||!c?'':' class="on"'}></span>Autre couleur…</label>`; }
 const domPalette=colorGrid;
 const domColorOf=pid=>{ if(!pid||pid===Projets.AUTRES) return null; const d=(S.domains||[]).find(x=>x.id===pid); return d&&d.color?d.color:null; };
@@ -1449,7 +1453,7 @@ function domainSheet(id,msg){
 }
 /* ret : {draft:true} (retour au nouveau projet), {pid} (retour à la fiche du projet) ou rien (ouvre le domaine) */
 function newDomSheet(ret){
-  if(ret!==undefined||!ui.ndom) ui.ndom={name:'',emoji:'📁',color:PAL[Math.floor(Math.random()*12)][5],ret:ret||null};
+  if(ret!==undefined||!ui.ndom) ui.ndom={name:'',emoji:'📁',color:BASE_COLORS[Math.floor(Math.random()*BASE_COLORS.length)],ret:ret||null};
   const n=ui.ndom; sheetId=null;
   openSheet(`<div class="shead" style="--pc:${n.color};--pt:${ink(n.color)}"><button class="emo" data-act="emojiPick" data-for="newdom" aria-label="Choisir un émoji">${n.emoji}</button><h2>Nouveau domaine<small>il range des projets, ni perso ni pro</small></h2><button class="xbtn" data-act="ndomBack">Retour</button></div><div class="sbody">
   <div class="field"><label for="f-ndom">Nom</label><input class="input" id="f-ndom" autocomplete="off" autocorrect="off" placeholder="Ex. Parkour, Maison, Cuisine" value="${esc(n.name)}"></div>
