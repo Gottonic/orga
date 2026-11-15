@@ -791,6 +791,29 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .chip .ic{width:14px;height:14px}
 .nomat-note .ic,.tipb-h .ic{width:16px;height:16px;margin-right:2px}
 .pe-chk .ic{width:15px;height:15px}
+/* séance en plus : retirer de la semaine (deux touchers) */
+.srow{position:relative}
+.srow-x{all:unset;cursor:pointer;position:absolute;top:10px;right:10px;height:30px;min-width:30px;padding:0 8px;box-sizing:border-box;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--on-ph);background:rgba(26,23,20,.1)}
+.srow-x .ic{width:15px;height:15px}
+.srow-x.on{background:var(--on-ph);color:var(--sc)}
+.srow-x:focus-visible{outline:2px solid var(--on-ph)}
+/* séance guidée : le fond prend la couleur de la séance (sa flamme), texte foncé */
+.ov.run.col{background:var(--sc);color:var(--on-ph)}
+.ov.run.col .run-sn,.ov.run.col .run-ct,.ov.run.col .st-blk,.ov.run.col .st-load,.ov.run.col .st-cue,.ov.run.col .fq-l,.ov.run.col .fq-h,.ov.run.col .fq-hh,.ov.run.col .nx-rx,.ov.run.col .bv-t,.ov.run.col .muted,.ov.run.col .eyebrow{color:rgba(26,23,20,.72)}
+.ov.run.col .st-set,.ov.run.col .hold-t,.ov.run.col .holdrun.done .hold-t,.ov.run.col .bv-ic .ic{color:var(--on-ph)}
+.ov.run.col .run-pb,.ov.run.col .rc-bar{background:rgba(26,23,20,.16)}
+.ov.run.col .run-pb i,.ov.run.col .rc-bar i{background:var(--on-ph)}
+.ov.run.col .x{background:rgba(26,23,20,.12);color:var(--on-ph)}
+.ov.run.col .btn{background:rgba(26,23,20,.1);border-color:rgba(26,23,20,.32);color:var(--on-ph)}
+.ov.run.col .btn.primary{background:var(--on-ph);border-color:var(--on-ph);color:var(--sc)}
+.ov.run.col .btn.ghost{background:none;border-color:transparent}
+.ov.run.col .fq-c button,.ov.run.col .st-kg button{background:rgba(26,23,20,.1);border-color:rgba(26,23,20,.3);color:var(--on-ph)}
+.ov.run.col .fq-c button.on{background:var(--on-ph);border-color:var(--on-ph);color:var(--sc)}
+.ov.run.col .fq-c button.pl{border-style:dashed;border-color:rgba(26,23,20,.5)}
+.ov.run.col .nx,.ov.run.col .st-chain,.ov.run.col .st-aim,.ov.run.col .tag{background:rgba(26,23,20,.12);border-color:transparent;color:var(--on-ph)}
+.ov.run.col .sh-tips summary{color:var(--on-ph)}
+.ov.run.col .sh-tips p{color:rgba(26,23,20,.75)}
+.ov.run.col textarea,.ov.run.col input[type=text],.ov.run.col input[type=number]{background:rgba(26,23,20,.88);border-color:transparent;color:var(--ink)}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -945,9 +968,9 @@ function unmoveSession(wk, sid){
 function planOf(id){
   const own = S.data.weeks[id]; const w = weekById(id); const b = w ? blockOf(w) : null;
   const addTests = ss => { ss = ss || []; if (!isTestWeek(id) || ss.some(x => x.id === "s-tests")) return ss; const t = testsSession(); return t ? [t, ...ss] : ss; };
-  const over = (own && own.over) || {}; const nm = nomatWeek(id); const moved = ((S.data.logs[id] || {}).moved) || {};
+  const over = (own && own.over) || {}; const nm = nomatWeek(id); const moved = ((S.data.logs[id] || {}).moved) || {}; const off = ((S.data.logs[id] || {}).off) || {};
   const keep = ss => [...(addTests(ss) || []).filter(x => !x.onlyIf).map(x => over[x.id] ? { ...over[x.id], id: x.id, over: true } : x), ...seriesFor(id)]
-    .filter(x => !moved[x.id] && (nm ? !needsGym(x) : !nomatOnly(x))).map(x => nm && nomatOnly(x) && x.optional ? { ...x, optional: false } : x);
+    .filter(x => !moved[x.id] && !off[x.id] && (nm ? !needsGym(x) : !nomatOnly(x))).map(x => nm && nomatOnly(x) && x.optional ? { ...x, optional: false } : x);
   if (own && own.sessions && own.sessions.length) return { ...own, sessions: resolveWeek(keep(own.sessions), w, b, false), fromTemplate:false, block:b };
   const tpl = b && b.template && b.template.sessions ? b.template.sessions : null;
   return { ...(own || {}), sessions: resolveWeek(keep(tpl), w, b, true), fromTemplate: !!tpl, block:b };
@@ -1347,9 +1370,9 @@ function vWeek(){
   const now = currentWeekId(); const pr = weekProgress(w.id); const b = plan.block; const dl = isDeload(w);
   const pos = b ? blockWeeks(b).indexOf(w.id) + 1 : 0;
   const isDone = s => !!(log.sessions && log.sessions[s.id] && log.sessions[s.id].done);
-  const sorted = plan.sessions.map((s,i) => ({s,i})).sort((x,y) => (isDone(x.s) - isDone(y.s)) || (!!x.s.optional - !!y.s.optional) || (x.i - y.i)).map(x => x.s);
-  const hint = nervHint(w.id);
-  const sessions = sorted.length ? sorted.map(s => sessRow(w.id, s, log, hint)).join("") :
+  const sorted = plan.sessions.map((s,i) => ({s,i})).sort((x,y) => (isDone(x.s) - isDone(y.s)) || (x.i - y.i)).map(x => x.s);
+  const hint = nervHint(w.id); const mainList = sorted.filter(s => !s.optional); const plusList = sorted.filter(s => s.optional);
+  const sessions = mainList.length ? mainList.map(s => sessRow(w.id, s, log, hint)).join("") : plusList.length ? "" :
     `<div class="empty"><strong>Pas encore de programme pour cette semaine.</strong> Demande à Claude de la remplir, ou note directement ce que tu as fait dans le journal ci-dessous.</div>`;
   const pills = TRACKS.map(([k,,short]) => { const p = phaseOf(w,k); return p ? `<span class="pill" style="--ph:${phVar(p)};--on:${phOn(p)}">${short} · ${esc(phName(p))}</span>` : ""; }).join("");
   const mainS = plan.sessions.filter(s => !s.optional); const total = mainS.reduce((a,s) => a + (s.min || 0), 0); const free = mainS.some(s => !s.min);
@@ -1380,7 +1403,7 @@ function vWeek(){
     ${Object.entries(log.moved || {}).map(([sid, m]) => `<div class="moved-row"><span>↪ <b>${esc(m.title || sid)}</b> reportée en ${wkLabel(m.to)}</span><span class="row"><button class="btn small ghost" data-action="open-week" data-week="${m.to}">Voir</button><button class="btn small ghost" data-action="mv-undo" data-sid="${esc(sid)}">Annuler</button></span></div>`).join("")}
     <button class="btn" data-action="pe-snew">+ Nouvelle séance</button>
     ${fx ? `<p class="muted" style="margin:0;font-size:12.5px">${ico("nerv")} très exigeante pour le système nerveux · ${ico("doms")} grosses courbatures probables</p>` : ""}
-    ${extrasPanel(log)}
+    ${extrasPanel(w.id, log, plusList, hint)}
     ${plan.sessions.length ? `<details class="missed"><summary>Une séance ratée ?</summary><ul>
       <li>Pas de rattrapage en doublant : si tu peux encore la placer cette semaine, garde 48 h avec l'autre séance lourde (bas, haut, parkour high). Sinon, laisse tomber.</li>
       <li>La semaine suivante, reprends avec les mêmes charges que la dernière fois, sans augmenter.</li>
@@ -1393,15 +1416,28 @@ function vWeek(){
 const ctxChips = () => "";
 const SS_KINDS = { superset:"Superset", alternance:"Alternance", contraste:"Contraste par paires" };
 const EXTRA_TYPES = { haut:"Haut du corps", bas:"Bas du corps", plyo:"Plyo", endurance:"Endurance", parkour:"Parkour", tricking:"Tricking", grimpe:"Grimpe", autre:"Autre" };
-function extrasPanel(log){
-  const ex = log.extra || {};
-  const rows = [0,1,2].map(i => { const x = ex[i] || {};
-    return `<div class="exrow ${x.type ? "set" : ""}">
-      <label class="sr" for="ext-${i}">Séance en plus ${i+1}</label>
-      <select id="ext-${i}" data-extra="${i}" data-f="type"><option value="">+ ajouter une séance</option>${Object.entries(EXTRA_TYPES).map(([k,v]) => `<option value="${k}" ${x.type===k?"selected":""}>${v}</option>`).join("")}</select>
-      ${x.type ? `<button class="btn small donebtn" aria-pressed="${x.done ? "true" : "false"}" data-action="extra-done" data-i="${i}">${x.done ? "Faite ✓" : "Faite ?"}</button>` : ""}
-    </div>`; }).join("");
-  return `<section class="panel extras"><div class="between"><h3>Séances en plus</h3><span class="muted" style="font-size:12.5px">Complètement optionnelles, jusqu'à 3</span></div>${rows}</section>`;
+/* Séances en plus : les séances optionnelles de la semaine (du programme ou ajoutées), de vraies séances
+   qu'on peut afficher, démarrer, modifier, ajouter (une fois ou répétées) et retirer de la semaine.
+   Les anciennes « séances en plus » notées par type (logs[semaine].extra) restent visibles tant qu'il y en a. */
+function extrasPanel(wk, log, list, hint){
+  const legacy = Object.entries(log.extra || {}).filter(([, x]) => x && x.type);
+  const off = Object.entries(log.off || {});
+  return `<section class="extras" style="display:flex;flex-direction:column;gap:10px">
+    <div class="between"><h3>Séances en plus</h3><span class="muted" style="font-size:12.5px">optionnelles, hors suivi</span></div>
+    ${list.length ? `<div class="slist">${list.map(s => sessRow(wk, s, log, hint, true)).join("")}</div>` : `<p class="muted" style="margin:0;font-size:13px">Aucune cette semaine.</p>`}
+    ${off.map(([sid, t]) => `<div class="moved-row"><span>Retirée cette semaine : <b>${esc(t || sid)}</b></span><button class="btn small ghost" data-action="off-undo" data-sid="${esc(sid)}">Remettre</button></div>`).join("")}
+    ${legacy.map(([i, x]) => `<div class="moved-row"><span>Notée : <b>${esc(EXTRA_TYPES[x.type] || x.type)}</b></span><span class="row"><button class="btn small donebtn" aria-pressed="${x.done ? "true" : "false"}" data-action="extra-done" data-i="${i}">${x.done ? "Faite ✓" : "Faite ?"}</button><button class="btn small ghost" data-action="extra-del" data-i="${i}" aria-label="Enlever">${ico("trash")}</button></span></div>`).join("")}
+    <button class="btn" data-action="pe-snew" data-opt="1">+ Séance en plus</button>
+  </section>`;
+}
+/* retirer une séance d'une semaine : une séance ajoutée seule disparaît, une séance répétée saute cette semaine,
+   une séance du programme est cachée cette semaine (logs[semaine].off) */
+function offSession(wk, sid){
+  const s = planOf(wk).sessions.find(x => x.id === sid); if (!s) return;
+  const r = s.series && S.data.series[s.series];
+  if (r && !r.every) { del("series", s.series); toast("Séance retirée"); return; }
+  if (r) { put("series", s.series, { ...r, skip: [...new Set([...(r.skip || []), wk])], edited: true }); toast("Retirée de " + wkLabel(wk)); return; }
+  patchLog(wk, l => { l.off = { ...(l.off || {}), [sid]: s.title || sid }; }); toast("Retirée de " + wkLabel(wk) + " · « Remettre » pour annuler");
 }
 
 /* ---------- ressenti après la séance ---------- */
@@ -1517,7 +1553,7 @@ function sessPh(wk, s){
   return trk && tph ? (PH_HOT.includes(tph.type) ? tph.type : null) : SESS_PH[s.kind] || null;
 }
 const sessSc = (wk, s) => { const k = sessPh(wk, s); return k ? "var(--ph-" + k + ")" : "var(--anth)"; };
-function sessRow(wk, s, log, hint){
+function sessRow(wk, s, log, hint, plus){
   const st = (log.sessions && log.sessions[s.id]) || {};
   const steps = guided(s) ? runSteps(s, st) : []; const inRun = !st.done && st.run && steps.length;
   const status = st.done ? `<span class="sstat ok">Faite ✓${st.date ? " · " + dayShort(st.date) : ""}</span>`
@@ -1525,14 +1561,14 @@ function sessRow(wk, s, log, hint){
   const sph = sessPh(wk, s);
   return `<article class="srow ${st.done ? "done" : "col"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
-      <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
+      <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional && !plus ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
       <h3><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h3>${s.series ? `<span class="sbadge">${(S.data.series[s.series] || {}).movedFrom ? "↪ reportée de " + wkLabel(S.data.series[s.series].movedFrom) : (S.data.series[s.series] || {}).every ? "↻ ajoutée, répétée" : "ajoutée cette semaine"}</span>` : s.over ? `<span class="sbadge">modifiée cette semaine</span>` : ""}${status}${hint && s.nerv && !st.done ? `<span class="shint">${esc(hint)}</span>` : ""}
     </div>
     <div class="srow-b ${guided(s) ? "" : "two"}">
       <button class="btn" data-action="show" data-sid="${esc(s.id)}">Afficher</button>
       ${guided(s) ? `<button class="btn primary" data-action="run" data-sid="${esc(s.id)}" ${steps.length ? "" : "disabled"}>${inRun ? "Reprendre" : "Démarrer"}</button>` : ""}
       <button class="btn donebtn" aria-pressed="${st.done ? "true" : "false"}" data-action="toggle-done" data-sid="${esc(s.id)}">${st.done ? "Fait ✓" : "Fait"}</button>
-    </div></article>`;
+    </div>${plus && !st.done ? `<button class="srow-x ${S.ui.offAsk === s.id ? "on" : ""}" data-action="off-ask" data-sid="${esc(s.id)}" aria-label="Retirer de la semaine">${S.ui.offAsk === s.id ? "Retirer de la semaine ?" : ico("trash")}</button>` : ""}</article>`;
 }
 function progTxt(wk, s, it){
   const m = progOf(it); const lp = loadPlan(wk, s, it);
@@ -1975,9 +2011,9 @@ function peOpenSession(wk, sid){
   if (S.ui.ov) S.ui.ov = { type: "pe" }; else ovOpen("pe", null);
   render();
 }
-function peNewSeries(){
+function peNewSeries(optional){
   const w = weekById(S.week); const b = w && blockOf(w);
-  S.pe = { mode: "series", wk: S.week, pick: true, sd: null, lp: {}, openX: null, confirm: null, tips: true, isNew: true,
+  S.pe = { mode: "series", wk: S.week, pick: true, sd: null, lp: {}, openX: null, confirm: null, tips: true, isNew: true, optional: !!optional,
     rep: { every: 0, until: b ? blockWeeks(b).slice(-1)[0] : seasonWeeks().slice(-1)[0].id } };
   ovOpen("pe", null); render();
 }
@@ -2331,7 +2367,7 @@ function peAction(a, b){
   if (a === "pe-block") { peOpenBlock(b.dataset.id); return; }
   if (a === "pe-new") { peOpenBlock(null); return; }
   if (a === "pe-sess") { peOpenSession(S.week, b.dataset.sid); return; }
-  if (a === "pe-snew") { peNewSeries(); return; }
+  if (a === "pe-snew") { peNewSeries(!!b.dataset.opt); return; }
   if (!P) return;
   const s = P.sd; const g = s && b.dataset.g != null ? s.blocks[+b.dataset.g] : null; const xi = b.dataset.x != null ? +b.dataset.x : null;
   if (!["pe-bdel","pe-gdel","pe-xdel","pe-sdel"].includes(a)) P.confirm = null;
@@ -2348,7 +2384,7 @@ function peAction(a, b){
     case "pe-scope": if (!b.dataset.v) { P.ask = false; break; } P.scope = b.dataset.v; P.ask = false; peSaveSession(); return;
     case "pe-rdel": peDeleteSeries(b.dataset.v === "week" ? "week" : "all"); return;
     case "pe-pick": { const i = +b.dataset.i; const lib = allSessionsLib(); const src = i >= 0 ? clone(lib[i].s) : { title: "", kind: "force", min: 45, blocks: [{ name: "", items: [] }] };
-      src.id = uid("s"); delete src.series; delete src.over; P.pick = null; P.sIdx = -1; P.sd = sessDraft(src); P.openX = null; P.tips = i < 0; if (i < 0) { const T = stype("force"); Object.assign(P.sd.blocks[0], { _kind: T.g.kind, _between: T.g.between || 0, _after: T.g.after || 0, _set: 120, _next: T.g.after || 120, _dirty: true }); } break; }
+      src.id = uid("s"); delete src.series; delete src.over; if (P.mode === "series") src.optional = !!P.optional; P.pick = null; P.sIdx = -1; P.sd = sessDraft(src); P.openX = null; P.tips = i < 0; if (i < 0) { const T = stype("force"); Object.assign(P.sd.blocks[0], { _kind: T.g.kind, _between: T.g.between || 0, _after: T.g.after || 0, _set: 120, _next: T.g.after || 120, _dirty: true }); } break; }
     case "pe-sback": P.sd = null; P.sIdx = null; P.openX = null; break;
     case "pe-ssave": peSaveSession(); return;
     case "pe-sdel": if (P.confirm !== "del-sess") P.confirm = "del-sess"; else { if (P.sIdx >= 0) P.sessions.splice(P.sIdx, 1); P.sd = null; P.sIdx = null; P.confirm = null; } break;
@@ -2553,7 +2589,7 @@ function runView(){
       <div class="field bv-note"><label for="bv-note">Note (facultatif)</label><input id="bv-note" type="text" data-snote="${esc(s.id)}" value="${esc(fin.note || "")}"></div></div>`;
     foot = `<button class="btn primary big" data-action="ov-close">Terminer</button>`;
   }
-  return `<div class="ov run" role="dialog" aria-modal="true" aria-label="Séance : ${esc(s.title)}">${top}${body}<div class="run-foot">${foot}</div></div>`;
+  return `<div class="ov run col" style="--sc:${sessSc(R.wk || S.week, s)}" role="dialog" aria-modal="true" aria-label="Séance : ${esc(s.title)}">${top}${body}<div class="run-foot">${foot}</div></div>`;
 }
 function ovHtml(){
   const o = S.ui.ov; if (!o) return ""; if (o.type === "pe") return peView(); if (o.type === "exo") return exoSheet(); if (S.view !== "semaine") return ""; if (o.type === "feel") return feelSheet();
@@ -3039,6 +3075,9 @@ app.addEventListener("click", async e => {
   else if (a === "setv") { const k = b.dataset.k, f = b.dataset.f, v = +b.dataset.v; patchLog(S.week, l => { l.actual ||= {}; const cur = { ...(l.actual[k] || {}), ex: b.dataset.ex }; if (cur[f] === v) delete cur[f]; else cur[f] = v; l.actual[k] = cur; }); }
   else if (a === "load") { const k = b.dataset.k, d = +b.dataset.d, base = +b.dataset.base; patchLog(S.week, l => { l.actual ||= {}; const cur = { ...(l.actual[k] || {}), ex: b.dataset.ex }; const now = numOrNull(cur.load);
       if (d === 0) { if (now == null) cur.load = base; else delete cur.load; } else cur.load = Math.max(0, Math.round(((now ?? base) + d) * 100) / 100); l.actual[k] = cur; }); }
+  else if (a === "off-ask") { if (S.ui.offAsk === b.dataset.sid) { S.ui.offAsk = null; offSession(S.week, b.dataset.sid); } else { S.ui.offAsk = b.dataset.sid; render(); } }
+  else if (a === "off-undo") { const sid = b.dataset.sid; patchLog(S.week, l => { if (l.off) { delete l.off[sid]; if (!Object.keys(l.off).length) delete l.off; } }); }
+  else if (a === "extra-del") { const i = b.dataset.i; patchLog(S.week, l => { if (l.extra) delete l.extra[i]; }); }
   else if (a === "extra-done") { const i = b.dataset.i; patchLog(S.week, l => { l.extra ||= {}; const cur = { ...(l.extra[i] || {}) }; cur.done = !cur.done; l.extra[i] = cur; }); }
   else if (a === "alt") { const sid = b.dataset.sid; patchLog(S.week, l => { l.sessions ||= {}; const cur = { ...(l.sessions[sid] || {}) }; if (cur.alt) delete cur.alt; else cur.alt = true; l.sessions[sid] = cur; }); }
   else if (a === "gopen") { S.ui.openG ||= {}; S.ui.openG[b.dataset.k] = !S.ui.openG[b.dataset.k]; render(); }
