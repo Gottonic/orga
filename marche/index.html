@@ -146,7 +146,11 @@ main .chip{background:var(--surface);border-color:transparent}
 .ray-a .cb .ic{width:13px;height:13px;stroke-width:2.4;opacity:0}
 .ray-a.on .cb{background:var(--accent);border-color:var(--accent)}
 .ray-a.on .cb .ic{opacity:1}
-.ray-a .nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.ray-a .nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere;border:0;background:transparent;color:inherit;text-align:left;padding:10px 2px;cursor:text}
+.ray-a .nm small{font-weight:400;color:var(--ink-3);font-size:.78rem}
+.ray-a .mot-x{flex:none;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--ink-3);display:grid;place-items:center}
+.ray-a .mot-x .ic{width:14px;height:14px}
+.ray-a .r-mot{flex:1;height:40px;margin:4px 0;background:var(--surface);border-color:var(--accent)}
 .ray-a small{flex:none;max-width:45%;font:400 10.5px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);text-align:right}
 .ray-art{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:8px}
 .ray-art span{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
@@ -274,29 +278,29 @@ const CHECK=ic('fait'), PLUS=ic('plus');
 /* rayons de départ, dans l'ordre d'un tour de supermarché, avec les mots qui y rangent un article
    (sans accents ; « _ » relie les mots d'une expression). Nicolas peut tout changer : nom, ordre, mots. */
 const RAYONS0=[
- ['fruits','Fruits','fruit pomme poire banane orange mandarine clementine citron lime kiwi raisin fraise framboise myrtille mure cerise abricot peche nectarine prune ananas mangue melon pasteque grenade figue avocat kaki litchi papaye rhubarbe coing pamplemousse'],
- ['legumes','Légumes','legume carotte tomate salade laitue roquette epinard chou brocoli courgette aubergine poivron concombre oignon ail echalote poireau celeri fenouil radis betterave navet panais patate pomme_de_terre courge potiron butternut champignon haricot asperge artichaut endive mache cresson persil basilic coriandre ciboulette menthe aneth gingembre petit_pois'],
+ ['fruits','Fruits','fruit pomme poire banane orange mandarine clémentine citron lime kiwi raisin fraise framboise myrtille mûre cerise abricot pêche nectarine prune ananas mangue melon pastèque grenade figue avocat kaki litchi papaye rhubarbe coing pamplemousse'],
+ ['legumes','Légumes','légume carotte tomate salade laitue roquette épinard chou brocoli courgette aubergine poivron concombre oignon ail échalote poireau céleri fenouil radis betterave navet panais patate pomme_de_terre courge potiron butternut champignon haricot asperge artichaut endive mache cresson persil basilic coriandre ciboulette menthe aneth gingembre petit_pois'],
  ['boulangerie','Boulangerie','pain baguette croissant tresse brioche ballon mie pain_de_mie petit_pain'],
- ['viande','Viande & poisson','viande poulet boeuf porc veau agneau steak hache saucisse cervelas jambon lard lardon bacon chorizo salami dinde escalope emince merguez poisson saumon truite crevette cabillaud'],
- ['fromage','Fromage','fromage gruyere emmental vacherin mozzarella parmesan feta raclette fondue mascarpone ricotta chevre brie camembert tomme cottage halloumi'],
- ['laitiers','Produits laitiers','lait yaourt yogourt yoghourt beurre creme sere skyr kefir margarine'],
- ['oeufs','Œufs','oeuf'],
- ['frais','Frais & traiteur','tofu tempeh houmous hummus gnocchi rosti traiteur ravioli pate_feuilletee pate_brisee pate_a_pizza pate_fraiche'],
- ['conserves','Conserves & bocaux','conserve boite pelee concentre coulis passata sauce_tomate thon sardine cornichon olive capre bocal'],
- ['cereales','Pâtes, riz & céréales','pate spaghetti penne nouille fusilli tagliatelle riz quinoa couscous boulgour semoule polenta lentille pois_chiche'],
- ['epicerie','Épicerie','farine sucre sel poivre huile vinaigre epice curry paprika cumin cannelle moutarde mayonnaise ketchup bouillon levure bicarbonate maizena sauce_soja miel cacao vanille noix amande noisette cacahuete graine fruits_secs raisins_secs datte pruneau lait_de_coco'],
- ['petitdej','Petit-déjeuner','cafe the tisane infusion confiture pate_a_tartiner nutella ovomaltine muesli cereale flocon avoine porridge'],
+ ['viande','Viande & poisson','viande poulet bœuf porc veau agneau steak haché saucisse cervelas jambon lard lardon bacon chorizo salami dinde escalope émincé merguez poisson saumon truite crevette cabillaud'],
+ ['fromage','Fromage','fromage gruyère emmental vacherin mozzarella parmesan feta raclette fondue mascarpone ricotta chèvre brie camembert tomme cottage halloumi'],
+ ['laitiers','Produits laitiers','lait yaourt yogourt yoghourt beurre crème séré skyr kefir margarine'],
+ ['oeufs','Œufs','œuf'],
+ ['frais','Frais & traiteur','tofu tempeh houmous hummus gnocchi rosti traiteur ravioli pâte_feuilletée pâte_brisée pâte_à_pizza pâte_fraîche'],
+ ['conserves','Conserves & bocaux','conserve boite pelée concentré coulis passata sauce_tomate thon sardine cornichon olive câpre bocal'],
+ ['cereales','Pâtes, riz & céréales','pâte spaghetti penne nouille fusilli tagliatelle riz quinoa couscous boulgour semoule polenta lentille pois_chiche'],
+ ['epicerie','Épicerie','farine sucre sel poivre huile vinaigre épice curry paprika cumin cannelle moutarde mayonnaise ketchup bouillon levure bicarbonate maïzena sauce_soja miel cacao vanille noix amande noisette cacahuète graine fruits_secs raisins_secs datte pruneau lait_de_coco'],
+ ['petitdej','Petit-déjeuner','café thé tisane infusion confiture pâte_à_tartiner nutella ovomaltine muesli céréale flocon avoine porridge'],
  ['snacks','Biscuits & snacks','biscuit chips chocolat bonbon gateau cracker barre apero'],
- ['boissons','Boissons','eau jus sirop biere vin cidre soda coca limonade kombucha rivella the_froid'],
- ['surgeles','Surgelés','surgele congele glace frite pizza'],
- ['hygiene','Hygiène','savon shampoing shampooing dentifrice brosse_a_dents deodorant papier_toilette pq mouchoir coton rasoir creme_solaire gel_douche'],
- ['menage','Ménage','lessive liquide_vaisselle produit_vaisselle eponge sac_poubelle javel nettoyant papier_menage essuie_tout sopalin film_alimentaire papier_alu papier_cuisson allumette bougie pile'],
- ['animaux','Animaux','croquette litiere patee'],
- ['visserie','Visserie & colle','vis cheville clou boulon ecrou rondelle colle silicone scotch adhesif ruban mastic joint mousse_expansive'],
- ['outillage','Outillage','meche foret lame disque scie tournevis embout cutter metre gant'],
+ ['boissons','Boissons','eau jus sirop bière vin cidre soda coca limonade kombucha rivella thé_froid'],
+ ['surgeles','Surgelés','surgelé congelé glace frite pizza'],
+ ['hygiene','Hygiène','savon shampoing shampooing dentifrice brosse_a_dents déodorant papier_toilette pq mouchoir coton rasoir crème_solaire gel_douche'],
+ ['menage','Ménage','lessive liquide_vaisselle produit_vaisselle éponge sac_poubelle javel nettoyant papier_ménage essuie_tout sopalin film_alimentaire papier_alu papier_cuisson allumette bougie pile'],
+ ['animaux','Animaux','croquette litière pâtée'],
+ ['visserie','Visserie & colle','vis cheville clou boulon écrou rondelle colle silicone scotch adhésif ruban mastic joint mousse_expansive'],
+ ['outillage','Outillage','mèche foret lame disque scie tournevis embout cutter mètre gant'],
  ['peinture','Peinture','peinture pinceau rouleau enduit lasure vernis'],
- ['electricite','Électricité','cable prise interrupteur domino gaine ampoule rallonge'],
- ['bois','Bois & panneaux','planche panneau osb contreplaque latte chevron poutre liteau tasseau'],
+ ['electricite','Électricité','câble prise interrupteur domino gaine ampoule rallonge'],
+ ['bois','Bois & panneaux','planche panneau osb contreplaqué latte chevron poutre liteau tasseau'],
  ['jardin','Jardin','terreau engrais semence semis plant tuyau'],
  ['divers','Divers','']
 ];
@@ -322,7 +326,7 @@ function fJour(d){ return new Date(d+'T12:00').toLocaleDateString('fr-CH',{day:'
 function ilYa(d){ const n=ecart(d,today()); if(n<=0) return 'aujourd’hui'; if(n===1) return 'hier'; if(n<15) return 'il y a '+n+' j'; return 'le '+fJour(d); }
 function dansJ(n){ if(n<=0) return 'aujourd’hui'; if(n===1) return 'demain'; return 'dans '+n+' j'; }
 function rythmeTxt(n){ if(n===7) return 'toutes les semaines'; if(n===30) return 'tous les mois'; if(n%30===0) return 'tous les '+n/30+' mois'; if(n%7===0) return 'toutes les '+n/7+' semaines'; return 'tous les '+n+' jours'; }
-function norm(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/\s+/g,' '); }
+function norm(s){ return String(s||'').replace(/œ/g,'oe').replace(/Œ/g,'Oe').replace(/æ/g,'ae').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/\s+/g,' '); }
 function slug(s){ return norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -369,6 +373,8 @@ function grouper(list,ici){
 /* --- rayons (catégories de produits) --- */
 let DICO=null;
 function catsTri(){ return Object.values(S.cats).sort((a,b)=>(a.ordre||0)-(b.ordre||0)||a.nom.localeCompare(b.nom,'fr')); }
+/* les rayons semés avant le 15.11 avaient leurs mots sans accents : on reprend la version accentuée s'ils n'ont pas été touchés */
+function accentuerRayons(){ let ch=false; for(const [id,,mots] of RAYONS0){ const c=S.cats[id]; if(c&&c.mots!==mots&&norm(c.mots)===norm(mots)){ c.mots=mots; ch=true; } } return ch; }
 function semerRayons(){ RAYONS0.forEach(([id,nom,mots],i)=>{ if(!S.cats[id]) S.cats[id]={id,nom,mots,appris:[],ordre:i}; }); }
 function sing(t){ return t.length>3&&/[sx]$/.test(t)?t.slice(0,-1):t; }
 function toks(s){ return norm(s).replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).map(sing); }
@@ -384,15 +390,25 @@ function dico(){
   return DICO={noms,multi,single};
 }
 /* devine le rayon d'après le nom : ce que Nicolas a appris au Marché, puis les expressions, puis les mots prioritaires, puis le premier mot reconnu */
-function deviner(nom){
-  const d=dico(), n=cleNom(nom); if(!n) return S.cats.divers?'divers':'';
+function deviner(nom){ return trouverRayon(nom)||(S.cats.divers?'divers':''); }
+/* le rayon reconnu d'après le nom, ou null si le Marché ne sait pas */
+function trouverRayon(nom){
+  const d=dico(), n=cleNom(nom); if(!n) return null;
   if(d.noms.has(n)) return d.noms.get(n);
   const n2=' '+n+' '; for(const [k,c] of d.multi) if(n2.includes(' '+k+' ')) return c;
   const ts=n.split(' ');
   for(const t of ts) if(PRIO.has(t)&&d.single.has(t)) return d.single.get(t);
   for(const t of ts){ let best=null, bl=0; for(const [k,c] of d.single){ if(k.length<=3?t===k:t.startsWith(k)){ if(k.length>bl){ best=c; bl=k.length; } } } if(best) return best; }
-  return S.cats.divers?'divers':'';
+  return null;
 }
+/* les noms d'un rayon : ses mots, les noms appris et les articles qui y sont, par ordre alphabétique */
+function nomsRayon(id){ const c=S.cats[id]; if(!c) return []; const m=new Map();
+  for(const w of String(c.mots||'').split(/\s+/).filter(Boolean)){ const lab=w.replace(/_/g,' '); m.set(cleNom(lab),{lab,mot:w}); }
+  for(const n of c.appris||[]){ const e=m.get(n)||{lab:n}; e.appris=n; m.set(n,e); }
+  for(const a of arts()) if(catDe(a)===id){ const k=cleNom(a.nom), e=m.get(k)||{}; e.lab=a.nom; e.art=a.id; m.set(k,e); }
+  return [...m.entries()].map(([cle,v])=>Object.assign({cle},v)).sort((x,y)=>x.lab.localeCompare(y.lab,'fr',{sensitivity:'base'}));
+}
+function motDe(txt){ return norm(txt)===''?'':String(txt).trim().toLowerCase().replace(/\s+/g,'_'); }
 function catDe(a){ return a.cat&&S.cats[a.cat]?a.cat:deviner(a.nom); }
 function catNom(id){ return S.cats[id]?S.cats[id].nom:'Divers'; }
 /* ordre des rayons dans un magasin : le sien (choisi par Nicolas), puis les autres dans l'ordre par défaut */
@@ -755,13 +771,12 @@ function vRayonsMag(){
   const m=S.mags[ed.id], ord=ordreRayons(m.id), autres=mags().filter(x=>x.id!==m.id&&(x.rayons||[]).length), A=arts();
   const ligne=(id,i)=>{ const ouvert=ed.ouvert===id, c=S.cats[id];
     let edit='';
-    if(ouvert&&c){ const tous=A.slice().sort(triNom), n=tous.filter(a=>catDe(a)===id).length;
-      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Tous les articles · ${n} dans ce rayon</div>
-      <input class="in" id="r-cherche" type="search" autocomplete="off" placeholder="Chercher ou ajouter un article…" value="${esc(ed.rq||'')}">
-      <div class="ray-tous" id="r-tous">${tous.map(a=>{ const dans=catDe(a)===id;
-        return `<button type="button" class="ray-a${dans?' on':''}" data-act="ray-toggle" data-art="${a.id}" data-cat="${id}" data-n="${esc(norm(a.nom))}" aria-pressed="${dans}"><span class="cb" aria-hidden="true">${ic('fait')}</span><span class="nm">${esc(a.nom)}</span>${dans?'':`<small>${esc(catNom(catDe(a)))}</small>`}</button>`; }).join('')}</div>
-      <button type="button" class="btn2" id="r-nouveau" data-act="ray-ajout" data-id="${id}" hidden></button>
-      <p class="aide" style="color:var(--ink-3)">Coche ce qui va dans ce rayon. Les articles et le nom valent pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}.</p></div>`; }
+    if(ouvert&&c){ const ns=nomsRayon(id);
+      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Ce qui va dans ce rayon · ${ns.length}</div>
+      <div class="ray-tous">${ns.length?ns.map(x=>ed.motEdit===x.cle?`<div class="ray-a"><input class="in r-mot" id="r-mot" data-cle="${esc(x.cle)}" data-cat="${id}" value="${esc(x.lab)}" autocomplete="off" aria-label="Modifier ${esc(x.lab)}"></div>`
+        :`<div class="ray-a"><button type="button" class="nm" data-act="mot-edit" data-cle="${esc(x.cle)}" aria-label="Modifier ${esc(x.lab)}">${esc(x.lab)}${x.art?'<small> · sur la liste ou déjà acheté</small>':''}</button><button type="button" class="mot-x" data-act="mot-sup" data-cle="${esc(x.cle)}" data-cat="${id}" aria-label="Retirer ${esc(x.lab)} de ce rayon">${ic('supprimer')}</button></div>`).join(''):'<p class="aide" style="color:var(--ink-3)">Rien pour l’instant.</p>'}</div>
+      <div class="row-in"><input class="in" id="r-add" autocomplete="off" placeholder="Ajouter un article à ce rayon…"><button type="button" class="btn2" data-act="ray-ajout" data-id="${id}">Ajouter</button></div>
+      <p class="aide" style="color:var(--ink-3)">Touche un nom pour le modifier. Un mot range aussi ce qui commence par lui (« pomme » range « pommes Gala »). Valable pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}.</p></div>`; }
     return `<div class="rang${ouvert?' ouvert':''}" data-id="${id}"><div class="rang-l"><span class="poignee" aria-label="Glisser pour déplacer ${esc(catNom(id))}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg></span><span class="num">${i+1}</span>${ed.renomme===id?`<input class="in r-nom" id="r-nom" data-cat="${id}" value="${esc(catNom(id))}" autocomplete="off" aria-label="Nom du rayon (pour tous les magasins)">`:`<button type="button" class="nom-r" data-act="ray-renommer" data-id="${id}" aria-label="Renommer ${esc(catNom(id))}">${esc(catNom(id))}</button>`}<button type="button" class="plus" data-act="ray-plus" data-id="${id}" aria-expanded="${ouvert}" aria-label="${ouvert?'Fermer':'Modifier'} ${esc(catNom(id))}">${ic('plus')}</button></div>${edit}</div>`; };
   $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin : glisse un rayon par ses trois traits. Touche son nom pour le renommer, le + pour voir ses articles.</p>
   ${autres.length?`<div class="chips">${autres.map(x=>`<button type="button" class="chip" data-act="ray-copier" data-id="${x.id}">Même ordre que ${esc(x.nom)}</button>`).join('')}</div>`:''}
@@ -792,6 +807,7 @@ function lacher(e){ if(!drag||(e&&e.pointerId!==drag.id)) return; cancelAnimatio
   const list=drag.row.parentNode, m=S.mags[ed.id]; drag.row.style.transform=''; drag.row.classList.remove('drag'); drag=null;
   if(m&&list){ const ord=[...list.children].map(x=>x.dataset.id).filter(Boolean); if(ord.join()!==ordreRayons(m.id).join()){ m.rayons=ord; save(); render(); } }
   rafraichirRayons(); }
+$sheet.addEventListener('focusout',e=>{ if(e.target.id==='r-mot'&&ed&&ed.motEdit) setTimeout(()=>{ if(ed&&ed.motEdit&&(!document.activeElement||document.activeElement.id!=='r-mot')){ ed.motEdit=null; rafraichirRayons(); } },0); });
 $sheet.addEventListener('focusout',e=>{ if(e.target.id==='r-nom'&&ed&&ed.renomme) setTimeout(()=>{ if(ed&&ed.renomme&&document.activeElement&&document.activeElement.id!=='r-nom'){ ed.renomme=null; rafraichirRayons(); } },0); });
 $sheet.addEventListener('pointerup',lacher); $sheet.addEventListener('pointercancel',lacher);
 function vMag(){
@@ -862,6 +878,25 @@ function sauverCat(){ lireCat(); const d=ed.d, nom=d.nom.trim(); if(!nom){ docum
   if(!c){ let id=slug(nom)||uid(); if(S.cats[id]) id+='-'+uid().slice(-4); const cs=catsTri(); c={id,appris:[],ordre:cs.length?Math.max(...cs.map(x=>x.ordre||0))+1:0}; S.cats[id]=c;
     const dv=S.cats.divers; if(dv&&dv.ordre<=c.ordre) dv.ordre=c.ordre+1; }
   c.nom=nom; c.mots=motsDe(d.mots); save(); fermer(); render(); }
+/* un nom ajouté à un rayon : il devient un mot du rayon (qui range aussi ce qui commence par lui) ; un article de ce nom y passe */
+function ajouterNom(id,nom){ const c=S.cats[id], k=cleNom(nom); if(!c||!k) return;
+  for(const x of Object.values(S.cats)){ if((x.appris||[]).includes(k)) x.appris=x.appris.filter(n=>n!==k);
+    if(x.id!==id){ const ws=String(x.mots||'').split(/\s+/).filter(Boolean), r=ws.filter(w=>cleNom(w.replace(/_/g,' '))!==k); if(r.length!==ws.length) x.mots=r.join(' '); } }
+  const ws=String(c.mots||'').split(/\s+/).filter(Boolean); if(!ws.some(w=>cleNom(w.replace(/_/g,' '))===k)) c.mots=[...ws,motDe(nom)].join(' ');
+  DICO=null; arts().forEach(a=>{ if(cleNom(a.nom)===k) a.cat=id; }); }
+/* retirer un nom d'un rayon : le mot, le nom appris, et l'article de ce nom qui y était (il va là où le Marché le range sinon, ou dans Divers) */
+function retirerNom(id,cle){ const c=S.cats[id]; if(!c) return;
+  c.mots=String(c.mots||'').split(/\s+/).filter(w=>w&&cleNom(w.replace(/_/g,' '))!==cle).join(' ');
+  c.appris=(c.appris||[]).filter(n=>n!==cle); DICO=null;
+  arts().forEach(a=>{ if(cleNom(a.nom)===cle&&catDe(a)===id){ delete a.cat; const g=trouverRayon(a.nom); a.cat=g&&g!==id?g:(S.cats.divers?'divers':''); if(id==='divers') delete a.cat; } });
+  ed.motEdit=null; save(); render(); rafraichirRayons(); }
+/* modifier un nom d'un rayon : le mot ou le nom appris, et l'article du même nom */
+function renommerNom(id,cle,nouveau){ const c=S.cats[id], v=String(nouveau||'').trim().replace(/\s+/g,' '), k2=cleNom(v); ed.motEdit=null;
+  if(!c||!k2||k2===cle&&!arts().some(a=>cleNom(a.nom)===cle&&a.nom!==v)){ rafraichirRayons(); return; }
+  c.mots=String(c.mots||'').split(/\s+/).filter(Boolean).map(w=>cleNom(w.replace(/_/g,' '))===cle?motDe(v):w).join(' ');
+  c.appris=(c.appris||[]).map(n=>n===cle?k2:n);
+  arts().forEach(a=>{ if(cleNom(a.nom)===cle&&catDe(a)===id){ a.nom=v; a.cat=id; } });
+  DICO=null; save(); render(); rafraichirRayons(); }
 function bougerCat(id,dir){ const cs=catsTri(), i=cs.findIndex(c=>c.id===id), j=i+dir; if(i<0||j<0||j>=cs.length) return; [cs[i],cs[j]]=[cs[j],cs[i]]; cs.forEach((c,k)=>{ c.ordre=k; }); save(); render(); }
 
 /* --- réglages --- */
@@ -888,10 +923,17 @@ function ajoutRapide(){
   const nom=(ui.q||'').trim().replace(/\s+/g,' '); if(!nom) return;
   const ex=arts().find(a=>norm(a.nom)===norm(nom)); ui.q='';
   if(ex){ if(ex.liste){ render(); toast('« '+ex.nom+' » est déjà sur la liste'); return; } surListe(ex); save(); render(); toast('« '+ex.nom+' » remis sur la liste','Modifier',()=>ouvrirArt(ex.id)); return; }
-  const mi=ui.ici&&S.mags[ui.ici], a={id:uid(),nom,qte:'',note:'',ou:mi?['m:'+mi.id]:[],basique:false,rythme:0,achats:[],cree:nowIso(),cat:deviner(nom)};
+  const mi=ui.ici&&S.mags[ui.ici], connu=trouverRayon(nom), a={id:uid(),nom,qte:'',note:'',ou:mi?['m:'+mi.id]:[],basique:false,rythme:0,achats:[],cree:nowIso(),cat:connu||deviner(nom)};
   surListe(a); S.arts[a.id]=a; save(); render();
+  if(!connu){ demanderRayon(a.id); return; }
   toast((mi?'Chez '+mi.nom:'N’importe où')+' · '+catNom(a.cat),'Modifier',()=>ouvrirArt(a.id));
 }
+/* « Quel rayon ? » : pour un article que le Marché ne sait pas encore ranger */
+function demanderRayon(aid){ const a=S.arts[aid]; if(!a) return; cacherToast(); ed={k:'qray',id:aid}; const mid=ui.ici&&S.mags[ui.ici]?ui.ici:magDeRef(prim(a));
+  $sheet.innerHTML=tete('Quel rayon ?')+`<p class="aide">Le Marché ne sait pas encore où ranger « ${esc(a.nom)} ». Il s’en souviendra pour la prochaine fois.</p>
+  <div class="chips">${ordreRayons(mid).filter(id=>id!=='divers').map(id=>`<button type="button" class="chip" data-act="qray" data-id="${id}">${esc(catNom(id))}</button>`).join('')}</div>
+  <button class="btn2" data-act="qray" data-id="divers">Divers</button>`;
+  ouvrir(); }
 function texteListe(){
   const mi=ui.ici&&S.mags[ui.ici], act=arts().filter(a=>a.liste&&(!mi||dispo(a,mi.id)));
   const gs=mi?[{ref:'m:'+mi.id,items:act}]:grouper(act,'');
@@ -957,15 +999,13 @@ document.addEventListener('click',e=>{
     case 'ray-ouvrir': lireMag(); ed.sub='rayons'; ed.ouvert=null; vMag(); $sheet.scrollTop=0; break;
     case 'ray-retour': ed.sub=null; vMag(); $sheet.scrollTop=0; break;
     case 'ray-renommer': ed.renomme=id; rafraichirRayons(); { const i=document.getElementById('r-nom'); if(i){ i.focus(); i.select(); } } break;
-    case 'ray-plus': ed.ouvert=ed.ouvert===id?null:id; ed.rq=''; rafraichirRayons(); break;
-    case 'ray-toggle': { const a=S.arts[b.dataset.art], cid=b.dataset.cat; if(!a||!S.cats[cid]) break;
-      let cible; if(catDe(a)!==cid) cible=cid; else { delete a.cat; const g=deviner(a.nom); cible=g!==cid?g:(cid!=='divers'&&S.cats.divers?'divers':g); }
-      apprendre(a.nom,cible); a.cat=cible; save(); render(); const st=document.getElementById('r-tous'), sc=st?st.scrollTop:0; rafraichirRayons();
-      const st2=document.getElementById('r-tous'); if(st2) st2.scrollTop=sc; filtrerRayon(); break; }
-    case 'ray-ajout': { const i=document.getElementById('r-cherche'), nom=(i&&i.value||'').trim().replace(/\s+/g,' '); if(!nom||!S.cats[id]){ if(i) i.focus(); break; }
-      const a=arts().find(x=>norm(x.nom)===norm(nom));
-      apprendre(nom,id); if(a) a.cat=id;
-      ed.rq=''; save(); render(); rafraichirRayons(); toast(a?'« '+a.nom+' » rangé dans '+catNom(id):'« '+nom+' » ira dans '+catNom(id)+' quand tu l’ajouteras'); break; }    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(!id||!S.mags[id]) break; m.rayons=ordreRayons(id); save(); render(); rafraichirRayons(); toast('Même ordre que '+S.mags[id].nom); break; }
+    case 'ray-plus': ed.ouvert=ed.ouvert===id?null:id; ed.motEdit=null; rafraichirRayons(); break;
+    case 'mot-edit': ed.motEdit=b.dataset.cle; rafraichirRayons(); { const x=document.getElementById('r-mot'); if(x){ x.focus(); x.select(); } } break;
+    case 'mot-sup': retirerNom(b.dataset.cat,b.dataset.cle); break;
+    case 'ray-ajout': { const i=document.getElementById('r-add'), nom=(i&&i.value||'').trim().replace(/\s+/g,' '); if(!nom||!S.cats[id]){ if(i) i.focus(); break; }
+      ajouterNom(id,nom); save(); render(); rafraichirRayons(); const i2=document.getElementById('r-add'); if(i2) i2.focus(); toast('« '+nom+' » → '+catNom(id)); break; }    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(!id||!S.mags[id]) break; m.rayons=ordreRayons(id); save(); render(); rafraichirRayons(); toast('Même ordre que '+S.mags[id].nom); break; }
+    case 'qray': { const a=ed&&S.arts[ed.id]; if(!a||!S.cats[id]) { fermer(); break; } ajouterNom(id,a.nom); a.cat=id; save(); fermer(); render();
+      const q=document.getElementById('qa'); if(q) q.focus(); toast('« '+a.nom+' » → '+catNom(id)); break; }
     case 'cat': ouvrirCat(id); break;
     case 'cat-new': ouvrirCat(null); break;
     case 'cat-haut': bougerCat(id,-1); break;
@@ -1012,6 +1052,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
   if(ed.sub==='rayons'){
+    if(t.id==='r-mot'){ renommerNom(t.dataset.cat,t.dataset.cle,t.value); return; }
     if(t.id==='r-nom'){ const c=S.cats[t.dataset.cat], v=t.value.trim(); ed.renomme=null; if(c&&v&&v!==c.nom){ c.nom=v; save(); render(); toast('Rayon renommé « '+v+' » (tous les magasins)'); } rafraichirRayons(); return; }
     if(t.classList.contains('r-move')){ const a=S.arts[t.dataset.art]; if(a&&S.cats[t.value]){ apprendre(a.nom,t.value); a.cat=t.value; save(); render(); rafraichirRayons(); toast('« '+a.nom+' » → '+catNom(t.value)); } return; }
   }
@@ -1024,12 +1065,14 @@ document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
 });
 document.addEventListener('keydown',e=>{
   if($scrim.hidden) return;
+  if(e.key==='Escape'&&ed&&ed.motEdit){ e.preventDefault(); ed.motEdit=null; rafraichirRayons(); return; }
   if(e.key==='Escape'&&ed&&ed.renomme){ e.preventDefault(); ed.renomme=null; rafraichirRayons(); return; }
   if(e.key==='Escape'){ e.preventDefault(); fermer(); return; }
   if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&ed){
     e.preventDefault();
     if(ed.k==='envie'&&ed.id&&!ed.sub){ e.target.blur(); return; }
-    if(e.target.id==='r-cherche'){ const b=document.getElementById('r-nouveau'); if(b&&!b.hidden) b.click(); return; }
+    if(e.target.id==='r-add'){ const b=$sheet.querySelector('[data-act="ray-ajout"]'); if(b) b.click(); return; }
+    if(e.target.id==='r-mot'){ e.target.blur(); return; }
     if(e.target.id==='r-nom'){ e.target.blur(); return; }
     if(e.target.id==='e-ntype'){ $sheet.querySelector('[data-act="mtype-add"]').click(); return; }
     const s=$sheet.querySelector('.btn[data-act^="sauver"]'); if(s) s.click(); }
@@ -1046,6 +1089,7 @@ async function enter(user){
   await pull(!c);
   if(!Object.keys(S.types).length){ semer(); save(); render(); }
   if(!Object.keys(S.cats).length){ semerRayons(); save(); render(); }
+  if(accentuerRayons()){ save(); render(); }
   entretien(); push();
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{
