@@ -126,6 +126,8 @@ main .chip{background:var(--surface);border-color:transparent}
 .rang{display:flex;align-items:center;background:var(--surface-2);border-radius:var(--r-m);padding-left:16px}
 .rang .num{font:600 .75rem/1 var(--f-mono);color:var(--ink-3);width:24px}
 .rang b{flex:1;font-weight:600}
+.nom-r{flex:1;min-width:0;border:0;background:transparent;color:inherit;text-align:left;font-weight:600;font-size:1rem;padding:14px 4px;cursor:text}
+.rang .r-nom{flex:1;min-width:0;height:42px;margin:6px 0;padding:0 14px;background:var(--surface);border-color:var(--accent)}
 .rang{flex-direction:column;align-items:stretch;padding:0;user-select:none;-webkit-user-select:none;transition:box-shadow .15s}
 .rang-l{display:flex;align-items:center;min-height:54px;padding-left:4px}
 .rang .num{padding-left:2px}
@@ -419,6 +421,7 @@ function entretien(){
   if(!booted) return; let ch=false; const t=today();
   for(const a of arts()){
     if(a.pris&&jourDe(a.pris.le)!==t){ delete a.pris; ch=true; }
+    if((a.ou||[]).length>1){ a.ou=ouDe(a).slice(0,1); ch=true; }
     if(a.liste&&a.panier){ ranger1(a); ch=true; }
     else if(a.basique&&a.rythme>0&&!a.liste&&prochain(a)<=t){ a.liste=true; a.auto=true; a.panier=null; a.ajoute=nowIso(); ch=true; }
   }
@@ -611,13 +614,13 @@ const val=id=>{ const el=document.getElementById(id); return el?el.value:''; };
 /* --- article --- */
 function ouvrirArt(id,o){ o=o||{}; const a=id?S.arts[id]:null;
   ed={k:'art',id:id||null,conf:false,d:a?JSON.parse(JSON.stringify(a)):{nom:o.nom||'',qte:'',note:'',ou:ui.tab==='liste'&&ui.ici&&S.mags[ui.ici]?['m:'+ui.ici]:[],basique:!!o.basique,rythme:0,liste:!o.basique,achats:[]}};
-  ed.d.ou=ouDe(ed.d); ed.d.rythme=ed.d.rythme||0; ed.d.catChoix=a&&a.cat&&S.cats[a.cat]&&a.cat!==deviner(a.nom)?a.cat:''; vArt(); ouvrir(id?null:'e-nom'); }
+  ed.d.ou=ouDe(ed.d).slice(0,1); ed.d.rythme=ed.d.rythme||0; ed.d.catChoix=a&&a.cat&&S.cats[a.cat]&&a.cat!==deviner(a.nom)?a.cat:''; vArt(); ouvrir(id?null:'e-nom'); }
 function lireArt(){ if(!ed||ed.k!=='art') return; const d=ed.d, g=id=>document.getElementById(id);
   if(g('e-nom')) d.nom=g('e-nom').value; if(g('e-qte')) d.qte=g('e-qte').value; if(g('e-note')) d.note=g('e-note').value;
   if(g('e-bas')) d.basique=g('e-bas').checked; if(g('e-liste')) d.liste=g('e-liste').checked;
   if(g('e-ry')&&g('e-ry').value!==''){ const n=parseInt(g('e-ry').value,10); if(n>=0&&n<=730) d.rythme=n; }
   if(g('e-cat')) d.catChoix=g('e-cat').value; }
-function chipOu(ref,label){ const i=ed.d.ou.indexOf(ref); return `<button type="button" class="chip${i>=0?' on':''}" data-act="ou" data-ref="${ref}" aria-pressed="${i>=0}">${esc(label)}${i>=0&&ed.d.ou.length>1?`<span class="o">${i+1}</span>`:''}</button>`; }
+function chipOu(ref,label){ const on=ed.d.ou[0]===ref; return `<button type="button" class="chip${on?' on':''}" data-act="ou" data-ref="${ref}" aria-pressed="${on}">${esc(label)}</button>`; }
 function vArt(){
   const d=ed.d, nouv=!ed.id, ms=mags(), ts=types(), obs=rythmeObserve(d), perso=d.rythme&&!RYTHMES.some(r=>r[0]===d.rythme);
   $sheet.innerHTML=tete(nouv?(d.basique?'Nouveau basique':'Nouvel article'):d.nom||'Article')+
@@ -626,7 +629,7 @@ function vArt(){
   <div class="lab">Où l’acheter ?</div>
   ${ms.length?`<div class="chips">${ms.map(m=>chipOu('m:'+m.id,m.nom)).join('')}</div>`:'<p class="aide">Pas encore de magasins : ajoute-les dans l’onglet Magasins.</p>'}
   ${ts.length?`<div class="chips">${ts.map(t=>chipOu('y:'+t.id,(t.emoji?t.emoji+' ':'')+t.nom+' (tous)')).join('')}</div>`:''}
-  <p class="aide">${!d.ou.length?'Rien de choisi : n’importe où, il apparaît dans tous les magasins.':d.ou.length>1?'Il apparaît partout où il se trouve ; le n° 1 décide de son étal dans « Tout ».':'« (tous) » = n’importe quel magasin de ce type.'}</p>
+  <p class="aide">${!d.ou.length?'Rien de choisi : n’importe où, il apparaît dans tous les magasins.':'Un seul endroit par article. « (tous) » = n’importe quel magasin de ce type.'}</p>
   <label class="lab" for="e-cat">Rayon</label><select class="in" id="e-cat"><option value="">Automatique · ${esc(catNom(deviner(d.nom)))}</option>${catsTri().map(c=>`<option value="${c.id}"${d.catChoix===c.id?' selected':''}>${esc(c.nom)}</option>`).join('')}</select>
   <p class="aide">Choisi d’après le nom. Si tu le changes, le Marché s’en souviendra pour la prochaine fois.</p>
   <label class="lab" for="e-note">Note <span class="opt">· facultatif</span></label><input class="in" id="e-note" value="${esc(d.note)}" autocomplete="off" placeholder="ex. la marque bio, rayon du fond">
@@ -646,7 +649,7 @@ function sauverArt(){
   let a=ed.id?S.arts[ed.id]:arts().find(x=>norm(x.nom)===norm(d.nom)); const now=nowIso();
   if(!a){ a={id:uid(),cree:now,achats:[]}; S.arts[a.id]=a; }
   const avant=!!a.liste;
-  Object.assign(a,{nom:d.nom,qte:(d.qte||'').trim(),note:(d.note||'').trim(),ou:d.ou.filter(refOk),basique:!!d.basique,rythme:d.basique?(d.rythme||0):0});
+  Object.assign(a,{nom:d.nom,qte:(d.qte||'').trim(),note:(d.note||'').trim(),ou:d.ou.filter(refOk).slice(0,1),basique:!!d.basique,rythme:d.basique?(d.rythme||0):0});
   const choix=d.catChoix&&S.cats[d.catChoix]?d.catChoix:''; apprendre(a.nom,choix); a.cat=choix||deviner(a.nom);
   if(d.liste&&!avant) surListe(a);
   else if(!d.liste&&avant){ a.liste=false; a.panier=null; a.auto=false; a.depuis=today(); }
@@ -745,14 +748,13 @@ function vRayonsMag(){
   const ligne=(id,i)=>{ const ouvert=ed.ouvert===id, c=S.cats[id];
     let edit='';
     if(ouvert&&c){ const dans=A.filter(a=>catDe(a)===id).sort(triNom), hors=A.filter(a=>catDe(a)!==id).sort(triNom);
-      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Nom du rayon · pour tous les magasins</div><input class="in" id="r-nom" data-cat="${id}" value="${esc(c.nom)}" autocomplete="off">
-      <div class="lab">Articles dans ce rayon${dans.length?' · '+dans.length:''}</div>
+      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Articles dans ce rayon${dans.length?' · '+dans.length:''}</div>
       ${dans.length?dans.map(a=>`<div class="ray-art"><span>${esc(a.nom)}</span><select class="in r-move" data-art="${a.id}" aria-label="Rayon de ${esc(a.nom)}">${catsTri().map(x=>`<option value="${x.id}"${x.id===id?' selected':''}>${esc(x.nom)}</option>`).join('')}</select></div>`).join(''):'<p class="aide" style="color:var(--ink-3)">Aucun article pour l’instant.</p>'}
       <div class="row-in"><input class="in" id="r-add" list="r-noms" autocomplete="off" placeholder="Ranger un article ici…"><button type="button" class="btn2" data-act="ray-ajout" data-id="${id}">Ajouter</button></div>
       <datalist id="r-noms">${hors.map(a=>`<option value="${esc(a.nom)}"></option>`).join('')}</datalist>
-      <p class="aide" style="color:var(--ink-3)">Nom et articles valent pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}. Un nom nouveau sera rangé ici quand tu l’ajouteras.</p></div>`; }
-    return `<div class="rang${ouvert?' ouvert':''}" data-id="${id}"><div class="rang-l"><span class="poignee" aria-label="Glisser pour déplacer ${esc(catNom(id))}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg></span><span class="num">${i+1}</span><b>${esc(catNom(id))}</b><button type="button" class="plus" data-act="ray-plus" data-id="${id}" aria-expanded="${ouvert}" aria-label="${ouvert?'Fermer':'Modifier'} ${esc(catNom(id))}">${ic('plus')}</button></div>${edit}</div>`; };
-  $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin : glisse un rayon par ses trois traits. Le + ouvre son nom et ses articles.</p>
+      <p class="aide" style="color:var(--ink-3)">Ses articles valent pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}. Un nom nouveau sera rangé ici quand tu l’ajouteras.</p></div>`; }
+    return `<div class="rang${ouvert?' ouvert':''}" data-id="${id}"><div class="rang-l"><span class="poignee" aria-label="Glisser pour déplacer ${esc(catNom(id))}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg></span><span class="num">${i+1}</span>${ed.renomme===id?`<input class="in r-nom" id="r-nom" data-cat="${id}" value="${esc(catNom(id))}" autocomplete="off" aria-label="Nom du rayon (pour tous les magasins)">`:`<button type="button" class="nom-r" data-act="ray-renommer" data-id="${id}" aria-label="Renommer ${esc(catNom(id))}">${esc(catNom(id))}</button>`}<button type="button" class="plus" data-act="ray-plus" data-id="${id}" aria-expanded="${ouvert}" aria-label="${ouvert?'Fermer':'Modifier'} ${esc(catNom(id))}">${ic('plus')}</button></div>${edit}</div>`; };
+  $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin : glisse un rayon par ses trois traits. Touche son nom pour le renommer, le + pour voir ses articles.</p>
   ${autres.length?`<div class="chips">${autres.map(x=>`<button type="button" class="chip" data-act="ray-copier" data-id="${x.id}">Même ordre que ${esc(x.nom)}</button>`).join('')}</div>`:''}
   <div class="liste-v" id="ray-l">${ord.map(ligne).join('')}</div>
   <button class="btn2" data-act="ray-retour">${ic('retour')} Retour au magasin</button>`;
@@ -781,6 +783,7 @@ function lacher(e){ if(!drag||(e&&e.pointerId!==drag.id)) return; cancelAnimatio
   const list=drag.row.parentNode, m=S.mags[ed.id]; drag.row.style.transform=''; drag.row.classList.remove('drag'); drag=null;
   if(m&&list){ const ord=[...list.children].map(x=>x.dataset.id).filter(Boolean); if(ord.join()!==ordreRayons(m.id).join()){ m.rayons=ord; save(); render(); } }
   rafraichirRayons(); }
+$sheet.addEventListener('focusout',e=>{ if(e.target.id==='r-nom'&&ed&&ed.renomme) setTimeout(()=>{ if(ed&&ed.renomme&&document.activeElement&&document.activeElement.id!=='r-nom'){ ed.renomme=null; rafraichirRayons(); } },0); });
 $sheet.addEventListener('pointerup',lacher); $sheet.addEventListener('pointercancel',lacher);
 function vMag(){
   if(ed.sub==='rayons') return vRayonsMag();
@@ -911,7 +914,7 @@ document.addEventListener('click',e=>{
     case 'fini': { const a=S.arts[id]; if(!a) break; const s=snap([a]); surListe(a); save(); render(); toast('« '+a.nom+' » ajouté à la liste','Annuler',()=>restaurer(s)); break; }
     case 'defini': { const a=S.arts[id]; if(!a) break; const s=snap([a]); a.liste=false; a.panier=null; a.auto=false; a.depuis=today(); save(); render(); toast('« '+a.nom+' » retiré de la liste','Annuler',()=>restaurer(s)); break; }
     case 'partager': partager(); break;
-    case 'ou': { lireArt(); const r=b.dataset.ref, ou=ed.d.ou, i=ou.indexOf(r); if(i>=0) ou.splice(i,1); else ou.push(r); vArt(); break; }
+    case 'ou': { lireArt(); const r=b.dataset.ref; ed.d.ou=ed.d.ou[0]===r?[]:[r]; vArt(); break; }
     case 'rythme': lireArt(); ed.d.rythme=+b.dataset.n||0; { const el=document.getElementById('e-ry'); if(el) el.value=''; } vArt(); break;
     case 'sauver-art': sauverArt(); break;
     case 'sup-art': { if(!ed.conf){ ed.conf=true; lireArt(); vArt(); break; } const a=S.arts[ed.id], s=snap([a]); delete S.arts[ed.id]; save(); fermer(); render(); toast('« '+a.nom+' » supprimé','Annuler',()=>restaurer(s)); break; }
@@ -944,6 +947,7 @@ document.addEventListener('click',e=>{
     case 'mag': ouvrirMag(id); break;
     case 'ray-ouvrir': lireMag(); ed.sub='rayons'; ed.ouvert=null; vMag(); $sheet.scrollTop=0; break;
     case 'ray-retour': ed.sub=null; vMag(); $sheet.scrollTop=0; break;
+    case 'ray-renommer': ed.renomme=id; rafraichirRayons(); { const i=document.getElementById('r-nom'); if(i){ i.focus(); i.select(); } } break;
     case 'ray-plus': ed.ouvert=ed.ouvert===id?null:id; rafraichirRayons(); break;
     case 'ray-ajout': { const i=document.getElementById('r-add'), nom=(i&&i.value||'').trim().replace(/\s+/g,' '); if(!nom||!S.cats[id]){ if(i) i.focus(); break; }
       const a=arts().find(x=>norm(x.nom)===norm(nom));
@@ -991,7 +995,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
   if(ed.sub==='rayons'){
-    if(t.id==='r-nom'){ const c=S.cats[t.dataset.cat], v=t.value.trim(); if(c&&v&&v!==c.nom){ c.nom=v; save(); render(); rafraichirRayons(); } return; }
+    if(t.id==='r-nom'){ const c=S.cats[t.dataset.cat], v=t.value.trim(); ed.renomme=null; if(c&&v&&v!==c.nom){ c.nom=v; save(); render(); toast('Rayon renommé « '+v+' » (tous les magasins)'); } rafraichirRayons(); return; }
     if(t.classList.contains('r-move')){ const a=S.arts[t.dataset.art]; if(a&&S.cats[t.value]){ apprendre(a.nom,t.value); a.cat=t.value; save(); render(); rafraichirRayons(); toast('« '+a.nom+' » → '+catNom(t.value)); } return; }
   }
   if(ed.k==='art'&&t.id==='e-nom'){ const o=$sheet.querySelector('#e-cat option[value=""]'); if(o) o.textContent='Automatique · '+catNom(deviner(t.value)); }
@@ -1003,6 +1007,7 @@ document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
 });
 document.addEventListener('keydown',e=>{
   if($scrim.hidden) return;
+  if(e.key==='Escape'&&ed&&ed.renomme){ e.preventDefault(); ed.renomme=null; rafraichirRayons(); return; }
   if(e.key==='Escape'){ e.preventDefault(); fermer(); return; }
   if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&ed){
     e.preventDefault();

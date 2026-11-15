@@ -120,10 +120,11 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   l'ordre des rayons de ce magasin. Le champ du haut ajoute un article (dans le magasin choisi) ou en remet un connu.
 - **Rayons** : un article est rangé tout seul d'après son nom (mots de chaque rayon, `RAYONS0` dans `marche/index.html`).
   Le changer de rayon dans sa fiche apprend le nom pour la suite. Onglet Magasins → Rayons : renommer, ajouter,
-  supprimer, ordre par défaut ; fiche d'un magasin → « Ordre des rayons » : glisser-déposer par les trois traits (ordre propre au magasin, ou « Même ordre que <autre magasin> »), et le + d'un rayon pour son nom et ses articles (communs à tous les magasins).
+  supprimer, ordre par défaut ; fiche d'un magasin → « Ordre des rayons » : glisser-déposer par les trois traits (ordre propre au magasin, ou « Même ordre que <autre magasin> »), toucher le nom d'un rayon pour le renommer, et son + pour ses articles (nom et articles communs à tous les magasins).
 - **Cocher = acheté** : l'achat est noté tout de suite ; « Acheté aujourd'hui » jusqu'au lendemain, décocher pour annuler.
 - **Basiques** : ce qu'on rachète quand c'est fini. « Fini » le remet sur la liste ; un rythme le fait revenir tout seul.
 - **À mijoter** : les envies d'achat reposent (1 semaine à 3 mois), avec des options à comparer, puis « Toujours envie ? ».
+- **Un seul lieu par article** : un magasin, un type de magasin (« Supermarché (tous) ») ou n'importe où.
 - **Magasins** : un magasin a un ou plusieurs types (Supermarché, Brico, Jardin…), dont la couleur fait sa pastille.
 - Style : charte commune de Locus (`commun/lieux.css`, `data-lieu="marche"`), pictos de `commun/pictos.js`.
 - Données : table `marche_rows` (magasin `m:`, type `y:`, rayon `c:` sous le genre `type`, article `a:`, envie `e:` sous le genre `article`).
