@@ -115,20 +115,18 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
 
 ## Bon à savoir (Marché)
 
-- **Liste** : les articles à acheter, rangés par étal (un magasin = un étal, dans l'ordre de l'onglet Magasins).
-  « Je suis chez » ne montre que ce qu'on trouve dans ce magasin : ses articles, ceux de son type
-  (ex. « Supermarché (tous) ») et ceux qui se trouvent n'importe où. Le champ du haut ajoute un article
-  (dans le magasin choisi) ou en remet un connu sur la liste.
-- **Cocher = acheté** (depuis le 14.11) : l'achat est noté tout de suite et l'article quitte la liste.
-  Il reste visible dans « Acheté aujourd'hui » jusqu'au lendemain ; le décocher le remet sur la liste.
-- **Basiques** : ce qu'on rachète quand c'est fini. « Fini » le remet sur la liste. Avec un rythme
-  (ex. toutes les 2 semaines), il revient tout seul après ce délai depuis le dernier achat.
-- **À mijoter** : les envies d'achat reposent (1 semaine à 3 mois) avant d'aller sur la liste. On y compare
-  des options (prix, magasin, lien, pour et contre, ☆ préférée). Le temps passé, le Marché demande
-  « Toujours envie ? » : oui (va sur la liste), encore 2 semaines, ou non (compte dans « laissées de côté »).
-- **Magasins** : un magasin a un ou plusieurs types (Supermarché, Brico, Jardin…) ; la couleur du type donne celle de l'auvent.
-- Données : table `marche_rows` (une ligne par magasin `m:`, type `y:`, article `a:`, envie `e:` rangée sous le genre `article`).
-  Réglages ⚙ → Exporter.
+- **Liste** : les articles à acheter, rangés par magasin, et dans chaque magasin par **rayon** (Fruits, Légumes,
+  Produits laitiers…). « Je suis chez » ne montre que ce qu'on trouve dans ce magasin, en un seul bloc, dans
+  l'ordre des rayons de ce magasin. Le champ du haut ajoute un article (dans le magasin choisi) ou en remet un connu.
+- **Rayons** : un article est rangé tout seul d'après son nom (mots de chaque rayon, `RAYONS0` dans `marche/index.html`).
+  Le changer de rayon dans sa fiche apprend le nom pour la suite. Onglet Magasins → Rayons : renommer, ajouter,
+  supprimer, ordre par défaut ; fiche d'un magasin → « Ordre des rayons » (ou « Comme <autre magasin> »).
+- **Cocher = acheté** : l'achat est noté tout de suite ; « Acheté aujourd'hui » jusqu'au lendemain, décocher pour annuler.
+- **Basiques** : ce qu'on rachète quand c'est fini. « Fini » le remet sur la liste ; un rythme le fait revenir tout seul.
+- **À mijoter** : les envies d'achat reposent (1 semaine à 3 mois), avec des options à comparer, puis « Toujours envie ? ».
+- **Magasins** : un magasin a un ou plusieurs types (Supermarché, Brico, Jardin…), dont la couleur fait sa pastille.
+- Style : charte commune de Locus (`commun/lieux.css`, `data-lieu="marche"`), pictos de `commun/pictos.js`.
+- Données : table `marche_rows` (magasin `m:`, type `y:`, rayon `c:` sous le genre `type`, article `a:`, envie `e:` sous le genre `article`).
 
 ## Bon à savoir (Mine)
 

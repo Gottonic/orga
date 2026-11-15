@@ -11,204 +11,203 @@
 <link rel="icon" href="icons/tete-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-style:normal;font-display:swap;src:url(../commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"Caveat";font-weight:700;font-style:normal;font-display:swap;src:url(fonts/caveat-latin-700-normal.woff2) format("woff2")}
-/* Marché : un étal de marché — papier kraft, auvents rayés, ardoise à la craie (titres en Caveat), vert épicerie */
-:root{
-  /* charte du 15.11 (commun/CHARTE.md) : étal au soleil, céleri, cagette, tomate pour l'action ; --line vient du lieu */
-  --bg:var(--page); --card:var(--surface); --creme:var(--surface-2); --line2:#A9BE91; --text:var(--ink); --muted:var(--ink-3);
-  --vert:var(--accent); --vert2:#9A3220; --vertpale:var(--accent-soft); --tomate:var(--bad); --tomatepale:#F6D4CF; --moutpale:#F8E3C4; --neutre:#6F7F66;
-  --shadow:none;
-  --body:var(--f-body); --craie:var(--f-display);
-}
+/* Le Marché : charte commune de Locus (commun/lieux.css, commun/CHARTE.md) — formes de la Forge,
+   couleurs de l'étal au soleil : céleri, cagette, tomate pour l'action, carotte et feuille en plus.
+   Chaque type de magasin garde sa couleur, en petite pastille. */
+:root{--r-m:16px}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg) radial-gradient(rgba(30,51,36,.05) 1px,transparent 1.2px) 0 0/7px 7px;color:var(--text);font:16px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
-button,input,select,textarea{font:inherit;color:inherit}
+body{margin:0;font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 button{cursor:pointer}
-button:disabled{cursor:default;opacity:.35}
+button:disabled{cursor:default;opacity:.3}
 [hidden]{display:none!important}
-:focus-visible{outline:3px solid var(--vert);outline-offset:2px}
-svg.i{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg.ic{display:inline-block}
 
-main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-right,0px)) calc(116px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
-.titre{margin:4px 0 -8px;font:700 2.1rem/1 var(--craie)}
-.sous-titre{margin:0;color:var(--muted);font-size:.92rem}
-.cap{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:-8px}
-.alerte{background:var(--tomatepale);color:#7A2414;border-radius:12px;padding:12px 14px;font-size:.92rem}
+main{max-width:760px;margin:0 auto;padding:16px max(14px,env(safe-area-inset-right,0px)) calc(116px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+.cap{font:400 11px/1.3 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--on-page-2);margin:6px 2px -4px}
+.titre{margin:0 2px;font:700 1.55rem/1.1 var(--f-display);letter-spacing:-.025em;color:var(--on-page)}
+.sous-titre{margin:0 2px;color:var(--on-page-2);font-size:.92rem}
+.alerte{background:var(--accent-soft);color:var(--accent-ink);border-radius:var(--r-m);padding:12px 16px;font-size:.92rem}
 .alerte b{display:block}
 
 /* « Je suis chez » : un bouton par magasin, avec le nombre d'articles qu'on peut y trouver */
-.ici{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:2px 14px 4px}
+.ici{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:2px 14px 2px}
 .ici::-webkit-scrollbar{display:none}
-.ici button{flex:none;height:40px;padding:0 8px 0 14px;border:1.5px solid var(--line2);border-radius:99px;background:var(--card);font-weight:700;font-size:.95rem;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
-.ici button .n{min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:var(--bg);display:inline-grid;place-items:center;font-size:.82rem;font-variant-numeric:tabular-nums}
-.ici button.vide{color:var(--muted);border-color:var(--line)}
-.ici button[aria-pressed="true"]{background:var(--vert);border-color:var(--vert);color:#fff}
-.ici button[aria-pressed="true"] .n{background:rgba(255,255,255,.22)}
+.ici button{flex:none;height:40px;padding:0 6px 0 16px;border:0;border-radius:var(--pill);background:var(--surface);color:var(--ink);font-weight:600;font-size:.95rem;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.ici button .n{min-width:26px;height:28px;padding:0 8px;border-radius:var(--pill);background:var(--surface-2);display:inline-grid;place-items:center;font:600 .78rem/1 var(--f-mono)}
+.ici button.vide{color:var(--ink-3)}
+.ici button[aria-pressed="true"]{background:var(--accent);color:var(--on-acc)}
+.ici button[aria-pressed="true"] .n{background:color-mix(in srgb,var(--on-acc) 22%,transparent)}
 
 /* ajout rapide */
 .qa{display:flex;gap:8px}
-.qa input{flex:1;min-width:0;height:50px;padding:0 14px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card);font-size:1.02rem}
-.qa input:focus{outline:none;border-color:var(--vert);box-shadow:0 0 0 3px var(--vertpale)}
-.qa button{flex:none;width:50px;height:50px;border:0;border-radius:12px;background:var(--vert);color:#fff;display:grid;place-items:center}
-.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
-.sg{border:1.5px solid var(--line2);background:var(--creme);border-radius:99px;padding:7px 12px;font-weight:700;font-size:.92rem;text-align:left}
-.sg small{font-weight:400;color:var(--muted);margin-left:4px}
-.sg.deja{opacity:.65;cursor:default}
+.qa input{flex:1;min-width:0;height:52px;padding:0 20px;border:1px solid transparent;border-radius:var(--pill);background:var(--surface);color:var(--ink);font-size:1.02rem}
+.qa input::placeholder{color:var(--ink-3)}
+.qa input:focus{outline:none;border-color:var(--accent)}
+.qa button{flex:none;width:52px;height:52px;border:0;border-radius:50%;background:var(--accent);color:var(--on-acc);display:grid;place-items:center}
+.qa button .ic{width:22px;height:22px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
+.sg{border:0;background:var(--surface);color:var(--ink);border-radius:var(--pill);padding:8px 14px;font-weight:600;font-size:.92rem;text-align:left}
+.sg small{font-weight:400;color:var(--ink-3);margin-left:6px}
+.sg.deja{opacity:.6;cursor:default}
 
-/* un étal = un magasin, avec son auvent rayé de la couleur de son type */
-.etal{--c:var(--neutre);background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
-.aw{display:block;height:6px;position:relative;z-index:1;opacity:.5;background:repeating-linear-gradient(90deg,var(--c) 0 14px,transparent 14px 28px)}
-.aw::after{content:"";position:absolute;left:0;right:0;top:6px;height:5px;background:radial-gradient(circle at 7px 0,var(--c) 4.6px,transparent 5.2px) 0 0/28px 5px repeat-x}
-.st-in{display:flex;align-items:baseline;gap:8px;padding:9px 14px 0}
-.st-in h2{margin:0;font:700 1.7rem/1.35 var(--craie);display:flex;align-items:baseline;gap:7px;min-width:0;flex:none;max-width:70%}
-.st-in h2 .em{font:1.05rem/1 system-ui,sans-serif}
-.st-in h2 .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:.12em .22em 0 0}
-.st-sous{flex:1;min-width:0;font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.st-n{flex:none;font-weight:700;font-size:.85rem;color:var(--c);font-variant-numeric:tabular-nums}
-.rows{display:flex;flex-direction:column;padding:0 2px 4px}
-.art{display:flex;align-items:center;min-height:54px;border-top:1px dashed var(--line)}
-.art:first-child{border-top:0}
-.ck{flex:none;width:52px;height:54px;border:0;background:transparent;display:grid;place-items:center;padding:0}
-.ck::before{content:"";grid-area:1/1;width:26px;height:26px;border:2px solid var(--line2);border-radius:50%;background:#fff;transition:background .12s}
-.ck svg{grid-area:1/1;width:15px;height:15px;stroke:#fff;stroke-width:3.2;opacity:0}
-.art.pris .ck::before{background:var(--vert);border-color:var(--vert)}
-.art.pris .ck svg{opacity:1}
-.txt{flex:1;min-width:0;border:0;background:transparent;text-align:left;padding:9px 10px 9px 0;display:flex;flex-direction:column;gap:2px;min-height:54px;justify-content:center}
+/* un étal = un magasin (ou un type de magasin, ou « n'importe où ») */
+.etal{--c:var(--ink-3);background:var(--surface);color:var(--ink);border-radius:var(--r);padding:4px 0 6px}
+.st-in{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;padding:14px 18px 6px}
+.st-ey{display:flex;align-items:center;gap:8px;min-width:0;font:400 11px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--ink-3)}
+.st-ey .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pastille{flex:none;width:10px;height:10px;border-radius:3px;background:var(--c)}
+.st-n{grid-row:1/3;grid-column:2;font:600 .8rem/1 var(--f-mono);color:var(--ink-3)}
+.st-in h2{margin:0;grid-column:1;font:700 1.1rem/1.25 var(--f-display);letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-in h2 .ic{width:18px;height:18px;margin-right:6px;vertical-align:-.15em;color:var(--feuille)}
+.rows{display:flex;flex-direction:column}
+.rayon{margin:10px 18px 0;padding-bottom:4px;font:400 10.5px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);border-bottom:1px solid var(--line)}
+.art{display:flex;align-items:center;min-height:54px;margin:0 6px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.rows>.art:first-child,.rayon+.art{border-top:0}
+.ck{flex:none;width:50px;height:54px;border:0;background:transparent;display:grid;place-items:center;padding:0;color:var(--on-acc)}
+.ck::before{content:"";grid-area:1/1;width:24px;height:24px;border:1.8px solid color-mix(in srgb,var(--ink) 40%,transparent);border-radius:50%;transition:background .12s}
+.ck .ic{grid-area:1/1;width:14px;height:14px;stroke-width:2.4;opacity:0}
+.art.pris .ck::before{background:var(--accent);border-color:var(--accent)}
+.art.pris .ck .ic{opacity:1}
+.txt{flex:1;min-width:0;border:0;background:transparent;color:inherit;text-align:left;padding:9px 10px 9px 0;display:flex;flex-direction:column;gap:2px;min-height:54px;justify-content:center}
 .txt.pad{padding-left:14px}
 .l1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.nom{font-weight:700;font-size:1.03rem;overflow-wrap:anywhere}
-.qte{font-size:.8rem;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--moutpale);color:#6E4B00;white-space:nowrap}
-.meta{font-size:.83rem;color:var(--muted)}
-.meta .v{color:var(--vert);font-weight:700}
-.meta .t{color:var(--tomate);font-weight:700}
-.art.pris .nom{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
-.bt-fini,.bt-on,.bt-re{flex:none;margin-right:10px;height:38px;padding:0 14px;border-radius:99px;font-weight:700;font-size:.92rem;white-space:nowrap}
-.bt-fini{border:1.5px solid var(--tomate);color:var(--tomate);background:#fff}
-.bt-fini:active{background:var(--tomatepale)}
-.bt-on{border:0;background:var(--vertpale);color:var(--vert2)}
-.bt-re{border:1.5px solid var(--line2);background:var(--creme)}
-.fait .st-in{padding-top:12px}
-.note-bas{margin:0;padding:2px 14px 12px;font-size:.8rem;color:var(--muted)}
-details.etal>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:14px;font-weight:700}
+.nom{font-weight:600;font-size:1.02rem;overflow-wrap:anywhere}
+.qte{font:600 .74rem/1 var(--f-mono);padding:4px 8px;border-radius:var(--pill);background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.meta{font-size:.83rem;color:var(--ink-3)}
+.meta .v{color:var(--feuille);font-weight:600}
+.meta .t{color:var(--accent-ink);font-weight:600}
+.art.pris .nom{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--ink-3)}
+.bt-fini,.bt-on,.bt-re{flex:none;margin-right:8px;height:38px;padding:0 16px;border-radius:var(--pill);font-weight:600;font-size:.9rem;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.bt-fini{border:0;background:var(--accent);color:var(--on-acc)}
+.bt-on{border:0;background:var(--surface-2);color:var(--feuille)}
+.bt-on .ic{width:15px;height:15px}
+.bt-re{border:1px solid var(--line);background:transparent;color:var(--ink)}
+.fait .st-in h2{color:var(--ink-2)}
+.note-bas{margin:0;padding:6px 18px 10px;font-size:.8rem;color:var(--ink-3)}
+details.etal>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 18px;font:700 .95rem/1.2 var(--f-display);letter-spacing:-.02em}
 details.etal>summary::-webkit-details-marker{display:none}
-details.etal>summary::after{content:"▾";margin-left:auto;color:var(--muted)}
-details.etal[open]>summary::after{content:"▴"}
-.cherche{width:100%;height:46px;padding:0 14px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card)}
-.cherche:focus{outline:none;border-color:var(--vert)}
+details.etal>summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:1.8px solid var(--ink-3);border-bottom:1.8px solid var(--ink-3);transform:rotate(45deg) translateY(-3px)}
+details.etal[open]>summary::after{transform:rotate(-135deg) translateY(-1px)}
+.cherche{width:100%;height:48px;padding:0 20px;border:1px solid transparent;border-radius:var(--pill);background:var(--surface);color:var(--ink)}
+.cherche:focus{outline:none;border-color:var(--accent)}
 
-.vide{text-align:center;padding:26px 16px 10px;color:var(--muted)}
-.vide .gros{display:block;font:700 2rem/1.1 var(--craie);color:var(--text);margin-bottom:6px}
+.vide{text-align:center;padding:28px 18px 12px;color:var(--on-page-2)}
+.vide .gros{display:block;font:700 1.25rem/1.2 var(--f-display);letter-spacing:-.02em;color:var(--on-page);margin-bottom:8px}
 .vide .btn2{margin-top:14px}
-.btn{height:50px;border:0;border-radius:12px;background:var(--vert);color:#fff;font-weight:700;font-size:1.02rem;padding:0 18px}
-.btn2{min-height:46px;padding:8px 16px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card);font-weight:700}
-.btn-sup{height:46px;border:0;border-radius:12px;background:transparent;color:var(--tomate);font-weight:700}
-.btn-sup.conf{background:var(--tomatepale)}
-.lien{border:0;background:none;padding:0;color:var(--vert);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.btn{min-height:52px;border:0;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);font-weight:600;font-size:1rem;padding:0 22px}
+.btn2{min-height:48px;padding:8px 20px;border:0;border-radius:var(--pill);background:var(--surface);color:var(--ink);font-weight:600}
+.sheet .btn2{background:var(--surface-2)}
+.btn-sup{min-height:46px;border:0;border-radius:var(--pill);background:transparent;color:var(--bad);font-weight:600}
+.btn-sup.conf{background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.lien{border:0;background:none;padding:0;color:var(--accent-ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 
-/* magasins */
-.mag{--c:var(--neutre);display:flex;align-items:stretch;background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
-.mag::before{content:"";flex:none;width:6px;opacity:.5;background:repeating-linear-gradient(180deg,var(--c) 0 12px,transparent 12px 24px)}
-.mag .txt{padding:10px 8px 10px 12px}
-.mag-nom{font:700 1.55rem/1.3 var(--craie)}
-.ord{display:flex;flex-direction:column;justify-content:center;padding-right:4px}
-.ord button{width:42px;height:34px;border:0;background:transparent;font-size:1.1rem;color:var(--muted)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{min-height:38px;border:1.5px solid var(--line2);background:var(--card);border-radius:99px;padding:6px 12px;font-weight:700;font-size:.92rem;display:inline-flex;align-items:center;gap:6px}
-.chip.on{background:var(--vert);border-color:var(--vert);color:#fff}
-.chip .o{min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.25);display:inline-grid;place-items:center;font-size:.75rem}
-.chip.sw-c{width:38px;padding:0;justify-content:center;border-color:transparent}
-.chip.sw-c.on{outline:3px solid var(--text);outline-offset:2px}
-.typ{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:0;padding:10px 14px;text-align:left;width:100%}
-.typ .pas{flex:none;width:28px;height:28px;border-radius:7px;opacity:.55;background:repeating-linear-gradient(90deg,var(--c) 0 7px,transparent 7px 14px)}
-.typ .em{font-size:1.2rem}
-.typ b{flex:1}
-.typ span.meta{flex:none}
+/* magasins, types, rayons */
 .liste-v{display:flex;flex-direction:column;gap:8px}
+.mag{--c:var(--ink-3);display:flex;align-items:center;background:var(--surface);color:var(--ink);border-radius:var(--r);padding-left:18px}
+.mag .txt{padding:14px 8px 14px 12px}
+.mag-nom{font:700 1rem/1.25 var(--f-display);letter-spacing:-.02em}
+.ord{display:flex;flex-direction:column;justify-content:center;padding-right:6px}
+.ord button{width:42px;height:34px;border:0;background:transparent;color:var(--ink-3);display:grid;place-items:center}
+.ord .ic{width:17px;height:17px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:40px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:var(--pill);padding:6px 14px;font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
+main .chip{background:var(--surface);border-color:transparent}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-acc)}
+.chip .o{min-width:20px;height:20px;border-radius:10px;background:color-mix(in srgb,var(--on-acc) 25%,transparent);display:inline-grid;place-items:center;font:600 .72rem/1 var(--f-mono)}
+.chip.sw-c{width:40px;padding:0;justify-content:center}
+.chip.sw-c.on{outline:2px solid var(--ink);outline-offset:2px}
+.typ{--c:var(--ink-3);display:flex;align-items:center;gap:12px;background:var(--surface);color:var(--ink);border-radius:var(--r-m);border:0;padding:14px 18px;text-align:left;width:100%}
+.typ .em{font-size:1.1rem}
+.typ b{flex:1;font-weight:600}
+.typ span.meta{flex:none;font-family:var(--f-mono);font-size:.75rem}
+.rang{display:flex;align-items:center;background:var(--surface-2);border-radius:var(--r-m);padding-left:16px}
+.rang .num{font:600 .75rem/1 var(--f-mono);color:var(--ink-3);width:24px}
+.rang b{flex:1;font-weight:600}
+.rang .ord{flex-direction:row;padding:4px}
 
 /* À mijoter : les envies d'achat qui reposent avant d'aller sur la liste */
-.oh .ot .ot-t .ot-n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#C8462C;color:#fff;font-size:.74rem}
-.envie{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
-.envie>.txt{width:100%;padding:12px 14px 12px}
-.envie.prete{box-shadow:0 0 0 2px var(--vert),var(--shadow)}
-.jauge{display:block;height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:7px}
-.jauge>i{display:block;height:100%;background:#D9A441;border-radius:3px}
-.prete .jauge>i,.jauge.ok>i{background:var(--vert)}
-.question{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 14px}
-.question b{width:100%;font-size:.95rem}
-.mini{min-height:38px;padding:0 13px;border-radius:99px;font-weight:700;font-size:.9rem;border:1.5px solid var(--line2);background:var(--creme)}
-.mini.oui{background:var(--vert);border-color:var(--vert);color:#fff}
-.mini.non{color:var(--tomate);border-color:var(--tomate);background:#fff}
-.bilan{display:flex;gap:10px;align-items:center;background:var(--vertpale);color:var(--vert2);border-radius:12px;padding:12px 14px;font-size:.92rem}
-.bilan b{font-size:1.15rem}
-.statut{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.95rem}
-.statut.ok{border-color:var(--vert);background:var(--vertpale)}
-.choix{display:flex;align-items:stretch;background:var(--card);border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
-.choix.fav{border-color:var(--vert);box-shadow:0 0 0 1px var(--vert)}
-.choix .txt{padding:10px 6px 10px 12px;min-height:0}
-.star{flex:none;width:48px;border:0;background:transparent;font-size:1.3rem;color:var(--line2)}
-.choix.fav .star{color:#D9A441}
-.prix{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.pill{font-size:.75rem;font-weight:700;padding:1px 8px;border-radius:99px;white-space:nowrap}
-.pill.v{background:var(--vertpale);color:var(--vert2)}
-.pill.t{background:var(--tomatepale);color:#8E2A16}
+html[data-lieu] .oh .ot .ot-t .ot-n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);font:600 .72rem/1 var(--f-mono)}
+.envie{background:var(--surface);color:var(--ink);border-radius:var(--r);overflow:hidden}
+.envie>.txt{width:100%;padding:16px 18px}
+.envie.prete{box-shadow:inset 0 0 0 2px var(--accent)}
+.jauge{display:block;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-top:9px}
+.jauge>i{display:block;height:100%;background:var(--carotte);border-radius:3px}
+.prete .jauge>i,.jauge.ok>i{background:var(--feuille)}
+.question{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 16px}
+.question b{width:100%;font:700 .95rem/1.3 var(--f-display);letter-spacing:-.02em;margin-bottom:2px}
+.mini{min-height:40px;padding:0 16px;border-radius:var(--pill);font-weight:600;font-size:.9rem;border:0;background:var(--surface-2);color:var(--ink)}
+.mini.oui{background:var(--accent);color:var(--on-acc)}
+.mini.non{background:transparent;color:var(--bad);box-shadow:inset 0 0 0 1px var(--line)}
+.bilan{display:flex;gap:12px;align-items:center;background:var(--surface);color:var(--ink-2);border-radius:var(--r-m);padding:14px 18px;font-size:.92rem}
+.bilan .ic{width:20px;height:20px;color:var(--feuille)}
+.bilan b{font:700 1rem/1 var(--f-display);color:var(--ink)}
+.statut{background:var(--surface);color:var(--ink);border-radius:var(--r-m);padding:14px 16px;font-size:.95rem}
+.statut .ic{color:var(--carotte);width:18px;height:18px;margin-right:4px}
+.statut.ok{box-shadow:inset 0 0 0 2px var(--feuille)}
+.statut.ok .ic{color:var(--feuille)}
+.choix{display:flex;align-items:stretch;background:var(--surface);color:var(--ink);border-radius:var(--r-m);overflow:hidden}
+.choix.fav{box-shadow:inset 0 0 0 2px var(--accent)}
+.choix .txt{padding:12px 6px 12px 16px;min-height:0}
+.star{flex:none;width:50px;border:0;background:transparent;color:var(--ink-3);display:grid;place-items:center}
+.star .ic{width:20px;height:20px}
+.choix.fav .star{color:var(--carotte)}
+.choix.fav .star .ic{fill:currentColor}
+.prix{font:600 .85rem/1.2 var(--f-mono);white-space:nowrap}
+.pill{font:600 .68rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:var(--pill);white-space:nowrap}
+.pill.v{background:color-mix(in srgb,var(--feuille) 16%,transparent);color:var(--feuille)}
+.pill.t{background:var(--accent-soft);color:var(--accent-ink)}
 .choix-l{display:flex;flex-direction:column;gap:8px}
-textarea.in{height:auto;min-height:76px;padding:10px 12px;resize:vertical;line-height:1.35}
+textarea.in{height:auto;min-height:80px;padding:12px 16px;resize:vertical;line-height:1.35;border-radius:var(--r-m)}
 .btn-l{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .btn-l .btn{margin-top:0}
-.lien-ext{color:var(--vert);font-weight:700;word-break:break-all}
+.lien-ext{color:var(--accent-ink);font-weight:600;word-break:break-all}
 
 /* fenêtre (feuille) */
-.scrim{position:fixed;inset:0;z-index:40;background:rgba(30,25,15,.45);display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--on-page) 45%,transparent);display:flex;align-items:flex-end;justify-content:center}
 .sheet>*{flex-shrink:0}
-.sheet{background:var(--bg);width:100%;max-width:520px;max-height:92%;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:18px 18px 0 0;display:flex;flex-direction:column;gap:8px;animation:up .18s ease-out}
+.sheet{background:var(--page);color:var(--on-page);width:100%;max-width:520px;max-height:92%;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:var(--r) var(--r) 0 0;display:flex;flex-direction:column;gap:8px;animation:up .18s ease-out}
 @keyframes up{from{transform:translateY(28px);opacity:.5}}
-@media (min-width:600px){.scrim{align-items:center}.sheet{border-radius:18px}}
-.sh{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:8px;padding:14px 0 4px}
-.sh h2{flex:1;margin:0;font:700 2rem/1 var(--craie)}
-.x{width:44px;height:44px;border:0;background:transparent;border-radius:50%;font-size:1.15rem;color:var(--muted)}
-.x:hover{background:var(--line)}
-.lab{font-size:.86rem;font-weight:700;color:var(--muted);margin-top:8px}
-.lab .opt{font-weight:400}
-.in{width:100%;height:48px;padding:0 12px;border:1.5px solid var(--line2);border-radius:10px;background:var(--card);font-size:1rem}
-.in:focus{outline:none;border-color:var(--vert);box-shadow:0 0 0 3px var(--vertpale)}
-.aide{margin:0;font-size:.86rem;color:var(--muted)}
-.sw{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:8px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);cursor:pointer}
-.sw input{width:24px;height:24px;margin:0;accent-color:var(--vert);flex:none}
+@media (min-width:600px){.scrim{align-items:center}.sheet{border-radius:var(--r)}}
+.sh{position:sticky;top:0;z-index:2;background:var(--page);display:flex;align-items:center;gap:8px;padding:16px 0 6px}
+.sh h2{flex:1;margin:0;font:700 1.2rem/1.2 var(--f-display);letter-spacing:-.02em}
+.x{width:44px;height:44px;border:0;background:var(--surface);color:var(--ink);border-radius:50%;display:grid;place-items:center}
+.x .ic{width:16px;height:16px}
+.lab{font:400 11px/1.3 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--on-page-2);margin-top:10px}
+.lab .opt{text-transform:none;letter-spacing:0;font-family:var(--f-body);font-size:.8rem}
+.in{width:100%;height:50px;padding:0 16px;border:1px solid transparent;border-radius:var(--r-m);background:var(--surface);color:var(--ink);font-size:1rem}
+select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);background-position:calc(100% - 22px) 22px,calc(100% - 16px) 22px;background-size:6px 6px;background-repeat:no-repeat;padding-right:40px}
+.in:focus{outline:none;border-color:var(--accent)}
+.in::placeholder{color:var(--ink-3)}
+.aide{margin:0;font-size:.86rem;color:var(--on-page-2)}
+.sw{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-top:8px;border-radius:var(--r-m);background:var(--surface);color:var(--ink);cursor:pointer}
+.sw input{width:22px;height:22px;margin:0;accent-color:var(--accent);flex:none}
 .sw span{display:flex;flex-direction:column}
-.sw small{color:var(--muted);font-size:.86rem}
-.row-in{display:flex;align-items:center;gap:8px;font-size:.92rem;color:var(--muted)}
+.sw small{color:var(--ink-3);font-size:.85rem}
+.row-in{display:flex;align-items:center;gap:8px;font-size:.92rem;color:var(--on-page-2)}
 .row-in .in{flex:1}
-.in-n{width:84px;flex:none!important;text-align:center}
-.ligne-r{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.95rem}
-.ligne-r span:first-child{color:var(--muted)}
+.in-n{width:90px;flex:none!important;text-align:center}
+.ligne-r{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+.ligne-r span:first-child{color:var(--on-page-2)}
 
-.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:26;width:60px;height:60px;border:0;border-radius:18px;background:var(--vert);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 3px var(--page)}
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:26;width:60px;height:60px;border:0;border-radius:var(--r);background:var(--accent);color:var(--on-acc);display:grid;place-items:center;box-shadow:0 0 0 4px var(--page)}
+.fab .ic{width:24px;height:24px}
 @media (min-width:800px){.fab{right:calc(50% - 380px + 16px)}}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom,0px));z-index:50;width:max-content;max-width:calc(100% - 28px);background:#24211B;color:#fff;border-radius:12px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);font-size:.95rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom,0px));z-index:50;width:max-content;max-width:calc(100% - 28px);background:var(--ink);color:var(--surface);border-radius:var(--pill);padding:6px 8px 6px 20px;display:flex;align-items:center;gap:10px;font-size:.93rem}
 .toast span{padding:6px 0}
-.toast button{border:0;background:transparent;color:#A8DDB9;font-weight:700;padding:8px 10px;white-space:nowrap}
+.toast button{border:0;background:transparent;color:#F4B27A;font-weight:600;padding:8px 12px;white-space:nowrap}
 
-.login{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:0 16px}
-.lbox{width:100%;max-width:380px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:8px}
-.lbox .logo{width:56px;height:56px;display:block}
-.lbox h1{margin:4px 0 0;font:700 2.4rem/1 var(--craie)}
-.lbox p{margin:0 0 6px;color:var(--muted);font-size:.92rem}
-.lbox label{font-size:.86rem;font-weight:700;color:var(--muted);margin-top:4px}
+.login{position:fixed;inset:0;z-index:100;background:var(--page);display:grid;place-items:center;padding:0 16px}
+.lbox{width:100%;max-width:380px;background:var(--surface);color:var(--ink);border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:8px}
+.lbox .logo{width:52px;height:52px;display:block;border-radius:12px}
+.lbox h1{margin:6px 0 0;font:700 1.6rem/1.1 var(--f-display);letter-spacing:-.02em}
+.lbox p{margin:0 0 6px;color:var(--ink-3);font-size:.92rem}
+.lbox label{font:400 11px/1.3 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--ink-3);margin-top:6px}
+.lbox .in{background:var(--surface-2)}
 .lbox .btn{margin-top:10px}
-.err{color:var(--tomate);margin:4px 0 0!important}
-
-/* ===== Charte du 15.11 : typo de la Forge, étiquettes mono ===== */
-body{letter-spacing:.005em;-webkit-font-smoothing:antialiased}
-.titre{font-size:1.5rem;letter-spacing:-.025em;margin:6px 0 -6px}
-.cap{font-family:var(--f-mono);font-weight:400;letter-spacing:.12em;font-size:.7rem}
-.st-in h2{font-size:1.1rem;letter-spacing:-.02em;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vide .gros{font-size:1.3rem;letter-spacing:-.02em}
-.mag-nom{font-size:1rem;letter-spacing:-.02em}
-.sh h2{font-size:1.2rem;letter-spacing:-.02em}
-.lbox h1{font-size:1.6rem;letter-spacing:-.02em}
+.err{color:var(--bad);margin:4px 0 0!important}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 <link rel="stylesheet" href="../commun/lieux.css">
@@ -218,17 +217,18 @@ body{letter-spacing:.005em;-webkit-font-smoothing:antialiased}
 <header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">Le Marché</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="liste">Liste</button><button class="ot-t" data-tab="basiques">Basiques</button><button class="ot-t" data-tab="mijote">À mijoter</button><button class="ot-t" data-tab="magasins">Magasins</button></nav></header>
 <main id="view" aria-live="polite"></main>
-<button class="fab" id="fab" data-act="plus" aria-label="Ajouter un article"><svg class="i" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<button class="fab" id="fab" data-act="plus" aria-label="Ajouter un article"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg></button>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-titre"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
+<script src="../commun/pictos.js"></script>
 <script>
 'use strict';
 /* =============================== Réglages fixes =============================== */
 const SB_URL='https://rzcpjsffpvuvbdtqymms.supabase.co', SB_KEY='sb_publishable_mJNXDji0NMOmLFqo3GusGg_JBkFhJmC', TABLE='marche_rows';
 /* une ligne par objet : m: magasin, y: type de magasin, a: article, e: envie (article à mijoter), s: réglages.
    Les envies sont rangées sous le genre « article » : pas besoin de changer la table. */
-const KIND={m:'magasin',y:'type',a:'article',e:'article',s:'reglage'};
+const KIND={m:'magasin',y:'type',a:'article',e:'article',c:'type',s:'reglage'}; /* c: rayon, rangé sous le genre « type » (la table ne change pas) */
 const NEUTRE='#8A8170';
 const COULEURS=['#2E6B4E','#C8462C','#C9932B','#6E8B2F','#2F7EA6','#8A5A2B','#6A5ACD','#B4487A','#7A776C'];
 const TYPES0=[['supermarche','Supermarché','🛒','#2E6B4E'],['brico','Brico','🔨','#C8462C'],['jardin','Jardin','🌱','#6E8B2F'],['pharmacie','Pharmacie','💊','#2F7EA6'],
@@ -238,10 +238,47 @@ const SUGG=[['Migros',['supermarche']],['Coop',['supermarche']],['Lidl',['superm
   ['Pharmacie',['pharmacie']],['Boulangerie',['boulangerie']],['Galaxus',['en-ligne']]];
 const MIJOTE=[[7,'1 semaine'],[14,'2 semaines'],[30,'1 mois'],[90,'3 mois']]; /* durée de repos d'une envie */
 const RYTHMES=[[0,'Quand c’est fini'],[7,'1 semaine'],[14,'2 semaines'],[30,'1 mois'],[60,'2 mois'],[90,'3 mois']];
-const CHECK='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-const PLUS='<svg class="i" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+/* pictos au trait (charte : commun/pictos.js), plus quelques-uns propres au Marché */
+const PICTOS_M={
+  marmite:'<path d="M3 8h14v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zM1 8h18M7.5 5V3M12.5 5V3"/>',
+  feuille:'<path d="M4 17C4 9 9 4 17 3c0 8-5 13-13 14zM4 17l7-7"/>',
+  etoile:'<path d="M10 2.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2L10 14.3l-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z"/>',
+  rythme:'<path d="M16 11a6 6 0 1 1-2-5.2M15 2v4h-4"/>'
+};
+function ic(k){ if(PICTOS_M[k]) return `<svg class="ic" viewBox="0 0 20 20" aria-hidden="true">${PICTOS_M[k]}</svg>`; return window.Pictos?Pictos.svg(k):''; }
+const CHECK=ic('fait'), PLUS=ic('plus');
+/* rayons de départ, dans l'ordre d'un tour de supermarché, avec les mots qui y rangent un article
+   (sans accents ; « _ » relie les mots d'une expression). Nicolas peut tout changer : nom, ordre, mots. */
+const RAYONS0=[
+ ['fruits','Fruits','fruit pomme poire banane orange mandarine clementine citron lime kiwi raisin fraise framboise myrtille mure cerise abricot peche nectarine prune ananas mangue melon pasteque grenade figue avocat kaki litchi papaye rhubarbe coing pamplemousse'],
+ ['legumes','Légumes','legume carotte tomate salade laitue roquette epinard chou brocoli courgette aubergine poivron concombre oignon ail echalote poireau celeri fenouil radis betterave navet panais patate pomme_de_terre courge potiron butternut champignon haricot asperge artichaut endive mache cresson persil basilic coriandre ciboulette menthe aneth gingembre petit_pois'],
+ ['boulangerie','Boulangerie','pain baguette croissant tresse brioche ballon mie pain_de_mie petit_pain'],
+ ['viande','Viande & poisson','viande poulet boeuf porc veau agneau steak hache saucisse cervelas jambon lard lardon bacon chorizo salami dinde escalope emince merguez poisson saumon truite crevette cabillaud'],
+ ['fromage','Fromage','fromage gruyere emmental vacherin mozzarella parmesan feta raclette fondue mascarpone ricotta chevre brie camembert tomme cottage halloumi'],
+ ['laitiers','Produits laitiers','lait yaourt yogourt yoghourt beurre creme sere skyr kefir margarine'],
+ ['oeufs','Œufs','oeuf'],
+ ['frais','Frais & traiteur','tofu tempeh houmous hummus gnocchi rosti traiteur ravioli pate_feuilletee pate_brisee pate_a_pizza pate_fraiche'],
+ ['conserves','Conserves & bocaux','conserve boite pelee concentre coulis passata sauce_tomate thon sardine cornichon olive capre bocal'],
+ ['cereales','Pâtes, riz & céréales','pate spaghetti penne nouille fusilli tagliatelle riz quinoa couscous boulgour semoule polenta lentille pois_chiche'],
+ ['epicerie','Épicerie','farine sucre sel poivre huile vinaigre epice curry paprika cumin cannelle moutarde mayonnaise ketchup bouillon levure bicarbonate maizena sauce_soja miel cacao vanille noix amande noisette cacahuete graine fruits_secs raisins_secs datte pruneau lait_de_coco'],
+ ['petitdej','Petit-déjeuner','cafe the tisane infusion confiture pate_a_tartiner nutella ovomaltine muesli cereale flocon avoine porridge'],
+ ['snacks','Biscuits & snacks','biscuit chips chocolat bonbon gateau cracker barre apero'],
+ ['boissons','Boissons','eau jus sirop biere vin cidre soda coca limonade kombucha rivella the_froid'],
+ ['surgeles','Surgelés','surgele congele glace frite pizza'],
+ ['hygiene','Hygiène','savon shampoing shampooing dentifrice brosse_a_dents deodorant papier_toilette pq mouchoir coton rasoir creme_solaire gel_douche'],
+ ['menage','Ménage','lessive liquide_vaisselle produit_vaisselle eponge sac_poubelle javel nettoyant papier_menage essuie_tout sopalin film_alimentaire papier_alu papier_cuisson allumette bougie pile'],
+ ['animaux','Animaux','croquette litiere patee'],
+ ['visserie','Visserie & colle','vis cheville clou boulon ecrou rondelle colle silicone scotch adhesif ruban mastic joint mousse_expansive'],
+ ['outillage','Outillage','meche foret lame disque scie tournevis embout cutter metre gant'],
+ ['peinture','Peinture','peinture pinceau rouleau enduit lasure vernis'],
+ ['electricite','Électricité','cable prise interrupteur domino gaine ampoule rallonge'],
+ ['bois','Bois & panneaux','planche panneau osb contreplaque latte chevron poutre liteau tasseau'],
+ ['jardin','Jardin','terreau engrais semence semis plant tuyau'],
+ ['divers','Divers','']
+];
+const PRIO=new Set(['pelee','concentre','conserve','boite','bocal','surgele','congele']); /* ces mots l'emportent : « tomates pelées » va aux conserves */
 
-let S={mags:{},types:{},arts:{},envies:{},regl:{}};
+let S={mags:{},types:{},arts:{},envies:{},cats:{},regl:{}};
 let sb=null, UID=null, EMAIL='', prev={}, dirty=new Set(), lastPull=null, pushing=false, pushTimer=null, syncErr='', booted=false;
 const ui={tab:lsGet('marche-tab')||'liste', ici:lsGet('marche-ici')||'', q:'', bq:''};
 if(!['liste','basiques','mijote','magasins'].includes(ui.tab)) ui.tab='liste';
@@ -278,7 +315,6 @@ function prim(a){ return ouDe(a)[0]||''; }
 function typeCouleur(id){ const t=S.types[id]; return t&&t.couleur||NEUTRE; }
 function typesDeMag(m){ return (m&&m.types||[]).filter(t=>S.types[t]); }
 function refCouleur(r){ if(!r) return NEUTRE; if(r[0]==='m'){ const t=typesDeMag(S.mags[r.slice(2)]); return t.length?typeCouleur(t[0]):'#2E6B4E'; } return typeCouleur(r.slice(2)); }
-function refEmoji(r){ if(!r) return '🧺'; if(r[0]==='m'){ const t=typesDeMag(S.mags[r.slice(2)]); return t.length?S.types[t[0]].emoji||'🏪':'🏪'; } const t=S.types[r.slice(2)]; return t&&t.emoji||'🏷️'; }
 function refNom(r,court){ if(!r) return 'N’importe où'; if(r[0]==='m'){ const m=S.mags[r.slice(2)]; return m?m.nom:'?'; } const t=S.types[r.slice(2)]; return t?(court?t.nom+' (tous)':t.nom):'?'; }
 /* l'article se trouve-t-il dans ce magasin ? (chez lui, ou n'importe quel magasin de son type, ou n'importe où) */
 function dispo(a,mid){ const ou=ouDe(a); if(!ou.length) return true; const m=S.mags[mid]; if(!m) return false; const ts=typesDeMag(m); return ou.some(r=>r==='m:'+mid||(r[0]==='y'&&ts.includes(r.slice(2)))); }
@@ -306,6 +342,51 @@ function grouper(list,ici){
   }
   return [...mags().map(m=>'m:'+m.id),...types().map(t=>'y:'+t.id),''].filter(r=>G.has(r)).map(r=>({ref:r,items:G.get(r).sort(triNom)}));
 }
+/* --- rayons (catégories de produits) --- */
+let DICO=null;
+function catsTri(){ return Object.values(S.cats).sort((a,b)=>(a.ordre||0)-(b.ordre||0)||a.nom.localeCompare(b.nom,'fr')); }
+function semerRayons(){ RAYONS0.forEach(([id,nom,mots],i)=>{ if(!S.cats[id]) S.cats[id]={id,nom,mots,appris:[],ordre:i}; }); }
+function sing(t){ return t.length>3&&/[sx]$/.test(t)?t.slice(0,-1):t; }
+function toks(s){ return norm(s).replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).map(sing); }
+function cleNom(s){ return toks(s).join(' '); }
+function dico(){
+  if(DICO) return DICO; const noms=new Map(), multi=[], single=new Map();
+  for(const c of catsTri()){
+    for(const n of c.appris||[]) if(!noms.has(n)) noms.set(n,c.id);
+    for(const w of String(c.mots||'').split(/[\s,;]+/).filter(Boolean)){ const t=toks(w.replace(/_/g,' ')); if(!t.length) continue;
+      if(t.length>1) multi.push([t.join(' '),c.id]); else if(!single.has(t[0])) single.set(t[0],c.id); }
+  }
+  multi.sort((a,b)=>b[0].length-a[0].length);
+  return DICO={noms,multi,single};
+}
+/* devine le rayon d'après le nom : ce que Nicolas a appris au Marché, puis les expressions, puis les mots prioritaires, puis le premier mot reconnu */
+function deviner(nom){
+  const d=dico(), n=cleNom(nom); if(!n) return S.cats.divers?'divers':'';
+  if(d.noms.has(n)) return d.noms.get(n);
+  const n2=' '+n+' '; for(const [k,c] of d.multi) if(n2.includes(' '+k+' ')) return c;
+  const ts=n.split(' ');
+  for(const t of ts) if(PRIO.has(t)&&d.single.has(t)) return d.single.get(t);
+  for(const t of ts){ let best=null, bl=0; for(const [k,c] of d.single){ if(k.length<=3?t===k:t.startsWith(k)){ if(k.length>bl){ best=c; bl=k.length; } } } if(best) return best; }
+  return S.cats.divers?'divers':'';
+}
+function catDe(a){ return a.cat&&S.cats[a.cat]?a.cat:deviner(a.nom); }
+function catNom(id){ return S.cats[id]?S.cats[id].nom:'Divers'; }
+/* ordre des rayons dans un magasin : le sien (choisi par Nicolas), puis les autres dans l'ordre par défaut */
+function ordreRayons(mid){ const m=mid&&S.mags[mid], perso=(m&&m.rayons||[]).filter(id=>S.cats[id]); return [...perso,...catsTri().map(c=>c.id).filter(id=>!perso.includes(id))]; }
+function magDeRef(r){ if(!r) return ui.ici&&S.mags[ui.ici]?ui.ici:''; if(r[0]==='m') return r.slice(2); const m=mags().find(x=>typesDeMag(x).includes(r.slice(2))); return m?m.id:''; }
+function trierRayons(items,mid){ const rang=new Map(ordreRayons(mid).map((id,i)=>[id,i])), rg=a=>{ const c=catDe(a); return rang.has(c)?rang.get(c):999; };
+  return items.slice().sort((a,b)=>rg(a)-rg(b)||triNom(a,b)); }
+/* les lignes d'un étal, avec un petit intertitre par rayon quand il y en a plusieurs */
+function lignesRayons(items,mid,row){
+  const tri=trierRayons(items,mid), cs=[...new Set(tri.map(catDe))];
+  if(cs.length<2) return tri.map(row).join('');
+  let h='', cur=null; for(const a of tri){ const c=catDe(a); if(c!==cur){ cur=c; h+=`<div class="rayon">${esc(catNom(c))}</div>`; } h+=row(a); } return h;
+}
+/* Nicolas range un article ailleurs que prévu : le Marché retient le nom pour ce rayon */
+function apprendre(nom,cat){ const k=cleNom(nom); if(!k) return;
+  for(const c of Object.values(S.cats)){ if((c.appris||[]).includes(k)) c.appris=c.appris.filter(x=>x!==k); }
+  DICO=null; if(cat&&S.cats[cat]&&deviner(nom)!==cat){ const c=S.cats[cat]; c.appris=[...(c.appris||[]),k].slice(-300); }
+  DICO=null; }
 function semer(){ TYPES0.forEach(([id,nom,emoji,couleur],i)=>{ if(!S.types[id]) S.types[id]={id,nom,emoji,couleur,ordre:i}; }); }
 function ranger1(a){ const d=jourDe(a.panier)||today(); a.achats=[...new Set([...(a.achats||[]),d])].sort().slice(-24); a.liste=false; a.panier=null; a.auto=false; a.depuis=d; }
 function surListe(a){ a.liste=true; a.panier=null; a.auto=false; a.ajoute=nowIso(); delete a.pris; }
@@ -335,13 +416,14 @@ function canon(v){ if(Array.isArray(v)) return '['+v.map(x=>canon(x===undefined?
 function rowsOf(st){ const r={};
   for(const m of Object.values(st.mags)) r['m:'+m.id]=m; for(const t of Object.values(st.types)) r['y:'+t.id]=t; for(const a of Object.values(st.arts)) r['a:'+a.id]=a;
   for(const e of Object.values(st.envies||{})) r['e:'+e.id]=e;
+  for(const c of Object.values(st.cats||{})) r['c:'+c.id]=c;
   if(Object.keys(st.regl).length) r['s:reglages']=st.regl; return r; }
-function fromRows(map){ const st={mags:{},types:{},arts:{},envies:{},regl:{}};
+function fromRows(map){ DICO=null; const st={mags:{},types:{},arts:{},envies:{},cats:{},regl:{}};
   for(const k in map){ let d; try{ d=JSON.parse(map[k]); }catch(e){ continue; } if(!d) continue; const p=k[0];
-    if(p==='m') st.mags[d.id]=d; else if(p==='y') st.types[d.id]=d; else if(p==='a') st.arts[d.id]=d; else if(p==='e') st.envies[d.id]=d; else if(k==='s:reglages') st.regl=d; }
+    if(p==='m') st.mags[d.id]=d; else if(p==='y') st.types[d.id]=d; else if(p==='a') st.arts[d.id]=d; else if(p==='e') st.envies[d.id]=d; else if(p==='c') st.cats[d.id]=d; else if(k==='s:reglages') st.regl=d; }
   return st; }
 function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull})); }catch(e){} }
-function save(){ if(!UID) return; const cur=rowsOf(S); let ch=false;
+function save(){ DICO=null; if(!UID) return; const cur=rowsOf(S); let ch=false;
   for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ prev[k]=v; dirty.add(k); ch=true; } }
   for(const k in prev){ if(!(k in cur)){ delete prev[k]; dirty.add(k); ch=true; } }
   if(ch){ persist(); schedulePush(); setSync(); } }
@@ -403,11 +485,11 @@ function render(){
 }
 function alerteTable(){ return tableManque()?'<div class="alerte"><b>La base de Marché n’est pas encore prête.</b>Lance « supabase/marche.sql » dans Supabase (SQL Editor). En attendant, tout reste enregistré sur cet appareil.</div>':''; }
 function section(g,rows,extra){
-  const sous=!g.ref?'pas de magasin précis':g.ref[0]==='y'?'n’importe quel magasin de ce type':typesDeMag(S.mags[g.ref.slice(2)]).map(t=>S.types[t].nom).join(' · ');
-  return `<section class="etal" style="--c:${refCouleur(g.ref)}"><span class="aw" aria-hidden="true"></span><div class="st-in"><h2><span class="em" aria-hidden="true">${refEmoji(g.ref)}</span><span class="tx">${esc(refNom(g.ref))}</span></h2><span class="st-sous">${esc(sous)}</span><span class="st-n">${extra==null?g.items.length:extra}</span></div><div class="rows">${rows}</div></section>`;
+  const sous=!g.ref?'pas de magasin précis':g.ref[0]==='y'?'tous les magasins de ce type':(typesDeMag(S.mags[g.ref.slice(2)]).map(t=>S.types[t].nom).join(' · ')||'magasin');
+  return `<section class="etal" style="--c:${refCouleur(g.ref)}"><div class="st-in"><span class="st-ey"><span class="pastille" aria-hidden="true"></span><span class="tx">${esc(sous)}</span></span><h2>${esc(refNom(g.ref))}</h2><span class="st-n">${extra==null?g.items.length:extra}</span></div><div class="rows">${rows}</div></section>`;
 }
-function rowListe(a,ref,fait){
-  const autres=ouDe(a).filter(r=>r!==ref), meta=[];
+function rowListe(a,ref,fait,ici){
+  const autres=ici?[]:ouDe(a).filter(r=>r!==ref), meta=[];
   if(a.note) meta.push(esc(a.note));
   if(a.basique) meta.push('<span class="v">basique</span>'+(a.auto?' · revenu avec le rythme':''));
   if(autres.length) meta.push('aussi : '+autres.map(r=>esc(refNom(r,true))).join(', '));
@@ -423,13 +505,14 @@ function vListe(){
   }
   h+=`<form class="qa" id="qa-form" autocomplete="off"><input id="qa" type="text" placeholder="${mi?'Ajouter chez '+esc(mi.nom)+'…':'Ajouter un article…'}" value="${esc(ui.q)}" enterkeyhint="done" autocapitalize="sentences" aria-label="Ajouter un article"><button type="submit" aria-label="Ajouter">${PLUS}</button></form><div class="sugg" id="qa-sugg" hidden></div>`;
   const vis=mi?act.filter(a=>dispo(a,ui.ici)):act;
-  if(vis.length) h+=grouper(vis,mi?ui.ici:'').map(g=>section(g,g.items.map(a=>rowListe(a,g.ref)).join(''))).join('');
+  if(vis.length&&mi) h+=section({ref:'m:'+mi.id,items:vis},lignesRayons(vis,mi.id,a=>rowListe(a,'m:'+mi.id,false,true)));
+  else if(vis.length) h+=grouper(vis,'').map(g=>section(g,lignesRayons(g.items,magDeRef(g.ref),a=>rowListe(a,g.ref)))).join('');
   else if(act.length&&mi) h+=`<div class="vide"><span class="gros">Rien à acheter ici</span>Rien sur ta liste ne se trouve chez ${esc(mi.nom)}.</div>`;
-  else if(pris.length) h+=`<div class="vide"><span class="gros">Tout est acheté 👏</span>Les basiques sont retournés dans leur réserve.</div>`;
+  else if(pris.length) h+=`<div class="vide"><span class="gros">Tout est acheté</span>Les basiques sont retournés dans leur réserve.</div>`;
   else { const nb=tous.filter(a=>a.basique).length;
-    h+=`<div class="vide"><span class="gros">Rien à acheter 🌿</span>${ms.length?'Écris un article juste au-dessus, ou touche +.':'Commence par tes magasins : la liste sera rangée par étal.'}<br>${!ms.length?'<button class="btn2" data-tab-go="magasins">Ajouter mes magasins</button>':nb?'<button class="btn2" data-tab-go="basiques">Passer en revue mes basiques</button>':''}</div>`; }
+    h+=`<div class="vide"><span class="gros">Rien à acheter</span>${ms.length?'Écris un article juste au-dessus, ou touche +.':'Commence par tes magasins : la liste sera rangée par étal.'}<br>${!ms.length?'<button class="btn2" data-tab-go="magasins">Ajouter mes magasins</button>':nb?'<button class="btn2" data-tab-go="basiques">Passer en revue mes basiques</button>':''}</div>`; }
   if(mi&&vis.length<act.length) h+=`<button class="btn2" data-act="ici" data-id="">${pl(act.length-vis.length,'article')} pour d’autres magasins · tout voir</button>`;
-  if(pris.length) h+=`<section class="etal fait"><div class="st-in"><h2><span class="em" aria-hidden="true">✓</span><span class="tx">Acheté aujourd’hui</span></h2><span class="st-sous">${pl(pris.length,'article')}</span></div><div class="rows">${pris.map(a=>rowListe(a,prim(a),true)).join('')}</div><p class="note-bas">Coché par erreur ? Touche-le pour le remettre sur la liste.</p></section>`;
+  if(pris.length) h+=`<section class="etal fait"><div class="st-in"><span class="st-ey"><span class="tx">${pl(pris.length,'article')}</span></span><h2>${ic('fait')}Acheté aujourd’hui</h2></div><div class="rows">${pris.map(a=>rowListe(a,prim(a),true)).join('')}</div><p class="note-bas">Coché par erreur ? Touche-le pour le remettre sur la liste.</p></section>`;
   if(vis.length) h+=`<button class="btn2" data-act="partager">Envoyer la liste${mi?' de '+esc(mi.nom):''}</button>`;
   return h;
 }
@@ -442,21 +525,20 @@ function majSugg(){
 }
 function rowBasique(a){
   let st, btn;
-  if(a.liste){ st='<span class="v">sur la liste</span>'+(a.auto?' · revenu avec le rythme':''); btn=`<button class="bt-on" data-act="defini" data-id="${a.id}" aria-label="${esc(a.nom)} : retirer de la liste">✓ Sur la liste</button>`; }
-  else { const d=derniere(a); st='en stock'+(d?' · acheté '+ilYa(d):''); if(a.rythme>0) st+=' · <span title="'+rythmeTxt(a.rythme)+'">↻ revient '+dansJ(ecart(today(),prochain(a)))+'</span>'; btn=`<button class="bt-fini" data-act="fini" data-id="${a.id}" aria-label="${esc(a.nom)} : c’est fini, à racheter">Fini</button>`; }
-  const ry=a.liste&&a.rythme>0&&!a.auto?' · ↻ '+rythmeTxt(a.rythme):'';
+  if(a.liste){ st='<span class="v">sur la liste</span>'+(a.auto?' · revenu avec le rythme':''); btn=`<button class="bt-on" data-act="defini" data-id="${a.id}" aria-label="${esc(a.nom)} : retirer de la liste">${ic('fait')}Sur la liste</button>`; }
+  else { const d=derniere(a); st='en stock'+(d?' · acheté '+ilYa(d):''); if(a.rythme>0) st+=' · <span title="'+rythmeTxt(a.rythme)+'">revient '+dansJ(ecart(today(),prochain(a)))+'</span>'; btn=`<button class="bt-fini" data-act="fini" data-id="${a.id}" aria-label="${esc(a.nom)} : c’est fini, à racheter">Fini</button>`; }
+  const ry=a.liste&&a.rythme>0&&!a.auto?' · '+rythmeTxt(a.rythme):'';
   return `<div class="art"><button class="txt pad" data-act="art" data-id="${a.id}"><span class="l1"><span class="nom">${esc(a.nom)}</span>${a.qte?`<span class="qte">${esc(a.qte)}</span>`:''}</span><span class="meta">${st}${ry}</span></button>${btn}</div>`;
 }
 function vBasiques(){
   const bs=arts().filter(a=>a.basique), q=norm(ui.bq), vis=q?bs.filter(a=>norm(a.nom).includes(q)):bs;
   const nl=bs.filter(a=>a.liste).length;
-  let h=alerteTable()+`<h2 class="titre">Basiques</h2><p class="sous-titre">Ce que tu rachètes chaque fois que c’est fini. Touche « Fini » : l’article retourne sur la liste.</p>`;
+  let h=alerteTable()+`<div class="cap">Réserve${bs.length?' · '+(bs.length-nl)+' en stock · '+nl+' sur la liste':''}</div><h2 class="titre">Basiques</h2><p class="sous-titre">Ce que tu rachètes chaque fois que c’est fini. Touche « Fini » : l’article retourne sur la liste.</p>`;
   if(!bs.length) h+=`<div class="vide"><span class="gros">Pas encore de basiques</span>Huile, café, papier toilette, vis de 4×40… Touche + pour en ajouter, ou coche « Basique » sur un article de ta liste.</div>`;
   else {
-    h+=`<p class="sous-titre"><b>${bs.length-nl}</b> en réserve · <b>${nl}</b> sur la liste</p>`;
     if(bs.length>8) h+=`<input class="cherche" id="bq" type="search" placeholder="Chercher un basique…" value="${esc(ui.bq)}" aria-label="Chercher un basique">`;
     const gs=grouper(vis,'');
-    h+=gs.length?gs.map(g=>section(g,g.items.map(rowBasique).join(''))).join(''):'<div class="vide">Aucun basique ne correspond.</div>';
+    h+=gs.length?gs.map(g=>section(g,lignesRayons(g.items,magDeRef(g.ref),rowBasique))).join(''):'<div class="vide">Aucun basique ne correspond.</div>';
   }
   const autres=arts().filter(a=>!a.basique&&!a.liste&&(!q||norm(a.nom).includes(q))).sort((a,b)=>(derniere(b)||'').localeCompare(derniere(a)||'')||triNom(a,b));
   if(autres.length) h+=`<details class="etal"><summary>Autres articles déjà achetés · ${autres.length}</summary><div class="rows">${autres.slice(0,200).map(a=>{ const d=derniere(a);
@@ -475,34 +557,39 @@ function carteEnvie(e){
 function vMijote(){
   const E=envies(), mij=E.filter(e=>e.etat==='mijote').sort((a,b)=>(a.jusqua||'').localeCompare(b.jusqua||'')), pretes=mij.filter(prete), enCours=mij.filter(e=>!prete(e));
   const faites=E.filter(e=>e.etat!=='mijote').sort((a,b)=>((b.fin&&b.fin.le)||'').localeCompare((a.fin&&a.fin.le)||'')), ren=faites.filter(e=>e.etat==='renonce');
-  let h=alerteTable()+`<h2 class="titre">À mijoter</h2><p class="sous-titre">Une envie d’achat repose ici avant d’aller sur la liste. Compare les options en attendant ; quand le temps est passé, le Marché te demande si tu en as toujours envie.</p>`;
-  if(!E.length) h+=`<div class="vide"><span class="gros">Rien ne mijote 🍲</span>Une scie, une veste, un gadget qui te trotte dans la tête ? Touche + : l’envie attend deux semaines, et tu compares les options pendant ce temps.</div>`;
+  let h=alerteTable()+`<div class="cap">Envies d’achat${mij.length?' · '+mij.length+' en attente':''}</div><h2 class="titre">À mijoter</h2><p class="sous-titre">Une envie d’achat repose ici avant d’aller sur la liste. Compare les options en attendant ; quand le temps est passé, le Marché te demande si tu en as toujours envie.</p>`;
+  if(!E.length) h+=`<div class="vide"><span class="gros">Rien ne mijote</span>Une scie, une veste, un gadget qui te trotte dans la tête ? Touche + : l’envie attend deux semaines, et tu compares les options pendant ce temps.</div>`;
   if(pretes.length) h+=`<div class="cap">Le temps est passé</div><div class="liste-v">${pretes.map(carteEnvie).join('')}</div>`;
   if(enCours.length) h+=`<div class="cap">Ça mijote</div><div class="liste-v">${enCours.map(carteEnvie).join('')}</div>`;
-  if(ren.length){ const v=ren.reduce((t,e)=>t+(valeurEnvie(e)||0),0); h+=`<div class="bilan"><span aria-hidden="true">🌿</span><span><b>${pl(ren.length,'envie')}</b> laissée${ren.length>1?'s':''} de côté${v?` · environ <b>${esc(chf(Math.round(v)))}</b> pas dépensés`:''}</span></div>`; }
+  if(ren.length){ const v=ren.reduce((t,e)=>t+(valeurEnvie(e)||0),0); h+=`<div class="bilan">${ic('feuille')}<span><b>${pl(ren.length,'envie')}</b> laissée${ren.length>1?'s':''} de côté${v?` · environ <b>${esc(chf(Math.round(v)))}</b> pas dépensés`:''}</span></div>`; }
   if(faites.length) h+=`<details class="etal"><summary>Envies décidées · ${faites.length}</summary><div class="rows">${faites.map(e=>{ const v=valeurEnvie(e);
-    return `<div class="art"><button class="txt pad" data-act="envie" data-id="${e.id}"><span class="l1"><span class="nom">${esc(e.nom)}</span>${v?`<span class="prix meta">${esc(chf(v))}</span>`:''}</span><span class="meta">${e.etat==='achete'?'<span class="v">✓ achetée</span>':'<span class="t">laissée de côté</span>'}${e.fin&&e.fin.le?' · '+ilYa(e.fin.le):''}${e.fin&&e.fin.nom&&e.fin.nom!==e.nom?' · '+esc(e.fin.nom):''}</span></button></div>`; }).join('')}</div></details>`;
+    return `<div class="art"><button class="txt pad" data-act="envie" data-id="${e.id}"><span class="l1"><span class="nom">${esc(e.nom)}</span>${v?`<span class="prix meta">${esc(chf(v))}</span>`:''}</span><span class="meta">${e.etat==='achete'?'<span class="v">achetée</span>':'<span class="t">laissée de côté</span>'}${e.fin&&e.fin.le?' · '+ilYa(e.fin.le):''}${e.fin&&e.fin.nom&&e.fin.nom!==e.nom?' · '+esc(e.fin.nom):''}</span></button></div>`; }).join('')}</div></details>`;
   return h;
 }
 function vMagasins(){
   const ms=mags(), act=arts().filter(a=>a.liste);
-  let h=alerteTable()+`<h2 class="titre">Magasins</h2><p class="sous-titre">Ta liste suit cet ordre : mets en premier celui où tu vas le plus.</p>`;
+  let h=alerteTable()+`<div class="cap">Où tu fais tes courses${ms.length?' · '+ms.length:''}</div><h2 class="titre">Magasins</h2><p class="sous-titre">Ta liste suit cet ordre : mets en premier celui où tu vas le plus. Dans la fiche d’un magasin, « Ordre des rayons » règle le tour du magasin.</p>`;
   h+=ms.length?'<div class="liste-v">'+ms.map((m,i)=>{ const ts=typesDeMag(m), n=act.filter(a=>dispo(a,m.id)).length;
-    return `<div class="mag" style="--c:${refCouleur('m:'+m.id)}"><button class="txt" data-act="mag" data-id="${m.id}"><span class="mag-nom">${esc(m.nom)}</span><span class="meta">${ts.length?ts.map(t=>esc(S.types[t].emoji+' '+S.types[t].nom)).join(' · '):'sans type'}${n?' · <span class="v">'+pl(n,'article')+' à acheter</span>':''}${m.note?' · '+esc(m.note):''}</span></button><div class="ord"><button data-act="mag-haut" data-id="${m.id}" aria-label="Monter ${esc(m.nom)}" ${i===0?'disabled':''}>↑</button><button data-act="mag-bas" data-id="${m.id}" aria-label="Descendre ${esc(m.nom)}" ${i===ms.length-1?'disabled':''}>↓</button></div></div>`; }).join('')+'</div>'
+    return `<div class="mag" style="--c:${refCouleur('m:'+m.id)}"><span class="pastille" aria-hidden="true"></span><button class="txt" data-act="mag" data-id="${m.id}"><span class="mag-nom">${esc(m.nom)}</span><span class="meta">${ts.length?ts.map(t=>esc(S.types[t].emoji+' '+S.types[t].nom)).join(' · '):'sans type'}${n?' · <span class="v">'+pl(n,'article')+' à acheter</span>':''}${m.note?' · '+esc(m.note):''}</span></button><div class="ord"><button data-act="mag-haut" data-id="${m.id}" aria-label="Monter ${esc(m.nom)}" ${i===0?'disabled':''}>${ic('monter')}</button><button data-act="mag-bas" data-id="${m.id}" aria-label="Descendre ${esc(m.nom)}" ${i===ms.length-1?'disabled':''}>${ic('descendre')}</button></div></div>`; }).join('')+'</div>'
     :`<div class="vide"><span class="gros">Aucun magasin</span>Touche ceux où tu vas, juste en dessous, ou ajoute le tien.</div>`;
   h+=`<button class="btn2" data-act="mag-new">+ Ajouter un magasin</button>`;
   const noms=new Set(ms.map(m=>norm(m.nom))), sug=SUGG.filter(([n])=>!noms.has(norm(n)));
   if(sug.length) h+=`<div class="cap">Ajout rapide</div><div class="chips">${sug.map(([n])=>`<button class="chip" data-act="mag-sugg" data-nom="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>`;
   const ts=types();
-  h+=`<h2 class="titre" style="margin-top:14px">Types de magasins</h2><p class="sous-titre">Un article rangé dans « Supermarché (tous) » apparaît dans chaque supermarché. La couleur donne celle de l’auvent.</p>`;
+  h+=`<div class="cap" style="margin-top:14px">Types</div><h2 class="titre">Types de magasins</h2><p class="sous-titre">Un article rangé dans « Supermarché (tous) » apparaît dans chaque supermarché. La couleur est celle de la pastille.</p>`;
   h+='<div class="liste-v">'+ts.map(t=>{ const n=ms.filter(m=>typesDeMag(m).includes(t.id)).length;
-    return `<button class="typ" style="--c:${t.couleur||NEUTRE}" data-act="type" data-id="${t.id}"><span class="pas" aria-hidden="true"></span><span class="em" aria-hidden="true">${esc(t.emoji||'🏷️')}</span><b>${esc(t.nom)}</b><span class="meta">${n?pl(n,'magasin'):'—'}</span></button>`; }).join('')+'</div>';
+    return `<button class="typ" style="--c:${t.couleur||NEUTRE}" data-act="type" data-id="${t.id}"><span class="pastille" aria-hidden="true"></span><span class="em" aria-hidden="true">${esc(t.emoji||'🏷️')}</span><b>${esc(t.nom)}</b><span class="meta">${n?pl(n,'magasin'):'—'}</span></button>`; }).join('')+'</div>';
   h+=`<button class="btn2" data-act="type-new">+ Nouveau type</button>`;
+  const cs=catsTri(), A=arts();
+  h+=`<div class="cap" style="margin-top:14px">Rayons · ${cs.length}</div><h2 class="titre">Rayons</h2><p class="sous-titre">Les catégories de produits. Un article est rangé tout seul d’après son nom ; si tu le changes de rayon, le Marché s’en souvient. Cet ordre est celui par défaut ; chaque magasin peut avoir le sien.</p>`;
+  h+=`<details class="etal"><summary>Voir et ranger les rayons</summary><div class="rows">${cs.map((c,i)=>{ const n=A.filter(a=>catDe(a)===c.id).length;
+    return `<div class="art"><button class="txt pad" data-act="cat" data-id="${c.id}"><span class="l1"><span class="nom">${esc(c.nom)}</span></span><span class="meta">${n?pl(n,'article'):'aucun article'}${(c.appris||[]).length?' · '+(c.appris.length)+' appris':''}</span></button><div class="ord"><button data-act="cat-haut" data-id="${c.id}" aria-label="Monter ${esc(c.nom)}" ${i===0?'disabled':''}>${ic('monter')}</button><button data-act="cat-bas" data-id="${c.id}" aria-label="Descendre ${esc(c.nom)}" ${i===cs.length-1?'disabled':''}>${ic('descendre')}</button></div></div>`; }).join('')}</div></details>`;
+  h+=`<button class="btn2" data-act="cat-new">+ Nouveau rayon</button>`;
   return h;
 }
 
 /* =============================== Fenêtres =============================== */
-function tete(t){ return `<div class="sh"><h2 id="sh-titre">${esc(t)}</h2><button class="x" data-act="fermer" aria-label="Fermer">✕</button></div>`; }
+function tete(t){ return `<div class="sh"><h2 id="sh-titre">${esc(t)}</h2><button class="x" data-act="fermer" aria-label="Fermer">${ic('supprimer')}</button></div>`; }
 function ouvrir(focus){ $scrim.hidden=false; document.body.style.overflow='hidden'; if(focus){ const el=document.getElementById(focus); if(el) setTimeout(()=>el.focus(),60); } }
 function fermer(){ $scrim.hidden=true; document.body.style.overflow=''; ed=null; $sheet.innerHTML=''; }
 const val=id=>{ const el=document.getElementById(id); return el?el.value:''; };
@@ -510,11 +597,12 @@ const val=id=>{ const el=document.getElementById(id); return el?el.value:''; };
 /* --- article --- */
 function ouvrirArt(id,o){ o=o||{}; const a=id?S.arts[id]:null;
   ed={k:'art',id:id||null,conf:false,d:a?JSON.parse(JSON.stringify(a)):{nom:o.nom||'',qte:'',note:'',ou:ui.tab==='liste'&&ui.ici&&S.mags[ui.ici]?['m:'+ui.ici]:[],basique:!!o.basique,rythme:0,liste:!o.basique,achats:[]}};
-  ed.d.ou=ouDe(ed.d); ed.d.rythme=ed.d.rythme||0; vArt(); ouvrir(id?null:'e-nom'); }
+  ed.d.ou=ouDe(ed.d); ed.d.rythme=ed.d.rythme||0; ed.d.catChoix=a&&a.cat&&S.cats[a.cat]&&a.cat!==deviner(a.nom)?a.cat:''; vArt(); ouvrir(id?null:'e-nom'); }
 function lireArt(){ if(!ed||ed.k!=='art') return; const d=ed.d, g=id=>document.getElementById(id);
   if(g('e-nom')) d.nom=g('e-nom').value; if(g('e-qte')) d.qte=g('e-qte').value; if(g('e-note')) d.note=g('e-note').value;
   if(g('e-bas')) d.basique=g('e-bas').checked; if(g('e-liste')) d.liste=g('e-liste').checked;
-  if(g('e-ry')&&g('e-ry').value!==''){ const n=parseInt(g('e-ry').value,10); if(n>=0&&n<=730) d.rythme=n; } }
+  if(g('e-ry')&&g('e-ry').value!==''){ const n=parseInt(g('e-ry').value,10); if(n>=0&&n<=730) d.rythme=n; }
+  if(g('e-cat')) d.catChoix=g('e-cat').value; }
 function chipOu(ref,label){ const i=ed.d.ou.indexOf(ref); return `<button type="button" class="chip${i>=0?' on':''}" data-act="ou" data-ref="${ref}" aria-pressed="${i>=0}">${esc(label)}${i>=0&&ed.d.ou.length>1?`<span class="o">${i+1}</span>`:''}</button>`; }
 function vArt(){
   const d=ed.d, nouv=!ed.id, ms=mags(), ts=types(), obs=rythmeObserve(d), perso=d.rythme&&!RYTHMES.some(r=>r[0]===d.rythme);
@@ -525,6 +613,8 @@ function vArt(){
   ${ms.length?`<div class="chips">${ms.map(m=>chipOu('m:'+m.id,m.nom)).join('')}</div>`:'<p class="aide">Pas encore de magasins : ajoute-les dans l’onglet Magasins.</p>'}
   ${ts.length?`<div class="chips">${ts.map(t=>chipOu('y:'+t.id,(t.emoji?t.emoji+' ':'')+t.nom+' (tous)')).join('')}</div>`:''}
   <p class="aide">${!d.ou.length?'Rien de choisi : n’importe où, il apparaît dans tous les magasins.':d.ou.length>1?'Il apparaît partout où il se trouve ; le n° 1 décide de son étal dans « Tout ».':'« (tous) » = n’importe quel magasin de ce type.'}</p>
+  <label class="lab" for="e-cat">Rayon</label><select class="in" id="e-cat"><option value="">Automatique · ${esc(catNom(deviner(d.nom)))}</option>${catsTri().map(c=>`<option value="${c.id}"${d.catChoix===c.id?' selected':''}>${esc(c.nom)}</option>`).join('')}</select>
+  <p class="aide">Choisi d’après le nom. Si tu le changes, le Marché s’en souviendra pour la prochaine fois.</p>
   <label class="lab" for="e-note">Note <span class="opt">· facultatif</span></label><input class="in" id="e-note" value="${esc(d.note)}" autocomplete="off" placeholder="ex. la marque bio, rayon du fond">
   <label class="sw"><input type="checkbox" id="e-bas" ${d.basique?'checked':''}><span><b>Basique</b><small>Je le rachète chaque fois que c’est fini</small></span></label>
   ${d.basique?`<div class="lab">Revient tout seul sur la liste</div><div class="chips">${RYTHMES.map(([n,l])=>`<button type="button" class="chip${!perso&&(d.rythme||0)===n?' on':''}" data-act="rythme" data-n="${n}">${n?'après '+l:l}</button>`).join('')}</div>
@@ -533,7 +623,7 @@ function vArt(){
   <label class="sw"><input type="checkbox" id="e-liste" ${d.liste?'checked':''}><span><b>À acheter</b><small>${d.basique?'Sur la liste maintenant (sinon : en réserve)':'Sur la liste de courses'}</small></span></label>
   ${!nouv&&(d.achats||[]).length?`<p class="aide">Acheté ${pl(new Set(d.achats).size,'fois','fois')} · dernier achat ${ilYa(derniere(d))}</p>`:''}
   <button class="btn" data-act="sauver-art">Enregistrer</button>
-  ${!nouv&&!d.basique?`<button class="btn2" data-act="vers-mijote">🍲 Plutôt le laisser mijoter</button>`:''}
+  ${!nouv&&!d.basique?`<button class="btn2" data-act="vers-mijote">Plutôt le laisser mijoter</button>`:''}
   ${!nouv?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-art">${ed.conf?'Toucher encore pour supprimer':'Supprimer l’article'}</button>`:''}`;
 }
 function sauverArt(){
@@ -543,6 +633,7 @@ function sauverArt(){
   if(!a){ a={id:uid(),cree:now,achats:[]}; S.arts[a.id]=a; }
   const avant=!!a.liste;
   Object.assign(a,{nom:d.nom,qte:(d.qte||'').trim(),note:(d.note||'').trim(),ou:d.ou.filter(refOk),basique:!!d.basique,rythme:d.basique?(d.rythme||0):0});
+  const choix=d.catChoix&&S.cats[d.catChoix]?d.catChoix:''; apprendre(a.nom,choix); a.cat=choix||deviner(a.nom);
   if(d.liste&&!avant) surListe(a);
   else if(!d.liste&&avant){ a.liste=false; a.panier=null; a.auto=false; a.depuis=today(); }
   if(!a.liste&&!a.depuis) a.depuis=today();
@@ -567,27 +658,27 @@ function vEnvie(){
   const os=(e.options||[]).slice(), ps=prixOptions(e), min=ps.length>1?Math.min(...ps):null, p=prete(e), r=resteJ(e), deb=jourDe(e.cree)||today();
   os.sort((a,b)=>(b.id===e.fav)-(a.id===e.fav)||((a.prix||1e12)-(b.prix||1e12)));
   let st;
-  if(e.etat==='achete') st=`<div class="statut ok">✓ Achetée ${ilYa(e.fin&&e.fin.le||today())}${e.fin&&e.fin.nom?' · '+esc(e.fin.nom):''}${e.fin&&e.fin.prix?' · '+esc(chf(e.fin.prix)):''} — elle est passée sur la liste.</div>`;
-  else if(e.etat==='renonce') st=`<div class="statut">🌿 Laissée de côté ${ilYa(e.fin&&e.fin.le||today())}. Bien joué.</div>`;
+  if(e.etat==='achete') st=`<div class="statut ok">${ic('fait')}Achetée ${ilYa(e.fin&&e.fin.le||today())}${e.fin&&e.fin.nom?' · '+esc(e.fin.nom):''}${e.fin&&e.fin.prix?' · '+esc(chf(e.fin.prix)):''} — elle est passée sur la liste.</div>`;
+  else if(e.etat==='renonce') st=`<div class="statut">${ic('feuille')}Laissée de côté ${ilYa(e.fin&&e.fin.le||today())}. Bien joué.</div>`;
   else if(p) st=`<div class="statut ok"><b>Le temps est passé : toujours envie ?</b><br>Elle mijote depuis ${pl(ecart(deb,today()),'jour')}.</div>`;
   else { const tot=Math.max(1,ecart(deb,e.jusqua)), fait=Math.min(tot,Math.max(0,ecart(deb,today())));
-    st=`<div class="statut">🍲 Mijote encore <b>${pl(r,'jour')}</b> (jusqu’au ${fJour(e.jusqua)})<span class="jauge" aria-hidden="true"><i style="width:${Math.max(4,Math.round(fait/tot*100))}%"></i></span></div>`; }
+    st=`<div class="statut">${ic('marmite')}Mijote encore <b>${pl(r,'jour')}</b> (jusqu’au ${fJour(e.jusqua)})<span class="jauge" aria-hidden="true"><i style="width:${Math.max(4,Math.round(fait/tot*100))}%"></i></span></div>`; }
   const cartes=os.map(o=>{ const m=o.mag&&S.mags[o.mag], ou=[m?m.nom:'',o.ou||''].filter(Boolean).join(' · '), tags=[];
     if(min!=null&&o.prix===min) tags.push('<span class="pill v">le moins cher</span>');
     if(e.budget&&o.prix>e.budget) tags.push('<span class="pill t">au-dessus du budget</span>');
-    return `<div class="choix${e.fav===o.id?' fav':''}"><button class="txt" data-act="opt" data-o="${o.id}"><span class="l1"><span class="nom">${esc(o.nom||'Sans nom')}</span>${o.prix?`<span class="prix">${esc(chf(o.prix))}</span>`:''}${tags.join('')}</span>${ou?`<span class="meta">${esc(ou)}</span>`:''}${o.note?`<span class="meta">${esc(o.note)}</span>`:''}</button><button class="star" data-act="fav" data-o="${o.id}" aria-pressed="${e.fav===o.id}" aria-label="Ma préférée : ${esc(o.nom||'')}">${e.fav===o.id?'★':'☆'}</button></div>`; }).join('');
+    return `<div class="choix${e.fav===o.id?' fav':''}"><button class="txt" data-act="opt" data-o="${o.id}"><span class="l1"><span class="nom">${esc(o.nom||'Sans nom')}</span>${o.prix?`<span class="prix">${esc(chf(o.prix))}</span>`:''}${tags.join('')}</span>${ou?`<span class="meta">${esc(ou)}</span>`:''}${o.note?`<span class="meta">${esc(o.note)}</span>`:''}</button><button class="star" data-act="fav" data-o="${o.id}" aria-pressed="${e.fav===o.id}" aria-label="Ma préférée : ${esc(o.nom||'')}">${ic('etoile')}</button></div>`; }).join('');
   const conf=ed.conf;
   let dec='';
   if(e.etat==='mijote'){
     if(p) dec=`<div class="btn-l"><button class="btn" data-act="m-oui" data-id="${e.id}">Oui, je l’achète</button><button class="btn2" data-act="m-encore" data-id="${e.id}">Encore 2 semaines</button><button class="btn-sup" data-act="m-non" data-id="${e.id}">Non, j’y renonce</button></div>`;
-    else dec=`<div class="btn-l"><button class="btn2${conf==='acheter'?' conf':''}" data-act="m-forcer" style="${conf==='acheter'?'background:var(--moutpale)':''}">${conf==='acheter'?`Ça mijote encore ${pl(r,'jour')}… toucher encore pour l’acheter quand même`:'Je l’achète maintenant'}</button><button class="btn-sup" data-act="m-non" data-id="${e.id}">J’y renonce</button></div>`;
+    else dec=`<div class="btn-l"><button class="btn2${conf==='acheter'?' conf':''}" data-act="m-forcer" style="${conf==='acheter'?'background:var(--accent-soft);color:var(--accent-ink)':''}">${conf==='acheter'?`Ça mijote encore ${pl(r,'jour')}… toucher encore pour l’acheter quand même`:'Je l’achète maintenant'}</button><button class="btn-sup" data-act="m-non" data-id="${e.id}">J’y renonce</button></div>`;
   } else dec=`<div class="btn-l"><button class="btn2" data-act="m-remettre">Remettre à mijoter</button></div>`;
   $sheet.innerHTML=tete(e.nom)+st+
   `<label class="lab" for="e-nom">Quoi ?</label><input class="in" id="e-nom" value="${esc(e.nom)}" autocomplete="off">
   <label class="lab" for="e-pq">Pourquoi j’en ai besoin</label><textarea class="in" id="e-pq" placeholder="À quoi elle servira, ce que j’ai déjà qui fait l’affaire…">${esc(e.pourquoi||'')}</textarea>
   <label class="lab" for="e-bud">Budget maximum <span class="opt">· en CHF</span></label><input class="in in-n" id="e-bud" value="${e.budget!=null?esc(e.budget):''}" inputmode="decimal" autocomplete="off" style="width:140px">
   <div class="lab">Options à comparer${os.length?' · '+os.length:''}</div>
-  ${os.length?`<div class="choix-l">${cartes}</div>`:'<p class="aide">Ajoute les modèles ou les offres que tu regardes : prix, magasin, lien, pour et contre. ☆ marque ta préférée.</p>'}
+  ${os.length?`<div class="choix-l">${cartes}</div>`:'<p class="aide">Ajoute les modèles ou les offres que tu regardes : prix, magasin, lien, pour et contre. L’étoile marque ta préférée.</p>'}
   <button class="btn2" data-act="opt" data-o="">+ Ajouter une option</button>
   ${e.etat==='mijote'&&!p?`<div class="lab">Mijoter plus longtemps</div><div class="chips">${[[7,'+1 semaine'],[14,'+2 semaines'],[30,'+1 mois']].map(([n,l])=>`<button type="button" class="chip" data-act="m-plus" data-n="${n}">${l}</button>`).join('')}</div>`:''}
   ${dec}
@@ -612,7 +703,7 @@ function lireOption(){ if(!ed||ed.sub!=='opt') return; const o=ed.o, g=id=>docum
 function vAchat(){
   const e=S.envies[ed.id], os=(e.options||[]).slice().sort((a,b)=>(b.id===e.fav)-(a.id===e.fav)||((a.prix||1e12)-(b.prix||1e12)));
   $sheet.innerHTML=tete('Laquelle ?')+`<p class="aide">Elle va sur ta liste de courses, dans son magasin.</p><div class="choix-l">${os.map(o=>{ const m=o.mag&&S.mags[o.mag];
-    return `<button class="btn2" style="text-align:left" data-act="acheter" data-o="${o.id}">${e.fav===o.id?'★ ':''}${esc(o.nom||e.nom)}${o.prix?' · '+esc(chf(o.prix)):''}${m?' · '+esc(m.nom):o.ou?' · '+esc(o.ou):''}</button>`; }).join('')}
+    return `<button class="btn2" style="text-align:left" data-act="acheter" data-o="${o.id}">${e.fav===o.id?'Préférée : ':''}${esc(o.nom||e.nom)}${o.prix?' · '+esc(chf(o.prix)):''}${m?' · '+esc(m.nom):o.ou?' · '+esc(o.ou):''}</button>`; }).join('')}
     <button class="btn2" style="text-align:left" data-act="acheter" data-o="">Sans choisir : « ${esc(e.nom)} »</button></div>
     <button class="btn-sup" data-act="opt-retour">‹ Retour</button>`;
 }
@@ -635,7 +726,15 @@ function direOui(e){ const os=e.options||[];
 function ouvrirMag(id){ const m=id?S.mags[id]:null;
   ed={k:'mag',id:id||null,conf:false,d:m?{nom:m.nom,types:typesDeMag(m),note:m.note||''}:{nom:'',types:[],note:''}}; vMag(); ouvrir(id?null:'e-nom'); }
 function lireMag(){ if(!ed||ed.k!=='mag') return; if(document.getElementById('e-nom')){ ed.d.nom=val('e-nom'); ed.d.note=val('e-note'); } }
+function vRayonsMag(){
+  const m=S.mags[ed.id], ord=ordreRayons(m.id), autres=mags().filter(x=>x.id!==m.id&&(x.rayons||[]).length);
+  $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin. La liste « Je suis chez ${esc(m.nom)} » le suit.</p>
+  <div class="chips">${autres.map(x=>`<button type="button" class="chip" data-act="ray-copier" data-id="${x.id}">Comme ${esc(x.nom)}</button>`).join('')}<button type="button" class="chip" data-act="ray-copier" data-id="">Ordre par défaut</button></div>
+  <div class="liste-v">${ord.map((id,i)=>`<div class="rang"><span class="num">${i+1}</span><b>${esc(catNom(id))}</b><div class="ord"><button data-act="ray-haut" data-id="${id}" aria-label="Monter ${esc(catNom(id))}" ${i===0?'disabled':''}>${ic('monter')}</button><button data-act="ray-bas" data-id="${id}" aria-label="Descendre ${esc(catNom(id))}" ${i===ord.length-1?'disabled':''}>${ic('descendre')}</button></div></div>`).join('')}</div>
+  <button class="btn2" data-act="ray-retour">${ic('retour')} Retour au magasin</button>`;
+}
 function vMag(){
+  if(ed.sub==='rayons') return vRayonsMag();
   const d=ed.d, nouv=!ed.id, n=nouv?0:arts().filter(a=>(a.ou||[]).includes('m:'+ed.id)).length;
   $sheet.innerHTML=tete(nouv?'Nouveau magasin':'Magasin')+
   `<label class="lab" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" autocomplete="off" autocapitalize="words" placeholder="ex. Migros Marly">
@@ -643,6 +742,7 @@ function vMag(){
   <div class="row-in"><input class="in" id="e-ntype" autocomplete="off" placeholder="Autre type, ex. Quincaillerie"><button type="button" class="btn2" data-act="mtype-add">Ajouter</button></div>
   <p class="aide">Les articles « Supermarché (tous) » apparaîtront dans chaque magasin de type Supermarché.</p>
   <label class="lab" for="e-note">Note <span class="opt">· facultatif</span></label><input class="in" id="e-note" value="${esc(d.note)}" autocomplete="off" placeholder="ex. fermé le lundi">
+  ${!nouv?`<button class="btn2" data-act="ray-ouvrir">Ordre des rayons${(S.mags[ed.id].rayons||[]).length?' (le sien)':' (par défaut)'}</button>`:''}
   <button class="btn" data-act="sauver-mag">Enregistrer</button>
   ${!nouv?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-mag">${ed.conf?(n?'Toucher encore : '+pl(n,'article')+' n’y seront plus rattachés':'Toucher encore pour supprimer'):'Supprimer le magasin'}</button>`:''}`;
 }
@@ -682,6 +782,28 @@ function sauverType(){
   Object.assign(t,{nom:d.nom,emoji:d.emoji||'🏷️',couleur:d.couleur}); save(); fermer(); render();
 }
 
+/* --- rayon --- */
+function ouvrirCat(id){ const c=id?S.cats[id]:null; ed={k:'cat',id:id||null,conf:false,d:c?{nom:c.nom,mots:String(c.mots||'').replace(/_/g,' ').split(/\s+/).filter(Boolean).map(w=>w).join(', ')}:{nom:'',mots:''}}; vCat(); ouvrir(id?null:'e-nom'); }
+function vCat(){
+  const d=ed.d, nouv=!ed.id, c=ed.id&&S.cats[ed.id], n=nouv?0:arts().filter(a=>catDe(a)===ed.id).length, ap=c?(c.appris||[]):[];
+  $sheet.innerHTML=tete(nouv?'Nouveau rayon':'Rayon')+
+  `<label class="lab" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" autocomplete="off" placeholder="ex. Bébé, Vrac, Apéro">
+  <label class="lab" for="e-mots">Mots qui y rangent un article</label><textarea class="in" id="e-mots" placeholder="ex. couche, lingette, biberon">${esc(d.mots)}</textarea>
+  <p class="aide">Séparés par des virgules. Un article dont le nom commence par l’un de ces mots arrive ici. Pour une expression, écris-la entière (« pomme de terre »).</p>
+  ${ap.length?`<div class="lab">Appris en rangeant (${ap.length})</div><div class="chips">${ap.map((k,i)=>`<button type="button" class="chip" data-act="oublier" data-i="${i}" aria-label="Oublier ${esc(k)}">${esc(k)} ${ic('supprimer')}</button>`).join('')}</div>`:''}
+  <button class="btn" data-act="sauver-cat">Enregistrer</button>
+  ${!nouv&&ed.id!=='divers'?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-cat">${ed.conf?(n?'Toucher encore : '+pl(n,'article')+' seront rangés ailleurs':'Toucher encore pour supprimer'):'Supprimer le rayon'}</button>`:''}`;
+}
+function lireCat(){ if(!ed||ed.k!=='cat') return; if(document.getElementById('e-nom')){ ed.d.nom=val('e-nom'); ed.d.mots=val('e-mots'); } }
+function motsDe(txt){ return txt.split(/[,;\n]+/).map(w=>norm(w).replace(/[^a-z0-9 ]+/g,' ').trim().replace(/\s+/g,'_')).filter(Boolean).join(' '); }
+function sauverCat(){ lireCat(); const d=ed.d, nom=d.nom.trim(); if(!nom){ document.getElementById('e-nom').focus(); return; }
+  let c=ed.id&&S.cats[ed.id];
+  if(!c){ let id=slug(nom)||uid(); if(S.cats[id]) id+='-'+uid().slice(-4); const cs=catsTri(); c={id,appris:[],ordre:cs.length?Math.max(...cs.map(x=>x.ordre||0))+1:0}; S.cats[id]=c;
+    const dv=S.cats.divers; if(dv&&dv.ordre<=c.ordre) dv.ordre=c.ordre+1; }
+  c.nom=nom; c.mots=motsDe(d.mots); save(); fermer(); render(); }
+function bougerCat(id,dir){ const cs=catsTri(), i=cs.findIndex(c=>c.id===id), j=i+dir; if(i<0||j<0||j>=cs.length) return; [cs[i],cs[j]]=[cs[j],cs[i]]; cs.forEach((c,k)=>{ c.ordre=k; }); save(); render(); }
+function bougerRayonMag(id,dir){ const m=S.mags[ed.id], ord=ordreRayons(m.id), i=ord.indexOf(id), j=i+dir; if(i<0||j<0||j>=ord.length) return; [ord[i],ord[j]]=[ord[j],ord[i]]; m.rayons=ord; save(); render(); vMag(); }
+
 /* --- réglages --- */
 function vReglages(){
   ed={k:'regl'}; const [txt,tip]=etatSync(), A=arts();
@@ -706,13 +828,14 @@ function ajoutRapide(){
   const nom=(ui.q||'').trim().replace(/\s+/g,' '); if(!nom) return;
   const ex=arts().find(a=>norm(a.nom)===norm(nom)); ui.q='';
   if(ex){ if(ex.liste){ render(); toast('« '+ex.nom+' » est déjà sur la liste'); return; } surListe(ex); save(); render(); toast('« '+ex.nom+' » remis sur la liste','Modifier',()=>ouvrirArt(ex.id)); return; }
-  const mi=ui.ici&&S.mags[ui.ici], a={id:uid(),nom,qte:'',note:'',ou:mi?['m:'+mi.id]:[],basique:false,rythme:0,achats:[],cree:nowIso()};
+  const mi=ui.ici&&S.mags[ui.ici], a={id:uid(),nom,qte:'',note:'',ou:mi?['m:'+mi.id]:[],basique:false,rythme:0,achats:[],cree:nowIso(),cat:deviner(nom)};
   surListe(a); S.arts[a.id]=a; save(); render();
-  toast(mi?'Ajouté chez '+mi.nom:'Ajouté · n’importe où','Modifier',()=>ouvrirArt(a.id));
+  toast((mi?'Chez '+mi.nom:'N’importe où')+' · '+catNom(a.cat),'Modifier',()=>ouvrirArt(a.id));
 }
 function texteListe(){
   const mi=ui.ici&&S.mags[ui.ici], act=arts().filter(a=>a.liste&&(!mi||dispo(a,mi.id)));
-  return ('🧺 Courses'+(mi?' · '+mi.nom:'')+'\n'+grouper(act,mi?mi.id:'').map(g=>'\n'+refNom(g.ref)+'\n'+g.items.map(a=>'– '+a.nom+(a.qte?' ('+a.qte+')':'')+(a.note?' · '+a.note:'')).join('\n')).join('\n')).trim();
+  const gs=mi?[{ref:'m:'+mi.id,items:act}]:grouper(act,'');
+  return ('Courses'+(mi?' · '+mi.nom:'')+'\n'+gs.map(g=>'\n'+refNom(g.ref)+'\n'+trierRayons(g.items,magDeRef(g.ref)).map(a=>'– '+a.nom+(a.qte?' ('+a.qte+')':'')+(a.note?' · '+a.note:'')).join('\n')).join('\n')).trim();
 }
 async function partager(){ const t=texteListe();
   if(navigator.share){ try{ await navigator.share({text:t}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
@@ -766,11 +889,25 @@ document.addEventListener('click',e=>{
     case 'm-encore': { const e=S.envies[id]; if(!e) break; e.jusqua=plusJours(today(),14); e.relances=(e.relances||0)+1; save(); render(); if(ed&&ed.k==='envie') vEnvie(); toast('« '+e.nom+' » mijote encore 2 semaines'); break; }
     case 'm-plus': { const e=S.envies[ed.id]; if(!e) break; e.jusqua=plusJours(e.jusqua>today()?e.jusqua:today(),+b.dataset.n); save(); render(); vEnvie(); break; }
     case 'm-non': { const e=S.envies[id]; if(!e) break; const s=JSON.stringify(e); e.etat='renonce'; e.fin={le:today()}; save(); if(ed&&ed.k==='envie') fermer(); render();
-      toast('Laissée de côté 🌿','Annuler',()=>{ S.envies[e.id]=JSON.parse(s); save(); render(); }); break; }
+      toast('Laissée de côté','Annuler',()=>{ S.envies[e.id]=JSON.parse(s); save(); render(); }); break; }
     case 'm-remettre': { const e=S.envies[ed.id]; if(!e) break; e.etat='mijote'; e.fin=null; e.jusqua=plusJours(today(),e.duree||14); save(); render(); vEnvie(); break; }
     case 'sup-envie': { if(ed.conf!=='sup'){ ed.conf='sup'; vEnvie(); break; } const e=S.envies[ed.id], s=JSON.stringify(e); delete S.envies[ed.id]; save(); fermer(); render();
       toast('« '+e.nom+' » supprimée','Annuler',()=>{ const x=JSON.parse(s); S.envies[x.id]=x; save(); render(); }); break; }
     case 'mag': ouvrirMag(id); break;
+    case 'ray-ouvrir': lireMag(); ed.sub='rayons'; vMag(); $sheet.scrollTop=0; break;
+    case 'ray-retour': ed.sub=null; vMag(); $sheet.scrollTop=0; break;
+    case 'ray-haut': bougerRayonMag(id,-1); break;
+    case 'ray-bas': bougerRayonMag(id,1); break;
+    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(id&&S.mags[id]) m.rayons=ordreRayons(id); else delete m.rayons; save(); render(); vMag(); toast(id?'Même ordre que '+S.mags[id].nom:'Ordre par défaut'); break; }
+    case 'cat': ouvrirCat(id); break;
+    case 'cat-new': ouvrirCat(null); break;
+    case 'cat-haut': bougerCat(id,-1); break;
+    case 'cat-bas': bougerCat(id,1); break;
+    case 'sauver-cat': sauverCat(); break;
+    case 'oublier': { lireCat(); const c=S.cats[ed.id]; if(!c) break; c.appris=(c.appris||[]).filter((x,i)=>i!==+b.dataset.i); save(); render(); vCat(); break; }
+    case 'sup-cat': { if(!ed.conf){ ed.conf=true; lireCat(); vCat(); break; } const cid=ed.id, nom=S.cats[cid].nom; delete S.cats[cid];
+      arts().forEach(a=>{ if(a.cat===cid) delete a.cat; }); mags().forEach(m=>{ if((m.rayons||[]).includes(cid)) m.rayons=m.rayons.filter(x=>x!==cid); });
+      save(); fermer(); render(); toast('Rayon « '+nom+' » supprimé'); break; }
     case 'mag-new': ouvrirMag(null); break;
     case 'mag-sugg': ajouterSugg(b.dataset.nom); break;
     case 'mag-haut': bouger(id,-1); break;
@@ -803,6 +940,7 @@ document.addEventListener('input',e=>{
   else if(t.id==='e-ry'&&ed&&ed.k==='art'){ const n=parseInt(t.value,10); ed.d.rythme=n>0&&n<=730?n:0; $sheet.querySelectorAll('[data-act="rythme"]').forEach(c=>c.classList.toggle('on',t.value===''&&+c.dataset.n===ed.d.rythme)); }
 });
 document.addEventListener('change',e=>{ const t=e.target; if(!ed) return;
+  if(ed.k==='art'&&t.id==='e-nom'){ const o=$sheet.querySelector('#e-cat option[value=""]'); if(o) o.textContent='Automatique · '+catNom(deviner(t.value)); }
   if(ed.k==='envie'&&ed.id&&!ed.sub&&['e-nom','e-pq','e-bud'].includes(t.id)){ const en=S.envies[ed.id]; if(!en) return;
     if(t.id==='e-nom'){ const v=t.value.trim().replace(/\s+/g,' '); if(v){ en.nom=v; const h=document.getElementById('sh-titre'); if(h) h.textContent=v; } }
     else if(t.id==='e-pq') en.pourquoi=t.value.trim(); else en.budget=prixDe(t.value);
@@ -829,6 +967,7 @@ async function enter(user){
   S=fromRows(prev); booted=true; render(); setSync();
   await pull(!c);
   if(!Object.keys(S.types).length){ semer(); save(); render(); }
+  if(!Object.keys(S.cats).length){ semerRayons(); save(); render(); }
   entretien(); push();
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{
