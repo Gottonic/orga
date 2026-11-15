@@ -183,8 +183,11 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   `s:push-<appareil>` = abonnement aux notifications d'un appareil, avec ses clés VAPID.
 - **Vide-tête** : une seule boîte d'entrée. On y écrit depuis la Bibliothèque, le champ de l'accueil de Locus (`bibliotheque/?note=…`) et le vrac de l'Établi
   (file d'attente `etabli-vide-<utilisateur>`, envoyée dans `biblio_rows`). « → » range une idée dans un projet, un domaine ou le journal de la semaine.
-- **Projets** : l'arbre commun (domaines › projets de l'Établi, archives en filtre) ; chaque page a ses notes. Modèle facultatif Plan / À faire / Ressources / Journal.
-  Dans l'Établi, « 📚 Notes dans la Bibliothèque » ouvre la page du projet ou du domaine.
+- **Notes** (15.11, ex-onglet Projets) : une page libre façon Workflowy (racine `arbre`), avec en tête la ligne « Domaines » (repliable) : chaque domaine
+  de l'Établi y a sa page, avec ses notes à lui et la liste de ses projets. **Les notes d'un projet** (racine `p:<id>`, toujours dans `biblio_rows`) **ne
+  s'affichent que dans l'Établi** : aperçu dans la fiche, puis une fenêtre plein écran qui charge `bibliotheque/?seul=p:<id>` (mode « seul » : juste
+  l'éditeur, sans en-tête). Un projet touché dans la Bibliothèque ouvre `../etabli/#p:<id>` (l'Établi ouvre alors sa fiche). « Notes dans la
+  Bibliothèque » d'un domaine ouvre `bibliotheque/#d:<id>`. « → » range toujours une idée dans un projet, un domaine, Notes ou le journal.
 - **Éditeur** : Entrée (nouvelle ligne, coupe au curseur), Tab / Maj+Tab (emboîter), Maj+Entrée (note sous la ligne), Ctrl+Entrée (fait),
   Alt+↑/↓ (déplacer), Ctrl+↑/↓ (plier), Retour arrière sur une ligne vide (la supprime) ; clic sur la puce = plier, double-clic = zoomer ; barre d'outils en bas
   sur le téléphone (⇤ ⇥ ↑ ↓ ✓ 📝 🗄 ×). Les liens d'une ligne s'affichent à droite, cliquables. Coller plusieurs lignes = une ligne chacune.

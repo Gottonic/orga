@@ -197,6 +197,13 @@ tbody tr.qrow{cursor:default}
 .notesprev{border:1px solid var(--bd);background:var(--cell);padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:3px;width:100%}
 .notesprev span{font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
 .notesprev b{font-size:.85rem;margin-top:4px}
+#notesbib{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:#F7EAE6}
+#notesbib .nb-bar{display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:#5E1F2A;color:#F9E9E4}
+#notesbib .nb-bar b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#notesbib .nb-bar span{font:400 .7rem/1 var(--mono,monospace);text-transform:uppercase;letter-spacing:.12em;opacity:.8}
+#notesbib .xbtn{color:inherit;border-color:currentColor;background:transparent}
+#notesbib iframe{flex:1;width:100%;border:0;display:block}
+body.nb-open{overflow:hidden}
 .nlist{list-style:none;margin:0;padding:0;border:1px solid var(--bd);background:var(--cell)}
 .nl{display:flex;align-items:center;padding-left:calc(var(--lv) * 22px);border-top:1px solid var(--grid)}
 .nl:first-child{border-top:0}
@@ -1337,7 +1344,7 @@ let sheetKey=null, histSheet=false, histView=false, skipPop=0, vracGuard=null;
 function histPush(kind){ try{ history.pushState({etabli:kind},''); }catch(e){} }
 function histDrop(n){ if(n>0){ skipPop++; try{ history.go(-n); }catch(e){ skipPop--; } } }
 function goView(v){ if(MINI){ if(v==='mini'&&histView){ histView=false; histDrop(1); } else if(v!=='mini'&&ui.view==='mini'&&!histView){ histView=true; histPush('view'); } } ui.view=v; if(v==='semaine') ui.wk=CUR; window.scrollTo(0,0); render(); }
-addEventListener('popstate',()=>{ if(skipPop>0){ skipPop--; return; } if(histSheet){ histSheet=false; closeSheet(true); return; } if(histView){ histView=false; ui.view='mini'; window.scrollTo(0,0); render(); } });
+addEventListener('popstate',()=>{ if(skipPop>0){ skipPop--; return; } if(histNotes){ histNotes=false; notesBibFermer(true); return; } if(histSheet){ histSheet=false; closeSheet(true); return; } if(histView){ histView=false; ui.view='mini'; window.scrollTo(0,0); render(); } });
 function openSheet(html,key){ if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; }
 function closeSheet(fromPop){ ui.edit=false; if(fromPop!==true&&histSheet){ histSheet=false; histDrop(1); } $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; render();}
 $scrim.addEventListener('click',e=>{if(e.target===$scrim) closeSheet();});
@@ -1579,6 +1586,29 @@ let lastDetail=null;
 function placedOf(p){ return [...p.weeks.map(w=>({k:w,l:'S'+wkNum(w)+' · lun–ven '+wkRange(w).split(' – ')[0],c:'S'+wkNum(w),w,o:iso(wkMon(w))})),...p.days.map(x=>({k:x,l:dayLbl(x)+' '+MOIS[parse(x).getMonth()],c:dayLbl(x)+' '+MOIS[parse(x).getMonth()],w:wkKey(parse(x)),o:x}))].sort((u,v)=>u.o.localeCompare(v.o)); }
 function planSummary(p){ const m=iso(wkMon(CUR)), up=placedOf(p).filter(x=>x.o>=m); if(!up.length) return '';
   return `<span class="pplan">${pic('journal')} ${up.slice(0,3).map(x=>x.c+(x.w===CUR?' (cette sem.)':'')).join(' · ')}${up.length>3?' · +'+(up.length-3):''}</span>`; }
+/* Notes d'un projet (15.11) : elles vivent dans la Bibliothèque (biblio_rows, racine p:<id>) mais ne s'affichent qu'ici :
+   aperçu des premières lignes dans la fiche, puis une fenêtre plein écran avec l'éditeur de la Bibliothèque (bibliotheque/?seul=p:<id>). */
+const notesMem={}; let histNotes=false;
+function notesPrevHtml(id){ const L=notesMem[id];
+  if(L===undefined){ notesMem[id]=null; notesCharger(id); }
+  if(!L||!L.length) return `<b>${L&&!L.length?'+ Notes':'Ouvrir les notes'}</b>`;
+  return L.slice(0,3).map(t=>`<span>• ${esc(t)}</span>`).join('')+`<b>Ouvrir les notes${L.length>3?' · '+L.length+' lignes':''}</b>`; }
+async function notesCharger(id){
+  try{ if(!sb||!UID||!navigator.onLine) throw 0;
+    const {data,error}=await sb.from('biblio_rows').select('data').like('key','n:%').eq('deleted',false).eq('data->>p','p:'+id); if(error) throw error;
+    notesMem[id]=(data||[]).map(r=>r.data).filter(n=>n&&!n.a&&n.t).sort((a,b)=>a.o-b.o).map(n=>n.t);
+  }catch(e){ notesMem[id]=null; }
+  const el=document.getElementById('notesprev-'+id); if(el) el.innerHTML=notesPrevHtml(id); }
+function notesBib(id){ const p=P(id); let o=document.getElementById('notesbib');
+  if(!o){ o=document.createElement('div'); o.id='notesbib'; document.body.appendChild(o); }
+  o.innerHTML=`<div class="nb-bar"><button class="xbtn" data-act="notesBibOk">‹ Fiche</button><b>${esc(p?(p.emoji?p.emoji+' ':'')+p.name:'Projet')}</b><span>Notes</span></div><iframe src="../bibliotheque/?seul=p:${id}" title="Notes du projet"></iframe>`;
+  o.dataset.id=id; o.hidden=false; document.body.classList.add('nb-open'); histNotes=true; histPush('notes'); }
+function notesBibFermer(fromPop){ const o=document.getElementById('notesbib'); if(!o||o.hidden) return; if(fromPop!==true&&histNotes){ histNotes=false; histDrop(1); } const id=o.dataset.id; o.hidden=true; o.innerHTML=''; document.body.classList.remove('nb-open');
+  delete notesMem[id]; const el=document.getElementById('notesprev-'+id); if(el) el.innerHTML=notesPrevHtml(id); }
+/* ouvrir une fiche depuis une autre app : ../etabli/#p:<id> (la Bibliothèque, par exemple) */
+let hashFait=false;
+function ouvrirHash(){ if(hashFait) return; const h=decodeURIComponent((location.hash||'').slice(1)); if(!h.startsWith('p:')){ hashFait=true; return; }
+  const id=h.slice(2); if(!P(id)) return; hashFait=true; ui.view='projets'; render(); detail(id); }
 function detail(id,msg){
   const p=P(id); if(!p) return; if(lastDetail!==id){ ui.taskAdmin=false; ui.showDone=false; ui.edit=false; lastDetail=id; } sheetId=id; ctx=null; draft=null; placeMode=null;
   if(isMini(p)){ detailMini(p,msg); return; }
@@ -1590,7 +1620,7 @@ function detail(id,msg){
   ${msg&&msg!=='del'?msg:''}
   ${p.later&&!closed?`<div class="laterbox"><b>${pic('idee')} Idée</b><span>Pas encore décidé : ni au planning, ni dans les projets en cours.</span><button class="btn" data-act="laterOut">C'est décidé : le passer en cours</button></div>`:''}
   ${tasksBlock(p,closed,'tâche')}
-  <a class="btn ghost" style="text-align:center;text-decoration:none" href="../bibliotheque/#p:${p.id}">${pic('bibliotheque')} Notes</a>
+  <div class="field"><span class="lbl">Notes</span><button class="notesprev" data-act="notesBib" data-id="${p.id}" id="notesprev-${p.id}">${notesPrevHtml(p.id)}</button></div>
   ${p.why?`<p class="pwhy">${esc(p.why)}</p>`:''}
   <div id="apercu">${apercuHtml(apercuGet(p.id))}</div>
   ${p.dossier?dossierBlock(p,closed):''}
@@ -1996,6 +2026,8 @@ document.addEventListener('click',e=>{
   else if(a==='itemMini'){ const inp=document.getElementById('f-item'), v=itemArr(ctx.src).find(x=>x.id===ctx.vid); if(inp&&v&&inp.value.trim()) v.t=inp.value.trim(); save(); itemSheet(ctx.src,ctx.vid,'petite'); }
   else if(a==='toPetite'){ const h=H(id), v=takeItem(); if(h&&v){ h.tasks.push({t:v.t,d:false}); sinkDone(h); save(); toast(v.t+' → '+h.name); } closeSheet(); }
   else if(a==='notes') notesSheet(sheetId);
+  else if(a==='notesBib') notesBib(id);
+  else if(a==='notesBibOk') notesBibFermer();
   else if(a==='nCol') nAct('nCol',el.dataset.n);
   else if(['nIn','nOut','nUp','nDown','nDone','nDel'].includes(a)) nAct(a,lastNid);
   else if(a==='quickVrac') quickVrac();
@@ -2250,8 +2282,8 @@ async function enter(user){
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
   S=fromRows(prev); markSeen(); booted=true;
   try{ if(window.Dossier){ FB=Dossier.base(sb,UID); FB.surChangement(()=>{ if(booted) fichiersChanges(); }); fsEtat=await Dossier.etat(); } }catch(e){ FB=null; }
-  render(); setSync();
-  const ok=await pull(!c);
+  render(); setSync(); ouvrirHash();
+  const ok=await pull(!c); ouvrirHash();
   if(FB) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges);
   if(migratePetites()|migrateLater()) render();
   if(recolor()){ quiet=true; save(); quiet=false; render(); }
