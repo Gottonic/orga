@@ -340,7 +340,11 @@ code.fpath{font-family:var(--mono);font-size:.78rem;overflow-wrap:anywhere}
 .gwrap{display:flex;width:max-content}
 .gmore{flex:none;width:58px;border:0;border-left:2px solid var(--bd);background:var(--thead);font-size:1.6rem;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .gmore small{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.bgc[data-act="cell"]{cursor:pointer}
+.bgc[data-act="cell"]{cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#gantt .wk{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#gantt .bgc.rsel{background:var(--hl,#F2C230)!important;box-shadow:inset 0 0 0 1px var(--ink)}
+#gantt .wk.rsel{background:var(--hl,#F2C230)!important;color:var(--ink)}
+.pickbtn.on{outline:2px solid var(--ink);outline-offset:-2px}
 .bgc[data-act="cell"]:hover{background:var(--hl)}
 .grow.blank .gg{grid-template-rows:44px}
 .laterbox{border:2px solid var(--bd);background:#DCE0E8;padding:12px;display:flex;flex-direction:column;gap:8px}
@@ -619,12 +623,21 @@ details.more .field{margin-top:10px}
 .quad{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
 .quad i{width:12px;height:12px;display:inline-block;border:1px solid var(--bd)}
 .swatches{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.dompal{gap:3px}
-.dompal button{aspect-ratio:1.4;outline:1px solid rgba(0,0,0,.1);outline-offset:-1px}
+.cgrid{display:grid;grid-template-columns:repeat(11,22px);gap:2px;justify-content:start}
+.cgrid button{width:22px;height:22px;padding:0;border:0!important;border-radius:0!important;background:var(--sw)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.cgrid button[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px;position:relative;z-index:1}
+@media (pointer:fine){.cgrid{grid-template-columns:repeat(11,18px)}.cgrid button{width:18px;height:18px}.cgrid button:hover{outline:1px solid var(--ink)}}
 .freecol{display:inline-flex;align-items:center;gap:8px;margin-top:6px;font-weight:700;font-size:.9rem;cursor:pointer;align-self:flex-start}
 .freecol input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .freecol span{width:34px;height:24px;background:var(--sw);border:2px solid var(--line)}
 .freecol span.on{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--cell)}
+.pinfo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pinfo .pdue,.pinfo .pplan{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.78rem;padding:2px 8px;border:1px solid var(--line);background:var(--cell)}
+.pinfo .pplan.off{color:var(--muted);border-style:dashed;background:transparent}
+.pinfo .ic{width:14px;height:14px}
+.thint{display:none}
+.addrow:focus-within+.thint{display:block}
+.pwhy{margin:0;font-size:.9rem;color:var(--muted);font-style:italic}
 .shstrip{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid var(--bd);margin-top:6px}
 .shstrip span{padding:6px 2px;text-align:center;font-family:var(--mono);font-size:.72rem;font-weight:700}
 .swatches button{aspect-ratio:1;border:2px solid transparent;background:var(--sw);max-width:100%}
@@ -677,18 +690,20 @@ body{background:var(--page);letter-spacing:.005em;-webkit-font-smoothing:antiali
 .hd .dn.tod{background:var(--accent);color:var(--metre)}
 .login{background:var(--page)}
 .lbox{border:0}
+.oh .oh-b.oh-recap{width:auto;height:32px;padding:0 11px 0 8px;display:inline-flex;align-items:center;gap:5px;border:1.5px solid currentColor;border-radius:999px;font-weight:700;font-size:.78rem;letter-spacing:.02em}
+.oh .oh-b.oh-recap svg{width:17px;height:17px}
+.oh .oh-b.oh-recap .kb{position:static;margin-left:2px}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 <link rel="stylesheet" href="../commun/lieux.css">
 </head>
 <body>
 <div id="login" class="login" hidden><form class="lbox" id="loginForm"><h1>L’Établi</h1><p>Connecte-toi pour retrouver tes projets sur tous tes appareils.</p><label for="l-mail">Adresse e-mail</label><input class="input" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="input" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit" id="l-go">Se connecter</button><p class="lerr" id="l-err" hidden></p></form></div>
-<header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">L’Établi</h1><span class="oh-sub" id="sub"></span><button class="sync" id="sync" data-sync data-act="account" aria-label="Synchronisation et compte">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="account" aria-label="Réglages et compte"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
+<header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">L’Établi</h1><span class="oh-sub" id="sub"></span><button class="sync" id="sync" data-sync data-act="account" aria-label="Synchronisation et compte">…</button><span class="oh-sp"></span><button class="oh-b oh-recap" type="button" data-act="summary" aria-label="Récap de la semaine"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3h10v14H5zM8 7h4M8 10h4M8 13h2"/></svg><span>Récap</span></button><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="account" aria-label="Réglages et compte"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Vues">
   <button class="tab ot-t" data-view="planning">Planning</button>
   <button class="tab ot-t" data-view="projets">Projets</button>
   <button class="tab ot-t" data-view="vrac">En vrac<span class="badge" id="vbadge" hidden></span></button>
-  <button class="ot-t" data-act="summary">Récap</button>
 </nav></header>
 <div class="wrap">
   <main id="view"></main>
@@ -815,11 +830,15 @@ function hslHex(h,s,l){ s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1
 function shade(base,dur,perm,key){ const [h,s,l]=hexHsl(base); let n=0; for(const c of String(key||'')) n=(n*31+c.charCodeAt(0))%997; const H=(h+((n%9)-4)*1.6+360)%360;
   if(perm) return hslHex(H,Math.min(100,s*1.05),Math.max(10,l*.78));
   const t=Math.max(0,Math.min(1,Math.log2(Math.max(dur||1,.5)/.5)/Math.log2(80))); return hslHex(H,s*(.55+.45*t),91+(l-91)*t); }
-/* Palette des domaines : 14 teintes × 4 tons, des neutres, et une couleur libre */
-const DOM_COLORS=(()=>{ const H=[0,16,30,42,54,75,105,140,168,190,210,232,262,300], T=[[78,72],[62,74],[46,68],[32,58]], out=[]; T.forEach(([l,s])=>H.forEach(h=>out.push(hslHex(h,h>=42&&h<=75&&l>60?s+10:s,h>=42&&h<=75&&l<=62?l-6:l)))); return out.concat(['#F3F1E7','#D8D4C8','#B8B4AE','#8C877E','#5E6B7A','#3A3A3A','#1E1E1E']); })();
-function domPalette(cur,act){ const c=String(cur||'').toUpperCase(), inList=DOM_COLORS.includes(c);
-  return `<div class="swatches dompal">${DOM_COLORS.map(x=>`<button style="--sw:${x}" data-act="${act}" data-c="${x}" aria-pressed="${c===x}" aria-label="Couleur ${x}"></button>`).join('')}</div>
-  <label class="freecol"><input type="color" data-freecol="${act}" value="${/^#[0-9A-F]{6}$/.test(c)?c.toLowerCase():'#5e6b7a'}"><span style="--sw:${c||'#5E6B7A'}"${inList?'':' class="on"'}></span>Autre couleur…</label>`; }
+/* Palette : une ligne par teinte (12 + gris), de gauche à droite du plus clair au plus sombre, la couleur la plus vive au milieu */
+const PAL_H=[0,22,38,52,78,125,162,188,210,232,265,312], PAL_N=11;
+const PAL=(()=>{ const rows=PAL_H.map(h=>Array.from({length:PAL_N},(_,i)=>{ const t=i/(PAL_N-1); return hslHex(h,45+50*(1-Math.abs(t-.5)*2),94-80*t); }));
+  rows.push(Array.from({length:PAL_N},(_,i)=>hslHex(40,8,96-86*(i/(PAL_N-1))))); return rows; })();
+const DOM_COLORS=PAL.flat();
+function colorGrid(cur,act){ const c=String(cur||'').toUpperCase(), inPal=DOM_COLORS.includes(c);
+  return `<div class="cgrid" role="group" aria-label="Couleurs">${DOM_COLORS.map(x=>`<button type="button" style="--sw:${x}" data-act="${act}" data-c="${x}" aria-pressed="${c===x}" aria-label="Couleur ${x}"></button>`).join('')}</div>
+  <label class="freecol"><input type="color" data-freecol="${act}" value="${/^#[0-9A-F]{6}$/.test(c)?c.toLowerCase():'#5e6b7a'}"><span style="--sw:${c||'#5E6B7A'}"${inPal||!c?'':' class="on"'}></span>Autre couleur…</label>`; }
+const domPalette=colorGrid;
 const domColorOf=pid=>{ if(!pid||pid===Projets.AUTRES) return null; const d=(S.domains||[]).find(x=>x.id===pid); return d&&d.color?d.color:null; };
 const projColor=p=>domColorOf(p.parent);
 function recolor(){ let ch=false; (S&&S.projects||[]).forEach(p=>{ const c=projColor(p); if(c&&p.color!==c){ p.color=c; ch=true; } }); return ch; }
@@ -1012,7 +1031,7 @@ function vPlanning(){
   let mo='', curM=null, span=0, startI=0;
   dayS.forEach((s,i)=>{const m=s.slice(0,7); if(m!==curM){ if(curM) mo+=`<div class="mo" style="grid-column:${startI+1} / span ${span}">${MOIS_L[Number(curM.slice(5))-1]} ${curM.slice(0,4)}</div>`; curM=m; span=0; startI=i;} span++;});
   mo+=`<div class="mo" style="grid-column:${startI+1} / span ${span}">${MOIS_L[Number(curM.slice(5))-1]} ${curM.slice(0,4)}</div>`;
-  let wk=''; for(let w=0;w<W;w++){const k=wkAdd(k0,w), c=inWeek(k), full=c.all.length>=MAXT; wk+=`<button class="wk${k===CUR?' cur':''}" style="grid-column:${w*7+1} / span 7" data-act="goWk" data-k="${k}"><b>S${wkNum(k)}</b><span class="${full?'full':''}">${c.all.length}/${MAXT}</span></button>`;}
+  let wk=''; for(let w=0;w<W;w++){const k=wkAdd(k0,w), c=inWeek(k), full=c.all.length>=MAXT; wk+=`<button class="wk${k===CUR?' cur':''}" style="grid-column:${w*7+1} / span 7" data-act="wkPick" data-k="${k}"><b>S${wkNum(k)}</b><span class="${full?'full':''}">${c.all.length}/${MAXT}</span></button>`;}
   const dn=dayS.map((s,i)=>{const d=parse(s), we=d.getDay()===0||d.getDay()===6, off=offOn(s); return `<div class="dn${we?' we':''}${off?' off':''}${s===todayS?' tod':''}" style="grid-column:${i+1}"${off?` title="${esc(offLbl(s))}"`:''}>${d.getDate()}</div>`;}).join('');
   const bg=dayS.map((s,i)=>{const d=parse(s), we=d.getDay()===0||d.getDay()===6; return `<div class="bgc${i%7===0?' mon':''}${we?' we':''}${offOn(s)?' off':''}${s===todayS?' tod':''}" style="grid-column:${i+1}" data-act="cell" data-d="${s}"></div>`;}).join('');
   /* lignes : chaque projet garde une seule ligne, rangé le plus haut possible ; un autre projet peut se glisser dans ses trous */
@@ -1052,7 +1071,7 @@ function vPlanning(){
    <div class="grow proj blank"><div class="gl"></div><div class="gg">${bg}</div></div>
   </div><button class="gmore" data-act="planMore3" aria-label="Afficher 3 mois de plus">+<small>3 mois</small></button></div></div>
   <div class="planlegend"><span><b style="background:#EE9DC0"></b>vacances et congés</span><span><b style="background:#E2DFD5"></b>week-end</span><span>2/5 = projets dans la semaine (5 au plus, dont 3 sur la semaine entière)</span></div>
-  <p class="note">Touche une case vide pour y placer un projet, une barre pour l'ouvrir. Pour déplacer une barre : glisse-la (au doigt, appuie longuement d'abord).</p>
+  <p class="note">Pour placer un projet : touche une case ou un numéro de semaine, ou glisse sur plusieurs jours ou plusieurs semaines (au doigt : appuie longuement d'abord). Touche une barre pour l'ouvrir, glisse-la pour la déplacer.</p>
   <button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés prévus${S.offs.length?' ('+S.offs.length+')':''}</button>`;
   const g=document.getElementById('gantt'), ti=idx(tgt); if(g){ try{ if(ui.planScroll!=null){ g.scrollLeft=ui.planScroll; ui.planScroll=null; } else if(ti>=0) g.scrollLeft=ti*28; }catch(e){} }
 }
@@ -1316,7 +1335,7 @@ function histDrop(n){ if(n>0){ skipPop++; try{ history.go(-n); }catch(e){ skipPo
 function goView(v){ if(MINI){ if(v==='mini'&&histView){ histView=false; histDrop(1); } else if(v!=='mini'&&ui.view==='mini'&&!histView){ histView=true; histPush('view'); } } ui.view=v; if(v==='semaine') ui.wk=CUR; window.scrollTo(0,0); render(); }
 addEventListener('popstate',()=>{ if(skipPop>0){ skipPop--; return; } if(histSheet){ histSheet=false; closeSheet(true); return; } if(histView){ histView=false; ui.view='mini'; window.scrollTo(0,0); render(); } });
 function openSheet(html,key){ if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; }
-function closeSheet(fromPop){ if(fromPop!==true&&histSheet){ histSheet=false; histDrop(1); } $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; render();}
+function closeSheet(fromPop){ ui.edit=false; if(fromPop!==true&&histSheet){ histSheet=false; histDrop(1); } $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; render();}
 $scrim.addEventListener('click',e=>{if(e.target===$scrim) closeSheet();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$scrim.hidden) closeSheet();});
 
@@ -1340,7 +1359,7 @@ function tasksBlock(p,closed,word){
    ${adminN?`<div class="seg tfilt"><button data-act="tfilt" data-v="0" aria-pressed="${!only}">Toutes</button><button data-act="tfilt" data-v="1" aria-pressed="${only}">Admin (${adminN})</button></div>`:''}
    ${list.length?`<ul class="list tasks" data-pid="${p.id}">${list.map(({x,i})=>x.s?`<li class="sec" data-i="${i}"><span class="t tt" data-act="tedit" data-i="${i}">${esc(x.t)}</span>${closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer">≡</span>'}</li>`:`<li class="${x.d?'done':''}${i===firstOpen&&!closed?' next':''}" data-i="${i}"><input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider la ${word}"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer">≡</span>'}</li>`).join('')}</ul>`:''}
    ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
-   ${closed?'':`<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form><button class="btn ghost" data-act="addSec" title="Le texte du champ devient un titre de section">+ Section</button></div><p class="note" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Un titre de section : « + Section », ou commence la ligne par #.</p>`}</div>`;
+   ${closed?'':`<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form><button class="btn ghost" data-act="addSec" title="Le texte du champ devient un titre de section">+ Section</button></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Un titre de section : « + Section », ou commence la ligne par #.</p>`}</div>`;
 }
 function durPick(mode,dur,act){ const isM=mode===true||mode==='mini', isP=mode==='perm'; return `<div class="durrow"><div class="dfree${isM||isP?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&!isP&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="perm" aria-pressed="${isP}">∞ Perpétuel<small>sans fin ni durée</small></button></div>`; }
 function applyDur(p,v){ if(v==='perm'){ if(isPerm(p)){ p.size='proj'; p.dur=p.dur||5; return; } if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='perm'; p.due=null; return; } if(v!=='mini'&&Number(v)<0.5) v=0.5; if(v==='mini'){ p.size='mini'; p.dur=null; p.emoji=''; p.color=MINI_COLOR; p.weeks=[]; p.days=[]; return; } const n=Number(v); if(!(n>0)) return; if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='proj'; p.dur=n; }
@@ -1356,7 +1375,7 @@ function newSheet(keep){
   if(!keep||!draft) draft={name:'',emoji:'✨',picked:false,color:COLORS[Math.floor(Math.random()*COLORS.length)],size:'proj',dur:5,imp:2,due:'',tags:[],why:'',etat:'encours',prevu:'',parent:(ctx&&ctx.parentFor)||null,nature:'perso'};
   if(ctx&&ctx.size==='s'&&!keep) draft.dur=1;
   const d=draft;
-  openSheet(`<div class="shead"><h2>Nouveau projet<small>${ctx&&ctx.fromCell?((ui.cellMode||'j')==='j'?'pour le '+fmt(ctx.cell):'pour la semaine '+wkNum(ctx.k)):ctx&&ctx.k?'pour la semaine '+wkNum(ctx.k):'il ira dans « À planifier »'}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  openSheet(`<div class="shead"><h2>Nouveau projet<small>${ctx&&ctx.fromCell?(ctx.range?'pour '+rangeInfo(ctx.range).label:(ui.cellMode||'j')==='j'?'pour le '+fmt(ctx.cell):'pour la semaine '+wkNum(ctx.k)):ctx&&ctx.k?'pour la semaine '+wkNum(ctx.k):'il ira dans « À planifier »'}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
    <div class="namerow" style="--pc:${nColor()}">${d.size==='mini'?'':`<button class="emobtn" data-act="emojiPick" data-for="new" aria-label="Choisir un émoji" id="nemo">${d.emoji}</button>`}<input class="input" id="n-name" autocomplete="off" autocorrect="off" placeholder="Ex. Monter le tunnel de semis" value="${esc(d.name)}" aria-label="Nom du projet"></div>
    <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(d.size,d.dur,'ndur')}</div>
    <div class="field"><span class="lbl">Importance</span>${starPick(d.imp,'nimp')}</div>
@@ -1367,7 +1386,7 @@ function newSheet(keep){
    ${d.size==='mini'?'':`
    <details class="more"><summary>Plus de détails</summary>
     <div class="field"><label for="n-why">Pourquoi ce projet</label><input class="input" id="n-why" value="${esc(d.why)}" placeholder="Ce que tu veux en retirer"></div>
-    ${domColorOf(d.parent)?'':`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="ncolor" data-c="${c}" aria-pressed="${d.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
+    ${domColorOf(d.parent)?'':`<div class="field"><span class="lbl">Couleur</span>${colorGrid(d.color,'ncolor')}</div>`}
    </details>`}
    <button class="btn" data-act="create">Créer${ctx?' et placer':''}</button></div>`,'new');
   if(!keep) setTimeout(()=>{const n=document.getElementById('n-name'); if(n) try{n.focus();}catch(e){}},60);
@@ -1430,7 +1449,7 @@ function domainSheet(id,msg){
 }
 /* ret : {draft:true} (retour au nouveau projet), {pid} (retour à la fiche du projet) ou rien (ouvre le domaine) */
 function newDomSheet(ret){
-  if(ret!==undefined||!ui.ndom) ui.ndom={name:'',emoji:'📁',color:DOM_COLORS[14+Math.floor(Math.random()*14)],ret:ret||null};
+  if(ret!==undefined||!ui.ndom) ui.ndom={name:'',emoji:'📁',color:PAL[Math.floor(Math.random()*12)][5],ret:ret||null};
   const n=ui.ndom; sheetId=null;
   openSheet(`<div class="shead" style="--pc:${n.color};--pt:${ink(n.color)}"><button class="emo" data-act="emojiPick" data-for="newdom" aria-label="Choisir un émoji">${n.emoji}</button><h2>Nouveau domaine<small>il range des projets, ni perso ni pro</small></h2><button class="xbtn" data-act="ndomBack">Retour</button></div><div class="sbody">
   <div class="field"><label for="f-ndom">Nom</label><input class="input" id="f-ndom" autocomplete="off" autocorrect="off" placeholder="Ex. Parkour, Maison, Cuisine" value="${esc(n.name)}"></div>
@@ -1553,40 +1572,49 @@ async function envoyerVide(){ if(!sb||!UID||!navigator.onLine) return; const K='
 
 /* Fiche projet */
 let lastDetail=null;
+function placedOf(p){ return [...p.weeks.map(w=>({k:w,l:'S'+wkNum(w)+' · lun–ven '+wkRange(w).split(' – ')[0],c:'S'+wkNum(w),w,o:iso(wkMon(w))})),...p.days.map(x=>({k:x,l:dayLbl(x)+' '+MOIS[parse(x).getMonth()],c:dayLbl(x)+' '+MOIS[parse(x).getMonth()],w:wkKey(parse(x)),o:x}))].sort((u,v)=>u.o.localeCompare(v.o)); }
+function planSummary(p){ const m=iso(wkMon(CUR)), up=placedOf(p).filter(x=>x.o>=m); if(!up.length) return '';
+  return `<span class="pplan">${pic('journal')} ${up.slice(0,3).map(x=>x.c+(x.w===CUR?' (cette sem.)':'')).join(' · ')}${up.length>3?' · +'+(up.length-3):''}</span>`; }
 function detail(id,msg){
-  const p=P(id); if(!p) return; if(lastDetail!==id){ ui.taskAdmin=false; ui.showDone=false; lastDetail=id; } sheetId=id; ctx=null; draft=null; placeMode=null;
+  const p=P(id); if(!p) return; if(lastDetail!==id){ ui.taskAdmin=false; ui.showDone=false; ui.edit=false; lastDetail=id; } sheetId=id; ctx=null; draft=null; placeMode=null;
   if(isMini(p)){ detailMini(p,msg); return; }
-  const st=state(p), closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, mo=money(id), h=hoursOf(id), par=parentOf(p), kids=kidsOf(p.id).sort((x,y)=>(!!x.closed-!!y.closed)||prioSort(x,y));
-  const placed=[...p.weeks.map(w=>({k:w,l:'S'+wkNum(w)+' · lun–ven '+wkRange(w).split(' – ')[0],w,o:iso(wkMon(w))})),...p.days.map(x=>({k:x,l:dayLbl(x)+' '+MOIS[parse(x).getMonth()],w:wkKey(parse(x)),o:x}))].sort((u,v)=>u.o.localeCompare(v.o));
-  openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>${esc(p.name)}<small>${isPerm(p)?'∞ Perpétuel':durLbl(p)} · ${IMP[p.imp]}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="projSave">OK</button>'}<button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
-  <div><span class="state st-${st}">${stName(p)}</span>${proHtml(p)}${urgHtml(p)} ${par?`<button class="tchip" style="margin-left:4px" data-act="${isDom(par)?'dom':'open'}" data-id="${par.id}">↑ ${par.emoji?par.emoji+' ':''}${esc(par.name)}</button>`:''}</div>
+  if(ui.edit&&!p.closed){ detailEdit(p,msg); return; }
+  const closed=!!p.closed, par=parentOf(p), kids=kidsOf(p.id);
+  openSheet(`<div class="shead" style="${pv(p)}"><span class="emo">${p.emoji}</span><h2>${esc(p.name)}<small>${par?`${esc(domName(par))} · `:''}${isPerm(p)?'∞ perpétuel':durLbl(p)}${p.imp===3?' · important':p.imp===1?' · secondaire':''}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="pedit">Modifier</button>'}<button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  <div class="pinfo"><span class="state st-${state(p)}">${stName(p)}</span>${proHtml(p)}${urgHtml(p)}${p.due?`<span class="pdue">${pic('echeance')} ${fmt(p.due)}</span>`:''}${p.later||closed?'':planSummary(p)||'<span class="pplan off">Pas au planning</span>'}</div>
   ${closed?`<div class="bilan"><span class="lbl">${p.fin&&p.fin.type==='abandonne'?'Abandonné':'Terminé'} le ${fmt(p.closed)}</span>${p.fin&&p.fin.raison?`<p><b>Pourquoi.</b> ${esc(p.fin.raison)}</p>`:''}${p.bilan&&p.bilan.learn?`<p><b>Ce que j'en retire.</b> ${esc(p.bilan.learn)}</p>`:''}${p.bilan&&p.bilan.diff?`<p><b>À refaire autrement.</b> ${esc(p.bilan.diff)}</p>`:''}${!(p.bilan&&(p.bilan.learn||p.bilan.diff))&&!(p.fin&&p.fin.raison)?'<p>Pas de bilan noté.</p>':''}</div>`:''}
   ${msg&&msg!=='del'?msg:''}
-  <div id="apercu">${apercuHtml(apercuGet(p.id))}</div>
+  ${p.later&&!closed?`<div class="laterbox"><b>${pic('idee')} Idée</b><span>Pas encore décidé : ni au planning, ni dans les projets en cours.</span><button class="btn" data-act="laterOut">C'est décidé : le passer en cours</button></div>`:''}
   ${tasksBlock(p,closed,'tâche')}
-  ${kids.length?`<div class="field"><span class="lbl">Sous-projets · ${kids.filter(k=>!k.closed).length}</span>${kids.length?`<div class="picklist">${kids.map(k=>`<button class="pickbtn" style="${pv(k)}" data-act="open" data-id="${k.id}"><span class="sw">${k.emoji||'·'}</span><span class="tx"><b>${esc(k.name)}</b><span class="meta"><span>${stName(k)}</span>${proHtml(k)}${k.due?`<span>${pic('echeance')} ${fmt(k.due)}</span>`:''}</span></span></button>`).join('')}</div>`:''}<p class="note" style="margin:0">Ancienne organisation : ce projet deviendra un domaine (Projets › « Passer aux domaines »).</p></div>`:''}
-  ${p.later&&!closed?`<div class="laterbox"><b>${pic('idee')} Idée</b><span>Ce projet n'est pas encore décidé : il n'apparaît ni au planning ni dans les projets en cours.</span><button class="btn" data-act="laterOut">C'est décidé : le passer en cours</button></div>`:''}
-  ${p.later&&!closed?'':`<div class="field"><span class="lbl">Placement · ${placed.length}</span>
-    ${placed.length?`<ul class="list">${placed.map(x=>`<li><span class="t" style="font-family:var(--mono);font-size:.88rem">${x.l}${x.w===CUR?' <span class="state" style="background:var(--hl);font-size:.7rem;padding:1px 5px">cette sem.</span>':''}</span>${closed?'':`<button class="x" data-act="unplace" data-k="${x.k}" aria-label="Retirer">×</button>`}</li>`).join('')}</ul>`:'<p class="note" style="margin:0">Pas encore placé.</p>'}
-    ${closed?'':`<div class="actions"><button class="btn ghost" data-act="place" data-m="j">Par jours</button><button class="btn ghost" data-act="place" data-m="s">Par semaines</button></div>`}
-    ${durOf(p)>=20&&!closed?'<p class="note" style="margin:0">Projet d\'un mois ou plus : note ses grandes étapes dans les tâches.</p>':''}</div>`}
-  ${closed?'':`
-  <div class="field"><span class="lbl">Importance</span>${starPick(p.imp,'imp')}</div>
-  ${isPerm(p)?'':`<div class="field"><label for="f-due">Échéance</label><div class="duerow"><input class="input" type="date" id="f-due" data-field="due" value="${p.due||''}"><button data-act="clearDue">Aucune</button></div><p class="duehint">${dueHint(p.due,durOf(p))}</p></div>`}
-  <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(p.size,p.dur,'dur')}${isPerm(p)?'<p class="note" style="margin:4px 0 0">Projet sans fin : place-le au planning quand tu t\'y consacres.</p>':''}</div>
-  ${p.later?'':prevuField(p)}
-  ${kids.length?'':`<div class="field"><label class="lbl" for="f-parent">Domaine</label>${domSelect('f-parent',p.parent||'')}</div>`}
-  <div class="field"><span class="lbl">Perso ou pro</span>${natPick(natureOf(p),null,'nat')}</div>`}
-  <div class="field"><span class="lbl">Notes</span><a class="btn ghost" style="text-align:center;text-decoration:none" href="../bibliotheque/#p:${p.id}">${pic('bibliotheque')} Notes dans la Bibliothèque</a></div>
-  ${dossierBlock(p,closed)}
-  <details class="more" ${p.why?'open':''}><summary>Pourquoi, couleur</summary>
-  <div class="field"><label for="f-why">Pourquoi ce projet</label><textarea class="input" id="f-why" data-field="why" ${closed?'disabled':''}>${esc(p.why)}</textarea></div>
-  ${closed?'':domColorOf(p.parent)?`<div class="field"><span class="lbl">Couleur</span><p class="note" style="margin:0">Celle du domaine ${esc(domName(D(p.parent)))}. Elle se change dans la fiche du domaine.</p></div>`:`<div class="field"><span class="lbl">Couleur</span><div class="swatches">${COLORS.map(c=>`<button style="--sw:${c}" data-act="color" data-c="${c}" aria-pressed="${p.color===c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>`}
-  </details>
-  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:`<button class="btn" data-act="closeStart">Archiver le projet…</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">${pic('idee')} Redevient une idée</button>`}`}
-  ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, archive-le plutôt.${kids.length?' Ses '+kids.length+' sous-projet'+(kids.length>1?'s':'')+' passeront au premier niveau.':''}</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
+  <a class="btn ghost" style="text-align:center;text-decoration:none" href="../bibliotheque/#p:${p.id}">${pic('bibliotheque')} Notes</a>
+  ${p.why?`<p class="pwhy">${esc(p.why)}</p>`:''}
+  <div id="apercu">${apercuHtml(apercuGet(p.id))}</div>
+  ${p.dossier?dossierBlock(p,closed):''}
+  ${kids.length?`<p class="note" style="margin:0">${kids.length} sous-projet${kids.length>1?'s':''} (ancienne organisation) : voir « Modifier ».</p>`:''}
+  ${closed?`<button class="btn ghost" data-act="reopen">Rouvrir le projet</button>`:''}
   </div>`,'d:'+id);
   chargerApercu(p);
+}
+function detailEdit(p,msg){
+  const id=p.id, par=parentOf(p), kids=kidsOf(p.id).sort((x,y)=>(!!x.closed-!!y.closed)||prioSort(x,y)), placed=placedOf(p);
+  openSheet(`<div class="shead" style="${pv(p)}"><button class="emo" data-act="emojiPick" data-for="${p.id}" aria-label="Changer l'émoji">${p.emoji}</button><h2>Modifier<small>${esc(p.name)}</small></h2><button class="xbtn okbtn" data-act="peditOk">OK</button></div><div class="sbody">
+  ${msg&&msg!=='del'?msg:''}
+  <div class="field"><label for="f-pname">Nom</label><input class="input" id="f-pname" autocomplete="off" autocorrect="off" data-field="name" value="${esc(p.name)}"></div>
+  ${kids.length?`<div class="field"><span class="lbl">Sous-projets · ${kids.filter(k=>!k.closed).length}</span><div class="picklist">${kids.map(k=>`<button class="pickbtn" style="${pv(k)}" data-act="open" data-id="${k.id}"><span class="sw">${k.emoji||'·'}</span><span class="tx"><b>${esc(k.name)}</b><span class="meta"><span>${stName(k)}</span>${proHtml(k)}</span></span></button>`).join('')}</div><p class="note" style="margin:0">Ancienne organisation : ce projet deviendra un domaine (Projets › « Passer aux domaines »).</p></div>`:`<div class="field"><label class="lbl" for="f-parent">Domaine</label>${domSelect('f-parent',p.parent||'')}</div>`}
+  <div class="field"><span class="lbl">Durée en jours de travail</span>${durPick(p.size,p.dur,'dur')}</div>
+  <div class="field"><span class="lbl">Importance</span>${starPick(p.imp,'imp')}</div>
+  ${isPerm(p)?'':`<div class="field"><label for="f-due">Échéance</label><div class="duerow"><input class="input" type="date" id="f-due" data-field="due" value="${p.due||''}"><button data-act="clearDue">Aucune</button></div><p class="duehint">${dueHint(p.due,durOf(p))}</p></div>`}
+  <div class="field"><span class="lbl">Perso ou pro</span>${natPick(natureOf(p),null,'nat')}</div>
+  ${p.later?'':prevuField(p)}
+  ${p.later?'':`<div class="field"><span class="lbl">Au planning · ${placed.length}</span>
+    ${placed.length?`<ul class="list">${placed.map(x=>`<li><span class="t" style="font-family:var(--mono);font-size:.88rem">${x.l}${x.w===CUR?' · cette sem.':''}</span><button class="x" data-act="unplace" data-k="${x.k}" aria-label="Retirer">×</button></li>`).join('')}</ul>`:''}
+    <p class="note" style="margin:0">Pour placer : touche une case du planning, ou glisse sur plusieurs jours ou plusieurs semaines. <button class="linkbtn" style="display:inline;padding:0" data-act="place">Placer d'ici…</button></p></div>`}
+  <div class="field"><label for="f-why">Pourquoi ce projet</label><textarea class="input" id="f-why" data-field="why">${esc(p.why)}</textarea></div>
+  ${domColorOf(p.parent)?`<div class="field"><span class="lbl">Couleur</span><p class="note" style="margin:0">Celle du domaine ${esc(domName(D(p.parent)))}. Elle se change dans la fiche du domaine.</p></div>`:`<div class="field"><span class="lbl">Couleur</span>${colorGrid(p.color,'color')}</div>`}
+  ${dossierBlock(p,false)}
+  <button class="btn ghost" data-act="closeStart">Archiver le projet…</button>${p.later?'':`<button class="linkbtn" style="align-self:center" data-act="laterIn">${pic('idee')} Redevient une idée</button>`}
+  ${msg==='del'?`<div class="danger"><div>Supprimer <b>${p.emoji} ${esc(p.name)}</b> définitivement ? Pour garder une trace, archive-le plutôt.${kids.length?' Ses '+kids.length+' sous-projet'+(kids.length>1?'s':'')+' passeront au premier niveau.':''}</div><div class="actions"><button class="btn ghost" data-act="back">Annuler</button><button class="btn warn" data-act="delOk">Supprimer</button></div></div>`:`<button class="linkbtn" style="align-self:center;color:var(--neg)" data-act="delAsk">Supprimer le projet</button>`}
+  </div>`,'d:'+id);
 }
 
 /* Placement */
@@ -1784,9 +1812,59 @@ function bdragEnd(cancel){ if(!bdrag) return; const st=bdrag; bdrag=null; clearT
   render();
 }
 document.addEventListener('pointerup',()=>bdragEnd(false)); document.addEventListener('pointercancel',()=>bdragEnd(true));
-document.addEventListener('click',e=>{ if(window.__noClick&&Date.now()-window.__noClick<400&&e.target.closest&&e.target.closest('.gbar')){ e.stopPropagation(); e.preventDefault(); } },true);
-document.addEventListener('contextmenu',e=>{ if(e.target.closest&&e.target.closest('.gbar')) e.preventDefault(); });
+document.addEventListener('click',e=>{ if(window.__noClick&&Date.now()-window.__noClick<400&&e.target.closest&&e.target.closest('.gbar,#gantt .bgc,#gantt .wk')){ e.stopPropagation(); e.preventDefault(); } },true);
+document.addEventListener('contextmenu',e=>{ if(e.target.closest&&e.target.closest('.gbar,#gantt .bgc,#gantt .wk')) e.preventDefault(); });
 function pic(k){ return window.Pictos?Pictos.svg(k):''; } /* pictos de l'interface (charte du 15.11) */
+/* Placer sur une plage : r={m:'j'|'s', a, b} (jours ISO ou semaines) */
+function rangeInfo(r){
+  if(r.m==='s'){ const ks=[r.a]; for(let i=0;i<60&&ks[ks.length-1]!==r.b;i++) ks.push(wkAdd(ks[ks.length-1],1));
+    return {ks,label:ks.length>1?`S${wkNum(r.a)} à S${wkNum(r.b)} · ${ks.length} semaines entières`:`Semaine ${wkNum(r.a)} · ${wkRange(r.a)} · lun–ven`}; }
+  const all=[]; for(let d=parse(r.a),i=0;iso(d)<=r.b&&i<400;d.setDate(d.getDate()+1),i++) all.push(iso(d));
+  let ds=all.filter(x=>{ const w=parse(x).getDay(); return w!==0&&w!==6&&!offOn(x); }); if(!ds.length) ds=all;
+  const L=x=>dayLbl(x)+' '+MOIS[parse(x).getMonth()];
+  return {all,ds,ks:[...new Set(ds.map(x=>wkKey(parse(x))))],label:r.a===r.b?L(r.a):`${L(r.a)} → ${L(r.b)} · ${ds.length} jour${ds.length>1?'s':''}`}; }
+function rangeOn(p,r){ const ri=rangeInfo(r); if(r.m==='s') return ri.ks.every(k=>p.weeks.includes(k)); return ri.ds.every(d=>p.days.includes(d)||p.weeks.includes(wkKey(parse(d)))); }
+function rangeToggle(p,r){ const ri=rangeInfo(r), w0=p.weeks.slice(), d0=p.days.slice(), wkDays=k=>{ const m=wkMon(k); return [0,1,2,3,4].map(i=>{ const d=new Date(m); d.setDate(m.getDate()+i); return iso(d); }); };
+  if(rangeOn(p,r)){
+    if(r.m==='s') p.weeks=p.weeks.filter(k=>!ri.ks.includes(k));
+    else { ri.ks.forEach(k=>{ if(p.weeks.includes(k)){ p.weeks=p.weeks.filter(x=>x!==k); p.days=p.days.concat(wkDays(k).filter(d=>!ri.ds.includes(d))); } }); p.days=p.days.filter(d=>!ri.ds.includes(d)); }
+    p.days=[...new Set(p.days)].sort(); return 'retiré'; }
+  if(r.m==='s') ri.ks.forEach(k=>{ if(!p.weeks.includes(k)){ p.weeks.push(k); p.days=p.days.filter(d=>wkKey(parse(d))!==k); } });
+  else ri.ks.forEach(k=>{ if(p.weeks.includes(k)) return; const wd=wkDays(k), mine=ri.ds.filter(d=>wkKey(parse(d))===k);
+    if(wd.every(d=>ri.all.includes(d))&&inWeek(k).n.filter(x=>x!==p).length<MAXW){ p.weeks.push(k); p.days=p.days.filter(d=>wkKey(parse(d))!==k); }
+    else p.days=[...new Set(p.days.concat(mine))]; });
+  p.weeks=[...new Set(p.weeks)].sort(); p.days=[...new Set(p.days)].sort();
+  const bad=ri.ks.find(k=>{ const c=inWeek(k); return c.all.length>MAXT||c.n.length>MAXW; });
+  if(bad){ p.weeks=w0; p.days=d0; return {full:bad}; }
+  return 'ajouté'; }
+function rangeSheet(r,msg){
+  const ri=rangeInfo(r); sheetId=null; ctx={fromCell:true,range:r,cell:r.m==='j'?r.a:iso(wkMon(r.a)),k:ri.ks[0]};
+  const list=open().filter(p=>!isMini(p)).map(p=>({p,on:rangeOn(p,r)})).sort((x,y)=>(y.on-x.on)||prioSort(x.p,y.p));
+  openSheet(`<div class="shead"><h2>Placer un projet<small>${ri.label}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  ${msg||''}
+  <button class="btn" data-act="new">+ Nouveau projet</button>
+  <div class="picklist">${list.map(({p,on})=>`<button class="pickbtn${on?' on':''}" style="${pv(p)}" data-act="rangeAdd" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta">${on?'<span>✓ déjà là · toucher pour retirer</span>':''}${starsHtml(p.imp)}<span>${durLbl(p)}</span><span>${stName(p)}</span>${urgHtml(p)}</span></span></button>`).join('')||'<p class="empty">Aucun projet ouvert.</p>'}</div>
+  ${r.m==='s'&&r.a===r.b?`<button class="linkbtn" style="align-self:center" data-act="goWk" data-k="${r.a}">Voir le détail de la semaine ${wkNum(r.a)}</button>`:''}
+  </div>`,'range');
+}
+/* Glisser sur des cases (jours) ou des numéros de semaine pour choisir une plage */
+let rsel=null;
+document.addEventListener('pointerdown',e=>{ if(e.button>0||!e.target.closest) return; const cell=e.target.closest('#gantt .bgc[data-act=cell]'), wk=cell?null:e.target.closest('#gantt .wk[data-act=wkPick]'); if(!cell&&!wk) return;
+  const el=cell||wk, sib=[...el.parentNode.querySelectorAll(cell?'.bgc[data-act=cell]':'.wk[data-act=wkPick]')], i=sib.indexOf(el);
+  rsel={kind:cell?'j':'s',sib,i0:i,i1:i,x0:e.clientX,y0:e.clientY,w:el.getBoundingClientRect().width||28,on:false,touch:e.pointerType!=='mouse',timer:null};
+  if(rsel.touch) rsel.timer=setTimeout(()=>{ if(rsel&&!rsel.on){ rsel.on=true; rselPaint(); try{ navigator.vibrate&&navigator.vibrate(15); }catch(err){} } },380);
+});
+function rselPaint(){ if(!rsel) return; const a=Math.min(rsel.i0,rsel.i1), b=Math.max(rsel.i0,rsel.i1); rsel.sib.forEach((x,i)=>x.classList.toggle('rsel',i>=a&&i<=b)); }
+document.addEventListener('pointermove',e=>{ if(!rsel) return; const dx=e.clientX-rsel.x0, dy=e.clientY-rsel.y0;
+  if(!rsel.on){ if(rsel.touch){ if(Math.hypot(dx,dy)>8){ clearTimeout(rsel.timer); rsel=null; } return; } if(Math.abs(dx)<8) return; rsel.on=true; }
+  e.preventDefault(); rsel.i1=Math.max(0,Math.min(rsel.sib.length-1,rsel.i0+Math.round(dx/rsel.w))); rselPaint();
+},{passive:false});
+document.addEventListener('touchmove',e=>{ if(rsel&&rsel.on) e.preventDefault(); },{passive:false});
+function rselEnd(cancel){ if(!rsel) return; const st=rsel; rsel=null; clearTimeout(st.timer); if(!st.on) return;
+  st.sib.forEach(x=>x.classList.remove('rsel')); window.__noClick=Date.now(); if(cancel) return;
+  const a=Math.min(st.i0,st.i1), b=Math.max(st.i0,st.i1), g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null;
+  if(st.kind==='j') rangeSheet({m:'j',a:st.sib[a].dataset.d,b:st.sib[b].dataset.d}); else rangeSheet({m:'s',a:st.sib[a].dataset.k,b:st.sib[b].dataset.k}); }
+document.addEventListener('pointerup',()=>rselEnd(false)); document.addEventListener('pointercancel',()=>rselEnd(true));
 let tt; function toast(m){const t=document.getElementById('toast'); t.textContent=m; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,2200);}
 function syncForm(){const a=document.getElementById('f-amount'),n=document.getElementById('f-note'),d=document.getElementById('f-date'); if(a) ui.amount=a.value; if(n) ui.note=n.value; if(d) ui.date=d.value;}
 function placeWeekly(p,k){ if(p.weeks.includes(k)) return true; if(!canAdd(p,k,'s')) return false; p.weeks.push(k); p.weeks.sort(); save(); return true; }
@@ -1818,7 +1896,7 @@ function afterCreate(p){
   if(ctx&&ctx.parentFor&&H(ctx.parentFor)){ const par=ctx.parentFor; toast(p.emoji+' '+p.name+' · dans '+H(par).name); refresh(par); return; }
   if(p.later){ toast(p.emoji+' '+p.name+' · rangé en idée'); closeSheet(); return; }
   if(p.prevu){ toast(p.emoji+' '+p.name+' · prévu dès le '+fmt(p.prevu)); closeSheet(); return; }
-  if(ctx&&ctx.fromCell&&!isMini(p)){ const r=cellPlace(p,ctx.cell,ctx.k); save(); toast(p.emoji+' '+p.name+(r?' · placé':' · semaine pleine, à planifier')); closeSheet(); return; }
+  if(ctx&&ctx.fromCell&&!isMini(p)){ const r=ctx.range?rangeToggle(p,ctx.range):cellPlace(p,ctx.cell,ctx.k), ok=r&&!r.full; save(); toast(p.emoji+' '+p.name+(ok?' · placé':' · semaine pleine, à planifier')); closeSheet(); return; }
   if(isMini(p)){ toast('Mini projet ajouté : '+p.name); if(ctx&&ctx.fromFill) weekSheet(ctx.k); else closeSheet(); return; }
   if(ctx&&ctx.fromFill){ const k=ctx.k;
     if(ctx.size==='s'){ placeMode='j'; placeSheet(p.id,null,k); return; }
@@ -1892,7 +1970,11 @@ document.addEventListener('click',e=>{
   else if(a==='clearDone'){S.lists.petites=S.lists.petites.filter(v=>!v.d); save(); render();}
   else if(a==='tags') tagsSheet();
   else if(a==='offs') offsSheet();
-  else if(a==='cell'){ const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null; cellSheet(el.dataset.d); }
+  else if(a==='cell'){ const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null; rangeSheet({m:'j',a:el.dataset.d,b:el.dataset.d}); }
+  else if(a==='wkPick'){ const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null; rangeSheet({m:'s',a:el.dataset.k,b:el.dataset.k}); }
+  else if(a==='rangeAdd'){ const p=P(id), r=ctx&&ctx.range; if(!p||!r) return; const res=rangeToggle(p,r);
+    if(res&&res.full){ rangeSheet(r,`<div class="alert"><div>La semaine ${wkNum(res.full)} est pleine : ${MAXT} projets au plus, dont ${MAXW} sur la semaine entière. Retire d'abord un projet de cette semaine.</div></div>`); return; }
+    save(); toast(p.emoji+' '+p.name+(res==='retiré'?' · retiré du planning':' · placé')); closeSheet(); }
   else if(a==='cmode'){ ui.cellMode=el.dataset.m; cellSheet(ctx.cell); }
   else if(a==='cellAdd'){ const p=P(id), dS=ctx.cell, k=ctx.k, r=cellPlace(p,dS,k); if(!r){ const cc=inWeek(k), wkFull=(ui.cellMode||'j')==='s'&&cc.n.length>=MAXW; cellSheet(dS,`<div class="alert"><div>La semaine ${wkNum(k)} a déjà ${wkFull?MAXW+' projets sur toute la semaine':MAXT+' projets'}.</div><button class="btn ghost" data-act="goWk" data-k="${k}">Voir la semaine ${wkNum(k)}</button></div>`); return; } save(); toast(p.emoji+' '+p.name+' '+r); closeSheet(); }
   else if(a==='planMore3'){ const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null; ui.planExtra=(ui.planExtra||0)+13; render(); }
@@ -1902,6 +1984,8 @@ document.addEventListener('click',e=>{
   else if(a==='tedit'){ const p=H(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp); try{ inp.focus(); const L=inp.value.length; inp.setSelectionRange(L,L); }catch(err){} }
   else if(a==='minis') petitesSheet();
   else if(a==='minisDone') minisSheet(true);
+  else if(a==='pedit'){ ui.edit=true; detail(sheetId); const b=$sheet.querySelector('.sbody'); if(b) b.scrollTop=0; }
+  else if(a==='peditOk'){ const p=P(sheetId), g=x=>document.getElementById(x); if(p){ if(g('f-pname')&&g('f-pname').value.trim()) p.name=g('f-pname').value.trim(); if(g('f-due')) p.due=g('f-due').value||null; if(g('f-why')) p.why=g('f-why').value.trim(); save(); } ui.edit=false; detail(sheetId); }
   else if(a==='projSave'){ const p=P(sheetId), g=x=>document.getElementById(x); if(g('f-next')) p.next=g('f-next').value.trim(); if(g('f-due')) p.due=g('f-due').value||null; if(g('f-why')) p.why=g('f-why').value.trim(); save(); toast('Enregistré'); closeSheet(); }
   else if(a==='miniSave'){ const p=P(sheetId), nm=document.getElementById('f-mname'), du=document.getElementById('f-due'); if(nm&&nm.value.trim()) p.name=nm.value.trim(); if(du) p.due=du.value||null; save(); toast('Enregistré'); minisSheet(); }
   else if(a==='miniDone'){ const p=P(sheetId); p.closed=todayS; save(); minisSheet(); toast('✓ '+p.name); }
@@ -1977,6 +2061,8 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
+  if(t.dataset.freecol==='color'){ const p=P(sheetId); if(p){ p.color=t.value.toUpperCase(); save(); detail(sheetId); } return; }
+  if(t.dataset.freecol==='ncolor'){ if(draft){ syncDraft(); draft.color=t.value.toUpperCase(); newSheet(true); } return; }
   if(t.dataset.freecol){ const c=t.value.toUpperCase(); if(t.dataset.freecol==='domColor'){ const d=D(sheetId); if(d){ d.color=c; save(); domainSheet(sheetId); } } else if(ui.ndom){ const i=document.getElementById('f-ndom'); if(i) ui.ndom.name=i.value; ui.ndom.color=c; newDomSheet(); } return; }
   if(t.dataset.act==='task'){const p=H(sheetId), x=p.tasks[Number(t.dataset.i)]; x.d=t.checked; sinkDone(p); save(); setTimeout(()=>refresh(sheetId),180); return;}
   if(t.dataset.act==='ptask'){const h=H(t.dataset.d), x=h&&h.tasks[Number(t.dataset.i)]; if(x){ x.d=t.checked; sinkDone(h); save(); setTimeout(()=>petitesSheet(),250); } return;}
@@ -2033,7 +2119,7 @@ const kbdOn=()=>document.body.classList.contains('kbd');
 function addBadges(){ if(!kbdOn()) return;
   const put=(el,l,end)=>{ if(!el||[...el.children].some(c=>c.classList.contains('kb'))) return; const s=document.createElement('span'); s.className='kb'; s.textContent=l; end?el.appendChild(s):el.insertBefore(s,el.firstChild); };
   [['planning','7'],['projets','8'],['vrac','9']].forEach(([v,l])=>put(document.querySelector('.tab[data-view='+v+']'),l,true));
-  put(document.querySelector('.ot-t[data-act=summary]'),'*',true); put(document.getElementById('fab'),'#');
+  put(document.querySelector('.oh-recap'),'*',true); put(document.getElementById('fab'),'#');
   put(document.querySelector('.wknav [data-d="-1"]'),'4'); put(document.querySelector('.wknav [data-d="1"]'),'6',true);
   document.querySelectorAll('.slots > .slot:not(.free) .band').forEach((b,i)=>put(b,String(i+1)));
   put(document.querySelector('.vrac form.inline'),'5');
