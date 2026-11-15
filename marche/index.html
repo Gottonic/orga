@@ -140,6 +140,14 @@ main .chip{background:var(--surface);border-color:transparent}
 .rang.ouvert{background:var(--surface)}
 .ray-ed{padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px;user-select:text;-webkit-user-select:text}
 .ray-ed .in{background:var(--surface-2)}
+.ray-tous{display:flex;flex-direction:column;max-height:46vh;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid var(--line)}
+.ray-a{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);background:transparent;color:var(--ink);text-align:left;padding:4px 2px}
+.ray-a .cb{flex:none;width:22px;height:22px;border-radius:6px;border:1.8px solid color-mix(in srgb,var(--ink) 40%,transparent);display:grid;place-items:center;color:var(--on-acc)}
+.ray-a .cb .ic{width:13px;height:13px;stroke-width:2.4;opacity:0}
+.ray-a.on .cb{background:var(--accent);border-color:var(--accent)}
+.ray-a.on .cb .ic{opacity:1}
+.ray-a .nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.ray-a small{flex:none;max-width:45%;font:400 10.5px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);text-align:right}
 .ray-art{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:8px}
 .ray-art span{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
 .ray-art select{flex:none;width:48%;height:40px;font-size:.86rem;border-radius:var(--pill);padding-left:12px;padding-right:30px;background-position:calc(100% - 18px) 17px,calc(100% - 12px) 17px}
@@ -747,12 +755,13 @@ function vRayonsMag(){
   const m=S.mags[ed.id], ord=ordreRayons(m.id), autres=mags().filter(x=>x.id!==m.id&&(x.rayons||[]).length), A=arts();
   const ligne=(id,i)=>{ const ouvert=ed.ouvert===id, c=S.cats[id];
     let edit='';
-    if(ouvert&&c){ const dans=A.filter(a=>catDe(a)===id).sort(triNom), hors=A.filter(a=>catDe(a)!==id).sort(triNom);
-      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Articles dans ce rayon${dans.length?' · '+dans.length:''}</div>
-      ${dans.length?dans.map(a=>`<div class="ray-art"><span>${esc(a.nom)}</span><select class="in r-move" data-art="${a.id}" aria-label="Rayon de ${esc(a.nom)}">${catsTri().map(x=>`<option value="${x.id}"${x.id===id?' selected':''}>${esc(x.nom)}</option>`).join('')}</select></div>`).join(''):'<p class="aide" style="color:var(--ink-3)">Aucun article pour l’instant.</p>'}
-      <div class="row-in"><input class="in" id="r-add" list="r-noms" autocomplete="off" placeholder="Ranger un article ici…"><button type="button" class="btn2" data-act="ray-ajout" data-id="${id}">Ajouter</button></div>
-      <datalist id="r-noms">${hors.map(a=>`<option value="${esc(a.nom)}"></option>`).join('')}</datalist>
-      <p class="aide" style="color:var(--ink-3)">Ses articles valent pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}. Un nom nouveau sera rangé ici quand tu l’ajouteras.</p></div>`; }
+    if(ouvert&&c){ const tous=A.slice().sort(triNom), n=tous.filter(a=>catDe(a)===id).length;
+      edit=`<div class="ray-ed"><div class="lab" style="margin-top:0">Tous les articles · ${n} dans ce rayon</div>
+      <input class="in" id="r-cherche" type="search" autocomplete="off" placeholder="Chercher ou ajouter un article…" value="${esc(ed.rq||'')}">
+      <div class="ray-tous" id="r-tous">${tous.map(a=>{ const dans=catDe(a)===id;
+        return `<button type="button" class="ray-a${dans?' on':''}" data-act="ray-toggle" data-art="${a.id}" data-cat="${id}" data-n="${esc(norm(a.nom))}" aria-pressed="${dans}"><span class="cb" aria-hidden="true">${ic('fait')}</span><span class="nm">${esc(a.nom)}</span>${dans?'':`<small>${esc(catNom(catDe(a)))}</small>`}</button>`; }).join('')}</div>
+      <button type="button" class="btn2" id="r-nouveau" data-act="ray-ajout" data-id="${id}" hidden></button>
+      <p class="aide" style="color:var(--ink-3)">Coche ce qui va dans ce rayon. Les articles et le nom valent pour tous les magasins ; seul l’ordre est propre à ${esc(m.nom)}.</p></div>`; }
     return `<div class="rang${ouvert?' ouvert':''}" data-id="${id}"><div class="rang-l"><span class="poignee" aria-label="Glisser pour déplacer ${esc(catNom(id))}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg></span><span class="num">${i+1}</span>${ed.renomme===id?`<input class="in r-nom" id="r-nom" data-cat="${id}" value="${esc(catNom(id))}" autocomplete="off" aria-label="Nom du rayon (pour tous les magasins)">`:`<button type="button" class="nom-r" data-act="ray-renommer" data-id="${id}" aria-label="Renommer ${esc(catNom(id))}">${esc(catNom(id))}</button>`}<button type="button" class="plus" data-act="ray-plus" data-id="${id}" aria-expanded="${ouvert}" aria-label="${ouvert?'Fermer':'Modifier'} ${esc(catNom(id))}">${ic('plus')}</button></div>${edit}</div>`; };
   $sheet.innerHTML=tete('Rayons · '+m.nom)+`<p class="aide">L’ordre de ton tour dans ce magasin : glisse un rayon par ses trois traits. Touche son nom pour le renommer, le + pour voir ses articles.</p>
   ${autres.length?`<div class="chips">${autres.map(x=>`<button type="button" class="chip" data-act="ray-copier" data-id="${x.id}">Même ordre que ${esc(x.nom)}</button>`).join('')}</div>`:''}
@@ -761,7 +770,7 @@ function vRayonsMag(){
 }
 /* glisser-déposer des rayons (doigt ou souris), par la poignée */
 let drag=null;
-function rafraichirRayons(){ const st=$sheet.scrollTop; vMag(); $sheet.scrollTop=st; }
+function rafraichirRayons(){ const st=$sheet.scrollTop; vMag(); $sheet.scrollTop=st; filtrerRayon(); }
 $sheet.addEventListener('pointerdown',e=>{
   const h=e.target.closest('.poignee'); if(!h||!ed||ed.sub!=='rayons') return;
   const row=h.closest('.rang'), r=row.getBoundingClientRect();
@@ -948,11 +957,15 @@ document.addEventListener('click',e=>{
     case 'ray-ouvrir': lireMag(); ed.sub='rayons'; ed.ouvert=null; vMag(); $sheet.scrollTop=0; break;
     case 'ray-retour': ed.sub=null; vMag(); $sheet.scrollTop=0; break;
     case 'ray-renommer': ed.renomme=id; rafraichirRayons(); { const i=document.getElementById('r-nom'); if(i){ i.focus(); i.select(); } } break;
-    case 'ray-plus': ed.ouvert=ed.ouvert===id?null:id; rafraichirRayons(); break;
-    case 'ray-ajout': { const i=document.getElementById('r-add'), nom=(i&&i.value||'').trim().replace(/\s+/g,' '); if(!nom||!S.cats[id]){ if(i) i.focus(); break; }
+    case 'ray-plus': ed.ouvert=ed.ouvert===id?null:id; ed.rq=''; rafraichirRayons(); break;
+    case 'ray-toggle': { const a=S.arts[b.dataset.art], cid=b.dataset.cat; if(!a||!S.cats[cid]) break;
+      let cible; if(catDe(a)!==cid) cible=cid; else { delete a.cat; const g=deviner(a.nom); cible=g!==cid?g:(cid!=='divers'&&S.cats.divers?'divers':g); }
+      apprendre(a.nom,cible); a.cat=cible; save(); render(); const st=document.getElementById('r-tous'), sc=st?st.scrollTop:0; rafraichirRayons();
+      const st2=document.getElementById('r-tous'); if(st2) st2.scrollTop=sc; filtrerRayon(); break; }
+    case 'ray-ajout': { const i=document.getElementById('r-cherche'), nom=(i&&i.value||'').trim().replace(/\s+/g,' '); if(!nom||!S.cats[id]){ if(i) i.focus(); break; }
       const a=arts().find(x=>norm(x.nom)===norm(nom));
       apprendre(nom,id); if(a) a.cat=id;
-      save(); render(); rafraichirRayons(); toast(a?'« '+a.nom+' » rangé dans '+catNom(id):'« '+nom+' » ira dans '+catNom(id)+' quand tu l’ajouteras'); break; }    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(!id||!S.mags[id]) break; m.rayons=ordreRayons(id); save(); render(); rafraichirRayons(); toast('Même ordre que '+S.mags[id].nom); break; }
+      ed.rq=''; save(); render(); rafraichirRayons(); toast(a?'« '+a.nom+' » rangé dans '+catNom(id):'« '+nom+' » ira dans '+catNom(id)+' quand tu l’ajouteras'); break; }    case 'ray-copier': { const m=S.mags[ed.id]; if(!m) break; if(!id||!S.mags[id]) break; m.rayons=ordreRayons(id); save(); render(); rafraichirRayons(); toast('Même ordre que '+S.mags[id].nom); break; }
     case 'cat': ouvrirCat(id); break;
     case 'cat-new': ouvrirCat(null); break;
     case 'cat-haut': bougerCat(id,-1); break;
@@ -987,8 +1000,12 @@ document.addEventListener('click',e=>{
   }
 });
 document.addEventListener('submit',e=>{ if(e.target.id==='qa-form'){ e.preventDefault(); const i=document.getElementById('qa'); if(i) ui.q=i.value; ajoutRapide(); } });
+function filtrerRayon(){ const q=norm(ed&&ed.rq||''), l=document.getElementById('r-tous'), nb=document.getElementById('r-nouveau'); if(!l) return; let exact=false, vus=0;
+  l.querySelectorAll('.ray-a').forEach(x=>{ const ok=!q||x.dataset.n.includes(q); x.hidden=!ok; if(ok) vus++; if(x.dataset.n===q) exact=true; });
+  if(nb){ const v=(ed.rq||'').trim(); nb.hidden=!v||exact; if(v) nb.textContent='+ Ranger « '+v+' » ici'+(vus?'':' (nouveau nom)'); } }
 document.addEventListener('input',e=>{
   const t=e.target;
+  if(t.id==='r-cherche'&&ed){ ed.rq=t.value; filtrerRayon(); return; }
   if(t.id==='qa'){ ui.q=t.value; majSugg(); }
   else if(t.id==='bq'){ ui.bq=t.value; render(); }
   else if(t.id==='e-ry'&&ed&&ed.k==='art'){ const n=parseInt(t.value,10); ed.d.rythme=n>0&&n<=730?n:0; $sheet.querySelectorAll('[data-act="rythme"]').forEach(c=>c.classList.toggle('on',t.value===''&&+c.dataset.n===ed.d.rythme)); }
@@ -1012,7 +1029,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&ed){
     e.preventDefault();
     if(ed.k==='envie'&&ed.id&&!ed.sub){ e.target.blur(); return; }
-    if(e.target.id==='r-add'){ const b=$sheet.querySelector('[data-act="ray-ajout"]'); if(b) b.click(); return; }
+    if(e.target.id==='r-cherche'){ const b=document.getElementById('r-nouveau'); if(b&&!b.hidden) b.click(); return; }
     if(e.target.id==='r-nom'){ e.target.blur(); return; }
     if(e.target.id==='e-ntype'){ $sheet.querySelector('[data-act="mtype-add"]').click(); return; }
     const s=$sheet.querySelector('.btn[data-act^="sauver"]'); if(s) s.click(); }
