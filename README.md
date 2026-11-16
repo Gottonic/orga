@@ -197,6 +197,10 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   `locus_rappel(cle)` (`supabase/rappel.sql`, secret `LOCUS_CLE` = clé du lien du lundi) et envoie une notification, sauf si le bilan est rempli.
   La toucher ouvre `bibliotheque/?bilan=1` (trois rangées de 1 à 10 et un mot facultatif). « Run workflow » envoie un essai même si le bilan est rempli.
   `sw.js` gère `push` et `notificationclick`. Sans services Google, le téléphone a besoin de microG (Cloud Messaging) pour recevoir.
+- **Annuler / refaire** (16.11) : Ctrl+Z, Ctrl+Maj+Z ou Ctrl+Y, et ↶ dans la barre d'outils. Chaque changement de `n:` ou `w:` garde l'état d'avant
+  (`HIST` ; changements rapprochés sur une même ligne = un seul pas).
+- **Émoji en début de ligne** (16.11) : bouton 🙂 de la barre d'outils, sur l'ordinateur (le téléphone a son clavier).
+- **Bloc du lundi** : « Objectif principal : », « Objectif secondaire : », « Conseil : », sans émojis (16.11 ; les lignes déjà collées sont corrigées).
 - **Pas de + flottant** (15.11) : le vide-tête a son champ, l'accueil aussi.
 - **L'adresse ne change pas** en changeant d'onglet ou de page (15.11) : sur Vivaldi Android, chaque changement d'adresse faisait perdre la couleur
   de la barre d'état. Le `#…` (`#vide`, `#journal`, `#p:<id>`, `#d:<id>`) n'est lu qu'à l'ouverture.

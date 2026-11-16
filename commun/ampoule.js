@@ -179,7 +179,7 @@
 
   /* ---------- fenêtre ---------- */
   let host = null, root = null, ouvert = false, bouton = null;
-  const V = { type: 'idee', faites: false, edit: null, tout: false, attente: [] };
+  const V = { type: 'idee', faites: false, edit: null, tout: false, attente: [], cochees: null };
   const fin = () => matchMedia('(pointer:fine)').matches;
   const CSS = `:host{all:initial}
 *{box-sizing:border-box;margin:0}
@@ -189,6 +189,7 @@
   border-radius:var(--r) var(--r) 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.18);
   padding:16px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
 @media (min-width:700px){.scrim{align-items:center;padding:24px}.sheet{border-radius:var(--r)}}
+.sheet>*{flex-shrink:0} /* sans ça, la liste se tasse au lieu de faire défiler la fenêtre (16.11) */
 .head{display:flex;align-items:flex-start;gap:10px}
 .head h2{flex:1;font:700 1.2rem/1.2 ${T.titre};letter-spacing:-.01em}
 .head .sous{display:block;font:400 .85rem/1.3 ${T.font};color:var(--m);margin-top:3px}
@@ -266,7 +267,7 @@ details[open] summary{margin-bottom:6px}
         <div class="caps" style="margin-top:8px">${V.attente.map(capHtml).join('')}</div>${joindreHtml(V.attente.length)}
         <details style="margin-top:4px"><summary>+ Détails</summary><textarea name="details" rows="3" placeholder="Détails (facultatif)"></textarea></details></form>`}
       ${corps}
-      <div class="pied"><span class="etat">${esc(ETATS[etat] || '')}</span><span style="display:flex;gap:14px">${ouv.length ? `<button type="button" class="lien" data-act="copier">Copier pour Claude</button>` : ''}${nbCaps(ouv) ? `<button type="button" class="lien" data-act="partager">Avec les captures (${nbCaps(ouv)})</button>` : ''}${faites.length ? `<button type="button" class="lien" data-act="faites">${V.faites ? 'Cacher' : 'Voir'} les faites (${faites.length})</button>` : ''}</span></div>
+      <div class="pied"><span class="etat">${esc(ETATS[etat] || '')}</span><span style="display:flex;gap:14px">${ouv.length ? `<button type="button" class="lien" data-act="copier">Copier pour Claude</button>` : ''}${ouv.length > 1 ? `<button type="button" class="lien" data-act="toutCocher">☑ Tout cocher</button>` : ''}${V.cochees ? `<button type="button" class="lien" data-act="decocher">↶ Annuler (${V.cochees.length})</button>` : ''}${nbCaps(ouv) ? `<button type="button" class="lien" data-act="partager">Avec les captures (${nbCaps(ouv)})</button>` : ''}${faites.length ? `<button type="button" class="lien" data-act="faites">${V.faites ? 'Cacher' : 'Voir'} les faites (${faites.length})</button>` : ''}</span></div>
       ${V.faites && faites.length ? `<div class="liste">${faites.slice(0, 60).map(ligne).join('')}</div>` : ''}`;
   }
   function vueEdit(x) {
@@ -351,7 +352,7 @@ details[open] summary{margin-bottom:6px}
       root.addEventListener('drop', (e) => { if (!surFichiers(e)) return; e.preventDefault(); const s = root.querySelector('.sheet'); if (s) s.classList.remove('depot'); joindre(e.dataTransfer.files); });
     }
     root.innerHTML = `<style>${CSS}</style><div class="scrim" data-act="fond"><div class="sheet" role="dialog" aria-modal="true" aria-label="Bugs et idées"></div><div class="zoom" data-act="dezoom" hidden><img alt="Capture"></div></div>`;
-    ouvert = true; V.edit = null; host.hidden = false;
+    ouvert = true; V.edit = null; V.cochees = null; host.hidden = false;
     document.documentElement.style.overflow = 'hidden';
     if (!etat) etat = aFaire() ? 'attente' : '';
     dessiner(); sync();
@@ -380,6 +381,12 @@ details[open] summary{margin-bottom:6px}
     else if (a === 'typeEdit') { V.edit.type = el.dataset.k; dessiner(); }
     else if (a === 'suppr') { if (!confirmer(el)) return; const S = load(); const r = S.rows[V.edit.key]; if (r) { oublierCaptures(S, r.data && r.data.captures); r.deleted = true; S.dirty.add(V.edit.key); save(S); } V.edit = null; dessiner(); sync(); }
     else if (a === 'copier') copier();
+    /* comme dans GDT : tout cocher d'un coup (après les avoir données à Claude) ; « Annuler » les remet toutes */
+    else if (a === 'toutCocher') { const { ouv } = ouvertes(); if (!ouv.length) return; const le = new Date().toISOString();
+      ouv.forEach((x) => modifier(x.key, (r) => { r.data = Object.assign({}, r.data, { fait: true, faitLe: le }); }));
+      V.cochees = ouv.map((x) => x.key); etat = 'attente'; dessiner(); toast(ouv.length + ' cochées.'); sync(); }
+    else if (a === 'decocher') { (V.cochees || []).forEach((k) => modifier(k, (r) => { r.data = Object.assign({}, r.data, { fait: false, faitLe: '' }); }));
+      V.cochees = null; etat = 'attente'; dessiner(); sync(); }
     else if (a === 'partager') partager();
   }
   /* pas de fenêtre du navigateur : on demande de toucher une deuxième fois */

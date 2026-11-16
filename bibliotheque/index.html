@@ -95,6 +95,13 @@ html.dans .login{position:static;background:transparent;padding:0}
 .outils{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--head)}
 .outils button{border:0;background:var(--bordeaux);color:var(--on-page);border-radius:10px;min-width:42px;height:40px;padding:0 8px;display:grid;place-items:center}
 .outils .ic{width:20px;height:20px;vertical-align:0}
+@media (pointer:coarse){.outils .emo-b{display:none}}
+.emojis{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:31;width:min(420px,94vw);max-height:46vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:8px 10px;box-shadow:0 6px 24px rgba(40,10,16,.25)}
+.emojis p{margin:6px 2px 2px;font:400 .68rem var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.emojis div{display:flex;flex-wrap:wrap;gap:2px}
+.emojis button{border:0;background:none;font-size:1.3rem;width:38px;height:38px;border-radius:8px;padding:0}
+.emojis button:hover{background:var(--bordpale)}
+.emojis button.sans{width:auto;font:600 .85rem var(--body);color:var(--bord);padding:0 8px;margin-top:4px}
 .semaine{display:flex;align-items:center;gap:8px}
 .semaine b{font:700 1.1rem var(--serif);letter-spacing:-.02em}
 .semaine button .ic{width:18px;height:18px;vertical-align:0}
@@ -137,7 +144,7 @@ html.dans .login{position:static;background:transparent;padding:0}
 <header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="projets">Notes</button><button class="ot-t" data-tab="journal">Journal</button><button class="ot-t" data-tab="chercher">Chercher</button></nav></header>
 <main id="view" aria-live="polite"></main>
-<div class="outils" id="outils" hidden><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
+<div class="outils" id="outils" hidden><button data-tool="undo" aria-label="Annuler (Ctrl+Z)" title="Annuler (Ctrl+Z)"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 8l4 4M3 8h9a5 5 0 0 1 0 10H8"/></svg></button><button class="emo-b" data-tool="emoji" aria-label="Émoji en début de ligne" title="Émoji en début de ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M6.8 12a3.6 3.6 0 0 0 6.4 0M7.5 8h.01M12.5 8h.01"/></svg></button><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
@@ -185,7 +192,21 @@ function toast(m,ms){ $toast.textContent=m; $toast.hidden=false; clearTimeout(to
 function canon(v){ if(Array.isArray(v)) return '['+v.map(x=>canon(x===undefined?null:x)).join(',')+']'; if(v&&typeof v==='object') return '{'+Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}'; return JSON.stringify(v===undefined?null:v); }
 function charger(){ N={}; W={}; REG={}; for(const k in prev){ let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(!d) continue; if(k.startsWith('n:')) N[d.id]=d; else if(k.startsWith('w:')) W[k.slice(2)]=d; else if(k.startsWith('s:')) REG[k.slice(2)]=d; } }
 function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull})); }catch(e){} }
-function ecrire(key,data){ const v=data==null?null:canon(data); if(v==null){ if(!(key in prev)) return; delete prev[key]; } else { if(prev[key]===v) return; prev[key]=v; } dirty.add(key); persist(); setSync(); clearTimeout(pushTimer); pushTimer=setTimeout(push,900); }
+/* Annuler / refaire (16.11) : chaque changement d'une ligne (n:) ou d'un bilan (w:) garde l'état d'avant. Les changements rapprochés
+   (moins d'une seconde, sur la même ligne) forment un seul pas ; une touche spéciale, un clic ou une autre ligne en commencent un nouveau.
+   Ctrl+Z (ou ↶ dans la barre d'outils) annule un pas, Ctrl+Maj+Z ou Ctrl+Y le refait. */
+const HIST={pile:[],refaire:[],tx:null,dernier:0,coupe:false,rejeu:false,cle:null};
+function noter(key,avant){ if(HIST.rejeu||!/^[nw]:/.test(key)) return; const now=Date.now();
+  if(!HIST.tx||HIST.coupe||now-HIST.dernier>1000){ HIST.tx={av:new Map()}; HIST.pile.push(HIST.tx); if(HIST.pile.length>200) HIST.pile.shift(); HIST.coupe=false; }
+  HIST.refaire=[]; if(!HIST.tx.av.has(key)) HIST.tx.av.set(key,avant); HIST.dernier=now; }
+const couper=()=>{ HIST.coupe=true; };
+function annuler(redo){ couper(); const src=redo?HIST.refaire:HIST.pile, tx=src.pop(); if(!tx){ toast(redo?'Rien à refaire':'Rien à annuler'); return; }
+  const inv={av:new Map()}; let vu=null; HIST.rejeu=true;
+  tx.av.forEach((v,k)=>{ inv.av.set(k,k in prev?prev[k]:null); const d=v==null?null:JSON.parse(v); ecrire(k,d); const id=k.slice(2);
+    if(k.startsWith('n:')){ if(d){ N[id]=d; if(!vu||!d.a) vu=id; } else delete N[id]; } else { if(d) W[id]=d; else delete W[id]; } });
+  HIST.rejeu=false; (redo?HIST.pile:HIST.refaire).push(inv); HIST.tx=null;
+  const ici=vu&&document.querySelector(`textarea[data-id="${vu}"]`); refaire(ici?vu:null); if(!ici) toast(redo?'Refait':'Annulé'); }
+function ecrire(key,data){ const v=data==null?null:canon(data); if(v==null){ if(!(key in prev)) return; noter(key,prev[key]); delete prev[key]; } else { if(prev[key]===v) return; noter(key,key in prev?prev[key]:null); prev[key]=v; } dirty.add(key); persist(); setSync(); clearTimeout(pushTimer); pushTimer=setTimeout(push,900); }
 const ecrireN=n=>ecrire('n:'+n.id,n);
 function effacerN(id){ delete N[id]; ecrire('n:'+id,null); }
 async function push(){
@@ -348,13 +369,16 @@ function collerSheet(){ const k=ui.wk||wkKey(new Date());
   <p class="note">Colle ici le bloc « LOCUS » que Claude t'a donné à la fin de la séance du lundi. Il va dans la semaine ${esc(wkLabel(k))}.</p>
   <textarea class="in" id="i-bloc" rows="8" placeholder="LOCUS&#10;OBJECTIF PRINCIPAL : …&#10;OBJECTIF SECONDAIRE : …&#10;CONSEIL : …&#10;PROJETS : … ; …"></textarea>
   <button class="btn" data-act="appliquerBloc">Ajouter au journal et au planning</button>`; $scrim.hidden=false; setTimeout(()=>{ const t=document.getElementById('i-bloc'); if(t) t.focus(); },30); }
+/* 16.11 : plus d'émojis devant les objectifs et le conseil (demande de Nicolas) ; les lignes déjà collées sont corrigées une fois */
+function sansEmojisJournal(){ const M=[['🎯 ','Objectif principal : '],['◎ ','Objectif secondaire : '],['💡 ','Conseil : ']]; HIST.rejeu=true;
+  Object.values(N).forEach(n=>{ if(!String(n.p||'').startsWith('j:')||!n.t) return; const m=M.find(([e])=>n.t.startsWith(e)); if(m){ n.t=m[1]+n.t.slice(m[0].length); ecrireN(n); } }); HIST.rejeu=false; }
 function appliquerBloc(txt){
   const k=ui.wk||wkKey(new Date()), root='j:'+k, L=String(txt||'').split(/\n+/).map(x=>x.trim()).filter(Boolean); let nObj=0; const places=[], inconnus=[];
   for(const l of L){ const m=l.match(/^[-•*\s]*(objectif principal|objectif secondaire|conseil(?: perso)?|point d'attention|projets?)\s*[:：]\s*(.+)$/i); if(!m) continue; const cle=plain(m[1]), v=m[2].trim();
     if(cle.startsWith('projet')){ v.split(/\s*[;,]\s*/).filter(Boolean).forEach(nom=>{ const q=plain(nom).replace(/^\S*\s/,x=>/\p{Extended_Pictographic}/u.test(x)?'':x).trim();
         const P=PB?PB.liste().filter(p=>!p.closed):[], p=P.find(x=>plain(x.name)===q)||P.find(x=>plain(x.name).startsWith(q)||q.startsWith(plain(x.name)));
         if(!p){ inconnus.push(nom); return; } if(!(p.weeks||[]).includes(k)){ p.weeks=(p.weeks||[]).concat([k]).sort(); delete p.later; PB.ecrire(p); } places.push(p.name); }); }
-    else { const lab=cle.startsWith('objectif principal')?'🎯 ':cle.startsWith('objectif secondaire')?'◎ ':'💡 '; nouvelle(root,ordreFin(root),lab+v); nObj++; } }
+    else { const lab=cle.startsWith('objectif principal')?'Objectif principal : ':cle.startsWith('objectif secondaire')?'Objectif secondaire : ':'Conseil : '; nouvelle(root,ordreFin(root),lab+v); nObj++; } }
   fermer(); render(); toast(nObj+' ligne'+(nObj>1?'s':'')+' au journal'+(places.length?' · '+places.length+' projet'+(places.length>1?'s':'')+' au planning':'')+(inconnus.length?' · introuvable : '+inconnus.join(', '):'')); }
 function vChercher(){
   const q=plain(ui.q).trim(), R=q.length<2?[]:Object.values(N).filter(n=>(ui.arch||!n.a)&&(plain(n.t).includes(q)||plain(n.d).includes(q))).slice(0,80);
@@ -393,11 +417,33 @@ document.addEventListener('focusin',e=>{ const t=e.target; if(t.classList&&t.cla
 document.addEventListener('focusout',e=>{ const t0=e.target; if(t0.classList&&t0.classList.contains('ti')&&t0.dataset.id){ const n=N[t0.dataset.id], lk=t0.parentNode&&t0.parentNode.querySelector('.lk'); if(n&&lk){ const go=lk.querySelector('.go'); lk.innerHTML=liens(n.t); if(go) lk.appendChild(go); } }
   setTimeout(()=>{ if(!editing()&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#outils'))){ document.body.classList.remove('edit'); $outils.hidden=true; } },150); });
 $outils.addEventListener('pointerdown',e=>e.preventDefault());
-$outils.addEventListener('click',e=>{ const b=e.target.closest('[data-tool]'); if(b&&dernier) outil(b.dataset.tool,dernier); });
+$outils.addEventListener('click',e=>{ const b=e.target.closest('[data-tool]'); if(!b) return; const a=b.dataset.tool;
+  if(a==='undo'){ annuler(false); return; } if(a==='emoji'){ emojis(); return; } if(dernier) outil(a,dernier); });
+/* Émoji en début de ligne (16.11), surtout pour l'ordinateur : le téléphone a son clavier d'émojis */
+const EMOJIS=[['Travail','📌 ✅ ❗ ⭐ 🎯 💡 📝 📎 📅 ⏳ 🔁 🔥 🚧 🧰 🔨 🪚 🪵 💰 🧾 📞 ✉️ 💻 📦 🚚 🛒'],
+  ['Nature','🌱 🥕 🍅 🎃 🥬 🌻 🍓 🌳 🐝 ☀️ 🌧️ ❄️'],['Sport','🏃 🧗 🤸 💪 🏄 🚴 🧘 🥇'],
+  ['Vie','🏠 🚐 🍳 🍫 🎮 📚 🎵 🎬 ✈️ 🗺️ 🎉 🎁 ❤️ 👥 🤝 🧠 😴'],['Humeur','😀 😊 😅 😎 🤔 😬 😢 😡 👍 👎 🙏 👀'],
+  ['Repères','➡️ ❓ ⚠️ ✨ 🟢 🟡 🔴 🔵 ⚫']];
+const EMO_DEBUT=/^(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:️|‍(?:\p{Extended_Pictographic}))*\s*/u;
+function emojis(){ let b=document.getElementById('emojis'); if(b){ b.remove(); return; }
+  b=document.createElement('div'); b.id='emojis'; b.className='emojis';
+  b.innerHTML=EMOJIS.map(([n,l])=>`<p>${n}</p><div>${l.split(' ').map(x=>`<button type="button" data-emo="${x}">${x}</button>`).join('')}</div>`).join('')+'<div><button type="button" data-emo="" class="sans">Enlever l’émoji</button></div>';
+  b.addEventListener('pointerdown',e=>e.preventDefault());
+  b.addEventListener('click',e=>{ const x=e.target.closest('[data-emo]'); if(!x) return; const id=dernier&&N[dernier]?dernier:null, n=id&&N[id]; b.remove(); if(!n) return;
+    couper(); const reste=String(n.t||'').replace(EMO_DEBUT,''); n.t=(x.dataset.emo?x.dataset.emo+' ':'')+reste; ecrireN(n); couper(); refaire(id,n.t.length); });
+  document.body.appendChild(b); }
+document.addEventListener('focusout',()=>setTimeout(()=>{ const b=document.getElementById('emojis'); if(b&&!editing()) b.remove(); },200));
 document.addEventListener('input',e=>{ const t=e.target;
+  if(t.classList&&t.classList.contains('ti')){ const c=t.dataset.id||'d'+t.dataset.nid; if(HIST.cle!==c){ couper(); HIST.cle=c; } }
   if(t.classList&&t.classList.contains('ti')){ autoH(t); if(t.dataset.nid){ const n=N[t.dataset.nid]; if(n){ n.d=t.value; ecrireN(n); } return; }
     const n=N[t.dataset.id]; if(n){ if(t.value.includes('\n')){ /* collage de plusieurs lignes : une ligne chacune */ const parts=t.value.split(/\n+/); n.t=parts.shift(); ecrireN(n); let o=n.o, last=n; parts.forEach(x=>{ if(!x.trim()) return; const s=enfants(n.p,true).find(y=>y.o>o); const m=nouvelle(n.p,s?(o+s.o)/2:o+1,x.trim()); o=m.o; last=m; }); refaire(last.id); return; } n.t=t.value; ecrireN(n); } return; }
   if(t.id==='i-q'){ ui.q=t.value; const pos=t.selectionStart; render(); const i=document.getElementById('i-q'); if(i){ i.focus(); i.setSelectionRange(pos,pos); } } });
+document.addEventListener('keydown',e=>{ const t=e.target, ti=!!(t.classList&&t.classList.contains('ti'));
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==='z'||e.key==='Z'||e.key==='y'||e.key==='Y')){
+    if(!ti&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||'')) return; /* champs ordinaires : l'annulation du navigateur */
+    e.preventDefault(); annuler(e.key==='y'||e.key==='Y'||e.shiftKey); return; }
+  if(e.key==='Enter'||e.key==='Tab'||e.altKey||((e.ctrlKey||e.metaKey)&&e.key.length>1)) couper(); },true);
+document.addEventListener('pointerdown',couper,true);
 document.addEventListener('keydown',e=>{ const t=e.target; if(!t.classList||!t.classList.contains('ti')) return;
   if(t.dataset.nid){ if(e.key==='Escape'||(e.key==='Enter'&&!e.shiftKey)){ e.preventDefault(); const n=N[t.dataset.nid]; if(n&&!n.d){ delete n.d; ecrireN(n); } refaire(t.dataset.nid); } return; }
   const n=N[t.dataset.id]; if(!n) return; const pos=t.selectionStart, fin=t.selectionEnd===t.value.length&&pos===t.value.length;
@@ -503,7 +549,7 @@ async function enter(user){
     if(q.get('bilan')){ ui.tab='journal'; ui.page=null; ui.wk=wkKey(new Date()); setTimeout(bilanSheet,60); } }catch(e){}
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(booted&&!editing()) render(); });
   render(); setSync();
-  await Promise.all([pull(!c),PB.tirer()]); if(!editing()) render(); push();
+  await Promise.all([pull(!c),PB.tirer()]); sansEmojisJournal(); if(!editing()) render(); push();
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{ e.preventDefault();
   try{ const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById('l-mail').value.trim(),password:document.getElementById('l-pass').value}); if(error) throw error; await enter(data.user); }
