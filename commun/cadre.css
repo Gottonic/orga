@@ -59,3 +59,20 @@ body::before{content:none!important}
 
 /* grand écran : onglets regroupés au centre plutôt qu'étirés sur toute la largeur */
 @media (min-width:800px){.oh .ot{justify-content:center}.oh .ot .ot-t{flex:0 1 190px}}
+
+/* L'en-tête ne déborde jamais de l'écran (16.11, Fairphone : avec ↶ et Récap, il poussait toute la page sur le côté).
+   Le nom de l'app peut se resserrer ; sur un écran étroit, boutons plus serrés, Récap réduit à son picto, état de synchro court. */
+.oh .oh-bar{overflow:hidden}
+.oh .oh-nom{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.oh .oh-bar [data-sync]{max-width:6.5em;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:440px){
+  .oh .oh-bar{gap:2px;padding-left:max(8px,env(safe-area-inset-left,0px))}
+  .oh .oh-orga{width:28px;margin-right:0}
+  .oh .oh-b{width:38px}
+  .oh .oh-b.oh-recap{width:38px;padding:0;border:0;border-radius:0;gap:0}
+  .oh .oh-b.oh-recap span{display:none}
+  .oh .oh-b.oh-recap svg{width:21px;height:21px}
+  .oh .oh-sub{display:none}
+  .oh .oh-bar [data-sync]{max-width:1.6em;text-overflow:clip}
+}
+@media (max-width:380px){ .oh .oh-nom{font-size:.98rem} }
