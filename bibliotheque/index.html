@@ -96,12 +96,19 @@ html.dans .login{position:static;background:transparent;padding:0}
 .outils button{border:0;background:var(--bordeaux);color:var(--on-page);border-radius:10px;min-width:42px;height:40px;padding:0 8px;display:grid;place-items:center}
 .outils .ic{width:20px;height:20px;vertical-align:0}
 @media (pointer:coarse){.outils .emo-b{display:none}}
-.emojis{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:31;width:min(420px,94vw);max-height:46vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:8px 10px;box-shadow:0 6px 24px rgba(40,10,16,.25)}
-.emojis p{margin:6px 2px 2px;font:400 .68rem var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.emojis div{display:flex;flex-wrap:wrap;gap:2px}
-.emojis button{border:0;background:none;font-size:1.3rem;width:38px;height:38px;border-radius:8px;padding:0}
-.emojis button:hover{background:var(--bordpale)}
-.emojis button.sans{width:auto;font:600 .85rem var(--body);color:var(--bord);padding:0 8px;margin-top:4px}
+.emojis{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:31;width:min(460px,94vw);max-height:56vh;display:flex;flex-direction:column;background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:14px;box-shadow:0 6px 24px rgba(40,10,16,.25)}
+.emojis .tete{display:flex;gap:6px;align-items:center;padding:8px;border-bottom:1px solid var(--line)}
+.emojis .tete input{flex:1;min-width:0;border:1px solid var(--line2);border-radius:10px;padding:7px 10px;background:#fff}
+.emojis .liste{overflow:auto;padding:4px 8px 8px}
+.emojis details{border-bottom:1px solid var(--line)}
+.emojis summary{display:flex;gap:10px;align-items:center;padding:8px 2px;cursor:pointer;list-style:none}
+.emojis summary::-webkit-details-marker{display:none}
+.emojis summary b{font-weight:600}.emojis summary span{flex:1;opacity:.85;letter-spacing:2px}.emojis summary small{font:400 .72rem var(--mono);color:var(--muted)}
+.emojis .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:2px;padding-bottom:6px}
+.emojis .grille button{border:0;background:none;font-size:1.35rem;height:38px;border-radius:8px;padding:0}
+.emojis .grille button:hover{background:var(--bordpale)}
+.emojis .sans{border:0;background:none;font:600 .85rem var(--body);color:var(--bord);padding:4px 6px;white-space:nowrap}
+.emojis .rien{color:var(--muted);margin:10px 4px}
 .semaine{display:flex;align-items:center;gap:8px}
 .semaine b{font:700 1.1rem var(--serif);letter-spacing:-.02em}
 .semaine button .ic{width:18px;height:18px;vertical-align:0}
@@ -144,7 +151,7 @@ html.dans .login{position:static;background:transparent;padding:0}
 <header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="projets">Notes</button><button class="ot-t" data-tab="journal">Journal</button><button class="ot-t" data-tab="chercher">Chercher</button></nav></header>
 <main id="view" aria-live="polite"></main>
-<div class="outils" id="outils" hidden><button data-tool="undo" aria-label="Annuler (Ctrl+Z)" title="Annuler (Ctrl+Z)"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 8l4 4M3 8h9a5 5 0 0 1 0 10H8"/></svg></button><button class="emo-b" data-tool="emoji" aria-label="Émoji en début de ligne" title="Émoji en début de ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M6.8 12a3.6 3.6 0 0 0 6.4 0M7.5 8h.01M12.5 8h.01"/></svg></button><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
+<div class="outils" id="outils" hidden><button class="emo-b" data-tool="emoji" aria-label="Émoji en début de ligne" title="Émoji en début de ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M6.8 12a3.6 3.6 0 0 0 6.4 0M7.5 8h.01M12.5 8h.01"/></svg></button><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
@@ -194,17 +201,20 @@ function charger(){ N={}; W={}; REG={}; for(const k in prev){ let d; try{ d=JSON
 function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull})); }catch(e){} }
 /* Annuler / refaire (16.11) : chaque changement d'une ligne (n:) ou d'un bilan (w:) garde l'état d'avant. Les changements rapprochés
    (moins d'une seconde, sur la même ligne) forment un seul pas ; une touche spéciale, un clic ou une autre ligne en commencent un nouveau.
-   Ctrl+Z (ou ↶ dans la barre d'outils) annule un pas, Ctrl+Maj+Z ou Ctrl+Y le refait. */
+   Ctrl+Z (ou ↶ dans l'en-tête) annule un pas, Ctrl+Maj+Z ou Ctrl+Y le refait. */
 const HIST={pile:[],refaire:[],tx:null,dernier:0,coupe:false,rejeu:false,cle:null};
 function noter(key,avant){ if(HIST.rejeu||!/^[nw]:/.test(key)) return; const now=Date.now();
   if(!HIST.tx||HIST.coupe||now-HIST.dernier>1000){ HIST.tx={av:new Map()}; HIST.pile.push(HIST.tx); if(HIST.pile.length>200) HIST.pile.shift(); HIST.coupe=false; }
-  HIST.refaire=[]; if(!HIST.tx.av.has(key)) HIST.tx.av.set(key,avant); HIST.dernier=now; }
+  HIST.refaire=[]; if(!HIST.tx.av.has(key)) HIST.tx.av.set(key,avant); HIST.dernier=now; annulable(); }
 const couper=()=>{ HIST.coupe=true; };
+/* le bouton ↶ de l'en-tête commun (commun/cadre.js) : il demande « locus:annuler », on lui dit s'il y a quelque chose à annuler */
+const annulable=()=>document.dispatchEvent(new CustomEvent('locus:annulable',{detail:{n:HIST.pile.length,refaire:HIST.refaire.length}}));
+document.addEventListener('locus:annuler',e=>annuler(!!(e.detail&&e.detail.refaire)));
 function annuler(redo){ couper(); const src=redo?HIST.refaire:HIST.pile, tx=src.pop(); if(!tx){ toast(redo?'Rien à refaire':'Rien à annuler'); return; }
   const inv={av:new Map()}; let vu=null; HIST.rejeu=true;
   tx.av.forEach((v,k)=>{ inv.av.set(k,k in prev?prev[k]:null); const d=v==null?null:JSON.parse(v); ecrire(k,d); const id=k.slice(2);
     if(k.startsWith('n:')){ if(d){ N[id]=d; if(!vu||!d.a) vu=id; } else delete N[id]; } else { if(d) W[id]=d; else delete W[id]; } });
-  HIST.rejeu=false; (redo?HIST.pile:HIST.refaire).push(inv); HIST.tx=null;
+  HIST.rejeu=false; (redo?HIST.pile:HIST.refaire).push(inv); HIST.tx=null; annulable();
   const ici=vu&&document.querySelector(`textarea[data-id="${vu}"]`); refaire(ici?vu:null); if(!ici) toast(redo?'Refait':'Annulé'); }
 function ecrire(key,data){ const v=data==null?null:canon(data); if(v==null){ if(!(key in prev)) return; noter(key,prev[key]); delete prev[key]; } else { if(prev[key]===v) return; noter(key,key in prev?prev[key]:null); prev[key]=v; } dirty.add(key); persist(); setSync(); clearTimeout(pushTimer); pushTimer=setTimeout(push,900); }
 const ecrireN=n=>ecrire('n:'+n.id,n);
@@ -420,19 +430,28 @@ $outils.addEventListener('pointerdown',e=>e.preventDefault());
 $outils.addEventListener('click',e=>{ const b=e.target.closest('[data-tool]'); if(!b) return; const a=b.dataset.tool;
   if(a==='undo'){ annuler(false); return; } if(a==='emoji'){ emojis(); return; } if(dernier) outil(a,dernier); });
 /* Émoji en début de ligne (16.11), surtout pour l'ordinateur : le téléphone a son clavier d'émojis */
-const EMOJIS=[['Travail','📌 ✅ ❗ ⭐ 🎯 💡 📝 📎 📅 ⏳ 🔁 🔥 🚧 🧰 🔨 🪚 🪵 💰 🧾 📞 ✉️ 💻 📦 🚚 🛒'],
-  ['Nature','🌱 🥕 🍅 🎃 🥬 🌻 🍓 🌳 🐝 ☀️ 🌧️ ❄️'],['Sport','🏃 🧗 🤸 💪 🏄 🚴 🧘 🥇'],
-  ['Vie','🏠 🚐 🍳 🍫 🎮 📚 🎵 🎬 ✈️ 🗺️ 🎉 🎁 ❤️ 👥 🤝 🧠 😴'],['Humeur','😀 😊 😅 😎 🤔 😬 😢 😡 👍 👎 🙏 👀'],
-  ['Repères','➡️ ❓ ⚠️ ✨ 🟢 🟡 🔴 🔵 ⚫']];
 const EMO_DEBUT=/^(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:️|‍(?:\p{Extended_Pictographic}))*\s*/u;
-function emojis(){ let b=document.getElementById('emojis'); if(b){ b.remove(); return; }
-  b=document.createElement('div'); b.id='emojis'; b.className='emojis';
-  b.innerHTML=EMOJIS.map(([n,l])=>`<p>${n}</p><div>${l.split(' ').map(x=>`<button type="button" data-emo="${x}">${x}</button>`).join('')}</div>`).join('')+'<div><button type="button" data-emo="" class="sans">Enlever l’émoji</button></div>';
-  b.addEventListener('pointerdown',e=>e.preventDefault());
-  b.addEventListener('click',e=>{ const x=e.target.closest('[data-emo]'); if(!x) return; const id=dernier&&N[dernier]?dernier:null, n=id&&N[id]; b.remove(); if(!n) return;
-    couper(); const reste=String(n.t||'').replace(EMO_DEBUT,''); n.t=(x.dataset.emo?x.dataset.emo+' ':'')+reste; ecrireN(n); couper(); refaire(id,n.t.length); });
-  document.body.appendChild(b); }
-document.addEventListener('focusout',()=>setTimeout(()=>{ const b=document.getElementById('emojis'); if(b&&!editing()) b.remove(); },200));
+/* Tous les émojis, par catégories officielles (commun/emojis.js, chargé à la première ouverture), avec une recherche en français */
+const nrmE=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function chargerEmojis(){ return window.LocusEmojis?Promise.resolve():new Promise((ok,ko)=>{ const sc=document.createElement('script'); sc.src='../commun/emojis.js'; sc.onload=ok; sc.onerror=ko; document.head.appendChild(sc); }); }
+function emojisListe(q){ const G=window.LocusEmojis||[], w=nrmE(q).split(/\s+/).filter(Boolean), btn=e=>`<button type="button" data-emo="${e}">${e}</button>`;
+  if(w.length){ const L=[]; G.forEach(([,l])=>l.split('\n').forEach(x=>{ const [e,t]=x.split('\t'); const n=' '+nrmE(t); if(w.every(m=>n.includes(' '+m)||n.includes(m))) L.push(e); }));
+    return L.length?`<div class="grille">${L.slice(0,240).map(btn).join('')}</div>`:'<p class="rien">Aucun émoji trouvé.</p>'; }
+  return G.map(([cat,l])=>{ const E=l.split('\n').map(x=>x.split('\t')[0]); return `<details><summary><b>${cat}</b><span>${E.slice(0,6).join('')}</span><small>${E.length}</small></summary><div class="grille">${E.map(btn).join('')}</div></details>`; }).join(''); }
+async function emojis(){ let b=document.getElementById('emojis'); if(b){ b.remove(); return; }
+  const id=dernier&&N[dernier]?dernier:null; if(!id) return;
+  b=document.createElement('div'); b.id='emojis'; b.className='emojis'; b.dataset.id=id;
+  b.innerHTML=`<div class="tete"><input type="search" id="emo-q" placeholder="Chercher (carotte, coeur, outil…)" autocomplete="off" aria-label="Chercher un émoji"><button type="button" data-emo="" class="sans">Sans émoji</button><button type="button" data-ferme class="sans" aria-label="Fermer">✕</button></div><div class="liste"><p class="rien">…</p></div>`;
+  b.addEventListener('pointerdown',e=>{ if(!e.target.closest('input')) e.preventDefault(); });
+  b.addEventListener('input',e=>{ if(e.target.id==='emo-q') b.querySelector('.liste').innerHTML=emojisListe(e.target.value); });
+  b.addEventListener('click',e=>{ if(e.target.closest('[data-ferme]')){ b.remove(); refaire(id); return; }
+    const x=e.target.closest('[data-emo]'); if(!x) return; const n=N[b.dataset.id]; b.remove(); if(!n) return;
+    couper(); const reste=String(n.t||'').replace(EMO_DEBUT,''); n.t=(x.dataset.emo?x.dataset.emo+' ':'')+reste; ecrireN(n); couper(); refaire(n.id,n.t.length); });
+  b.addEventListener('keydown',e=>{ if(e.key==='Escape'){ b.remove(); refaire(id); } });
+  document.body.appendChild(b);
+  try{ await chargerEmojis(); }catch(e){ b.querySelector('.liste').innerHTML='<p class="rien">Émojis indisponibles hors ligne pour l’instant.</p>'; return; }
+  if(b.isConnected) b.querySelector('.liste').innerHTML=emojisListe(''); }
+document.addEventListener('focusout',()=>setTimeout(()=>{ const b=document.getElementById('emojis'), a=document.activeElement; if(b&&!editing()&&!(a&&b.contains(a))) b.remove(); },200));
 document.addEventListener('input',e=>{ const t=e.target;
   if(t.classList&&t.classList.contains('ti')){ const c=t.dataset.id||'d'+t.dataset.nid; if(HIST.cle!==c){ couper(); HIST.cle=c; } }
   if(t.classList&&t.classList.contains('ti')){ autoH(t); if(t.dataset.nid){ const n=N[t.dataset.nid]; if(n){ n.d=t.value; ecrireN(n); } return; }

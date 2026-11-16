@@ -41,6 +41,7 @@ body::before{content:none!important}
 .oh .oh-b{all:unset;box-sizing:border-box;flex:none;width:42px;height:42px;display:grid;place-items:center;cursor:pointer;
   color:inherit;font-size:1.15rem;line-height:1}
 .oh .oh-b:hover,.oh .oh-b[aria-current="page"],.oh .oh-b[aria-pressed="true"]{background:color-mix(in srgb,currentColor 14%,transparent)}
+.oh .oh-b:disabled{opacity:.35;cursor:default}.oh .oh-b:disabled:hover{background:none}
 .oh .oh-b svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .oh a:focus-visible,.oh button:focus-visible{outline:2px solid currentColor;outline-offset:-3px}
 
