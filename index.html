@@ -27,9 +27,7 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .ligne{display:flex;gap:8px}
 .ligne input{flex:1;min-width:0;height:48px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);padding:0 16px;font-size:15px}
 .ligne input::placeholder{color:var(--ink-3);opacity:.8}
-.sem-n{flex:none;width:48px;height:48px;border-radius:14px;background:var(--surface-2);color:var(--on-page);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
-.sem-n small{font:400 9px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--on-page-2)}
-.sem-n b{font:700 19px var(--f-display);letter-spacing:-.03em;margin-top:2px}
+.sem-n{flex:none;width:48px;height:48px;border-radius:14px;background:#17141C;color:#F3F1E7;display:grid;place-items:center;font:700 24px/1 var(--f-display);letter-spacing:-.04em}
 .rondb{flex:none;border:0;width:48px;height:48px;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);display:grid;place-items:center;cursor:pointer}
 .rondb .ic{width:20px;height:20px}
 .obj{background:var(--accent);color:var(--on-acc);border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
@@ -254,7 +252,7 @@ function vAccueil(){
   const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour();
   let h='';
   if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, vide-tête, semaine, Banque, puis Claude</small></span>${P('suivant')}</button>`;
-  h+=`<form class="ligne" id="f-vide" autocomplete="off"><span class="sem-n" title="Semaine ${wkNum(CUR())}"><small>Sem.</small><b>${wkNum(CUR())}</b></span><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
+  h+=`<form class="ligne" id="f-vide" autocomplete="off"><span class="sem-n" title="Semaine ${wkNum(CUR())}" aria-label="Semaine ${wkNum(CUR())}">${wkNum(CUR())}</span><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
   if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
   const grandes=[], carres=[];
   if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
