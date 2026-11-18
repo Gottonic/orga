@@ -40,8 +40,8 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .dans-fond .att{width:34px;height:34px;border-radius:99px;border:3px solid var(--accent);border-right-color:transparent;animation:tour 0.8s linear infinite}
 .dans-fond.vu .att{display:none}
 @keyframes tour{to{transform:rotate(360deg)}}
-iframe.dans{position:fixed;inset:0;z-index:70;width:100%;height:100%;border:0;background:transparent;opacity:0;transition:opacity .15s}
-iframe.dans.vu{opacity:1}
+iframe.dans{position:fixed;inset:0;z-index:70;width:100%;height:100%;border:0;background:transparent;opacity:0;pointer-events:none;transition:opacity .12s}
+iframe.dans.actif.vu{opacity:1;pointer-events:auto}
 .dans-x{position:fixed;z-index:72;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;width:40px;height:40px;border:0;border-radius:99px;background:rgba(0,0,0,.35);color:#fff;display:grid;place-items:center;cursor:pointer}
 .dans-x .ic{width:16px;height:16px}
 .tuile-sem{display:flex;align-items:center;gap:14px;background:var(--on-page);color:var(--on-acc);border:0;border-radius:20px;padding:16px;text-align:left;cursor:pointer;width:100%}
@@ -50,7 +50,8 @@ iframe.dans.vu{opacity:1}
 .tuile-sem .tx{flex:1;display:flex;flex-direction:column;gap:2px}
 .tuile-sem b{font:700 17px/1.15 var(--f-display);letter-spacing:-.02em}
 .tuile-sem small{font-size:13px;color:var(--page)}
-.apps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.apps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.carre{grid-column:span 2}
 .carte{grid-column:1/-1;background:var(--page);color:var(--on-page);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-page) 10%,transparent)}
 .c-tete{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
 .c-tete .plaque{width:30px;height:30px;border-radius:8px}
@@ -138,7 +139,6 @@ pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius
 .res small{color:var(--ink-3);font-size:12px}
 .res mark{background:var(--accent);color:var(--on-acc);border-radius:3px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:80;background:var(--on-page);color:var(--on-acc);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px)}
-@media (min-width:600px){.apps{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -257,12 +257,17 @@ function vAccueil(){
   else carres.push(carre('etabli','L’Établi','etabli/'));
   if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">Séance du jour</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${s.min?'≈ '+fmtMin(s.min):''}${s.run?' · en cours':''}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}</article>`);
   else carres.push(carre('forge','La Forge','forge/'));
-  grandes.push(`<article class="carte" data-lieu="marche"><a class="c-tete" href="marche/">${PL('marche')}<h2>Le Marché</h2></a><form class="ligne" id="f-marche" autocomplete="off"><input id="i-marche" placeholder="Un achat à faire…" aria-label="Ajouter un achat au Marché" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form></article>`);
+  const marche=(`<article class="carte" data-lieu="marche" style="grid-column:span MARCHE"><a class="c-tete" href="marche/">${PL('marche')}<h2>Le Marché</h2></a><form class="ligne" id="f-marche" autocomplete="off"><input id="i-marche" placeholder="Un achat à faire…" aria-label="Ajouter un achat au Marché" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form></article>`);
   const ch=chronoTxt();
   carres.push(carre('mine','La Mine','mine/',`<button class="rond" type="button" id="b-chrono" aria-label="${ch?'Chrono en cours : '+ch:'Démarrer le chrono'}">${ch?esc(ch):P('lecture')}</button>`));
   carres.push(carre('banque','La Banque','banque/',`<button class="rond" type="button" id="b-saisie" aria-label="Nouvelle opération">${P('plus')}</button>`));
   carres.push(carre('bibliotheque','La Bibliothèque','bibliotheque/'));
-  h+=`<div class="apps">${grandes.join('')}${carres.join('')}</div>`;
+  /* le Marché prend 2/3 ou toute la largeur, pour que les carrés remplissent leurs lignes (demande de Nicolas, 18.11) :
+     grille de 6 ; un carré = 2. S'il reste 2 carrés seuls sur la dernière ligne, ils prennent la moitié chacun. */
+  const n=carres.length, mL=n%3===1?4:6;
+  let reste=mL===4?n-1:n; const fin=reste%3===2;
+  const cs=carres.map((c,i)=>fin&&i>=n-2?c.replace('<article class="carre"','<article class="carre" style="grid-column:span 3"'):c);
+  h+=`<div class="apps">${grandes.join('')}${marche.replace('span MARCHE','span '+mL)}${cs.join('')}</div>`;
   if(!(jourRoutine()&&!fait)) h+=`<button type="button" id="b-routine" class="lien-r">Ouvrir la routine du lundi</button>`;
   if(sync&&!navigator.onLine) h+=`<p class="note">Hors ligne : ce que tu notes partira au retour du réseau.</p>`;
   $main.innerHTML=h;
@@ -411,20 +416,35 @@ $main.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) r
 document.addEventListener('click',e=>{ const a=e.target.closest('a[data-dans]'); if(!a||e.ctrlKey||e.metaKey) return; e.preventDefault(); if(!$plein.hidden) fermerPlein(); ouvrirDans(a.dataset.dans,'',a.dataset.hash||''); });
 
 /* =============================== Une app au premier plan =============================== */
-let $dans=null, $fond=null, $x=null, dansT=null, derDans=null, derToast={t:'',le:0};
+/* Les apps des fenêtres rapides (Marché, Mine, Banque, Établi) sont chargées en arrière-plan, l'une après l'autre,
+   peu après l'ouverture de l'accueil (&attente=1) : au toucher, l'accueil leur envoie « ouvrir » et la fenêtre
+   s'affiche tout de suite. La Forge (plein écran) se charge à la demande. */
+const CHAUDES=['marche','mine','banque','etabli'], CH={};
+let $dans=null, $fond=null, $x=null, dansT=null, derToast={t:'',le:0};
+const scheme=app=>['forge','banque'].includes(app)?'dark':'light';
+function cadre(app,url){ const f=document.createElement('iframe'); f.className='dans'; f.title=app; f.tabIndex=-1; f.style.colorScheme=scheme(app); f.src=url; document.body.appendChild(f); return f; }
+function chauffer(app){ if(!CH[app]) CH[app]={f:cadre(app,app+'/?dans=accueil&attente=1'),charge:false,ordre:null}; return CH[app]; }
+function prechauffer(){ CHAUDES.forEach((a,i)=>setTimeout(()=>chauffer(a),1200+i*1500)); }
 function ouvrirDans(app,params,hash){
   if($dans) return;
   $fond=document.createElement('div'); $fond.className='dans-fond'; $fond.innerHTML='<span class="att" aria-label="Ouverture…"></span>'; document.body.appendChild($fond);
-  const f=document.createElement('iframe'); f.className='dans'; f.title=app; f.style.colorScheme=['forge','banque'].includes(app)?'dark':'light';
-  f.src=app+'/?dans=accueil'+(params?'&'+params:'')+(hash?'#'+hash:''); document.body.appendChild(f); $dans=f; derDans=f.contentWindow;
-  $x=document.createElement('button'); if(/plein=1/.test(params||'')) $x.hidden=true; $x.type='button'; $x.className='dans-x'; $x.setAttribute('aria-label','Revenir à l’accueil'); $x.innerHTML=P('supprimer'); $x.addEventListener('click',fermerDans); document.body.appendChild($x);
+  $x=document.createElement('button'); $x.type='button'; $x.className='dans-x'; $x.setAttribute('aria-label','Revenir à l’accueil'); $x.innerHTML=P('supprimer'); $x.addEventListener('click',fermerDans); document.body.appendChild($x);
+  if(/plein=1/.test(params||'')) $x.hidden=true;
   document.body.style.overflow='hidden';
-  dansT=setTimeout(()=>{ if($dans){ $dans.classList.add('vu'); $fond.classList.add('vu'); } },8000); }
-function fermerDans(){ if(!$dans) return; $dans.remove(); $fond.remove(); $x.remove(); $dans=$fond=$x=null; clearTimeout(dansT); document.body.style.overflow='';
+  if(CHAUDES.includes(app)){ const c=chauffer(app), ordre={locus:'ouvrir',p:Object.fromEntries(new URLSearchParams(params||'')),hash:hash||''}; $dans=c.f; $dans.classList.add('actif');
+    if(c.charge) c.f.contentWindow.postMessage(ordre,location.origin); else c.ordre=ordre; }
+  else { $dans=cadre(app,app+'/?dans=accueil'+(params?'&'+params:'')+(hash?'#'+hash:'')); $dans.classList.add('actif'); }
+  dansT=setTimeout(()=>{ if($dans){ $dans.classList.add('vu'); $fond.classList.add('vu'); } },9000); }
+function fermerDans(){ if(!$dans) return; const f=$dans; $dans=null; clearTimeout(dansT);
+  if(Object.values(CH).some(c=>c.f===f)) f.classList.remove('vu','actif'); else f.remove();
+  if($fond) $fond.remove(); if($x) $x.remove(); $fond=$x=null; document.body.style.overflow='';
   Promise.all([tirer(),PB?PB.tirer():null]).then(render); }
-addEventListener('message',e=>{ const d=e.data; if(e.origin!==location.origin||!d||!d.locus) return; if(!$dans&&e.source!==derDans) return;
+addEventListener('message',e=>{ const d=e.data; if(e.origin!==location.origin||!d||d.locus!==1) return;
+  const c=Object.values(CH).find(x=>x.f.contentWindow===e.source), actif=$dans&&e.source===$dans.contentWindow;
+  if(!c&&!actif) return;
   if(d.toast){ if(d.toast!==derToast.t||Date.now()-derToast.le>1500) toast(d.toast); derToast={t:d.toast,le:Date.now()}; }
-  if(!$dans||e.source!==$dans.contentWindow) return;
+  if(c&&d.etat==='charge'){ c.charge=true; if(c.ordre){ const o=c.ordre; c.ordre=null; c.f.contentWindow.postMessage(o,location.origin); } }
+  if(!actif) return;
   if(d.etat==='pret'){ clearTimeout(dansT); $dans.classList.add('vu'); $fond.classList.add('vu'); $x.hidden=true; }
   if(d.etat==='fermer') fermerDans(); });
 
@@ -435,7 +455,7 @@ function vLogin(msg){ $main.innerHTML=`<form class="login" id="f-login"><h2>Bien
     catch(err){ vLogin(/invalid/i.test((err&&err.message)||'')?'E-mail ou mot de passe incorrect.':'Connexion impossible : '+((err&&err.message)||err)); } }); }
 async function entrer(user){
   UID=user.id; reprendre(); PB=Projets.base(sb,UID); PB.surChangement(()=>{ if($plein.hidden) render(); else if($plein.dataset.e) vRoutine(); });
-  render(); await Promise.all([tirer(),PB.tirer()]); render(); vider(); }
+  render(); await Promise.all([tirer(),PB.tirer()]); render(); vider(); prechauffer(); }
 (async function(){
   const d=new Date(); document.getElementById('date').textContent=JOURS[(d.getDay()+6)%7]+' '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+' · S'+wkNum(wkKey(d));
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }

@@ -2317,6 +2317,7 @@ function setSync(force){
   el.className='sync '+cls; el.textContent=txt; el.title=tip;
 }
 function showLogin(msg){ booted=false; const l=document.getElementById('login'); l.hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; try{ document.getElementById('l-mail').focus(); }catch(e){} }
+document.addEventListener('locus:ouvrir',e=>{ const h=String(e.detail.hash||''); if(h.startsWith('p:')&&P(h.slice(2))){ ui.view='projets'; render(); detail(h.slice(2)); } else parent.postMessage({locus:1,etat:'fermer'},location.origin); });
 async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
@@ -2330,6 +2331,7 @@ async function enter(user){
   if(recolor()){ quiet=true; save(); quiet=false; render(); }
   if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; S.domaines={le:todayS}; save(); render(); } /* nouveau compte : domaines et projets dès le départ */
   push(); envoyerVide();
+  try{ if(/[?&]dans=accueil/.test(location.search)&&window.parent!==window) parent.postMessage({locus:1,etat:'charge'},location.origin); }catch(e){} /* prête pour les fenêtres rapides de l'accueil */
 }
 async function startApp(){
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('../sw.js',{scope:'../'}); }catch(e){} }

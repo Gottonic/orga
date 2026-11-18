@@ -949,6 +949,7 @@ function dansOk(){ const d=ed; if(!d||d.k!=='dans') return; let a=d.ex&&S.arts[d
   if(!a){ a={id:uid(),nom:d.nom,qte:'',note:'',ou:[],basique:false,rythme:0,achats:[],cree:nowIso(),cat:d.cat||deviner(d.nom)}; S.arts[a.id]=a; }
   a.ou=d.ref?[d.ref]:(d.ex?a.ou:[]); if(d.cat&&!d.connu){ ajouterNom(d.cat,a.nom); a.cat=d.cat; }
   surListe(a); save(); render(); fermer(); toast('« '+a.nom+' » sur la liste'+(d.ref?' · '+refNom(d.ref):'')); }
+document.addEventListener('locus:ouvrir',e=>{ const q=(e.detail.p||{}).q; if(q) dansAjout(q); });
 function dansFin(){ setTimeout(()=>{ try{ parent.postMessage({locus:1,etat:'fermer'},location.origin); }catch(e){} },900); }
 function texteListe(){
   const mi=ui.ici&&S.mags[ui.ici], act=arts().filter(a=>a.liste&&(!mi||dispo(a,mi.id)));
@@ -1110,6 +1111,7 @@ async function enter(user){
   if(!Object.keys(S.cats).length){ semerRayons(); save(); render(); }
   if(accentuerRayons()){ save(); render(); }
   entretien(); push();
+  try{ if(/[?&]dans=accueil/.test(location.search)&&window.parent!==window) parent.postMessage({locus:1,etat:'charge'},location.origin); }catch(e){} /* prête pour les fenêtres rapides de l'accueil */
   /* depuis l'accueil : la ligne d'achat, et les idées du vide-tête envoyées au Marché par la routine du lundi */
   const v=versLocus('marche'); if(DANS_ACC){ if(v&&v.q) dansAjout(v.q); return; }
   let L=[]; try{ L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); localStorage.removeItem('locus-vers-marche'); }catch(e){}

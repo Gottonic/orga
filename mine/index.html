@@ -1313,6 +1313,7 @@ function docCourant(){ const p=page(); return p&&p.k==='doc'?S.docs[p.id]:null; 
 function chronoStart(mid){ if(!S.mands[mid]) return; if(S.chrono) chronoStop(true); S.chrono={id:'chrono',mandat:mid,debut:nowIso(),note:''}; save(); render(); toast('Chrono lancé : '+S.mands[mid].nom); }
 /* Depuis l'accueil de Locus (18.11) : la feuille du chrono seule (choisir le mandat et lancer, ou arrêter) */
 const DANS_ACC=/[?&]dans=accueil/.test(location.search)&&window.parent!==window;
+document.addEventListener('locus:ouvrir',e=>{ if((e.detail.p||{}).act==='chrono'){ dansChrono(); pull().then(()=>{ if(!$scrim.hidden&&$sheet.querySelector('.chrono')) dansChrono(); }); } });
 function dansChrono(){ const c=carteChrono(); montrer(sh('Chrono')+(c||'<p class="aide">Aucun mandat ouvert : crée-en un dans la Mine.</p>')); }
 function chronoStop(silencieux){ const c=S.chrono; if(!c) return; const min=Math.round((Date.now()-new Date(c.debut))/60000); S.chrono=null;
   if(min>=1&&S.mands[c.mandat]){ const id=uid(); S.heures[id]={id,mandat:c.mandat,date:jourDe(c.debut),min,note:(c.note||'').trim(),fact:true,src:'chrono',cree:nowIso()}; save(); toucherProjet(c.mandat); render(); if(!silencieux) toast(fH(min)+' notées sur '+S.mands[c.mandat].nom,'Modifier',()=>ouvrirHeure(id)); }
@@ -1481,6 +1482,7 @@ async function enter(user){
   const [,tire]=await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);
   if(relierDepuisProjets()) save(); render();
   if(DANS_ACC&&/[?&]act=chrono/.test(location.search)) dansChrono();
+  try{ if(/[?&]dans=accueil/.test(location.search)&&window.parent!==window) parent.postMessage({locus:1,etat:'charge'},location.origin); }catch(e){} /* prête pour les fenêtres rapides de l'accueil */
   push(); PB.pousser(); gdtHeures(tire===true); /* clé créée seulement si les réglages sont à jour */
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{

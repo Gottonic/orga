@@ -34,6 +34,9 @@
   function premierPlan() {
     const q = new URLSearchParams(location.search); if (q.get('dans') !== 'accueil' || window.parent === window) return;
     const dire = (o) => { try { parent.postMessage(Object.assign({ locus: 1 }, o), location.origin); } catch (e) {} };
+    window.LocusDans = { dire };
+    /* fenêtre gardée prête en arrière-plan (&attente=1) : l'accueil envoie « ouvrir » au moment du toucher */
+    addEventListener('message', (e) => { const d = e.data; if (e.origin !== location.origin || e.source !== parent || !d || d.locus !== 'ouvrir') return; document.dispatchEvent(new CustomEvent('locus:ouvrir', { detail: d })); });
     const html = document.documentElement; html.classList.add('dans-acc');
     if (!q.get('plein')) {
       const st = document.createElement('style');
