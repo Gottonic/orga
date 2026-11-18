@@ -731,12 +731,11 @@ body{background:var(--page);letter-spacing:.005em;-webkit-font-smoothing:antiali
   <button class="tab ot-t" data-view="planning">Planning</button>
   <button class="tab ot-t" data-view="projets">Projets</button>
   <button class="tab ot-t" data-view="domaines">Domaines</button>
-  <button class="tab ot-t" data-view="vrac">En vrac<span class="badge" id="vbadge" hidden></span></button>
 </nav></header>
 <div class="wrap">
   <main id="view"></main>
 </div>
-<div class="fabw" id="fabw"><div class="fabm" id="fabm" hidden><button type="button" data-act="new">+ Projet</button><button type="button" data-act="quickVrac">+ Vrac</button></div><button class="fab" id="fab" type="button" aria-label="Ajouter un projet ou du vrac" aria-expanded="false">+</button></div>
+<div class="fabw" id="fabw"><button class="fab" id="fab" type="button" data-act="new" aria-label="Nouveau projet">+</button></div>
 
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" hidden></div>
@@ -937,7 +936,7 @@ function money(id){let dep=0,rec=0; S.entries.forEach(e=>{if(e.pid!==id)return; 
 const folderPath=p=>p.closed?'~/Projets/_Archives/'+p.closed.slice(0,4)+'/'+p.folder:'~/Projets/'+p.folder;
 const tagPv=()=>'--pc:var(--cell);--pt:var(--ink)';
 
-const VIEWS=['planning','projets','domaines','vrac'];
+const VIEWS=['planning','projets','domaines'];
 const ui={view:'planning',wk:CUR,filter:'ouverts',sort:'prio',tag:null,tagSel:[],taskAdmin:false,kind:'h',pid:null,amount:'',note:'',date:null,planMore:0,planStart:null};
 try{const h=(location.hash||'').slice(1); if(VIEWS.includes(h)) ui.view=h;}catch(e){}
 
@@ -956,7 +955,7 @@ function vDomaines(){
   const card=d=>{ const ps=domProjects(d.id).filter(p=>!p.closed).sort((x,y)=>(Projets.etat(x,todayS)==='idee')-(Projets.etat(y,todayS)==='idee')||prioSort(x,y)), nt=(d.tasks||[]).filter(t=>!t.d&&!t.s).length;
     return `<div class="dcard" style="${pv(d)}"><button class="dhead" data-act="dom" data-id="${d.id}"><span class="emo">${d.emoji||'📁'}</span><b>${esc(d.name)}</b><span class="dn">${ps.length} projet${ps.length>1?'s':''}${nt?' · '+nt+' tâche'+(nt>1?'s':''):''}</span><span class="vgo">›</span></button>
     ${ps.length?`<div class="dps">${ps.map(p=>`<button class="dp${p.later?' idee':''}" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${isPerm(p)?' ∞':''}</button>`).join('')}</div>`:''}</div>`; };
-  $view.innerHTML=`<div class="dcards">${ds.map(card).join('')}${card(autresD())}</div>
+  $view.innerHTML=`${S.inbox.length?`<div class="alert" style="margin-top:14px"><div><b>Ancien vrac · ${S.inbox.length}</b> : la Bibliothèque les reprend (Vide-tête › Reprendre).</div><a class="btn" style="text-decoration:none" href="../bibliotheque/#vide">Ouvrir</a></div>`:''}<div class="dcards">${ds.map(card).join('')}${card(autresD())}</div>
   <div class="dacts"><button class="btn ghost" data-act="newDom">+ Domaine</button><button class="btn ghost" data-act="minis">${pic('note')} Petites tâches · ${nPetites()}</button>${FB?`<button class="btn ghost" data-act="atrier">${pic('entree')} À trier · ${fichiersDe(Dossier.A_TRIER).length}</button>`:''}</div>
   ${arch.length?`<details class="more"><summary>Domaines archivés · ${arch.length}</summary><div class="pchips" style="margin-top:8px">${arch.map(d=>`<button class="pchip dom closed" style="${pv(d)}" data-act="dom" data-id="${d.id}">${d.emoji} ${esc(d.name)}</button>`).join('')}</div></details>`:''}`;
 }
@@ -2189,12 +2188,12 @@ document.addEventListener('submit',e=>{e.preventDefault(); const f=e.target.data
 /* Mode mini et clavier physique */
 const TINY=(()=>{ const w=Math.min(screen.width||9999,screen.height||9999), h=Math.max(screen.width||0,screen.height||0); return (w<=480&&h<=640)||/DumberOS/i.test(navigator.userAgent||'')&&w<=480; })();
 let MINI=(()=>{ try{ const o=localStorage.getItem('etabli-mini2'); if(o!==null) return o==='1'; }catch(e){} return TINY; })();
-function applyMode(){document.body.classList.toggle('minimode',MINI); if(MINI) ui.view='mini'; if(!MINI&&ui.view==='mini') ui.view='planning'; if(MINI||/DumberOS/i.test(navigator.userAgent||'')) document.body.classList.add('kbd');}
+function applyMode(){ if(ui.view==='vrac') ui.view='planning';document.body.classList.toggle('minimode',MINI); if(MINI) ui.view='mini'; if(!MINI&&ui.view==='mini') ui.view='planning'; if(MINI||/DumberOS/i.test(navigator.userAgent||'')) document.body.classList.add('kbd');}
 function setMini(v){MINI=v; try{localStorage.setItem('etabli-mini2',v?'1':'0');}catch(e){} applyMode(); window.scrollTo(0,0); render(); toast(v?'Mode mini':'Mode complet');}
 const kbdOn=()=>document.body.classList.contains('kbd');
 function addBadges(){ if(!kbdOn()) return;
   const put=(el,l,end)=>{ if(!el||[...el.children].some(c=>c.classList.contains('kb'))) return; const s=document.createElement('span'); s.className='kb'; s.textContent=l; end?el.appendChild(s):el.insertBefore(s,el.firstChild); };
-  [['planning','7'],['projets','8'],['vrac','9']].forEach(([v,l])=>put(document.querySelector('.tab[data-view='+v+']'),l,true));
+  [['planning','7'],['projets','8'],['domaines','9']].forEach(([v,l])=>put(document.querySelector('.tab[data-view='+v+']'),l,true));
   put(document.querySelector('.oh-recap'),'*',true); put(document.getElementById('fab'),'#');
   put(document.querySelector('.wknav [data-d="-1"]'),'4'); put(document.querySelector('.wknav [data-d="1"]'),'6',true);
   document.querySelectorAll('.slots > .slot:not(.free) .band').forEach((b,i)=>put(b,String(i+1)));
@@ -2232,7 +2231,7 @@ document.addEventListener('keydown',e=>{
   if(k==='#'){ e.preventDefault(); ctx=null; newSheet(false); return; }
   if(sheetOpen) return;
   if(k==='4'||k==='6'){ if(ui.view==='planning'){ e.preventDefault(); const b=document.querySelector(k==='4'?'.gnav button:first-child':'.gnav button:last-child'); if(b) b.click(); } return; }
-  if(k==='5'){ e.preventDefault(); const tv=MINI?'mini':'vrac'; if(ui.view!==tv){ goView(tv); } const i=document.getElementById('f-vrac'); if(i){ vracGuard={until:Date.now()+700,val:i.value}; fset(i); } return; }
+  if(k==='5'){ if(!MINI) return; e.preventDefault(); const tv='mini'; if(ui.view!==tv){ goView(tv); } const i=document.getElementById('f-vrac'); if(i){ vracGuard={until:Date.now()+700,val:i.value}; fset(i); } return; }
   if(k>='1'&&k<='3'){ e.preventDefault(); if(MINI&&ui.view==='mini'){ const el=$view.querySelectorAll('.mrows > .mrow')[Number(k)-1]; if(el) el.click(); else toast('Pas de projet n°'+k+' cette semaine'); } return; }
   if(k==='7'||k==='8'||k==='9'){ e.preventDefault(); goView((MINI&&k==='7')?'mini':VIEWS[Number(k)-7]); return; }
 },true);
@@ -2388,12 +2387,6 @@ startApp();
 </script>
 <script>
 /* bouton + : ouvre le petit menu Projet / Vrac ; un clic ailleurs le referme */
-(function(){ const b=document.getElementById('fab'), m=document.getElementById('fabm');
-  const set=o=>{ m.hidden=!o; b.setAttribute('aria-expanded',o?'true':'false'); };
-  b.addEventListener('click',e=>{ e.stopPropagation(); set(m.hidden); });
-  document.addEventListener('click',e=>{ if(!m.hidden&&!b.contains(e.target)) set(false); },true);
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!m.hidden) set(false); });
-})();
 </script>
 <script src="../commun/ampoule.js" data-app="etabli"></script>
 <script src="../commun/cadre.js"></script>
