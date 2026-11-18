@@ -179,6 +179,7 @@
 
   /* ---------- fenêtre ---------- */
   let host = null, root = null, ouvert = false, bouton = null;
+  let basFond = false;
   const V = { type: 'idee', faites: false, edit: null, tout: false, attente: [], cochees: null };
   /* brouillon (18.11) : une idée en cours d'écriture survit à un toucher à côté de la fenêtre (gardé sur l'appareil) */
   const BK = 'locus-ampoule-brouillon-' + APP;
@@ -348,7 +349,7 @@ details[open] summary{margin-bottom:6px}
         if (!ouvert || !e.composedPath().includes(host)) return;
         e.stopImmediatePropagation(); if (ev === 'keydown' && e.key === 'Escape') fermer();
       }, true));
-      root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche); root.addEventListener('input', (e) => { agrandir(e.target); const f = e.target.form; if (f && f.dataset.form === 'ajout') garderBrouillon({ titre: f.titre ? f.titre.value : '', details: f.details ? f.details.value : '', type: V.type }); });
+      root.addEventListener('pointerdown', (e) => { basFond = !!(e.target && e.target.dataset && e.target.dataset.act === 'fond'); }, true); root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche); root.addEventListener('input', (e) => { agrandir(e.target); const f = e.target.form; if (f && f.dataset.form === 'ajout') garderBrouillon({ titre: f.titre ? f.titre.value : '', details: f.details ? f.details.value : '', type: V.type }); });
       /* coller une capture (Ctrl+V), ou la glisser sur la fenêtre */
       addEventListener('paste', (e) => {
         if (!ouvert || !e.clipboardData) return;
@@ -378,7 +379,8 @@ details[open] summary{margin-bottom:6px}
     const el = e.target.closest('[data-act],[data-voir]'); if (!el) return;
     if (el.dataset.voir) { V.edit = { key: el.dataset.voir }; dessiner(); return; }
     const a = el.dataset.act;
-    if (a === 'fond') { if (e.target === el) fermer(); return; }
+    /* fermer seulement si le doigt s'est posé sur le fond (pas en sélectionnant du texte qui déborde, 18.11) */
+    if (a === 'fond') { if (e.target === el && basFond) fermer(); return; }
     if (a === 'dezoom') { el.hidden = true; return; }
     if (a === 'zoom') { zoom(el.dataset.id); return; }
     if (a === 'capRetirer') {

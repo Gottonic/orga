@@ -55,6 +55,27 @@
     if (to) { let der = ''; new MutationObserver(() => { if (to.hidden) { der = ''; return; } const s = to.querySelector('span'), x = ((s || to).textContent || '').trim(); if (x && x !== der) { der = x; dire({ toast: x }); } }).observe(to, { attributes: true, childList: true, subtree: true, characterData: true }); }
   }
   premierPlan();
-  function tout() { appliquer(); annuler(); }
+  /* Une sélection de texte commencée dans une feuille et relâchée sur le fond ne ferme plus la feuille (18.11) :
+     le clic n'atteint le fond (#scrim) que si le doigt s'y était posé. */
+  let posé = null;
+  addEventListener('pointerdown', (e) => { posé = e.target; }, true);
+  addEventListener('click', (e) => { const sc = e.target; if (sc && sc.id === 'scrim' && posé && posé !== sc) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  /* Loupe de la recherche commune dans chaque app (18.11) : seulement les éléments de cette app (commun/chercher.js) */
+  const ICI = (document.currentScript && document.currentScript.src) || '';
+  function chercher() {
+    const h = document.querySelector('header.oh'); if (!h || h.querySelector('[data-chercher]') || /[?&]dans=/.test(location.search)) return;
+    const apps = ['etabli', 'banque', 'forge', 'marche', 'mine', 'bibliotheque'];
+    const app = apps.find((a) => document.documentElement.dataset.lieu === a) || apps.find((a) => location.pathname.includes('/' + a + '/')); if (!app) return;
+    const avant = h.querySelector('[data-annuler]') || h.querySelector('[data-ampoule]'); if (!avant) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'oh-b'; b.dataset.chercher = ''; b.setAttribute('aria-label', 'Chercher dans cette app');
+    b.innerHTML = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M12 12l5.5 5.5"/></svg>';
+    b.addEventListener('click', () => {
+      const go = () => window.LocusChercher && LocusChercher.ouvrir({ app });
+      if (window.LocusChercher) return go();
+      const s = document.createElement('script'); s.src = ICI.replace(/cadre\.js(\?.*)?$/, 'chercher.js'); s.onload = go; document.head.appendChild(s);
+    });
+    avant.before(b);
+  }
+  function tout() { appliquer(); annuler(); chercher(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tout); else tout();
 })();

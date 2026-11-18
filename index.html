@@ -144,13 +144,14 @@ pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius
 </style>
 </head>
 <body>
-<header class="oh"><div class="oh-bar"><span class="oh-orga"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></span><h1 class="oh-nom">Locus</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" id="b-chercher" aria-label="Chercher dans toutes les apps"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M12 12l5.5 5.5"/></svg></button><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><a class="oh-b" href="reglages/" aria-label="Réglages de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></a></div></header>
+<header class="oh"><div class="oh-bar"><span class="oh-orga"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></span><h1 class="oh-nom">Locus</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" id="b-chercher" data-chercher aria-label="Chercher dans toutes les apps"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M12 12l5.5 5.5"/></svg></button><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><a class="oh-b" href="reglages/" aria-label="Réglages de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></a></div></header>
 <main id="main"></main>
 <div class="plein" id="plein" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <script src="commun/supabase.js"></script>
 <script src="commun/pictos.js"></script>
 <script src="commun/projets.js"></script>
+<script src="commun/chercher.js"></script>
 <script>
 'use strict';
 /* =====================================================================================================
@@ -390,48 +391,16 @@ function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProje
 $plein.addEventListener('change',e=>{ const el=e.target; if(el.dataset.r!=='ranger'||!el.value) return; const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return;
   n.p=el.value; n.o=Date.now()/1e6; delete B['n:'+n.id]; ecrireB('n:'+n.id,n); toast('Rangée dans '+el.options[el.selectedIndex].text.trim()); vRoutine(); });
 
-/* =============================== Chercher =============================== */
-let qT=null;
-function ouvrirChercher(){ $plein.hidden=false; document.body.style.overflow='hidden'; $plein.dataset.e='';
-  $plein.innerHTML=cadrePlein('Chercher partout','',`<input class="in" id="i-q" placeholder="Un mot : projet, note, mandat, article…" autocomplete="off" aria-label="Chercher" style="height:48px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 16px"><div id="r-q"><p class="note">Au moins deux lettres.</p></div>`,'');
-  setTimeout(()=>document.getElementById('i-q').focus(),30); }
-/* surligner : la recherche ignore accents et ligatures (œ = oe) ; on retrouve la place dans le texte d'origine */
-function marque(t,q){ const s=String(t||''); const map=[]; let pl=''; for(let i=0;i<s.length;i++){ const c=plain(s[i]); for(let k=0;k<c.length;k++) map.push(i); pl+=c; }
-  const i=pl.indexOf(q); if(i<0||!q) return esc(s); const a=map[i], z=map[i+q.length-1]+1; return esc(s.slice(0,a))+'<mark>'+esc(s.slice(a,z))+'</mark>'+esc(s.slice(z)); }
-/* filtre « ou » de Supabase : chaque champ, avec et sans ligature (oeuf → œuf) */
-function ouIlike(champs,brut){ const v=brut.trim().replace(/[%_,()"\\]/g,' ').trim(); const vs=[...new Set([v,v.replace(/oe/gi,'œ'),v.replace(/ae/gi,'æ')])];
-  return champs.flatMap(c=>vs.map(x=>`${c}.ilike."%${x}%"`)).join(','); }
-const fDate=d=>{ const x=parse(String(d||'').slice(0,10)); return isNaN(x)?'':x.getDate()+' '+MOIS[x.getMonth()]+' '+x.getFullYear(); };
-/* toutes les apps ; chaque ligne prend les couleurs de son app (demande de Nicolas, 18.11) */
-async function chercher(qBrut){ const q=plain(qBrut).trim(), $r=document.getElementById('r-q'); if(!$r) return; if(q.length<2){ $r.innerHTML='<p class="note">Au moins deux lettres.</p>'; return; }
-  const R=[];
-  if(PB){ PB.liste().filter(p=>plain(p.name).includes(q)).slice(0,8).forEach(p=>R.push({app:'etabli',e:p.emoji,t:p.name,s:Projets.ETATS[Projets.etat(p)]||'',href:'etabli/#p:'+p.id,attrs:`data-dans="etabli" data-hash="p:${esc(p.id)}"`}));
-    PB.domaines().filter(d=>plain(d.name).includes(q)).slice(0,4).forEach(d=>R.push({app:'etabli',e:d.emoji,t:d.name,s:'Domaine',href:'bibliotheque/#d:'+d.id}));
-    const T=[]; [...PB.liste(),...PB.domaines()].forEach(p=>{ if(p.closed) return; Projets.tachesSeules(p.tasks).forEach(x=>{ if(plain(x.t).includes(q)) T.push({p,x}); }); });
-    T.slice(0,10).forEach(({p,x})=>R.push({app:'etabli',t:x.t,s:(x.d?'Tâche faite · ':'Tâche · ')+(p.emoji?p.emoji+' ':'')+p.name,href:Projets.estDomaine(p)?'etabli/':'etabli/#p:'+p.id,attrs:Projets.estDomaine(p)?'':`data-dans="etabli" data-hash="p:${esc(p.id)}"`})); }
-  const f=forge(); if(f&&f.semaines){ const vu=new Set(); Object.entries(f.semaines).forEach(([wk,L])=>L.forEach(x=>{ if(!vu.has(x.t)&&plain(x.t).includes(q)){ vu.add(x.t); R.push({app:'forge',t:x.t,s:'Séance · S'+wkNum(wk)+(typeof x.day==='number'?' · '+JOURS[x.day]:''),href:'forge/#s-'+wk}); } })); }
-  let Q=[[],[],[],[],[],[]];
-  try{ Q=(await Promise.all([
-      sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).or(ouIlike(['data->>t','data->>d'],qBrut)).limit(25),
-      sb.from('mine_rows').select('key,data').like('key','m:%').eq('deleted',false).or(ouIlike(['data->>nom'],qBrut)).limit(8),
-      sb.from('mine_rows').select('key,data').like('key','c:%').eq('deleted',false).or(ouIlike(['data->>nom','data->>org'],qBrut)).limit(6),
-      sb.from('marche_rows').select('key,data').eq('deleted',false).or(ouIlike(['data->>nom'],qBrut)).limit(12),
-      sb.from('carnet').select('key,data').like('key','exos/%').eq('deleted',false).or(ouIlike(['data->>name'],qBrut)).limit(8),
-      sb.from('cash_rows').select('key,data').like('key','t:%').eq('deleted',false).or(ouIlike(['data->>tiers','data->>note'],qBrut)).limit(12)
-    ])).map(r=>((r&&r.data)||[]).filter(x=>x&&x.data).map(x=>Object.assign({_k:x.key},x.data))); }catch(e){}
-  if(plain(document.getElementById('i-q')?document.getElementById('i-q').value:'').trim()!==q) return;
-  const ou=n=>{ const p=String(n.p||''); if(p==='vide') return 'Vide-tête'; if(p.startsWith('j:')) return 'Journal S'+wkNum(p.slice(2)); if(p.startsWith('p:')){ const x=PB&&PB.get(p.slice(2)); return x?'Notes · '+x.name:'Notes'; } if(p.startsWith('d:')){ const x=PB&&PB.domaine(p.slice(2)); return x?'Notes · '+x.name:'Notes'; } return 'Notes'; };
-  const [notes,mands,conts,arts,exos,ops]=Q;
-  notes.forEach(n=>{ const ent=plain(n.t).includes(q); R.push({app:'bibliotheque',t:ent?n.t:(n.t||'…'),s:ou(n)+(n.a?' · archivée':''),sm:ent?'':n.d,href:'bibliotheque/',attrs:`data-ligne="${esc(n.id)}"`}); });
-  mands.forEach(m=>R.push({app:'mine',t:m.nom,s:'Mandat',href:'mine/',attrs:'data-mine="mandats"'}));
-  conts.forEach(c=>R.push({app:'mine',t:c.org||c.nom||'',s:'Contact'+(c.org&&c.nom?' · '+c.nom:''),href:'mine/',attrs:'data-mine="contacts"'}));
-  arts.filter(x=>/^[ae]:/.test(x._k)).forEach(x=>R.push({app:'marche',t:x.nom,s:x._k.startsWith('e:')?'Envie':x.liste?'Sur la liste':'Article',href:'marche/'}));
-  exos.forEach(x=>R.push({app:'forge',t:x.name,s:'Exercice',href:'forge/#exos'}));
-  ops.sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(t=>{ const ent=plain(t.tiers).includes(q); R.push({app:'banque',t:t.tiers||t.note||'Opération',sm:ent||!t.tiers?'':t.note,s:[fDate(t.date),t.montant!=null?chf(Math.abs(t.montant)):'',ent&&t.note?t.note:''].filter(Boolean).join(' · '),href:'banque/'}); });
-  $r.innerHTML=R.length?`<ul class="res">${R.map(x=>`<li><a href="${esc(x.href)}" data-lieu="${x.app}" ${x.attrs||''}><span class="t">${x.e?esc(x.e)+' ':''}${marque(x.t,q)}</span><small>${x.sm?marque(x.sm,q)+' · ':''}${esc(x.s||'')}</small></a></li>`).join('')}</ul>`:'<p class="note">Rien trouvé.</p>'; }
-$plein.addEventListener('input',e=>{ if(e.target.id==='i-q'){ clearTimeout(qT); const v=e.target.value; qT=setTimeout(()=>chercher(v),250); } });
-$plein.addEventListener('click',e=>{ const a=e.target.closest('a[data-ligne]'); if(a){ e.preventDefault(); vers('bibliotheque',{id:a.dataset.ligne}); return; }
-  const m=e.target.closest('a[data-mine]'); if(m){ try{ localStorage.setItem('mine-tab',m.dataset.mine); }catch(x){} } });
+/* =============================== Chercher (commun/chercher.js) =============================== */
+/* sur l'accueil : dans toutes les apps ; un élément s'ouvre au premier plan quand c'est possible */
+function allerA(x){
+  if(x.app==='etabli'&&x.type==='projet'){ ouvrirDans('etabli','','p:'+x.id); return; }
+  if(x.app==='etabli') { location.href='bibliotheque/#d:'+x.id; return; }
+  if(x.app==='bibliotheque'){ vers('bibliotheque',{id:x.id}); return; }
+  if(x.app==='mine'){ try{ localStorage.setItem('mine-tab',x.type==='contact'?'contacts':'mandats'); }catch(e){} location.href='mine/'; return; }
+  if(x.app==='forge'){ location.href=x.type==='exo'?'forge/#exos':'forge/#s-'+x.wk; return; }
+  location.href=x.app+'/'; }
+function ouvrirChercher(){ if(window.LocusChercher) LocusChercher.ouvrir({app:null,surClic:allerA}); }
 
 /* =============================== Accueil : actions =============================== */
 document.getElementById('b-chercher').addEventListener('click',()=>{ if(UID) ouvrirChercher(); });
