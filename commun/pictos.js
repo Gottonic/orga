@@ -11,7 +11,7 @@
     etabli: '<path d="M1 4.5h18M3 4.5v11M17 4.5v11M3 10.5h14"/>',
     banque: '<path d="M3 11.5a7 7 0 0 1 14 0zM3 15.5h14"/>',
     forge: '<path d="M3 17l7-7 7 7M3 10l7-7 7 7"/>',
-    marche: '<path d="M2 4h16v12H2zM2 10h16"/>',
+    marche: '<path d="M2 4h16v12H2zM2 10h16M10 2.5v15"/>',
     mine: '<path d="M1 6.5c5-5 13-5 18 0M10 3v14.5"/>',
     bibliotheque: '<path d="M2.5 2.5v15M6.5 2.5v15M10.5 2.5v15M13.5 3l4 14.5"/>',
     /* interface */

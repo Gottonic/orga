@@ -24,11 +24,11 @@ Fichiers :
 
 | App | Picto |
 |---|---|
-| Locus | un cadran : cercle, carré au centre, quatre repères |
+| Locus | un cadran : cercle, carré au centre, quatre repères. Icône de l'app (18.11) : ronde, fond sombre `#413B4F`, cercle bleu ciel `#8EC9EE` autour, picto crème plus grand |
 | L'Établi | un plateau et ses pieds, avec une traverse |
 | La Banque | un dôme (demi-cercle plein) sur un trait |
 | La Forge | la braise : deux chevrons qui montent |
-| Le Marché | un bac, avec un trait au milieu |
+| Le Marché | un bac, avec un trait au milieu et un trait vertical qui le traverse et dépasse un peu (18.11) |
 | La Mine | une pioche |
 | La Bibliothèque | trois traits verticaux et un trait en diagonale |
 

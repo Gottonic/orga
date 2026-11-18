@@ -202,6 +202,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 input[type=text],textarea{width:100%;font:inherit;color:var(--i);background:var(--c);border:1px solid var(--l);border-radius:calc(var(--r) * .6);padding:10px 12px;outline:none}
 input[type=text]:focus,textarea:focus{border-color:var(--i)}
 textarea{resize:vertical;min-height:70px}
+textarea.extensible{resize:none;min-height:0;overflow:hidden;line-height:1.35}
 .plus{flex:none;width:46px;border:0;background:var(--a);color:var(--ai);border-radius:calc(var(--r) * .6);font-size:1.4rem;font-weight:700}
 .btn{border:1px solid var(--l);background:var(--c);border-radius:var(--p);padding:9px 14px;font-size:.92rem}
 .btn.prim{background:var(--a);border-color:var(--a);color:var(--ai);font-weight:700}
@@ -265,7 +266,7 @@ details[open] summary{margin-bottom:6px}
       ${tout ? '' : `<form class="ajout-form" data-form="ajout"><div class="chips">${TYPES.map(([k, e, n]) => `<button type="button" class="chip${V.type === k ? ' on' : ''}" data-act="type" data-k="${k}">${e} ${n}</button>`).join('')}</div>
         <div class="ajout" style="margin-top:8px"><input type="text" name="titre" id="titre" placeholder="${V.type === 'bug' ? 'Ce qui ne marche pas…' : 'Ton idée, une nouvelle fonction…'}" autocomplete="off" enterkeyhint="done" aria-label="Titre"><button class="plus" type="submit" aria-label="Ajouter">+</button></div>
         <div class="caps" style="margin-top:8px">${V.attente.map(capHtml).join('')}</div>${joindreHtml(V.attente.length)}
-        <details style="margin-top:4px"><summary>+ Détails</summary><textarea name="details" rows="3" placeholder="Détails (facultatif)"></textarea></details></form>`}
+        <textarea name="details" rows="1" class="extensible" style="margin-top:8px" placeholder="Détails (facultatif)" aria-label="Détails"></textarea></form>`}
       ${corps}
       <div class="pied"><span class="etat">${esc(ETATS[etat] || '')}</span><span style="display:flex;gap:14px">${ouv.length ? `<button type="button" class="lien" data-act="copier">Copier pour Claude</button>` : ''}${ouv.length > 1 ? `<button type="button" class="lien" data-act="toutCocher">☑ Tout cocher</button>` : ''}${V.cochees ? `<button type="button" class="lien" data-act="decocher">↶ Annuler (${V.cochees.length})</button>` : ''}${nbCaps(ouv) ? `<button type="button" class="lien" data-act="partager">Avec les captures (${nbCaps(ouv)})</button>` : ''}${faites.length ? `<button type="button" class="lien" data-act="faites">${V.faites ? 'Cacher' : 'Voir'} les faites (${faites.length})</button>` : ''}</span></div>
       ${V.faites && faites.length ? `<div class="liste">${faites.slice(0, 60).map(ligne).join('')}</div>` : ''}`;
@@ -280,6 +281,8 @@ details[open] summary{margin-bottom:6px}
         <div class="fin"><button type="button" class="btn danger" data-act="suppr">Supprimer</button><button type="button" class="btn" data-act="liste">‹ Liste</button><button type="submit" class="btn prim">Enregistrer</button></div>
       </form>`;
   }
+  /* champ « Détails » sur une ligne, qui s'agrandit en écrivant (idée de Nicolas, 18.11) */
+  function agrandir(t) { if (!t || !t.classList || !t.classList.contains('extensible')) return; t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
   /* redessine la fenêtre en gardant ce qui est en train d'être écrit (sauf « vider », après un ajout) */
   function dessiner(vider) {
     if (!root) return;
@@ -293,7 +296,7 @@ details[open] summary{margin-bottom:6px}
     const f = sheet.querySelector('form');
     if (garde && f && f.dataset.form === garde.form && (V.edit && V.edit.key) === garde.cle) {
       if (f.titre && garde.titre != null) f.titre.value = garde.titre;
-      if (f.details && garde.details != null) f.details.value = garde.details;
+      if (f.details && garde.details != null) { f.details.value = garde.details; agrandir(f.details); }
       const d = f.querySelector('details'); if (d && garde.ouvert) d.open = true;
       if (garde.focus && f[garde.focus]) { try { f[garde.focus].focus({ preventScroll: true }); } catch (e) {} }
     }
@@ -339,7 +342,7 @@ details[open] summary{margin-bottom:6px}
         if (!ouvert || !e.composedPath().includes(host)) return;
         e.stopImmediatePropagation(); if (ev === 'keydown' && e.key === 'Escape') fermer();
       }, true));
-      root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche);
+      root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche); root.addEventListener('input', (e) => agrandir(e.target));
       /* coller une capture (Ctrl+V), ou la glisser sur la fenêtre */
       addEventListener('paste', (e) => {
         if (!ouvert || !e.clipboardData) return;
@@ -374,7 +377,7 @@ details[open] summary{margin-bottom:6px}
       dessiner(); return;
     }
     if (a === 'fermer') fermer();
-    else if (a === 'type') { V.type = el.dataset.k; dessiner(true); }
+    else if (a === 'type') { V.type = el.dataset.k; dessiner(); } /* garder le titre et les détails déjà écrits */
     else if (a === 'vue') { V.tout = el.dataset.tout === '1'; dessiner(); }
     else if (a === 'faites') { V.faites = !V.faites; dessiner(); }
     else if (a === 'liste') { V.edit = null; dessiner(); }
