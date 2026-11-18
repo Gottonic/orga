@@ -659,6 +659,7 @@ details.more .field{margin-top:10px}
 .dacts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .dacts .btn{flex:1 1 auto}
 .nbframe{transition:opacity .12s}
+.sheet.tall{height:92%} /* fiche projet ou domaine : hauteur fixe, rien ne saute pendant le chargement des notes et de l'argent */
 .pinfo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pinfo .pdue,.pinfo .pplan{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.78rem;padding:2px 8px;border:1px solid var(--line);background:var(--cell)}
 .pinfo .pplan.off{color:var(--muted);border-style:dashed;background:transparent}
@@ -1369,7 +1370,7 @@ function histPush(kind){ try{ history.pushState({etabli:kind},''); }catch(e){} }
 function histDrop(n){ if(n>0){ skipPop++; try{ history.go(-n); }catch(e){ skipPop--; } } }
 function goView(v){ if(MINI){ if(v==='mini'&&histView){ histView=false; histDrop(1); } else if(v!=='mini'&&ui.view==='mini'&&!histView){ histView=true; histPush('view'); } } ui.view=v; if(v==='semaine') ui.wk=CUR; window.scrollTo(0,0); render(); }
 addEventListener('popstate',()=>{ if(skipPop>0){ skipPop--; return; } if(histNotes){ histNotes=false; notesBibFermer(true); return; } if(histSheet){ histSheet=false; closeSheet(true); return; } if(histView){ histView=false; ui.view='mini'; window.scrollTo(0,0); render(); } });
-function openSheet(html,key){ notesGarder(); if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; notesPlacer(); }
+function openSheet(html,key){ notesGarder(); if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $sheet.classList.toggle('tall',/^d:/.test(key||'')); $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; notesPlacer(); }
 function closeSheet(fromPop){ ui.edit=false; if(nbFrame){ nbFrame.remove(); nbFrame=null; } if(fromPop!==true&&histSheet){ histSheet=false; histDrop(1); } $scrim.hidden=true; sheetKey=null; sheetId=null; ctx=null; draft=null; render();}
 $scrim.addEventListener('click',e=>{if(e.target===$scrim) closeSheet();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$scrim.hidden) closeSheet();});
@@ -1615,7 +1616,7 @@ function planSummary(p){ const m=iso(wkMon(CUR)), up=placedOf(p).filter(x=>x.o>=
    la fiche contient la Bibliothèque en mode « seul » (bibliotheque/?seul=p:<id>), qui envoie sa hauteur (message biblioH).
    La fiche est redessinée souvent (openSheet) : on met le cadre de côté avant et on le replace après, avec moveBefore quand le navigateur
    le permet (le cadre ne se recharge pas, le curseur reste) ; sinon il se recharge, sans rien perdre. « Plein écran » ouvre la même chose en grand. */
-let histNotes=false, nbFrame=null, nbHolder=null;
+let histNotes=false, nbFrame=null, nbHolder=null; const nbH={};
 function notesGarder(){ if(!nbFrame||!$sheet.contains(nbFrame)) return;
   if(!nbHolder){ nbHolder=document.createElement('div'); nbHolder.hidden=true; document.body.appendChild(nbHolder); }
   if(nbHolder.moveBefore) try{ nbHolder.moveBefore(nbFrame,null); return; }catch(e){}
@@ -1624,9 +1625,9 @@ function notesPlacer(){ const slot=$sheet.querySelector('.nbslot'); if(!slot) re
   if(nbFrame&&nbFrame.dataset.id===id&&nbFrame.isConnected){ if(slot.moveBefore) try{ slot.moveBefore(nbFrame,null); return; }catch(e){} }
   if(nbFrame) nbFrame.remove();
   nbFrame=document.createElement('iframe'); nbFrame.className='nbframe'; nbFrame.title='Notes du projet'; nbFrame.dataset.id=id;
-  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; nbFrame.style.opacity='0'; const fr=nbFrame, voir=()=>{ fr.style.opacity=''; }; fr.addEventListener('load',()=>{ nbStyle(fr); requestAnimationFrame(()=>requestAnimationFrame(voir)); }); setTimeout(voir,2500); slot.appendChild(nbFrame); }
+  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; nbFrame.style.opacity='0'; nbFrame.style.height=(nbH[id]||60)+'px'; const fr=nbFrame, voir=()=>{ fr.style.opacity=''; }; fr.addEventListener('load',()=>{ nbStyle(fr); requestAnimationFrame(()=>requestAnimationFrame(voir)); }); setTimeout(voir,2500); slot.appendChild(nbFrame); }
 addEventListener('message',e=>{ const d=e.data; if(!d||typeof d.biblioH!=='number'||e.origin!==location.origin) return;
-  [nbFrame,document.querySelector('#notesbib iframe')].forEach(f=>{ if(f&&f.classList.contains('nbframe')&&f.contentWindow===e.source) f.style.height=Math.max(60,Math.ceil(d.biblioH))+'px'; }); });
+  [nbFrame,document.querySelector('#notesbib iframe')].forEach(f=>{ if(f&&f.classList.contains('nbframe')&&f.contentWindow===e.source) { const h=Math.max(60,Math.ceil(d.biblioH)); f.style.height=h+'px'; if(f.dataset.id) nbH[f.dataset.id]=h; } }); });
 function notesBib(id){ const p=P(id); let o=document.getElementById('notesbib');
   if(!o){ o=document.createElement('div'); o.id='notesbib'; document.body.appendChild(o); }
   o.innerHTML=`<div class="nb-bar"><button class="xbtn" data-act="notesBibOk">‹ Fiche</button><b>${esc(p?(p.emoji?p.emoji+' ':'')+p.name:'Projet')}</b><span>Notes</span></div><iframe src="../bibliotheque/?seul=p:${id}" title="Notes du projet"></iframe>`; const fr=o.querySelector('iframe'); if(fr) fr.addEventListener('load',()=>nbStyle(fr));
