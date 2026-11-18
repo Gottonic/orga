@@ -69,6 +69,7 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .carre .rond .ic{width:22px;height:22px}
 a.carre:active,.carte a:active{filter:brightness(.95)}
 .note{color:var(--on-page-2);font-size:13px;margin:0}
+.lien-r{align-self:center;border:0;background:none;color:var(--on-page-2);font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px}
 /* connexion */
 .login{max-width:380px;margin:30px auto;display:flex;flex-direction:column;gap:10px}
 .login h2{margin:0;font:700 24px/1.1 var(--f-display);letter-spacing:-.02em}
@@ -251,6 +252,7 @@ function vAccueil(){
   carres.push(carre('banque','La Banque','banque/',`<button class="rond" type="button" id="b-saisie" aria-label="Nouvelle opération">${P('plus')}</button>`));
   carres.push(carre('bibliotheque','La Bibliothèque','bibliotheque/'));
   h+=`<div class="apps">${grandes.join('')}${carres.join('')}</div>`;
+  if(!(jourRoutine()&&!fait)) h+=`<button type="button" id="b-routine" class="lien-r">Ouvrir la routine du lundi</button>`;
   if(sync&&!navigator.onLine) h+=`<p class="note">Hors ligne : ce que tu notes partira au retour du réseau.</p>`;
   $main.innerHTML=h;
 }
