@@ -27,6 +27,9 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .ligne{display:flex;gap:8px}
 .ligne input{flex:1;min-width:0;height:48px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);padding:0 16px;font-size:15px}
 .ligne input::placeholder{color:var(--ink-3);opacity:.8}
+.sem-n{flex:none;width:48px;height:48px;border-radius:14px;background:var(--surface-2);color:var(--on-page);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.sem-n small{font:400 9px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--on-page-2)}
+.sem-n b{font:700 19px var(--f-display);letter-spacing:-.03em;margin-top:2px}
 .rondb{flex:none;border:0;width:48px;height:48px;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);display:grid;place-items:center;cursor:pointer}
 .rondb .ic{width:20px;height:20px}
 .obj{background:var(--accent);color:var(--on-acc);border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
@@ -135,9 +138,10 @@ textarea.libre{min-height:180px;border-radius:16px;border:1px solid var(--line);
 .jour.cible{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius:16px;padding:14px;font:12.5px/1.5 var(--f-mono);color:var(--ink)}
 .res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.res a{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
-.res small{color:var(--ink-3);font-size:12px}
-.res mark{background:var(--accent);color:var(--on-acc);border-radius:3px}
+.res a{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--page);color:var(--on-page);text-decoration:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-page) 10%,transparent)}
+.res a .t{display:block}
+.res small{color:var(--on-page-2);font-size:12px}
+.res mark{background:var(--accent);color:var(--on-acc);border-radius:3px;padding:0 1px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:80;background:var(--on-page);color:var(--on-acc);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px)}
 </style>
 </head>
@@ -171,7 +175,7 @@ const pad=n=>String(n).padStart(2,'0');
 const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const parse=s=>{ const a=String(s).split('-').map(Number); return new Date(a[0],a[1]-1,a[2]); };
 const plusJ=(s,n)=>{ const d=parse(s); d.setDate(d.getDate()+n); return iso(d); };
-const plain=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const plain=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/œ/g,'oe').replace(/æ/g,'ae');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 function wkKey(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const dn=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-dn+3); const y=t.getUTCFullYear(); const f=new Date(Date.UTC(y,0,4)); const w=1+Math.round(((t-f)/864e5-3+((f.getUTCDay()+6)%7))/7); return y+'-W'+pad(w); }
 const wkNum=k=>Number(String(k).split('-W')[1]);
@@ -250,7 +254,7 @@ function vAccueil(){
   const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour();
   let h='';
   if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, vide-tête, semaine, Banque, puis Claude</small></span>${P('suivant')}</button>`;
-  h+=`<form class="ligne" id="f-vide" autocomplete="off"><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
+  h+=`<form class="ligne" id="f-vide" autocomplete="off"><span class="sem-n" title="Semaine ${wkNum(CUR())}"><small>Sem.</small><b>${wkNum(CUR())}</b></span><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
   if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
   const grandes=[], carres=[];
   if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
@@ -393,25 +397,40 @@ let qT=null;
 function ouvrirChercher(){ $plein.hidden=false; document.body.style.overflow='hidden'; $plein.dataset.e='';
   $plein.innerHTML=cadrePlein('Chercher partout','',`<input class="in" id="i-q" placeholder="Un mot : projet, note, mandat, article…" autocomplete="off" aria-label="Chercher" style="height:48px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 16px"><div id="r-q"><p class="note">Au moins deux lettres.</p></div>`,'');
   setTimeout(()=>document.getElementById('i-q').focus(),30); }
-const marque=(t,q)=>{ const s=String(t||''), i=plain(s).indexOf(q); return i<0?esc(s):esc(s.slice(0,i))+'<mark>'+esc(s.slice(i,i+q.length))+'</mark>'+esc(s.slice(i+q.length)); };
+/* surligner : la recherche ignore accents et ligatures (œ = oe) ; on retrouve la place dans le texte d'origine */
+function marque(t,q){ const s=String(t||''); const map=[]; let pl=''; for(let i=0;i<s.length;i++){ const c=plain(s[i]); for(let k=0;k<c.length;k++) map.push(i); pl+=c; }
+  const i=pl.indexOf(q); if(i<0||!q) return esc(s); const a=map[i], z=map[i+q.length-1]+1; return esc(s.slice(0,a))+'<mark>'+esc(s.slice(a,z))+'</mark>'+esc(s.slice(z)); }
+/* filtre « ou » de Supabase : chaque champ, avec et sans ligature (oeuf → œuf) */
+function ouIlike(champs,brut){ const v=brut.trim().replace(/[%_,()"\\]/g,' ').trim(); const vs=[...new Set([v,v.replace(/oe/gi,'œ'),v.replace(/ae/gi,'æ')])];
+  return champs.flatMap(c=>vs.map(x=>`${c}.ilike."%${x}%"`)).join(','); }
+const fDate=d=>{ const x=parse(String(d||'').slice(0,10)); return isNaN(x)?'':x.getDate()+' '+MOIS[x.getMonth()]+' '+x.getFullYear(); };
+/* toutes les apps ; chaque ligne prend les couleurs de son app (demande de Nicolas, 18.11) */
 async function chercher(qBrut){ const q=plain(qBrut).trim(), $r=document.getElementById('r-q'); if(!$r) return; if(q.length<2){ $r.innerHTML='<p class="note">Au moins deux lettres.</p>'; return; }
-  const like='%'+qBrut.trim().replace(/[%_,()]/g,' ')+'%';
-  const proj=PB?PB.liste().filter(p=>plain(p.name).includes(q)).slice(0,8):[], dom=PB?PB.domaines().filter(d=>plain(d.name).includes(q)).slice(0,4):[];
-  let notes=[], mandats=[], arts=[];
-  try{ const [a,b,c]=await Promise.all([
-      sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).ilike('data->>t',like).limit(25),
-      sb.from('mine_rows').select('key,data').like('key','m:%').eq('deleted',false).ilike('data->>nom',like).limit(8),
-      sb.from('marche_rows').select('key,data').like('key','a:%').eq('deleted',false).ilike('data->>nom',like).limit(8)]);
-    notes=(a.data||[]).map(r=>r.data).filter(Boolean); mandats=(b.data||[]).map(r=>r.data).filter(Boolean); arts=(c.data||[]).map(r=>r.data).filter(Boolean); }catch(e){}
+  const R=[];
+  if(PB){ PB.liste().filter(p=>plain(p.name).includes(q)).slice(0,8).forEach(p=>R.push({app:'etabli',e:p.emoji,t:p.name,s:Projets.ETATS[Projets.etat(p)]||'',href:'etabli/#p:'+p.id,attrs:`data-dans="etabli" data-hash="p:${esc(p.id)}"`}));
+    PB.domaines().filter(d=>plain(d.name).includes(q)).slice(0,4).forEach(d=>R.push({app:'etabli',e:d.emoji,t:d.name,s:'Domaine',href:'bibliotheque/#d:'+d.id}));
+    const T=[]; [...PB.liste(),...PB.domaines()].forEach(p=>{ if(p.closed) return; Projets.tachesSeules(p.tasks).forEach(x=>{ if(plain(x.t).includes(q)) T.push({p,x}); }); });
+    T.slice(0,10).forEach(({p,x})=>R.push({app:'etabli',t:x.t,s:(x.d?'Tâche faite · ':'Tâche · ')+(p.emoji?p.emoji+' ':'')+p.name,href:Projets.estDomaine(p)?'etabli/':'etabli/#p:'+p.id,attrs:Projets.estDomaine(p)?'':`data-dans="etabli" data-hash="p:${esc(p.id)}"`})); }
+  const f=forge(); if(f&&f.semaines){ const vu=new Set(); Object.entries(f.semaines).forEach(([wk,L])=>L.forEach(x=>{ if(!vu.has(x.t)&&plain(x.t).includes(q)){ vu.add(x.t); R.push({app:'forge',t:x.t,s:'Séance · S'+wkNum(wk)+(typeof x.day==='number'?' · '+JOURS[x.day]:''),href:'forge/#s-'+wk}); } })); }
+  let Q=[[],[],[],[],[],[]];
+  try{ Q=(await Promise.all([
+      sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).or(ouIlike(['data->>t','data->>d'],qBrut)).limit(25),
+      sb.from('mine_rows').select('key,data').like('key','m:%').eq('deleted',false).or(ouIlike(['data->>nom'],qBrut)).limit(8),
+      sb.from('mine_rows').select('key,data').like('key','c:%').eq('deleted',false).or(ouIlike(['data->>nom','data->>org'],qBrut)).limit(6),
+      sb.from('marche_rows').select('key,data').eq('deleted',false).or(ouIlike(['data->>nom'],qBrut)).limit(12),
+      sb.from('carnet').select('key,data').like('key','exos/%').eq('deleted',false).or(ouIlike(['data->>name'],qBrut)).limit(8),
+      sb.from('cash_rows').select('key,data').like('key','t:%').eq('deleted',false).or(ouIlike(['data->>tiers','data->>note'],qBrut)).limit(12)
+    ])).map(r=>((r&&r.data)||[]).filter(x=>x&&x.data).map(x=>Object.assign({_k:x.key},x.data))); }catch(e){}
   if(plain(document.getElementById('i-q')?document.getElementById('i-q').value:'').trim()!==q) return;
-  const ou=n=>{ const p=String(n.p||''); if(p==='vide') return 'Vide-tête'; if(p.startsWith('j:')) return 'Journal S'+wkNum(p.slice(2)); if(p.startsWith('p:')){ const x=PB&&PB.get(p.slice(2)); return x?'Notes · '+x.name:'Notes'; } return 'Bibliothèque'; };
-  const bloc=(t,L)=>L.length?`<span class="eyebrow">${t}</span><ul class="res">${L.join('')}</ul>`:'';
-  $r.innerHTML=[
-    bloc('Projets',proj.map(p=>`<li><a href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}">${esc(p.emoji||'')} ${marque(p.name,q)}<small>${esc(Projets.ETATS[Projets.etat(p)]||'')}</small></a></li>`).concat(dom.map(d=>`<li><a href="bibliotheque/#d:${esc(d.id)}">${esc(d.emoji||'')} ${marque(d.name,q)}<small>Domaine</small></a></li>`))),
-    bloc('Notes',notes.map(n=>`<li><a href="bibliotheque/" data-ligne="${esc(n.id)}">${marque(n.t,q)}<small>${esc(ou(n))}${n.a?' · archivée':''}</small></a></li>`)),
-    bloc('La Mine',mandats.map(m=>`<li><a href="mine/" data-mine="mandats">${marque(m.nom,q)}<small>Mandat</small></a></li>`)),
-    bloc('Le Marché',arts.map(x=>`<li><a href="marche/">${marque(x.nom,q)}<small>${x.liste?'Sur la liste':'Article'}</small></a></li>`))
-  ].join('')||'<p class="note">Rien trouvé.</p>'; }
+  const ou=n=>{ const p=String(n.p||''); if(p==='vide') return 'Vide-tête'; if(p.startsWith('j:')) return 'Journal S'+wkNum(p.slice(2)); if(p.startsWith('p:')){ const x=PB&&PB.get(p.slice(2)); return x?'Notes · '+x.name:'Notes'; } if(p.startsWith('d:')){ const x=PB&&PB.domaine(p.slice(2)); return x?'Notes · '+x.name:'Notes'; } return 'Notes'; };
+  const [notes,mands,conts,arts,exos,ops]=Q;
+  notes.forEach(n=>{ const ent=plain(n.t).includes(q); R.push({app:'bibliotheque',t:ent?n.t:(n.t||'…'),s:ou(n)+(n.a?' · archivée':''),sm:ent?'':n.d,href:'bibliotheque/',attrs:`data-ligne="${esc(n.id)}"`}); });
+  mands.forEach(m=>R.push({app:'mine',t:m.nom,s:'Mandat',href:'mine/',attrs:'data-mine="mandats"'}));
+  conts.forEach(c=>R.push({app:'mine',t:c.org||c.nom||'',s:'Contact'+(c.org&&c.nom?' · '+c.nom:''),href:'mine/',attrs:'data-mine="contacts"'}));
+  arts.filter(x=>/^[ae]:/.test(x._k)).forEach(x=>R.push({app:'marche',t:x.nom,s:x._k.startsWith('e:')?'Envie':x.liste?'Sur la liste':'Article',href:'marche/'}));
+  exos.forEach(x=>R.push({app:'forge',t:x.name,s:'Exercice',href:'forge/#exos'}));
+  ops.sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(t=>{ const ent=plain(t.tiers).includes(q); R.push({app:'banque',t:t.tiers||t.note||'Opération',sm:ent||!t.tiers?'':t.note,s:[fDate(t.date),t.montant!=null?chf(Math.abs(t.montant)):'',ent&&t.note?t.note:''].filter(Boolean).join(' · '),href:'banque/'}); });
+  $r.innerHTML=R.length?`<ul class="res">${R.map(x=>`<li><a href="${esc(x.href)}" data-lieu="${x.app}" ${x.attrs||''}><span class="t">${x.e?esc(x.e)+' ':''}${marque(x.t,q)}</span><small>${x.sm?marque(x.sm,q)+' · ':''}${esc(x.s||'')}</small></a></li>`).join('')}</ul>`:'<p class="note">Rien trouvé.</p>'; }
 $plein.addEventListener('input',e=>{ if(e.target.id==='i-q'){ clearTimeout(qT); const v=e.target.value; qT=setTimeout(()=>chercher(v),250); } });
 $plein.addEventListener('click',e=>{ const a=e.target.closest('a[data-ligne]'); if(a){ e.preventDefault(); vers('bibliotheque',{id:a.dataset.ligne}); return; }
   const m=e.target.closest('a[data-mine]'); if(m){ try{ localStorage.setItem('mine-tab',m.dataset.mine); }catch(x){} } });

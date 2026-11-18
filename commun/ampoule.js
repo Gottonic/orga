@@ -180,6 +180,10 @@
   /* ---------- fenêtre ---------- */
   let host = null, root = null, ouvert = false, bouton = null;
   const V = { type: 'idee', faites: false, edit: null, tout: false, attente: [], cochees: null };
+  /* brouillon (18.11) : une idée en cours d'écriture survit à un toucher à côté de la fenêtre (gardé sur l'appareil) */
+  const BK = 'locus-ampoule-brouillon-' + APP;
+  const brouillon = () => { try { return JSON.parse(localStorage.getItem(BK) || 'null') || {}; } catch (e) { return {}; } };
+  const garderBrouillon = (b) => { try { if (b && ((b.titre || '').trim() || (b.details || '').trim())) localStorage.setItem(BK, JSON.stringify(b)); else localStorage.removeItem(BK); } catch (e) {} };
   const fin = () => matchMedia('(pointer:fine)').matches;
   const CSS = `:host{all:initial}
 *{box-sizing:border-box;margin:0}
@@ -294,6 +298,8 @@ details[open] summary{margin-bottom:6px}
     if (V.edit && !x) V.edit = null;
     sheet.innerHTML = V.edit ? vueEdit(Object.assign({}, x, { type: V.edit.type || x.type })) : vueListe();
     const f = sheet.querySelector('form');
+    if (vider && f && f.dataset.form === 'ajout') garderBrouillon(null);
+    else if (!garde && f && f.dataset.form === 'ajout') { const b = brouillon(); if (b.titre && f.titre) f.titre.value = b.titre; if (b.details && f.details) { f.details.value = b.details; agrandir(f.details); } }
     if (garde && f && f.dataset.form === garde.form && (V.edit && V.edit.key) === garde.cle) {
       if (f.titre && garde.titre != null) f.titre.value = garde.titre;
       if (f.details && garde.details != null) { f.details.value = garde.details; agrandir(f.details); }
@@ -342,7 +348,7 @@ details[open] summary{margin-bottom:6px}
         if (!ouvert || !e.composedPath().includes(host)) return;
         e.stopImmediatePropagation(); if (ev === 'keydown' && e.key === 'Escape') fermer();
       }, true));
-      root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche); root.addEventListener('input', (e) => agrandir(e.target));
+      root.addEventListener('click', clic); root.addEventListener('submit', envoi); root.addEventListener('change', coche); root.addEventListener('input', (e) => { agrandir(e.target); const f = e.target.form; if (f && f.dataset.form === 'ajout') garderBrouillon({ titre: f.titre ? f.titre.value : '', details: f.details ? f.details.value : '', type: V.type }); });
       /* coller une capture (Ctrl+V), ou la glisser sur la fenêtre */
       addEventListener('paste', (e) => {
         if (!ouvert || !e.clipboardData) return;
@@ -355,13 +361,18 @@ details[open] summary{margin-bottom:6px}
       root.addEventListener('drop', (e) => { if (!surFichiers(e)) return; e.preventDefault(); const s = root.querySelector('.sheet'); if (s) s.classList.remove('depot'); joindre(e.dataTransfer.files); });
     }
     root.innerHTML = `<style>${CSS}</style><div class="scrim" data-act="fond"><div class="sheet" role="dialog" aria-modal="true" aria-label="Bugs et idées"></div><div class="zoom" data-act="dezoom" hidden><img alt="Capture"></div></div>`;
-    ouvert = true; V.edit = null; V.cochees = null; host.hidden = false;
+    ouvert = true; V.edit = null; V.cochees = null; host.hidden = false; { const b = brouillon(); if (b.type) V.type = b.type; }
     document.documentElement.style.overflow = 'hidden';
     if (!etat) etat = aFaire() ? 'attente' : '';
     dessiner(); sync();
     if (matchMedia('(pointer:fine)').matches) { const n = root.getElementById('titre'); if (n) n.focus(); }
   }
-  function fermer() { if (!host) return; ouvert = false; host.hidden = true; root.innerHTML = ''; urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear(); document.documentElement.style.overflow = ''; if (bouton) bouton.focus(); }
+  function fermer() { if (!host) return;
+    /* une idée ouverte et modifiée s'enregistre en fermant, même par un toucher à côté (18.11) */
+    const f = root.querySelector('form[data-form=edit]');
+    if (f && V.edit) { const titre = String(f.titre.value || '').trim(), details = String(f.details.value || '').trim(), x = liste(null).find((y) => y.key === V.edit.key);
+      if (titre && x && (titre !== x.titre || details !== (x.details || '') || (V.edit.type && V.edit.type !== x.type))) { modifier(V.edit.key, (r) => { r.data = Object.assign({}, r.data, { titre, type: V.edit.type || r.data.type, details }); }); etat = 'attente'; sync(); } }
+    ouvert = false; host.hidden = true; root.innerHTML = ''; urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear(); document.documentElement.style.overflow = ''; if (bouton) bouton.focus(); }
   function toast(msg) { const e = root.querySelector('.etat'); if (e) e.textContent = msg; }
   function clic(e) {
     const el = e.target.closest('[data-act],[data-voir]'); if (!el) return;
@@ -377,7 +388,7 @@ details[open] summary{margin-bottom:6px}
       dessiner(); return;
     }
     if (a === 'fermer') fermer();
-    else if (a === 'type') { V.type = el.dataset.k; dessiner(); } /* garder le titre et les détails déjà écrits */
+    else if (a === 'type') { V.type = el.dataset.k; const b = brouillon(); if (b.titre || b.details) garderBrouillon(Object.assign(b, { type: V.type })); dessiner(); } /* garder le titre et les détails déjà écrits */
     else if (a === 'vue') { V.tout = el.dataset.tout === '1'; dessiner(); }
     else if (a === 'faites') { V.faites = !V.faites; dessiner(); }
     else if (a === 'liste') { V.edit = null; dessiner(); }
