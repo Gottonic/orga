@@ -32,12 +32,14 @@
     async function pousser() {
       if (envoi || !st.dirty.length || !sb || !navigator.onLine) return; envoi = true;
       const keys = st.dirty.slice(0, 50);
-      const rows = keys.map((k) => (st.prev[k] ? { user_id: user, key: k, data: st.prev[k], deleted: false } : { user_id: user, key: k, data: null, deleted: true }));
+      /* la table du Marché demande le genre de chaque ligne (kind) */
+      const rows = keys.map((k) => (st.prev[k] ? { user_id: user, key: k, kind: 'article', data: st.prev[k], deleted: false } : { user_id: user, key: k, kind: 'article', data: null, deleted: true }));
       try { const { error } = await sb.from('marche_rows').upsert(rows, { onConflict: 'user_id,key' }); if (error) throw error; st.dirty = st.dirty.filter((k) => !keys.includes(k)); garder(); }
       catch (e) { clearTimeout(minut); minut = setTimeout(pousser, 15000); }
       envoi = false; if (st.dirty.length) { clearTimeout(minut); minut = setTimeout(pousser, 300); }
     }
     function ecrire(k, a) { if (a) st.prev[k] = a; else delete st.prev[k]; if (!st.dirty.includes(k)) st.dirty.push(k); garder(); clearTimeout(minut); minut = setTimeout(pousser, 400); }
+    if (st.dirty.length) setTimeout(pousser, 800); /* achats écrits avant, pas encore partis */
     const liste = (pid) => Object.values(st.prev).filter((a) => a && a.projet === pid).sort((a, b) => (a.liste === b.liste ? String(a.cree).localeCompare(String(b.cree)) : a.liste ? -1 : 1));
     function ajouter(p, nom) {
       nom = String(nom || '').trim().replace(/\s+/g, ' '); if (!p || !nom) return null;
