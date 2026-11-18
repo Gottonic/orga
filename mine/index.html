@@ -105,7 +105,7 @@ a.btn,a.btn2{text-decoration:none;color:inherit}
 
 /* filons (activités) et cartes de mandats */
 .filon{--c:#55606B;display:flex;flex-direction:column;gap:10px}
-.fh{display:flex;align-items:center;gap:10px;padding:8px 12px;color:#fff;background:var(--c) repeating-linear-gradient(118deg,rgba(255,255,255,.09) 0 7px,transparent 7px 19px,rgba(0,0,0,.06) 19px 23px,transparent 23px 34px)}
+.fh{display:flex;align-items:center;gap:10px;padding:8px 12px;color:var(--ci,#fff);background:var(--c) repeating-linear-gradient(118deg,rgba(255,255,255,.09) 0 7px,transparent 7px 19px,rgba(0,0,0,.06) 19px 23px,transparent 23px 34px)}
 .fh .em{font-size:1.35rem;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
 .fh h2{margin:0;font:800 1.55rem/1 var(--pochoir);text-transform:uppercase;letter-spacing:.04em;flex:none}
 .fh .fs{margin-left:auto;font-size:.8rem;opacity:.92;text-align:right}
@@ -570,6 +570,10 @@ const proj=id=>PB&&id?PB.get(id):null;
 const projDe=m=>m&&m.projet?proj(m.projet):null;
 const relie=()=>!!S.regl.projets;
 const dom=id=>PB&&id?(id===Projets.AUTRES?Projets.autres():PB.domaine(id)):null;
+/* couleurs : celles de l'Établi pour ce qui y est relié (activité → son domaine, mandat → son projet), sinon le minerai de l'activité */
+function coulA(a){ const d=a&&a.domaine?dom(a.domaine):null; return d&&d.color||a&&a.couleur||SANS.couleur; }
+function coulM(m){ if(!m) return SANS.couleur; const p=projDe(m); return p&&p.color||coulA(act(m.activite)); }
+function encre(hex){ const h=String(hex||'').replace('#',''); if(h.length!==6) return '#fff'; const v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)); return .2126*v[0]+.7152*v[1]+.0722*v[2]>.33?'#1E1E1E':'#fff'; }
 const domsListe=()=>PB?PB.domaines().filter(d=>!d.closed&&!d.auto).sort((a,b)=>a.name.localeCompare(b.name,'fr')):[];
 const horsMine=()=>new Set((S.regl.horsMine||[]));
 /* projets pro de l'Établi qui ne sont le mandat de personne (et pas mis de côté) */
@@ -625,8 +629,8 @@ function optsProjets(cur,L,nouveau){ const o=L.slice().sort((a,b)=>(!!a.closed-!
 function vLiens(){ if(!ed||ed.k!=='liens') ed={k:'liens',R:liensInit()}; const R=ed.R, L=PB?PB.liste():[];
   const tops=L.filter(p=>!p.parent&&p.size!=='mini'), autres=L.filter(p=>p.size!=='perm');
   const DL=domsListe(), optsD=cur=>`<option value=""${!cur?' selected':''}>📦 Autres projets</option>${DL.map(d=>`<option value="${d.id}"${cur===d.id?' selected':''}>${esc((d.emoji?d.emoji+' ':'')+d.name)}</option>`).join('')}`;
-  const aRows=actsTri(true).map(a=>`<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(a.emoji)} ${esc(a.nom)}<small>activité${a.ignorer?' · aperçu seulement':''}${a.archive?' · rangée':''} · ses nouveaux mandats vont dans</small></span><select data-lien-a="${a.id}" aria-label="Domaine des mandats de ${esc(a.nom)}">${optsD(R.acts[a.id])}</select></div>`).join('');
-  const mRows=Object.values(S.mands).sort(triMandat).map(m=>{ const a=act(m.activite); return `<div class="rel" style="--c:${a.couleur}"><span class="nm">${esc(m.nom)}<small>${esc(a.emoji)} ${esc(a.nom)} · ${ETATS[m.etat]}</small></span><select data-lien-m="${m.id}" aria-label="Projet du mandat ${esc(m.nom)}">${optsProjets(R.mands[m.id],autres,'créer le projet « '+esc(m.nom)+' »')}</select></div>`; }).join('');
+  const aRows=actsTri(true).map(a=>`<div class="rel" style="--c:${coulA(a)}"><span class="nm">${esc(a.emoji)} ${esc(a.nom)}<small>activité${a.ignorer?' · aperçu seulement':''}${a.archive?' · rangée':''} · ses nouveaux mandats vont dans</small></span><select data-lien-a="${a.id}" aria-label="Domaine des mandats de ${esc(a.nom)}">${optsD(R.acts[a.id])}</select></div>`).join('');
+  const mRows=Object.values(S.mands).sort(triMandat).map(m=>{ const a=act(m.activite); return `<div class="rel" style="--c:${coulM(m)}"><span class="nm">${esc(m.nom)}<small>${esc(a.emoji)} ${esc(a.nom)} · ${ETATS[m.etat]}</small></span><select data-lien-m="${m.id}" aria-label="Projet du mandat ${esc(m.nom)}">${optsProjets(R.mands[m.id],autres,'créer le projet « '+esc(m.nom)+' »')}</select></div>`; }).join('');
   montrer(sh('Relier aux projets')+`<p class="aide">Une activité, c'est <b>qui paie</b>. Ses nouveaux mandats sont rangés dans le domaine choisi de l'Établi (un domaine peut mélanger perso et pro). Chaque mandat est un projet pro de l'Établi. Le projet garde le nom, l'état et les tâches ; la Mine garde le client, les heures, les devis, les factures et l'argent. Si les noms diffèrent, c'est celui du projet de l'Établi qui est gardé (tu peux le changer ensuite, dans l'une ou l'autre app). Vérifie ma proposition : rien ne change avant d'enregistrer, et une sauvegarde de la Mine est téléchargée juste avant.</p>
   <div class="lbl">Activités</div>${aRows||'<p class="aide">Aucune activité.</p>'}
   <div class="lbl">Mandats</div>${mRows||'<p class="aide">Aucun mandat.</p>'}
@@ -634,7 +638,7 @@ function vLiens(){ if(!ed||ed.k!=='liens') ed={k:'liens',R:liensInit()}; const R
 function sauverLiens(){ if(!ed||ed.k!=='liens'||!PB) return; const R=ed.R; exporter(); const all=()=>PB.liste(), get=id=>all().find(x=>x.id===id);
   for(const a of actsTri(true)){ const v=R.acts[a.id]; if(v&&dom(v)) a.domaine=v; else delete a.domaine; delete a.projet; }
   for(const m of Object.values(S.mands)){ const v=R.mands[m.id], a=S.acts[m.activite]; let p=null;
-    if(v==='new'){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom,nature:'pro'}); if(a&&a.domaine&&dom(a.domaine)) p.parent=a.domaine; }
+    if(v==='new'){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?coulA(a):'#C68A2E',name:m.nom,nature:'pro'}); if(a&&a.domaine&&dom(a.domaine)) p.parent=a.domaine; }
     else if(v){ p=get(v); } else { delete m.projet; continue; }
     if(!p) continue;
     p.nature='pro'; /* un mandat est un projet pro */
@@ -781,7 +785,7 @@ function vMandats(){
   const af=aFaire(); if(af.length) h+=`<section class="afaire" aria-label="À faire"><div class="cap">À faire</div>${af.join('')}</section>`;
   const acts=actsTravail(), tous=Object.values(S.mands);
   if(ui.filtre&&!S.acts[ui.filtre]) ui.filtre='';
-  if(acts.length>1&&tous.length) h+=`<div class="filtres" role="group" aria-label="Activités"><button data-act="filtre" data-id="" aria-pressed="${!ui.filtre}">Tout <span class="n">${tous.filter(m=>m.etat!=='fini').length}</span></button>${acts.map(a=>`<button data-act="filtre" data-id="${a.id}" aria-pressed="${ui.filtre===a.id}" style="--c:${a.couleur}"><span aria-hidden="true">${esc(a.emoji)}</span>${esc(a.nom)} <span class="n">${mandsDe(a.id).filter(m=>m.etat!=='fini').length}</span></button>`).join('')}</div>`;
+  if(acts.length>1&&tous.length) h+=`<div class="filtres" role="group" aria-label="Activités"><button data-act="filtre" data-id="" aria-pressed="${!ui.filtre}">Tout <span class="n">${tous.filter(m=>m.etat!=='fini').length}</span></button>${acts.map(a=>`<button data-act="filtre" data-id="${a.id}" aria-pressed="${ui.filtre===a.id}" style="--c:${coulA(a)}"><span aria-hidden="true">${esc(a.emoji)}</span>${esc(a.nom)} <span class="n">${mandsDe(a.id).filter(m=>m.etat!=='fini').length}</span></button>`).join('')}</div>`;
   if(!tous.length) h+=`<div class="vide"><span class="gros">La mine est vide</span>Un mandat, c’est un chantier, un cours, une commande… avec son client, ses heures, ses tâches, son devis et sa facture.<br><button class="btn" data-act="mandat-new">Ouvrir un premier mandat</button></div>`;
   else {
     const vis=ui.filtre?[S.acts[ui.filtre]]:actsTri(true).filter(a=>mandsDe(a.id).length);
@@ -789,7 +793,7 @@ function vMandats(){
     const orph=tous.filter(m=>!S.acts[m.activite]);
     if(orph.length&&!ui.filtre) h+=filon(SANS,orph);
     const vides=ui.filtre?[]:acts.filter(a=>!mandsDe(a.id).length);
-    if(vides.length) h+=`<div class="chips" aria-label="Activités sans mandat">${vides.map(a=>`<button class="chip coul" style="--c:${a.couleur}" data-act="mandat-new" data-id="${a.id}">+ ${esc(a.emoji)} ${esc(a.nom)}</button>`).join('')}</div>`;
+    if(vides.length) h+=`<div class="chips" aria-label="Activités sans mandat">${vides.map(a=>`<button class="chip coul" style="--c:${coulA(a)}" data-act="mandat-new" data-id="${a.id}">+ ${esc(a.emoji)} ${esc(a.nom)}</button>`).join('')}</div>`;
   }
   h+=`<button class="btn2" data-act="acts">Gérer les activités</button>`;
   return h;
@@ -797,7 +801,7 @@ function vMandats(){
 function filon(a,liste){
   const ms=liste||mandsDe(a.id), ouv=ms.filter(m=>m.etat!=='fini').sort(triMandat), finis=ms.filter(m=>m.etat==='fini').sort((x,y)=>(y.fin||derniereAct(y)).localeCompare(x.fin||derniereAct(x)));
   const mois=today().slice(0,7), ids=new Set(ms.map(m=>m.id)), minMois=Object.values(S.heures).filter(x=>ids.has(x.mandat)&&x.date.startsWith(mois)).reduce((s,x)=>s+x.min,0);
-  let h=`<section class="filon" style="--c:${a.couleur}"><div class="fh"><span class="em" aria-hidden="true">${esc(a.emoji)}</span><h2>${esc(a.nom)}</h2><span class="fs">${ouv.length?pl(ouv.length,'mandat ouvert','mandats ouverts'):'rien d’ouvert'}${minMois?'<br>'+fH(minMois)+' ce mois':''}</span></div>`;
+  let h=`<section class="filon" style="--c:${coulA(a)};--ci:${encre(coulA(a))}"><div class="fh"><span class="em" aria-hidden="true">${esc(a.emoji)}</span><h2>${esc(a.nom)}</h2><span class="fs">${ouv.length?pl(ouv.length,'mandat ouvert','mandats ouverts'):'rien d’ouvert'}${minMois?'<br>'+fH(minMois)+' ce mois':''}</span></div>`;
   if(ouv.length) h+=`<div class="cartes">${ouv.map(carteMandat).join('')}</div>`;
   if(finis.length){ const o=!!ui.finis[a.id||'_']; h+=`<button class="plus-fini" data-act="finis" data-id="${a.id||'_'}" aria-expanded="${o}">${o?'▾':'▸'} Terminés · ${finis.length}</button>`; if(o) h+=`<div class="cartes">${finis.map(carteMandat).join('')}</div>`; }
   if(a.id) h+=`<button class="ajout-m" data-act="mandat-new" data-id="${a.id}">+ Mandat</button>`;
@@ -806,20 +810,20 @@ function filon(a,liste){
 function carteMandat(m){
   const c=chiffres(m), cl=S.conts[m.client], t=tachesDe(m), tf=t.filter(x=>x.fait).length, run=S.chrono&&S.chrono.mandat===m.id, a=act(m.activite);
   const fl=[]; if(c.minNF) fl.push(`<span class="flag or">${fH(c.minNF)} à facturer</span>`); if(c.attente>0) fl.push(`<span class="flag${c.retard?' rouge':''}">${fCHF(c.attente)} ${c.retard?'en retard':'à encaisser'}</span>`);
-  return `<button class="carte${m.etat==='fini'?' fini':''}" style="--c:${a.couleur}" data-act="mandat" data-id="${m.id}"><span class="c1"><b class="cn">${esc(m.nom)}</b><span class="etat e-${m.etat}">${ETATS[m.etat]}</span></span><span class="c2">${cl?esc(cNom(cl)):'<i>sans client</i>'}${m.debut?' · '+fJour(m.debut):''}</span><span class="c3">${run?'<span class="rec">● chrono</span>':''}<span>⏱ ${fH(c.min)}</span>${c.facture?`<span>Facturé ${fCHF(c.facture)}</span>`:''}${t.length?`<span>☑ ${tf}/${t.length}</span>`:''}</span>${fl.length?`<span class="c4">${fl.join('')}</span>`:''}</button>`;
+  return `<button class="carte${m.etat==='fini'?' fini':''}" style="--c:${coulM(m)}" data-act="mandat" data-id="${m.id}"><span class="c1"><b class="cn">${esc(m.nom)}</b><span class="etat e-${m.etat}">${ETATS[m.etat]}</span></span><span class="c2">${cl?esc(cNom(cl)):'<i>sans client</i>'}${m.debut?' · '+fJour(m.debut):''}</span><span class="c3">${run?'<span class="rec">● chrono</span>':''}<span>⏱ ${fH(c.min)}</span>${c.facture?`<span>Facturé ${fCHF(c.facture)}</span>`:''}${t.length?`<span>☑ ${tf}/${t.length}</span>`:''}</span>${fl.length?`<span class="c4">${fl.join('')}</span>`:''}</button>`;
 }
 
 /* ---------- Heures ---------- */
 function rowHeure(x,avecDate,fh){ const m=S.mands[x.mandat], a=act(m&&m.activite), f=(fh||reprises('heures')).get(x.id);
-  if(avecDate) return `<button class="hrow" data-act="heure" data-id="${x.id}"><span class="dot" style="--c:${a.couleur}" aria-hidden="true"></span><span class="hb"><b>${esc(cap1(fJourLong(x.date)))}</b><span class="meta">${[x.note?esc(x.note):'',f?'<span class="ok">sur '+esc((S.docs[f]||{}).num||'une facture')+'</span>':x.fact===false?'non facturable':'',x.src==='chrono'?'⏱':''].filter(Boolean).join(' · ')||'&nbsp;'}</span></span><span class="mono">${fH(x.min)}</span></button>`;
-  return `<button class="hrow" data-act="heure" data-id="${x.id}"><span class="dot" style="--c:${a.couleur}" aria-hidden="true"></span><span class="hb"><b>${esc(m?m.nom:'Mandat supprimé')}</b><span class="meta">${[x.note?esc(x.note):'',f?'<span class="ok">sur '+esc((S.docs[f]||{}).num||'une facture')+'</span>':x.fact===false?'non facturable':''].filter(Boolean).join(' · ')}</span></span><span class="mono">${fH(x.min)}</span></button>`; }
+  if(avecDate) return `<button class="hrow" data-act="heure" data-id="${x.id}"><span class="dot" style="--c:${coulM(m)}" aria-hidden="true"></span><span class="hb"><b>${esc(cap1(fJourLong(x.date)))}</b><span class="meta">${[x.note?esc(x.note):'',f?'<span class="ok">sur '+esc((S.docs[f]||{}).num||'une facture')+'</span>':x.fact===false?'non facturable':'',x.src==='chrono'?'⏱':''].filter(Boolean).join(' · ')||'&nbsp;'}</span></span><span class="mono">${fH(x.min)}</span></button>`;
+  return `<button class="hrow" data-act="heure" data-id="${x.id}"><span class="dot" style="--c:${coulM(m)}" aria-hidden="true"></span><span class="hb"><b>${esc(m?m.nom:'Mandat supprimé')}</b><span class="meta">${[x.note?esc(x.note):'',f?'<span class="ok">sur '+esc((S.docs[f]||{}).num||'une facture')+'</span>':x.fact===false?'non facturable':''].filter(Boolean).join(' · ')}</span></span><span class="mono">${fH(x.min)}</span></button>`; }
 function carteChrono(){
   const c=S.chrono;
   if(c){ const m=S.mands[c.mandat];
     return `<section class="chrono on" aria-label="Chronomètre en cours"><div class="ch-t" data-chrono>${fChrono(c.debut)}</div><div class="ch-m">${esc(act(m&&m.activite).emoji)} ${esc(m?m.nom:'?')} <span class="meta" style="color:#CFC4B6">· depuis ${hhmm(c.debut)}</span></div><input class="in" id="ch-note" placeholder="Ce que tu fais (facultatif)" value="${esc(c.note||'')}" autocomplete="off"><div class="row2"><button class="btn or" data-act="chrono-stop">■ Arrêter et noter</button><button class="btn2" data-act="chrono-annuler">Annuler</button></div></section>`; }
   const ms=ouverts(); if(!ms.length) return '';
   const sel=ui.chronoM&&S.mands[ui.chronoM]&&S.mands[ui.chronoM].etat!=='fini'?ui.chronoM:ms[0].id;
-  return `<section class="chrono" aria-label="Chronomètre"><div class="cap">Chronomètre · sur quel mandat ?</div><div class="chips">${ms.slice(0,8).map(m=>`<button class="chip coul${m.id===sel?' on':''}" style="--c:${act(m.activite).couleur}" data-act="chrono-m" data-id="${m.id}" aria-pressed="${m.id===sel}">${esc(act(m.activite).emoji)} ${esc(m.nom)}</button>`).join('')}</div><button class="btn" data-act="chrono-go" data-id="${sel}">▶ Démarrer</button></section>`;
+  return `<section class="chrono" aria-label="Chronomètre"><div class="cap">Chronomètre · sur quel mandat ?</div><div class="chips">${ms.slice(0,8).map(m=>`<button class="chip coul${m.id===sel?' on':''}" style="--c:${coulM(m)}" data-act="chrono-m" data-id="${m.id}" aria-pressed="${m.id===sel}">${esc(act(m.activite).emoji)} ${esc(m.nom)}</button>`).join('')}</div><button class="btn" data-act="chrono-go" data-id="${sel}">▶ Démarrer</button></section>`;
 }
 /* Heures de Gamins de Talus (lecture seule). Par le lien privé de GDT (fonction mes_heures, clé dans regl.gdtCle, synchronisée) :
    marche sur tous les appareils, sans connexion GDT. La clé se crée une fois avec la connexion GDT de la Banque (même navigateur),
@@ -863,7 +867,7 @@ function vHeures(){
       h+=`<div class="jour"><div class="jh"><span>${cap1(fJourLong(d))}</span><span class="mono">${fH(dj.reduce((s,x)=>s+x.min,0))}</span></div>${dj.map(x=>rowHeure(x,false,fh)).join('')}</div>`; }
     const parM={}; hs.forEach(x=>{ parM[x.mandat]=(parM[x.mandat]||0)+x.min; });
     const lm=Object.entries(parM).sort((a,b)=>b[1]-a[1]);
-    if(lm.length>1) h+=`<section class="bloc"><div class="bh"><h3>Par mandat</h3></div>${lm.map(([id,min])=>{ const m=S.mands[id]; return `<div class="ligne-r"><span><span class="dot" style="--c:${act(m&&m.activite).couleur};display:inline-block;margin-right:8px"></span>${esc(m?m.nom:'?')}</span><b class="mono">${fH(min)}</b></div>`; }).join('')}</section>`;
+    if(lm.length>1) h+=`<section class="bloc"><div class="bh"><h3>Par mandat</h3></div>${lm.map(([id,min])=>{ const m=S.mands[id]; return `<div class="ligne-r"><span><span class="dot" style="--c:${coulM(m)};display:inline-block;margin-right:8px"></span>${esc(m?m.nom:'?')}</span><b class="mono">${fH(min)}</b></div>`; }).join('')}</section>`;
   }
   return h;
 }
@@ -882,7 +886,7 @@ function etatDoc(d){
   return {t:'Brouillon',cl:'e-br',sous:'du '+fJour(d.date)};
 }
 function rowDoc(d){ const m=S.mands[d.mandat], c=S.conts[d.client], a=act(m&&m.activite), st=etatDoc(d);
-  return `<button class="drow" style="--c:${a.couleur}" data-act="doc" data-id="${d.id}"><span class="db"><span class="d1"><b class="mono">${esc(d.num)}</b><span class="etat ${st.cl}">${st.t}</span></span><span class="d2">${esc(cNom(c)||'sans client')}${m?' · '+esc(m.nom):''}</span><span class="d3">${st.sous}</span></span><b class="mono dm">${fmt(docTotal(d))}</b></button>`; }
+  return `<button class="drow" style="--c:${coulM(m)}" data-act="doc" data-id="${d.id}"><span class="db"><span class="d1"><b class="mono">${esc(d.num)}</b><span class="etat ${st.cl}">${st.t}</span></span><span class="d2">${esc(cNom(c)||'sans client')}${m?' · '+esc(m.nom):''}</span><span class="d3">${st.sous}</span></span><b class="mono dm">${fmt(docTotal(d))}</b></button>`; }
 function groupe(titre,list,max,cle){ if(!list.length) return ''; let l=list, plus='';
   if(max&&list.length>max&&!ui[cle]){ l=list.slice(0,max); plus=`<button class="plus-fini" data-act="voir" data-cle="${cle}">▸ Voir les ${list.length}</button>`; }
   return `<div class="grp"><div class="cap">${titre} · ${list.length}</div>${l.map(rowDoc).join('')}${plus}</div>`; }
@@ -932,8 +936,8 @@ function vBilan(){
   h+=`<section class="hero"><span class="cap">Extrait en ${Y} · encaissé</span><span class="gros">${fCHF(T('enc'))}</span><span class="sous">Facturé ${fCHF(T('fac'))} · ${fH(tmin)} de travail${bPret?` · Banque net ${fCHF(T('net'),true)}`:''}</span></section>`;
   if(!bPret) h+=`<p class="info">${bErr?'La Banque n’est pas accessible pour l’instant ('+esc(bErr)+').':'La Banque se charge…'} Les dépenses et recettes Pro viennent de la Banque.</p>`;
   h+=lignes.map(x=>{ const parH=x.min?(bPret&&(x.rec||x.dep)?x.net:x.enc)/(x.min/60):null;
-    return `<section class="bact" style="--c:${x.a.couleur}"><h3>${esc(x.a.emoji)} ${esc(x.a.id?x.a.nom:'Autres opérations Pro')}</h3>${x.a.id?'':`<p class="aide" style="margin:-2px 0 6px">Catégories de la Banque reliées à aucune activité : ${x.cats.map(esc).join(', ')||'—'}. Relie-les dans « Gérer les activités ».</p>`}<div class="g3"><div><span class="cap">Heures</span><b>${fH(x.min)}</b></div><div><span class="cap">Facturé</span><b>${fCHF(x.fac)}</b></div><div><span class="cap">Encaissé</span><b>${fCHF(x.enc)}</b></div><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Par heure</span><b>${parH!=null?fCHF(r2(parH)):'—'}</b></div></div></section>`; }).join('');
-  h+=apercus.map(x=>`<section class="bact" style="--c:${x.a.couleur};background:#F7F4EF"><h3>${esc(x.a.emoji)} ${esc(x.a.nom)} <span class="meta" style="font:400 .8rem var(--body);text-transform:none;letter-spacing:0">· aperçu, suivi à part</span></h3><div class="g3"><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Net</span><b>${fCHF(x.net,true)}</b></div></div></section>`).join('');
+    return `<section class="bact" style="--c:${coulA(x.a)}"><h3>${esc(x.a.emoji)} ${esc(x.a.id?x.a.nom:'Autres opérations Pro')}</h3>${x.a.id?'':`<p class="aide" style="margin:-2px 0 6px">Catégories de la Banque reliées à aucune activité : ${x.cats.map(esc).join(', ')||'—'}. Relie-les dans « Gérer les activités ».</p>`}<div class="g3"><div><span class="cap">Heures</span><b>${fH(x.min)}</b></div><div><span class="cap">Facturé</span><b>${fCHF(x.fac)}</b></div><div><span class="cap">Encaissé</span><b>${fCHF(x.enc)}</b></div><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Par heure</span><b>${parH!=null?fCHF(r2(parH)):'—'}</b></div></div></section>`; }).join('');
+  h+=apercus.map(x=>`<section class="bact" style="--c:${coulA(x.a)};background:#F7F4EF"><h3>${esc(x.a.emoji)} ${esc(x.a.nom)} <span class="meta" style="font:400 .8rem var(--body);text-transform:none;letter-spacing:0">· aperçu, suivi à part</span></h3><div class="g3"><div><span class="cap">Banque +</span><b class="${x.rec?'pos':''}">${fCHF(x.rec)}</b></div><div><span class="cap">Banque −</span><b class="${x.dep?'neg':''}">${fCHF(x.dep)}</b></div><div><span class="cap">Net</span><b>${fCHF(x.net,true)}</b></div></div></section>`).join('');
   if(calmes.length) h+=`<p class="aide">Rien en ${Y} : ${calmes.map(a=>esc(a.emoji+' '+a.nom)).join(', ')}.</p>`;
   h+=`<p class="aide">« Banque + / − » : toutes les opérations Pro de l’activité dans la Banque. « Par heure » : le net de la Banque (ou l’encaissé) divisé par les heures notées.${apercus.length?' Les activités en aperçu ne comptent pas dans les totaux du haut.':''}</p>`;
   const att=docsType('facture').filter(d=>d.etat==='envoyee').sort((a,b)=>echeance(a).localeCompare(echeance(b)));
@@ -956,7 +960,7 @@ function vMandat(id){
   const m=S.mands[id]; if(!m) return `<button class="retour" data-act="retour">← ${esc(pileLabel())}</button><div class="vide">Ce mandat n’existe plus.</div>`;
   const a=act(m.activite), c=chiffres(m), cl=S.conts[m.client], run=S.chrono&&S.chrono.mandat===m.id;
   let h=`<button class="retour" data-act="retour">← ${esc(pileLabel())}</button>`+(S.chrono&&!run?chronoBanniere():'');
-  h+=`<section class="mtete" style="--c:${a.couleur}"><div class="mt-a">${esc(a.emoji)} ${esc(a.nom)}</div><h2 class="mt-n">${esc(m.nom)}</h2><div class="mt-c">${cl?`<button class="lien-b" data-act="contact" data-id="${cl.id}">${esc(cNom(cl))}</button>`:'<span class="meta">sans client</span>'}${m.debut?' · '+fJour(m.debut)+(m.fin?' → '+fJour(m.fin):''):''} · <span class="mono">${fCHF(tarifDe(m))}/h</span></div><div class="seg" role="group" aria-label="État">${['piste','cours','fini'].map(e=>`<button data-act="m-etat" data-e="${e}" aria-pressed="${m.etat===e}">${ETATS[e]}</button>`).join('')}</div><button class="mt-edit" data-act="mandat-edit" data-id="${m.id}">Modifier</button></section>`;
+  h+=`<section class="mtete" style="--c:${coulM(m)}"><div class="mt-a">${esc(a.emoji)} ${esc(a.nom)}</div><h2 class="mt-n">${esc(m.nom)}</h2><div class="mt-c">${cl?`<button class="lien-b" data-act="contact" data-id="${cl.id}">${esc(cNom(cl))}</button>`:'<span class="meta">sans client</span>'}${m.debut?' · '+fJour(m.debut)+(m.fin?' → '+fJour(m.fin):''):''} · <span class="mono">${fCHF(tarifDe(m))}/h</span></div><div class="seg" role="group" aria-label="État">${['piste','cours','fini'].map(e=>`<button data-act="m-etat" data-e="${e}" aria-pressed="${m.etat===e}">${ETATS[e]}</button>`).join('')}</div><button class="mt-edit" data-act="mandat-edit" data-id="${m.id}">Modifier</button></section>`;
   h+=`<div class="kpis"><div><span class="cap">Heures</span><b>${fH(c.min)}</b></div><div><span class="cap">Facturé</span><b>${fCHF(c.facture)}</b></div><div><span class="cap">Encaissé</span><b>${fCHF(c.encaisse)}</b></div><div><span class="cap">Dépenses</span><b class="${c.dep?'neg':''}">${fCHF(c.dep)}</b></div><div><span class="cap">Résultat</span><b>${fCHF(c.res)}</b></div><div><span class="cap">Par heure</span><b>${c.parH!=null?fCHF(c.parH):'—'}</b></div></div>`;
   if(c.minNF) h+=`<div class="reste"><span><b>${fH(c.minNF)}</b> pas encore facturées${c.valNF?' · '+fCHF(c.valNF):''}</span><button class="btn2" data-act="facturer" data-id="${m.id}">Facturer</button></div>`;
   if(run) h+=carteChrono();
@@ -995,7 +999,7 @@ function vDoc(id){
   const d=S.docs[id]; if(!d) return `<button class="retour" data-act="retour">← ${esc(pileLabel())}</button><div class="vide">Ce document n’existe plus.</div>`;
   const m=S.mands[d.mandat], a=act(m&&m.activite), st=etatDoc(d), fac=d.type==='facture';
   let h=`<button class="retour" data-act="retour">← ${esc(pileLabel())}</button>`;
-  h+=`<section class="mtete" style="--c:${a.couleur}"><div class="mt-a">${fac?'Facture':'Devis'} · ${esc(a.emoji)} ${m?`<button class="lien-b" data-act="mandat" data-id="${m.id}">${esc(m.nom)}</button>`:'sans mandat'}</div><h2 class="mt-n mono">${esc(d.num||'—')}</h2><div class="mt-c"><span class="etat ${st.cl}">${st.t}</span> <span class="meta">${st.sous}</span></div></section>`;
+  h+=`<section class="mtete" style="--c:${coulM(m)}"><div class="mt-a">${fac?'Facture':'Devis'} · ${esc(a.emoji)} ${m?`<button class="lien-b" data-act="mandat" data-id="${m.id}">${esc(m.nom)}</button>`:'sans mandat'}</div><h2 class="mt-n mono">${esc(d.num||'—')}</h2><div class="mt-c"><span class="etat ${st.cl}">${st.t}</span> <span class="meta">${st.sous}</span></div></section>`;
   const p=paiementPour(d); if(p) h+=`<div class="trouve"><span>💰 Paiement trouvé dans la Banque : ${fJour(p.date)}${p.tiers?' · '+esc(p.tiers):''} · <b class="mono">+${fmt(proMontant(p))}</b></span><button class="btn or" data-act="payer-auto" data-id="${d.id}" data-tx="${p.id}">C’est payé</button></div>`;
   h+=`<div class="actions">${boutonsDoc(d)}${projetDuDoc(d)&&FB?`<label class="btn2 fup">Ranger le PDF<input type="file" accept="application/pdf" data-docpdf="${d.id}" aria-label="Choisir le PDF enregistré depuis l'aperçu"></label>`:''}</div>`;
   if(projetDuDoc(d)&&FB) h+=`<p class="aide">${d.copie?'Copie dans le dossier du projet (Factures) le '+fJour(d.copie.le)+'. ':''}Une copie du document va dans le dossier du projet quand tu le marques envoyé ; « Ranger le PDF » y ajoute le PDF enregistré depuis l'aperçu.</p>`;
@@ -1139,7 +1143,7 @@ function sauverMandat(){ lireMandat(); const d=ed.d; if(!d.nom.trim()){ toast('D
   const m=Object.assign(base,{activite:d.activite,nom:d.nom.trim(),client,etat:d.etat,debut:d.debut,fin:d.fin,tarif:d.tarif.trim()});
   S.mands[m.id]=m;
   if(relie()&&PB){ let p=projDe(m); const a=S.acts[m.activite];
-    if(!p){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?a.couleur:'#C68A2E',name:m.nom,nature:'pro'}); const dd=a&&(a.domaine||a.projet); if(dd&&(dom(dd)||proj(dd))) p.parent=dd; m.projet=p.id; }
+    if(!p){ p=Projets.nouveau({emoji:a?a.emoji:'',color:a?coulA(a):'#C68A2E',name:m.nom,nature:'pro'}); const dd=a&&(a.domaine||a.projet); if(dd&&(dom(dd)||proj(dd))) p.parent=dd; m.projet=p.id; }
     p.name=m.nom; etatVersProjet(p,m.etat); ecrireProjet(p); }
   save(); const neuf=!ed.id;
   if(neuf){ allerPage('mandat',m.id); toast('Mandat ouvert'); } else { fermer(); render(); }
@@ -1156,7 +1160,7 @@ function vContact(){ const d=ed.d, id=ed.id;
   +`<div class="g2" style="grid-template-columns:110px 1fr"><div>${f('npa','NPA','1700','text','numeric')}</div><div>${f('lieu','Lieu','Fribourg')}</div></div>`+f('pays','Pays <span class="opt">(code à 2 lettres)</span>','CH')+f('email','E-mail','','email')+f('tel','Téléphone','','tel')
   +`<label class="lbl" for="e-note">Note</label><textarea class="in ta" id="e-note" placeholder="Ex. facturer à l’adresse du comité">${esc(d.note)}</textarea>`
   +`<button class="btn" data-act="sauver-contact" style="margin-top:14px">${id?'Enregistrer':'Ajouter le contact'}</button>`
-  +(ms.length?`<div class="sec">Mandats</div>${ms.map(m=>`<button class="opt-l" data-act="mandat" data-id="${m.id}"><span class="dot" style="--c:${act(m.activite).couleur}"></span><span class="hb"><b>${esc(m.nom)}</b><span>${ETATS[m.etat]}</span></span></button>`).join('')}`:'')
+  +(ms.length?`<div class="sec">Mandats</div>${ms.map(m=>`<button class="opt-l" data-act="mandat" data-id="${m.id}"><span class="dot" style="--c:${coulM(m)}"></span><span class="hb"><b>${esc(m.nom)}</b><span>${ETATS[m.etat]}</span></span></button>`).join('')}`:'')
   +(ds.length?`<div class="sec">Documents · facturé ${fCHF(sum(ds.filter(emise),docTotal))}</div>${ds.map(rowDoc).join('')}`:'')
   +(id?`<button class="btn-sup${ed.conf?' conf':''}" data-act="sup-contact" style="margin-top:8px">${ed.conf?(ms.length||ds.length?'Ses mandats et documents perdront ce client. Toucher encore':'Toucher encore pour supprimer'):'Supprimer ce contact'}</button>`:''));
 }
@@ -1189,7 +1193,7 @@ function sauverHeure(){ lireHeure(); const d=ed.d, min=parseDuree(d.duree);
 /* --- activités --- */
 function vActs(){ ed={k:'acts'}; const L=actsTri(true);
   montrer(sh('Activités')+`<p class="aide">Une activité = un filon de ton travail pro, avec sa couleur. Relie-la à sa catégorie Pro de la Banque pour y retrouver ses dépenses et recettes.</p>`
-  +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${a.couleur};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${a.ignorer?' · aperçu seulement':''}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
+  +L.map((a,i)=>`<div class="opt-l" style="padding:0 0 0 12px;${a.archive?'opacity:.6':''}"><span class="dot" style="--c:${coulA(a)};width:16px;height:16px"></span><button class="hb" data-act="act" data-id="${a.id}" style="border:0;background:transparent;text-align:left;padding:10px 0"><b>${esc(a.emoji)} ${esc(a.nom)}${a.archive?' (rangée)':''}</b><span>${a.cat?esc(catNom(a.cat)):'pas de catégorie Banque'}${a.ignorer?' · aperçu seulement':''}${num(a.tarif)?' · '+fCHF(num(a.tarif))+'/h':''}</span></button><button class="x" data-act="act-haut" data-id="${a.id}" aria-label="Monter" ${i?'':'disabled'}>↑</button></div>`).join('')
   +`<button class="btn2" data-act="act-new" style="margin-top:8px">+ Nouvelle activité</button>`+(PB?`<button class="btn2" data-act="liens" style="margin-top:8px">${relie()?'Revoir les liens avec les projets de l’Établi':'Relier aux projets de l’Établi'}</button>`:''));
 }
 function ouvrirAct(id){ const a=id&&S.acts[id]; ed={k:'act',id:a?id:null,d:a?{...a}:{nom:'',emoji:'⛏️',couleur:MINERAIS[actsTri(true).length%MINERAIS.length][1],cat:'',tarif:'',nomDoc:'',sousTitre:'',iban:'',archive:false,ignorer:false}}; vAct(); if(!a) focus1('e-nom'); }
@@ -1198,7 +1202,7 @@ function vAct(){ const d=ed.d, pros=Object.values(B.cats).filter(c=>c.id==='pro'
   if(d.cat&&!pros.some(c=>c.id===d.cat)) pros.push({id:d.cat,nom:catNom(d.cat)});
   montrer(sh(ed.id?esc(d.emoji+' '+d.nom):'Nouvelle activité')+`<label class="lbl" for="e-nom">Nom</label><input class="in" id="e-nom" value="${esc(d.nom)}" placeholder="Ex. Parkour" autocomplete="off">
 <label class="lbl" for="e-emoji">Émoji</label><div style="display:flex;gap:8px"><input class="in" id="e-emoji" value="${esc(d.emoji)}" style="width:80px;text-align:center;font-size:1.3rem" autocomplete="off"><div class="chips" style="flex:1">${EMOJIS.map(e=>`<button class="chip" data-act="e-emoji" data-e="${e}" style="padding:4px 8px">${e}</button>`).join('')}</div></div>
-<div class="lbl">Minerai (couleur du filon)</div><div class="chips">${MINERAIS.map(([n,c])=>`<button class="chip sw${c===d.couleur?' on':''}" style="--c:${c}" data-act="e-coul" data-c="${c}" aria-label="${n}" title="${n}" aria-pressed="${c===d.couleur}"></button>`).join('')}</div>
+${d.domaine&&dom(d.domaine)?`<div class="lbl">Couleur</div><p class="aide" style="display:flex;align-items:center;gap:8px"><span class="dot" style="--c:${coulA(d)};width:18px;height:18px"></span>Celle du domaine « ${esc(dom(d.domaine).name)} » de l’Établi, comme ses projets (elle se change là-bas).</p>`:''}<div class="lbl"${d.domaine&&dom(d.domaine)?' hidden':''}>Minerai (couleur du filon)</div><div class="chips"${d.domaine&&dom(d.domaine)?' hidden':''}>${MINERAIS.map(([n,c])=>`<button class="chip sw${c===d.couleur?' on':''}" style="--c:${c}" data-act="e-coul" data-c="${c}" aria-label="${n}" title="${n}" aria-pressed="${c===d.couleur}"></button>`).join('')}</div>
 <label class="lbl" for="e-cat">Catégorie dans la Banque</label><select class="in" id="e-cat"><option value="">— Aucune —</option>${pros.map(c=>`<option value="${esc(c.id)}"${c.id===d.cat?' selected':''}>${esc(catNom(c.id))}</option>`).join('')}</select>${!bPret?'<p class="aide">La Banque n’est pas encore chargée.</p>':''}
 <label class="lbl" for="e-tarif">Tarif horaire CHF <span class="opt">(par défaut pour ses mandats)</span></label><input class="in mono" id="e-tarif" inputmode="decimal" value="${esc(d.tarif)}" placeholder="${esc(String(R().tarif||''))}" autocomplete="off">
 <div class="sec">Sur ses devis et factures</div><p class="aide">Seulement si cette activité facture sous un autre nom ou sur un autre compte que dans ⚙ Réglages.</p>
@@ -1275,7 +1279,7 @@ function vRattacher(mid){ const m=S.mands[mid], a=S.acts[m.activite]; if(!ed||ed
 function vTrier(){ if(!ed||ed.k!=='trier') ed={k:'trier',vieux:false,conf:false}; const tous=aTrier(0,ed.vieux), L=tous.slice(0,80), n=tous.length, ign=actsTri(true).filter(a=>a.ignorer);
   montrer(sh('Trier')+`<p class="aide">Les opérations Pro de la Banque ${ed.vieux?'':'de cette année '}pas encore rattachées (${n}). Choisis le mandat, ou « Ignorer » : elle ne sera plus proposée.${ign.length?' Jamais proposées : '+ign.map(a=>esc(a.emoji+' '+a.nom)).join(', ')+' (aperçu seulement).':''}</p><div class="row-btns"><button class="chip${ed.vieux?' on':''}" data-act="t-vieux">Aussi les années d’avant</button>${n?`<button class="btn-sup${ed.conf?' conf':''}" data-act="t-tout">${ed.conf?'Toucher encore : ignorer les '+n:'Ignorer tout le reste ('+n+')'}</button>`:''}</div>`
   +(L.length?L.map(t=>{ const a=actDeTx(t), v=proMontant(t), ms=(a?mandsDe(a.id):Object.values(S.mands)).sort(triMandat).filter(m=>m.etat!=='fini'||ecart(m.fin||derniereAct(m).slice(0,10)||today(),t.date)<60).slice(0,6);
-    return `<div class="tri"><div class="l1"><b>${esc(t.tiers||t.note||'Opération')}</b><span class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</span></div><span class="meta">${fJour(t.date)} ${t.date.slice(0,4)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span><div class="chips">${ms.map(m=>`<button class="chip coul" style="--c:${act(m.activite).couleur}" data-act="t-lier" data-tx="${t.id}" data-id="${m.id}">${esc(m.nom)}</button>`).join('')}<button class="chip" data-act="t-lier" data-tx="${t.id}" data-id="">Ignorer</button></div></div>`; }).join(''):'<div class="vide"><span class="gros">Tout est rangé</span></div>')
+    return `<div class="tri"><div class="l1"><b>${esc(t.tiers||t.note||'Opération')}</b><span class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</span></div><span class="meta">${fJour(t.date)} ${t.date.slice(0,4)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span><div class="chips">${ms.map(m=>`<button class="chip coul" style="--c:${coulM(m)}" data-act="t-lier" data-tx="${t.id}" data-id="${m.id}">${esc(m.nom)}</button>`).join('')}<button class="chip" data-act="t-lier" data-tx="${t.id}" data-id="">Ignorer</button></div></div>`; }).join(''):'<div class="vide"><span class="gros">Tout est rangé</span></div>')
   +(n>L.length?`<p class="aide">${n-L.length} de plus après celles-ci.</p>`:''));
 }
 function vActionsMandat(mid){ const m=S.mands[mid]; ed={k:'actm',id:mid};
