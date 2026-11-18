@@ -814,6 +814,28 @@ input::placeholder,textarea::placeholder{color:var(--ink-3)}
 .ov.run.col .sh-tips summary{color:var(--on-ph)}
 .ov.run.col .sh-tips p{color:rgba(26,23,20,.75)}
 .ov.run.col textarea,.ov.run.col input[type=text],.ov.run.col input[type=number]{background:rgba(26,23,20,.88);border-color:transparent;color:var(--ink)}
+/* barre de la séance en cours (hors écran guidé) */
+.runbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;width:min(520px,calc(100% - 24px));
+  display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:20px;background:var(--surface-2);border:1.5px solid var(--sc);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.runbar .rb-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.rb-h{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-s{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-s b{font-variant-numeric:tabular-nums}
+.runbar .btn.primary{flex:none;padding:10px 16px}
+.runbar.go{background:var(--sc);color:var(--on-ph);border-color:var(--sc)}
+.runbar.go .rb-h{color:rgba(26,23,20,.7)}
+.runbar.go .btn.primary{background:var(--on-ph);border-color:var(--on-ph);color:var(--sc)}
+body.runbar-on main{padding-bottom:110px}
+.run-el{font-family:var(--f-mono);font-size:13px;opacity:.75;font-variant-numeric:tabular-nums}
+/* « Ensuite » pendant la pause : le tour du groupe */
+.nx.grp{align-items:stretch;text-align:left;gap:2px}
+.nx.grp .eyebrow{text-align:center;margin-bottom:4px}
+.nx-it{display:flex;flex-direction:column;gap:1px;padding:4px 8px;border-radius:10px}
+.nx-it.first{background:rgba(26,23,20,.14)}
+.nx-sep{font-size:11.5px;text-align:center;opacity:.7}
+.nx.grp .nx-nm{font-size:15.5px}
+.nx.grp .nx-rx{font-size:13px}
+.sh-tips .breath{margin-top:6px}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -1252,7 +1274,8 @@ function render(){
   if (!S.week) S.week = currentWeekId();
   const views = { calendrier: vCalendar, semaine: vWeek, exos: vExos, suivi: vStats, nutrition: vNutrition, donnees: vData };
   const sk = {}; app.querySelectorAll("[data-sk]").forEach(el => { sk[el.dataset.sk] = el.scrollTop; });
-  app.innerHTML = (views[S.view] || vCalendar)() + ovHtml();
+  app.innerHTML = (views[S.view] || vCalendar)() + ovHtml() + runBar();
+  document.body.classList.toggle("runbar-on", !!app.querySelector(".runbar"));
   app.querySelectorAll("[data-sk]").forEach(el => { if (sk[el.dataset.sk]) el.scrollTop = sk[el.dataset.sk]; });
   document.body.classList.toggle("ov-open", !!(S.ui.ov && (S.view === "semaine" || S.ui.ov.type === "pe" || S.ui.ov.type === "exo")));
   drawCharts(); hydrateMedia();
@@ -1645,7 +1668,7 @@ function showSheet(wk, s, log){
       return `<div class="sh-it ${big ? "zoomed" : ""}">${ip ? `<button class="thumb ${big ? "big" : ""}" data-action="zoom" data-k="${esc(zk)}" aria-label="${big ? "Réduire" : "Agrandir"} l'image : ${esc(it.name)}"><img src="${BLANK}" data-mpath="${esc(ip)}" alt="${esc(it.name)}"></button>` : ""}
         <div class="sh-tx"><div class="sh-nm">${code ? `<span class="code">${code}</span>` : ""}<span>${esc(it.name)}</span>${it.mod ? `<span class="tag mod">modifié</span>` : ""}</div>
         ${it.tests ? "" : shChips(wk, s, it, f.kind === "simple" ? f.setRest[i] : 0)}
-        ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; });
+        ${it.cue ? `<div class="sh-cue">${esc(it.cue)}</div>` : ""}${it.tests ? "" : tipsBox(xo, it)}${doneLine(log.actual && log.actual[key])}${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(wk + ":" + key)}</div>` : ""}</div></div>`; });
     const kindTag = f.kind === "superset" ? (s.kind === "contraste" && items.length >= 3 ? "French contrast" : "Superset") : f.kind === "contraste" ? "Contraste par paires" : "";
     const title = b.name && (!grp || b.name !== kindLabel(b)) ? b.name : kindTag || "Exercices";
     const card = `<div class="sh-b ${grp ? "grp" : ""}">
@@ -1832,6 +1855,32 @@ function exoFilter(){
   const q = (S.ui.exq || "").toLowerCase(); const t = S.ui.extag || "";
   app.querySelectorAll(".exr").forEach(r => { r.hidden = !!((q && !r.dataset.n.includes(q)) || (t && !r.dataset.t.split("|").includes(t))); });
 }
+/* ---------- respiration (conseil par exercice) ----------
+   Texte de l'exercice (exos.breath) s'il y en a un ; sinon déduit du type d'effort. */
+const BREATH = {
+  lourd: "Avant chaque rep : grande inspiration dans le ventre, bloque et gaine. Garde l'air jusqu'au point dur, souffle en fin de montée. Reprends ton souffle entre les reps.",
+  normal: "Inspire pendant la phase qui descend ou s'étire, souffle pendant l'effort (pousser, tirer, remonter). Ne bloque pas longtemps.",
+  explosif: "Inspire et gaine juste avant, souffle court et sec au moment de l'impulsion. Ventre gainé à la réception.",
+  sprint: "Deux ou trois grandes respirations avant le départ, puis respiration libre. Pendant la pause, expire longuement pour faire redescendre le cœur.",
+  cardio: "Respiration calme, par le nez si possible. Si tu ne peux plus parler, ralentis.",
+  intervalles: "Pendant l'effort, respiration libre et profonde. Pendant la récup, expire lentement et longuement.",
+  iso: "Respire en continu, petites respirations dans le ventre, sans relâcher la gaine. Ne bloque pas l'air.",
+  mobilite: "Expire lentement en allant dans l'amplitude, inspire en revenant. Respiration calme."
+};
+function breathAuto(xo, it){
+  const tags = ((xo && xo.tags) || []).join(" "); const nm = ((xo && xo.name) || (it && it.name) || "") + " " + tags;
+  if (/mobilit|étirement|stretch|yoga/i.test(nm)) return BREATH.mobilite;
+  if (/intervalle|vo2|fractionn/i.test(nm)) return BREATH.intervalles;
+  if (/zone 2|footing|vélo|trot|cardio/i.test(nm)) return BREATH.cardio;
+  if (/sprint|accélération|run\b|course/i.test(nm) && !(it && hasKg(it))) return BREATH.sprint;
+  if (/plyo|saut|sauté|bond|hop|catch|lâché|explosi|kipping|swing|clap|rebond/i.test(nm)) return BREATH.explosif;
+  if ((it && holdSec(it)) || /isométrie|gainage|planche|hollow|l-sit|chaise contre|maintien\b|iso\b/i.test(nm)) return BREATH.iso;
+  if (it && hasKg(it)) { const r = repsRange(it); return r && r[1] <= 6 ? BREATH.lourd : BREATH.normal; }
+  return BREATH.normal;
+}
+const breathOf = (xo, it) => (xo && xo.breath) || breathAuto(xo, it);
+/* bloc « Conseils » : conseils de l'exercice + respiration */
+const tipsBox = (xo, it) => `<details class="sh-tips"><summary>Conseils</summary>${xo && xo.tips ? `<p>${esc(xo.tips)}</p>` : ""}<p class="breath"><b>Respiration</b> · ${esc(breathOf(xo, it))}</p></details>`;
 /* fiche d'un exercice : lecture, puis modification */
 function exoSheet(){
   const o = S.ui.ov; const E = S.ui.exoEdit; const x = E ? E.d : exoOf(o.id); if (!x) return "";
@@ -1844,6 +1893,7 @@ function exoSheet(){
       <div class="extags lg">${(x.tags || []).map(t => `<i>${esc(t)}</i>`).join("") || `<i class="none">sans tag</i>`}</div>
       ${x.cue ? `<p class="excue">${esc(x.cue)}</p>` : ""}
       ${x.tips ? `<div class="extips"><b>Conseils</b><p>${esc(x.tips)}</p></div>` : ""}
+      <div class="extips"><b>Respiration</b>${x.breath ? "" : ` <span class="muted" style="font-size:12px">· conseil automatique</span>`}<p>${esc(breathOf(x))}</p></div>
       ${x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noopener">Voir une démo ↗</a>` : ""}
       <div class="exstat"><b>Force</b>${e ? `<p>1RM estimé ≈ <b>${e1Txt(x.id, e)}</b>${e.src === "ref" ? ` <span class="muted">(d'après ${esc((exoOf(e.refId) || {}).name || e.refId)} × ${x.ref.pct} %)</span>` : ` <span class="muted">(${wkLabel(e.wk)})</span>`}</p><div class="exr5">${r5}</div><p class="muted" style="font-size:12px;margin:0">Charges conseillées avec 2 reps en réserve.</p>`
         : `<p class="muted">Pas encore de séries notées${ref ? "" : ". Choisis un exercice proche dans « Modifier » pour estimer une charge."}</p>`}</div>
@@ -1859,6 +1909,7 @@ function exoSheet(){
         <label class="btn small" for="exo-img">${img ? "Changer" : "Ajouter une image"}</label><input id="exo-img" type="file" accept="image/*" hidden>${img ? `<button class="btn small ghost" data-action="exo-noimg">Retirer</button>` : ""}</div></div>
       <div class="field"><label for="exo-cue">Consigne courte</label><input id="exo-cue" type="text" data-exo="cue" value="${esc(d.cue || "")}" placeholder="ex. dos neutre, 2 reps en réserve"></div>
       <div class="field"><label for="exo-tips">Conseils</label><textarea id="exo-tips" data-exo="tips" rows="4" placeholder="Technique, erreurs à éviter, variantes…">${esc(d.tips || "")}</textarea></div>
+      <div class="field"><label for="exo-breath">Respiration</label><textarea id="exo-breath" data-exo="breath" rows="2" placeholder="Vide = conseil automatique : ${esc(breathAuto(d))}">${esc(d.breath || "")}</textarea></div>
       <div class="field"><label for="exo-link">Lien vers une vidéo</label><input id="exo-link" type="url" data-exo="link" value="${esc(d.link || "")}" placeholder="https://…"></div>
       <label class="pe-chk"><input type="checkbox" data-exo="bw" ${d.bw ? "checked" : ""}><span>Au poids du corps<small>La charge notée est le lest ; la force estimée compte ton poids.</small></span></label>
       <div class="field"><span class="lbl">Exercice proche, pour estimer la charge tant que celui-ci n'a pas de séries notées</span>
@@ -1887,7 +1938,7 @@ function exoAction(a, b){
     const d = E.d; const name = (d.name || "").trim(); if (!name) { toast("Donne un nom à l'exercice."); return; }
     const id = d.id || (() => { let k = slug(name), n = 2; while (S.data.exos[k] || exoList().some(y => y.id === k)) k = slug(name) + "-" + n++; return k; })();
     const doc = { ...(S.data.exos[id] || {}), ...d, name, edited: true }; delete doc.id; delete doc.loose;
-    ["cue","tips","link"].forEach(f => { if (!doc[f]) delete doc[f]; }); if (!doc.bw) delete doc.bw; if (!doc.ref || !doc.ref.id) delete doc.ref;
+    ["cue","tips","link","breath"].forEach(f => { if (!doc[f]) delete doc[f]; }); if (!doc.bw) delete doc.bw; if (!doc.ref || !doc.ref.id) delete doc.ref;
     put("exos", id, doc); S.ui.exoEdit = null; S.ui.ov.id = id; toast("Exercice enregistré");
     if (E.onSave) E.onSave(id);
   }
@@ -2083,6 +2134,11 @@ const STYPES = [
   { k:"test", l:"Tests", e:"📏", def:{ sets:3, reps:"1" }, g:{ kind:"simple" }, tips:["Frais, même terrain, mêmes chaussures, même heure.","3 essais, garder le meilleur."] },
   { k:"autre", l:"Autre", e:"🤸", def:{ sets:3, reps:"8" }, g:{ kind:"simple" }, tips:[] },
 ];
+/* la respiration, en dernier conseil de chaque type de séance */
+STYPES.forEach(t => { const b = { hypertrophie: BREATH.normal, force: BREATH.lourd, puissance: BREATH.explosif,
+  contraste: "Partie lourde : grande inspiration, bloque et gaine. Partie explosive : souffle court et sec à l'impulsion.",
+  vitesse: BREATH.sprint, plyo: BREATH.explosif, endurance: BREATH.cardio, intervalles: BREATH.intervalles, mobilite: BREATH.mobilite }[t.k];
+  if (b && t.tips) t.tips = [...t.tips, "Respiration : " + b.charAt(0).toLowerCase() + b.slice(1)]; });
 const stype = k => STYPES.find(t => t.k === k) || STYPES.find(t => t.k === "autre");
 /* charge écrite dans le programme ↔ nombre */
 const loadKg = it => /kg/i.test(it.load || "") ? (numRange(it.load) || [null])[0] : null;
@@ -2477,7 +2533,8 @@ function runSteps(s, st){
     const items = all.map((it, i) => ({ it, i })).filter(x => !x.it.off); if (!items.length) return;
     const code = i => grp ? (all.length > 1 ? letter + (i+1) : letter) : "";
     const n = it => typeof it.sets === "number" && it.sets > 0 ? it.sets : 1;
-    const mk = (it, i, set, rest) => ({ key: s.id + ":" + it.id, it, code: code(i), set, of: n(it), rest, bname: kindLabel(b) });
+    const g = L * 100 + steps.length; const rounds = grp ? Math.max(...items.map(x => n(x.it))) : 0;
+    const mk = (it, i, set, rest) => ({ key: s.id + ":" + it.id, it, code: code(i), set, of: n(it), rest, bname: kindLabel(b), grp, g, rounds });
     const first = steps.length;
     if (grp) {
       const seq = restSeq(b); const R = Math.max(...items.map(x => n(x.it)));
@@ -2540,12 +2597,21 @@ function holdCtl(step){
   return left > 0 ? `<div class="holdrun"><span class="hold-t" id="hold-t">${Math.floor(n/60)}:${String(n % 60).padStart(2, "0")}</span><button class="btn small" data-action="run-hold-stop">Arrêter</button></div>`
     : `<div class="holdrun done"><span class="hold-t">✓ ${fmtSec(sec)}</span><button class="btn small" data-action="run-hold">Relancer</button></div>`;
 }
+/* « Ensuite » pendant une pause : pour un superset ou un contraste, tout le tour qui vient (jusqu'à la fin du tour du groupe) */
+function nextBox(steps, i, skip, log){
+  const nx = steps[i]; const seq = [nx];
+  if (nx.grp) for (let j = i + 1; j < steps.length; j++) { const x = steps[j]; if (x.g !== nx.g || x.set !== nx.set) break; if (!skip.has(x.key)) seq.push(x); }
+  const line = x => `<div class="nx-nm">${x.code ? `<span class="code">${x.code}</span>` : ""}<b>${esc(x.it.name)}</b></div><div class="nx-rx">${esc(stepTarget(x, log))}</div>`;
+  if (seq.length < 2) return `<div class="nx"><span class="eyebrow">Ensuite</span>${line(nx)}</div>`;
+  return `<div class="nx grp"><span class="eyebrow">Ensuite · ${esc(nx.bname)}${nx.rounds > 1 ? " · tour " + nx.set + "/" + nx.rounds : ""}</span>
+    ${seq.map((x, k) => (k ? `<div class="nx-sep">${seq[k-1].rest ? "pause " + restTxt(seq[k-1].rest) : "↓ enchaîné"}</div>` : "") + `<div class="nx-it ${k ? "" : "first"}">${line(x)}</div>`).join("")}</div>`;
+}
 function runView(){
   const c = runCtx(); if (!c) return "";
   const { R, s, log, st, steps } = c; const n = steps.length;
   const pct = R.phase === "done" ? 100 : R.phase === "check" ? 0 : Math.round(R.i / n * 100);
   const top = `<div class="run-top"><button class="x" data-action="ov-close" aria-label="Quitter la séance (la progression est gardée)">✕</button>
-    <span class="run-sn">${esc(s.short || s.title)}</span><span class="run-ct">${R.phase === "set" || R.phase === "rest" ? (R.i + 1) + " / " + n : ""}</span></div>
+    <span class="run-sn">${esc(s.short || s.title)}</span>${st.run && st.run.t0 && R.phase !== "done" ? `<span class="run-el" id="run-el" title="Temps depuis le début">${elapsedTxt(st.run.t0)}</span>` : ""}<span class="run-ct">${R.phase === "set" || R.phase === "rest" ? (R.i + 1) + " / " + n : ""}</span></div>
     <div class="run-pb"><i style="width:${pct}%"></i></div>`;
   let body = "", foot = "";
   if (R.phase === "check") {
@@ -2567,7 +2633,7 @@ function runView(){
       ${it.reps ? `<div class="st-reps">${esc(fmtReps(it.reps))}</div>` : ""}${other}${(() => { const lp = hasKg(it) ? loadPlan(R.wk, { id: R.sid }, it) : null;
         return lp && lp.mode === "double" && lp.aim ? `<div class="st-aim">${lp.top ? "Tu avais tout fait : charge montée, repars à " + lp.aim + " reps" : "Vise " + lp.aim + " reps à cette charge"}</div>` : ""; })()}${holdSec(it) ? holdCtl(step) : ""}
       ${step.rest === 0 && steps[R.i + 1] ? `<div class="st-chain">Puis enchaîne directement : ${steps[R.i + 1].code ? `<b>${steps[R.i + 1].code}</b> ` : ""}${esc(steps[R.i + 1].it.name)}</div>` : ""}
-      ${it.cue ? `<p class="st-cue">${esc(it.cue)}</p>` : ""}${(() => { const xo = it.tests ? null : exoOf(it.ex || it.id); return xo && xo.tips ? `<details class="sh-tips"><summary>Conseils</summary><p>${esc(xo.tips)}</p></details>` : ""; })()}
+      ${it.cue ? `<p class="st-cue">${esc(it.cue)}</p>` : ""}${it.tests ? "" : tipsBox(exoOf(it.ex || it.id), it)}
       ${it.tests ? testRow(it) : ""}${it.videos ? `<div class="cuwrap">${cuStrip(R.wk + ":" + step.key)}</div>` : ""}
       ${kgCtl}${repsCtl}
     </div>`;
@@ -2578,7 +2644,7 @@ function runView(){
       <span class="eyebrow">Pause</span>
       <div class="rc-time" id="rc-time">${Math.floor(sec/60)}:${String(sec % 60).padStart(2, "0")}</div>
       <div class="rc-bar"><i id="rc-bar" style="width:${R.restTotal ? (1 - left / R.restTotal) * 100 : 0}%"></i></div>
-      ${nx ? `<div class="nx"><span class="eyebrow">Ensuite</span><div class="nx-nm">${nx.code ? `<span class="code">${nx.code}</span>` : ""}<b>${esc(nx.it.name)}</b></div><div class="nx-rx">${esc(stepTarget(nx, log))}</div></div>` : ""}
+      ${nx ? nextBox(steps, R.i, c.skip, log) : ""}
     </div>`;
     foot = `<button class="btn" data-action="run-plus">+15 s</button><button class="btn primary big" data-action="run-next">Passer la pause</button>`;
   } else {
@@ -2602,6 +2668,7 @@ function ovOpen(type, sid){
 }
 function ovClose(fromPop){
   const wasRun = S.ui.ov && S.ui.ov.type === "run";
+  if (wasRun && S.run && (S.run.phase === "set" || S.run.phase === "rest")) RUN.bg = { wk: S.run.wk, sid: S.run.sid, seen: Date.now() };
   S.ui.ov = null; S.ui.edit = null; S.ui.exoEdit = null; S.pe = null; S.run = null; clearInterval(RUN.iv); RUN.iv = null;
   if (wasRun) { try { RUN.lock && RUN.lock.release(); } catch(e) {} RUN.lock = null; }
   if (!fromPop) { try { if (history.state && history.state.ov) history.back(); } catch(e) {} }
@@ -2609,12 +2676,13 @@ function ovClose(fromPop){
 }
 window.addEventListener("popstate", () => { if (S.ui.ov) ovClose(true); });
 function wakeLock(){ try { navigator.wakeLock && navigator.wakeLock.request("screen").then(l => RUN.lock = l).catch(() => {}); } catch(e) {} }
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.run) { wakeLock(); runTick(); } });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState !== "visible") return; if (S.run) { wakeLock(); runTick(); } bgTick(); });
 function runStart(sid){
   const plan = planOf(S.week); const s = plan.sessions.find(x => x.id === sid); if (!s) return;
   const log = S.data.logs[S.week] || {}; const st = (log.sessions && log.sessions[sid]) || {}; const n = runSteps(s, st).length; if (!n) return;
-  const resume = !st.done && st.run && st.run.i < n;
-  S.run = { wk: S.week, sid, phase: resume ? "set" : "check", i: resume ? st.run.i : 0, kg: {}, reps: {}, restEnd: 0, restTotal: 0 };
+  const resume = !st.done && st.run && st.run.i < n; const inRest = resume && st.run.restEnd > Date.now();
+  S.run = { wk: S.week, sid, phase: resume ? (inRest ? "rest" : "set") : "check", i: resume ? st.run.i : 0, kg: {}, reps: {}, restEnd: inRest ? st.run.restEnd : 0, restTotal: inRest ? (st.run.restTotal || st.run.restEnd - Date.now()) : 0 };
+  RUN.bg = null; clearInterval(RUN.iv); RUN.iv = inRest ? setInterval(runTick, 250) : null;
   if (S.ui.ov) S.ui.ov = { type: "run", sid }; else ovOpen("run", sid);
   wakeLock(); render();
 }
@@ -2624,24 +2692,57 @@ function runTick(){
     const n = Math.ceil(left / 1000); const t = document.getElementById("hold-t"); if (t) t.textContent = Math.floor(n/60) + ":" + String(n % 60).padStart(2, "0"); return; }
   if (!R || R.phase !== "rest") { clearInterval(RUN.iv); RUN.iv = null; return; }
   const left = R.restEnd - Date.now();
-  if (left <= 0) { R.phase = "set"; clearInterval(RUN.iv); RUN.iv = null; render(); return; }
+  if (left <= 0) { R.phase = "set"; R.restEnd = 0; clearInterval(RUN.iv); RUN.iv = null; buzz(); render(); return; }
   const sec = Math.ceil(left / 1000); const t = document.getElementById("rc-time"); const b = document.getElementById("rc-bar");
   if (t) t.textContent = Math.floor(sec/60) + ":" + String(sec % 60).padStart(2, "0");
   if (b) b.style.width = (R.restTotal ? (1 - left / R.restTotal) * 100 : 0) + "%";
 }
+/* ---------- séance en cours, hors de l'écran guidé ----------
+   Le temps total et la pause continuent (la fin de pause est gardée dans le journal : run.restEnd).
+   Une barre en bas de l'app montre où on en est ; quand la pause finit : vibration + message « À toi ». */
+const elapsedTxt = t0 => { const sec = Math.max(0, Math.floor((Date.now() - t0) / 1000)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, x = sec % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+const clockTxt = ms => { const sec = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); };
+function buzz(){ try { navigator.vibrate && navigator.vibrate([140, 70, 140]); } catch(e) {} }
+function runSaveRest(R, s){ patchLog(R.wk, l => { const cur = l.sessions && l.sessions[s.id]; if (!cur || !cur.run) return;
+  if (R.restEnd > Date.now()) { cur.run.restEnd = R.restEnd; cur.run.restTotal = R.restTotal; } else { delete cur.run.restEnd; delete cur.run.restTotal; } }); }
+function bgInfo(){
+  const g = RUN.bg; if (!g) return null; const s = planOf(g.wk).sessions.find(x => x.id === g.sid); if (!s) return null;
+  const st = ((S.data.logs[g.wk] || {}).sessions || {})[s.id]; if (!st || st.done || !st.run) return null;
+  const steps = runSteps(s, st); const step = steps[st.run.i]; if (!step) return null;
+  return { s, st, step, restEnd: st.run.restEnd || 0, t0: st.run.t0 };
+}
+function runBar(){
+  if (!RUN.bg || (S.ui.ov && S.ui.ov.type === "run")) return ""; const b = bgInfo(); if (!b) return "";
+  const resting = b.restEnd > Date.now(); const nm = (b.step.code ? b.step.code + " " : "") + b.step.it.name;
+  return `<div class="runbar ${resting ? "" : "go"}" style="--sc:${sessSc(RUN.bg.wk, b.s)}" role="status">
+    <div class="rb-t"><span class="rb-h"><span id="rb-el">${b.t0 ? elapsedTxt(b.t0) : ""}</span> · ${esc(b.s.short || b.s.title)}</span>
+      <span class="rb-s">${resting ? `Pause <b id="rb-rest">${clockTxt(b.restEnd - Date.now())}</b> · ensuite ${esc(nm)}` : `À toi : <b>${esc(nm)}</b>`}</span></div>
+    <button class="btn primary" data-action="bg-resume">Reprendre</button></div>`;
+}
+function bgTick(){
+  const el = document.getElementById("run-el"); if (el && S.run) { const st = ((S.data.logs[S.run.wk] || {}).sessions || {})[S.run.sid]; if (st && st.run && st.run.t0) el.textContent = elapsedTxt(st.run.t0); }
+  if (!RUN.bg || (S.ui.ov && S.ui.ov.type === "run")) return;
+  const b = bgInfo(); if (!b) { RUN.bg = null; render(); return; }
+  const e = document.getElementById("rb-el"); if (e && b.t0) e.textContent = elapsedTxt(b.t0);
+  const r = document.getElementById("rb-rest");
+  if (b.restEnd && b.restEnd <= Date.now() && RUN.bg.done !== b.restEnd) { RUN.bg.done = b.restEnd; buzz(); toast("À toi : " + b.step.it.name); render(); return; }
+  if (r) r.textContent = clockTxt(b.restEnd - Date.now());
+}
+setInterval(bgTick, 1000);
 function nextIdx(steps, from, skip){ let j = from; while (j < steps.length && skip.has(steps[j].key)) j++; return j; }
 function runAdvance(c, j, rest){
-  const { R, s, steps } = c; R.hold = null;
+  const { R, s, steps } = c; R.hold = null; const rEnd = rest > 0 && j < steps.length ? Date.now() + rest * 1000 : 0;
   patchLog(R.wk, l => {
     l.sessions ||= {}; const cur = { ...(l.sessions[s.id] || {}) }; const run = { t0: Date.now(), skip: [], ...(cur.run || {}) };
     if (j >= steps.length) {
       const skip = new Set(run.skip); cur.done = true; cur.date = ds(todayUTC()); cur.dur = Math.round((Date.now() - run.t0) / 60000);
       cur.nSets = steps.filter(x => !skip.has(x.key)).length; delete cur.run;
-    } else cur.run = { ...run, i: j };
+    } else { cur.run = { ...run, i: j }; if (rEnd) { cur.run.restEnd = rEnd; cur.run.restTotal = rest * 1000; } else { delete cur.run.restEnd; delete cur.run.restTotal; } }
     l.sessions[s.id] = cur;
   });
-  if (j >= steps.length) R.phase = "done";
-  else if (rest > 0) { R.i = j; R.phase = "rest"; R.restTotal = rest * 1000; R.restEnd = Date.now() + R.restTotal; clearInterval(RUN.iv); RUN.iv = setInterval(runTick, 250); }
+  if (j >= steps.length) { R.phase = "done"; RUN.bg = null; }
+  else if (rest > 0) { R.i = j; R.phase = "rest"; R.restTotal = rest * 1000; R.restEnd = rEnd; clearInterval(RUN.iv); RUN.iv = setInterval(runTick, 250); }
   else { R.i = j; R.phase = "set"; }
   render(); const ov = app.querySelector(".ov.run .run-body"); if (ov) ov.scrollTop = 0;
 }
@@ -2674,8 +2775,8 @@ function runAction(a, b){
   }
   else if (a === "run-hold") { const step = steps[R.i]; if (!step) return; R.hold = { k: step.key + "#" + step.set, end: Date.now() + holdSec(step.it) * 1000 }; clearInterval(RUN.iv); RUN.iv = setInterval(runTick, 250); render(); }
   else if (a === "run-hold-stop") { R.hold = null; clearInterval(RUN.iv); RUN.iv = null; render(); }
-  else if (a === "run-plus") { R.restEnd += 15000; R.restTotal += 15000; runTick(); }
-  else if (a === "run-next") { R.phase = "set"; clearInterval(RUN.iv); RUN.iv = null; render(); }
+  else if (a === "run-plus") { R.restEnd += 15000; R.restTotal += 15000; runSaveRest(R, s); runTick(); }
+  else if (a === "run-next") { R.phase = "set"; R.restEnd = 0; clearInterval(RUN.iv); RUN.iv = null; runSaveRest(R, s); render(); }
 }
 function numRange(t){ const m = String(t ?? "").replace(",", ".").match(/(\d+(?:\.\d+)?)(?:\s*[–-]\s*(\d+(?:\.\d+)?))?/); return m ? [+m[1], m[2] ? +m[2] : +m[1]] : null; }
 function chipRange(lo, hi){ let a = Math.max(1, Math.floor(lo * 0.75)), b = Math.max(a, Math.ceil(hi * 1.25)); const step = (b - a) > 10 ? 2 : 1; const out = []; for (let v = a; v <= b; v += step) out.push(v); return out; }
@@ -3058,6 +3159,7 @@ app.addEventListener("click", async e => {
   else if (a === "show") { ovOpen("show", b.dataset.sid); render(); }
   else if (a === "run") { runStart(b.dataset.sid); }
   else if (a === "ov-close") { ovClose(); }
+  else if (a === "bg-resume") { const g = RUN.bg; if (!g) return; setView("semaine", g.wk); runStart(g.sid); }
   else if (a.startsWith("run-")) { runAction(a, b); }
   else if (a.startsWith("ed")) { edAction(a, b); }
   else if (a.startsWith("pe-")) { peAction(a, b); }
