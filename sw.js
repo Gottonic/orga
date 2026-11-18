@@ -1,10 +1,10 @@
 /* ORGA : un seul service worker pour l'accueil et toutes les apps (l'Établi, la Banque, la Forge, le Marché, la Mine…).
    Fonctionne hors ligne. Changer VERSION à chaque mise à jour du code. */
-const VERSION = 'orga-2026-11-18-15';
+const VERSION = 'orga-2026-11-18-16';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
-  'commun/supabase.js', 'commun/projets.js', 'commun/dossier.js', 'commun/ampoule.js', 'commun/cadre.css', 'commun/cadre.js', 'commun/lieux.css', 'commun/pictos.js', 'commun/emojis.js', 'commun/chercher.js', 'reglages/',
+  'commun/supabase.js', 'commun/projets.js', 'commun/dossier.js', 'commun/ampoule.js', 'commun/cadre.css', 'commun/cadre.js', 'commun/lieux.css', 'commun/pictos.js', 'commun/emojis.js', 'commun/chercher.js', 'commun/achats.js', 'reglages/',
   'commun/fonts/unbounded-latin-500-normal.woff2', 'commun/fonts/unbounded-latin-700-normal.woff2',
   'commun/fonts/space-grotesk-latin-400-normal.woff2', 'commun/fonts/space-grotesk-latin-500-normal.woff2', 'commun/fonts/space-grotesk-latin-600-normal.woff2', 'commun/fonts/space-grotesk-latin-700-normal.woff2',
   'commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2', 'commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2',

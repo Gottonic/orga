@@ -308,7 +308,7 @@ const PRIO=new Set(['pelee','concentre','conserve','boite','bocal','surgele','co
 
 let S={mags:{},types:{},arts:{},envies:{},cats:{},regl:{}};
 let sb=null, UID=null, EMAIL='', prev={}, dirty=new Set(), lastPull=null, pushing=false, pushTimer=null, syncErr='', booted=false;
-const ui={tab:lsGet('marche-tab')||'liste', ici:lsGet('marche-ici')||'', q:'', bq:''};
+const ui={tab:lsGet('marche-tab')||'liste', ici:lsGet('marche-ici')||'', projet:lsGet('marche-projet')||'', q:'', bq:''};
 if(!['liste','basiques','mijote','magasins'].includes(ui.tab)) ui.tab='liste';
 let ed=null; /* ce qui est ouvert dans la fenêtre */
 const CK=()=>'marche-cache-'+UID;
@@ -531,6 +531,7 @@ function section(g,rows,extra){
 }
 function rowListe(a,ref,fait,ici){
   const autres=ici?[]:ouDe(a).filter(r=>r!==ref), meta=[];
+  if(a.projet) meta.push(esc((a.projetE?a.projetE+' ':'')+(a.projetNom||'Projet')));
   if(a.note) meta.push(esc(a.note));
   if(a.basique) meta.push('<span class="v">basique</span>'+(a.auto?' · revenu avec le rythme':''));
   if(autres.length) meta.push('aussi : '+autres.map(r=>esc(refNom(r,true))).join(', '));
@@ -545,7 +546,11 @@ function vListe(){
       ms.map(m=>{ const n=act.filter(a=>dispo(a,m.id)).length; return `<button data-act="ici" data-id="${m.id}" aria-pressed="${ui.ici===m.id}" class="${n?'':'vide'}">${esc(m.nom)} <span class="n">${n}</span></button>`; }).join('')+'</div>';
   }
   h+=`<form class="qa" id="qa-form" autocomplete="off"><input id="qa" type="text" placeholder="${mi?'Ajouter chez '+esc(mi.nom)+'…':'Ajouter un article…'}" value="${esc(ui.q)}" enterkeyhint="done" autocapitalize="sentences" aria-label="Ajouter un article"><button type="submit" aria-label="Ajouter">${PLUS}</button></form><div class="sugg" id="qa-sugg" hidden></div>`;
-  const vis=mi?act.filter(a=>dispo(a,ui.ici)):act;
+  /* achats des projets de l'Établi (18.11) : un filtre par projet */
+  const PJ=[...new Map(act.filter(a=>a.projet).map(a=>[a.projet,{id:a.projet,nom:a.projetNom||'Projet',e:a.projetE||''}])).values()];
+  if(ui.projet&&!PJ.some(x=>x.id===ui.projet)) ui.projet='';
+  if(PJ.length) h=h.replace('<form class="qa"',`<div class="cap" id="pj-lab">Projets</div><div class="ici" role="group" aria-labelledby="pj-lab"><button data-act="projet" data-id="" aria-pressed="${!ui.projet}">Tous</button>${PJ.map(x=>`<button data-act="projet" data-id="${esc(x.id)}" aria-pressed="${ui.projet===x.id}">${esc((x.e?x.e+' ':'')+x.nom)} <span class="n">${act.filter(a=>a.projet===x.id).length}</span></button>`).join('')}</div><form class="qa"`);
+  const vis=(mi?act.filter(a=>dispo(a,ui.ici)):act).filter(a=>!ui.projet||a.projet===ui.projet);
   if(vis.length&&mi) h+=section({ref:'m:'+mi.id,items:vis},lignesRayons(vis,mi.id,a=>rowListe(a,'m:'+mi.id,false,true)));
   else if(vis.length) h+=grouper(vis,'').map(g=>section(g,lignesRayons(g.items,magDeRef(g.ref),a=>rowListe(a,g.ref)))).join('');
   else if(act.length&&mi) h+=`<div class="vide"><span class="gros">Rien à acheter ici</span>Rien sur ta liste ne se trouve chez ${esc(mi.nom)}.</div>`;
@@ -978,6 +983,7 @@ document.addEventListener('click',e=>{
     case 'fermer': fermer(); break;
     case 'reglages': vReglages(); break;
     case 'ici': ui.ici=id||''; lsSet('marche-ici',ui.ici); render(); break;
+    case 'projet': ui.projet=id||''; lsSet('marche-projet',ui.projet); render(); break;
     case 'cocher': { const a=S.arts[id]; if(!a||!a.liste) break; acheter(a); save(); render(); break; }
     case 'decocher': { const a=S.arts[id]; if(!a||!a.pris) break; annulerAchat(a); save(); render(); break; }
     case 'art': ouvrirArt(id); break;
@@ -1110,6 +1116,8 @@ async function enter(user){
   if(!Object.keys(S.types).length){ semer(); save(); render(); }
   if(!Object.keys(S.cats).length){ semerRayons(); save(); render(); }
   if(accentuerRayons()){ save(); render(); }
+  /* achats ajoutés depuis la fiche d'un projet (Établi) : rangés dans leur rayon */
+  { let ch=false; arts().forEach(a=>{ if(!a.cat||!S.cats[a.cat]){ a.cat=deviner(a.nom); ch=true; } }); if(ch){ save(); render(); } }
   entretien(); push();
   try{ if(/[?&]dans=accueil/.test(location.search)&&window.parent!==window) parent.postMessage({locus:1,etat:'charge'},location.origin); }catch(e){} /* prête pour les fenêtres rapides de l'accueil */
   /* depuis l'accueil : la ligne d'achat, et les idées du vide-tête envoyées au Marché par la routine du lundi */
