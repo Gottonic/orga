@@ -249,7 +249,7 @@ function vAccueil(){
   const N=semaineRoutine(), fait=((B['s:routine']||{}).fait||[]).includes(N);
   const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour();
   let h='';
-  if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, vide-tête, semaine, puis Claude</small></span>${P('suivant')}</button>`;
+  if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, vide-tête, semaine, Banque, puis Claude</small></span>${P('suivant')}</button>`;
   h+=`<form class="ligne" id="f-vide" autocomplete="off"><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
   if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
   const grandes=[], carres=[];
@@ -277,7 +277,7 @@ function render(){ if(!UID) return; if(document.activeElement&&$main.contains(do
 /* =============================== La routine du lundi =============================== */
 const $plein=document.getElementById('plein');
 const R={etape:1, sel:null, note:null};
-const ETAPES=['Ta semaine passée','Le journal','Vider la tête','Placer la semaine','Pour Claude'];
+const ETAPES=['Ta semaine passée','Le journal','Vider la tête','Placer les projets','Placer les entraînements','La Banque','Pour Claude'];
 function ouvrirRoutine(){ R.etape=1; R.sel=null; R.note=null; $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
 function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
@@ -296,34 +296,46 @@ function vRoutine(){
   if(e===3){ const L=lignes('vide');
     const opts=PB?[...PB.domaines().filter(d=>!d.auto).map(d=>['d:'+d.id,(d.emoji||'')+' '+d.name]),...PB.liste().filter(p=>!p.closed).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['p:'+p.id,(p.emoji||'')+' '+p.name])]:[];
     c=tete('Vider la tête','Range chaque idée dans un projet ou un domaine, garde-la pour plus tard, ou archive-la.')+(L.length?L.map(n=>`<div class="idee"><span class="t">${esc(n.t||'…')}</span><div class="act"><select data-r="ranger" data-id="${esc(n.id)}" aria-label="Ranger dans"><option value="">Ranger dans…</option>${opts.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select><button type="button" data-r="marche" data-id="${esc(n.id)}">Au Marché</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div></div>`).join(''):`<div class="boite"><b>Le vide-tête est vide.</b><span class="note">Rien à trier cette semaine.</span></div>`)+(L.length?`<p class="note">Ce que tu ne ranges pas reste dans le vide-tête.</p>`:''); }
-  if(e===4) c=tete('Placer la semaine','Choisis un projet, un mandat ou une séance, puis touche un jour. Touche-le sur un jour pour l’enlever. 5 projets au plus, dont 3 sur la semaine entière.')+vPlacer(N);
-  if(e===5) c=tete('Pour Claude','Tout est prêt : copie le texte et colle-le dans la séance du lundi.')+`<pre class="claude" id="t-claude">${esc(texteClaude(N,Pr))}</pre><button class="btn-acc" type="button" data-r="copier" style="height:50px;justify-content:center">${P('copier')}Copier pour Claude</button>`;
-  const pied=`${e>1?'<button class="sec" type="button" data-r="prec">Retour</button>':''}<button class="pri" type="button" data-r="suiv">${e<5?'Suivant':'Terminer'}</button>`;
+  if(e===4) c=tete('Placer les projets','Choisis un projet ou un mandat, puis touche un jour, ou « Semaine » pour toute la semaine. Touche-le sur un jour pour l’enlever. 5 projets au plus, dont 3 sur la semaine entière.')+vPlacer(N,'p');
+  if(e===5) c=tete('Placer les entraînements','Choisis une séance de la Forge, puis touche son jour. Touche-la sur un jour pour l’enlever.')+vPlacer(N,'f');
+  if(e===6){ const b=((B['s:routine']||{}).banque)||{}, ok=b.sem===N;
+    c=tete('La Banque','Le point de la semaine : importer le relevé Yuh, classer les opérations, vérifier les saisies.')+(ok?`<div class="boite"><b>Point fait</b><span class="note">${esc(chf(b.depenses))} dépensés la semaine passée (privé).</span><button type="button" class="chip" data-r="banque" style="align-self:flex-start">Rouvrir la Banque</button></div>`:`<button type="button" class="btn-acc" data-r="banque" style="height:50px;justify-content:center;background:#D6B15E;color:#15302A">${P('banque')}Ouvrir le point de la Banque</button><p class="note">« Point terminé » dans la Banque te ramène ici. Tu peux aussi passer cette étape.</p>`); }
+  if(e===7) c=tete('Pour Claude','Tout est prêt : copie le texte et colle-le dans la séance du lundi.')+`<pre class="claude" id="t-claude">${esc(texteClaude(N,Pr))}</pre><button class="btn-acc" type="button" data-r="copier" style="height:50px;justify-content:center">${P('copier')}Copier pour Claude</button>`;
+  const pied=`${e>1?'<button class="sec" type="button" data-r="prec">Retour</button>':''}<button class="pri" type="button" data-r="suiv">${e<ETAPES.length?'Suivant':'Terminer'}</button>`;
   const y=document.getElementById('corps')?document.getElementById('corps').scrollTop:0, meme=$plein.dataset.e===String(e);
-  $plein.innerHTML=cadrePlein('Démarrer la semaine',e+'/5',c,pied); $plein.dataset.e=e;
+  $plein.innerHTML=cadrePlein('Démarrer la semaine',e+'/'+ETAPES.length,c,pied); $plein.dataset.e=e;
   if(meme) document.getElementById('corps').scrollTop=y;
 }
 /* étape 4 : projets (p.days, p.weeks) et séances de la Forge (jour 0…6) */
 function enSemaine(p,N){ const m=Projets.lundi(N), f=plusJ(m,6); return (p.weeks||[]).includes(N)||(p.days||[]).some(d=>d>=m&&d<=f); }
-function vPlacer(N){
+/* mode 'p' : projets et mandats (jours, ou toute la semaine) ; mode 'f' : séances de la Forge (un jour), les projets en fond */
+function vPlacer(N,mode){
   const m=Projets.lundi(N), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[];
   const P_=PB?PB.liste().filter(p=>!p.closed&&!p.later&&p.size!=='perm'):[];
   const sem=P_.filter(p=>enSemaine(p,N)), autres=P_.filter(p=>!enSemaine(p,N)).sort((a,b)=>(b.imp||0)-(a.imp||0)||(plain(a.name)<plain(b.name)?-1:1));
-  const chipP=(p,act,extra)=>`<button type="button" class="chip" data-r="${act}" data-id="${esc(p.id)}"${extra||''} style="background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'}" aria-pressed="${R.sel==='p:'+p.id}">${esc(p.emoji||'')} ${esc(p.name)}</button>`;
-  const chipF=(s,act,extra)=>`<button type="button" class="chip forge" data-r="${act}" data-id="${esc(s.id)}"${extra||''} aria-pressed="${R.sel==='f:'+s.id}">${P('forge').replace('class="ic"','class="ic" style="width:13px;height:13px"')} ${esc(s.t)}</button>`;
-  const libresF=FS.filter(s=>typeof s.day!=='number'&&!s.opt);
-  let h=`<div class="boite"><span class="eyebrow">À placer</span><div class="chips">${sem.map(p=>chipP(p,'sel')).join('')}${libresF.map(s=>chipF(s,'selF')).join('')}</div>`;
-  if(!sem.length&&!libresF.length) h+=`<span class="note">Rien n'est encore prévu pour cette semaine : choisis dans les autres projets.</span>`;
-  h+=`<details><summary class="note" style="cursor:pointer">Autres projets en cours ou prévus (${autres.length})</summary><div class="chips" style="margin-top:8px">${autres.map(p=>chipP(p,'sel')).join('')}</div></details>`;
-  if(!f) h+=`<span class="note">Les séances de la Forge apparaîtront après la prochaine ouverture de la Forge.</span>`;
-  h+=`</div>`;
+  const chipP=(p,act,extra)=>mode==='f'?`<span class="chip" style="background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'};opacity:.45;cursor:default">${esc(p.emoji||'')} ${esc(p.name)}</span>`
+    :`<button type="button" class="chip" data-r="${act}" data-id="${esc(p.id)}"${extra||''} style="background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'}" aria-pressed="${R.sel==='p:'+p.id}">${esc(p.emoji||'')} ${esc(p.name)}</button>`;
+  const chipF=(s,act,extra)=>`<button type="button" class="chip forge" data-r="${act}" data-id="${esc(s.id)}"${extra||''} aria-pressed="${R.sel==='f:'+s.id}">${P('forge').replace('class="ic"','class="ic" style="width:13px;height:13px"')} ${esc(s.t)}${s.min?' · '+fmtMin(s.min):''}</button>`;
+  const libresF=FS.filter(s=>typeof s.day!=='number'&&!s.opt), optF=FS.filter(s=>typeof s.day!=='number'&&s.opt);
+  let h='<div class="boite"><span class="eyebrow">À placer</span>';
+  if(mode==='p'){
+    h+=`<div class="chips">${sem.map(p=>chipP(p,'sel')).join('')}</div>`;
+    if(!sem.length) h+=`<span class="note">Rien n'est encore prévu pour cette semaine : choisis dans les autres projets.</span>`;
+    h+=`<details><summary class="note" style="cursor:pointer">Autres projets en cours ou prévus (${autres.length})</summary><div class="chips" style="margin-top:8px">${autres.map(p=>chipP(p,'sel')).join('')}</div></details>`; }
+  else {
+    h+=libresF.length?`<div class="chips">${libresF.map(s=>chipF(s,'selF')).join('')}</div>`:`<span class="note">${f?(FS.length?'Toutes les séances sont placées.':'Pas de séance prévue cette semaine.'):'Les séances apparaîtront après la prochaine ouverture de la Forge.'}</span>`;
+    if(optF.length) h+=`<details><summary class="note" style="cursor:pointer">Séances facultatives (${optF.length})</summary><div class="chips" style="margin-top:8px">${optF.map(s=>chipF(s,'selF')).join('')}</div></details>`; }
+  h+='</div>';
   const touteSem=P_.filter(p=>(p.weeks||[]).includes(N));
-  h+=`<div><div role="button" tabindex="0" class="jour${R.sel&&R.sel.startsWith('p:')?' cible':''}" data-r="jour" data-j="sem"><span class="j">Semaine</span><span class="chips">${touteSem.length?touteSem.map(p=>chipP(p,'oter',' data-j="sem"')).join(''):'<span class="libre">toute la semaine : rien</span>'}</span></div>`;
+  h+=`<div><div role="button" tabindex="0" class="jour${mode==='p'&&R.sel?' cible':''}" data-r="jour" data-j="sem"><span class="j">Semaine</span><span class="chips">${touteSem.length?touteSem.map(p=>chipP(p,'oter',' data-j="sem"')).join(''):'<span class="libre">toute la semaine : rien</span>'}</span></div>`;
   for(let i=0;i<7;i++){ const d=plusJ(m,i), dd=parse(d);
     const ps=P_.filter(p=>(p.days||[]).includes(d)), ss=FS.filter(s=>s.day===i);
-    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${ps.map(p=>chipP(p,'oter',` data-j="${i}"`)).join('')}${ss.map(s=>chipF(s,'oterF',` data-j="${i}"`)).join('')}${!ps.length&&!ss.length?'<span class="libre">libre</span>':''}</span></div>`; }
-  h+=`</div><p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`;
+    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${mode==='f'?ss.map(s=>chipF(s,'oterF',` data-j="${i}"`)).join('')+ps.map(p=>chipP(p)).join(''):ps.map(p=>chipP(p,'oter',` data-j="${i}"`)).join('')+ss.map(s=>`<span class="chip forge" style="opacity:.45;cursor:default">${esc(s.t)}</span>`).join('')}${!ps.length&&!ss.length?'<span class="libre">libre</span>':''}</span></div>`; }
+  h+='</div>';
+  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Les projets de la semaine sont en fond, pour voir les jours chargés.</p>`;
   return h; }
+const chf=x=>'CHF '+(Math.round((+x||0)*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
+function banqueFaite(b){ const r=Object.assign({},B['s:routine']||{}); r.banque={sem:semaineRoutine(),depenses:b.depenses,le:AUJ()}; ecrireB('s:routine',r); }
 function clair(c){ const m=/^#?([0-9a-f]{6})$/i.exec(c||''); if(!m) return false; const n=parseInt(m[1],16), r=n>>16, g=n>>8&255, b=n&255; return (r*299+g*587+b*114)/1000>150; }
 function placerProjet(id,j){ const p=PB&&PB.get(id); if(!p) return; const N=semaineRoutine(), m=Projets.lundi(N);
   if(j==='sem'){ if(!(p.weeks||[]).includes(N)) p.weeks=(p.weeks||[]).concat([N]).sort(); }
@@ -348,6 +360,7 @@ function texteClaude(N,Pr){
   for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
   const nf=FS.filter(s=>typeof s.day!=='number'&&!s.opt); if(nf.length) L.push('- Forge pas encore placée : '+nf.map(s=>s.t).join(' ; '));
   const v=lignes('vide').length; L.push('VIDE-TÊTE : '+(v?v+' idée'+(v>1?'s':'')+' encore à trier':'vide'));
+  const bq=((B['s:routine']||{}).banque)||{}; L.push('BANQUE : '+(bq.sem===N?'point fait · '+chf(bq.depenses)+' dépensés la semaine passée (privé)':'point pas encore fait'));
   return L.join('\n'); }
 async function copier(t){ try{ await navigator.clipboard.writeText(t); toast('Copié : colle-le dans la séance avec Claude'); }catch(e){ const a=document.createElement('textarea'); a.value=t; document.body.appendChild(a); a.select(); try{ document.execCommand('copy'); toast('Copié'); }catch(x){ toast('Copie impossible : sélectionne le texte'); } a.remove(); } }
 function garderNote(){ const t=document.getElementById('i-retenu'); if(!t) return; R.note=t.value; const N=semaineRoutine(), Pr=semainePrec(N), v=t.value.trim(), w=Object.assign({},B['w:'+Pr]||{});
@@ -359,7 +372,7 @@ $plein.addEventListener('click',e=>{
   const el=e.target.closest('[data-r]'); if(!el||el.tagName==='SELECT') return; const a=el.dataset.r, N=semaineRoutine(), Pr=semainePrec(N);
   if(a==='fermer'){ if(R.etape===2) garderNote(); fermerPlein(); return; }
   if(a==='prec'){ if(R.etape===2) garderNote(); R.etape=Math.max(1,R.etape-1); R.sel=null; $plein.dataset.e=''; vRoutine(); return; }
-  if(a==='suiv'){ if(R.etape===2) garderNote(); if(R.etape<5){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
+  if(a==='suiv'){ if(R.etape===2) garderNote(); if(R.etape<ETAPES.length){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
     const r=Object.assign({},B['s:routine']||{}); r.fait=[...new Set([...(r.fait||[]),N])].slice(-12); r.le=AUJ(); ecrireB('s:routine',r); fermerPlein(); toast('Bonne semaine !'); return; }
   if(a==='axe'){ const w=Object.assign({},B['w:'+Pr]||{}), k=el.dataset.k, n=+el.dataset.n; if(w[k]===n) delete w[k]; else w[k]=n; ecrireB('w:'+Pr,w); vRoutine(); return; }
   if(a==='obj'){ garderNote(); const w=Object.assign({},B['w:'+Pr]||{}), ev=Object.assign({},w.obj||{}), k=el.dataset.k, v=el.dataset.v; if(ev[k]===v) delete ev[k]; else ev[k]=v; w.obj=ev; ecrireB('w:'+Pr,w); vRoutine(); return; }
@@ -369,6 +382,7 @@ $plein.addEventListener('click',e=>{
   if(a==='oter'||a==='oterF'){ e.stopPropagation(); if(R.sel){ const j=el.dataset.j; poser(j); return; } if(a==='oter') oterProjet(el.dataset.id,el.dataset.j); else jourSeance(el.dataset.id,null); vRoutine(); return; }
   if(a==='jour'){ if(!R.sel) return; poser(el.dataset.j); return; }
   if(a==='copier'){ copier(texteClaude(N,Pr)); return; }
+  if(a==='banque'){ ouvrirDans('banque','act=point&plein=1'); return; }
 });
 function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j); else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
 $plein.addEventListener('change',e=>{ const el=e.target; if(el.dataset.r!=='ranger'||!el.value) return; const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return;
@@ -429,23 +443,24 @@ function ouvrirDans(app,params,hash){
   if($dans) return;
   $fond=document.createElement('div'); $fond.className='dans-fond'; $fond.innerHTML='<span class="att" aria-label="Ouverture…"></span>'; document.body.appendChild($fond);
   $x=document.createElement('button'); $x.type='button'; $x.className='dans-x'; $x.setAttribute('aria-label','Revenir à l’accueil'); $x.innerHTML=P('supprimer'); $x.addEventListener('click',fermerDans); document.body.appendChild($x);
-  if(/plein=1/.test(params||'')) $x.hidden=true;
+  if(app==='forge') $x.hidden=true;
   document.body.style.overflow='hidden';
-  if(CHAUDES.includes(app)){ const c=chauffer(app), ordre={locus:'ouvrir',p:Object.fromEntries(new URLSearchParams(params||'')),hash:hash||''}; $dans=c.f; $dans.classList.add('actif');
+  if(CHAUDES.includes(app)&&!/plein=1/.test(params||'')){ const c=chauffer(app), ordre={locus:'ouvrir',p:Object.fromEntries(new URLSearchParams(params||'')),hash:hash||''}; $dans=c.f; $dans.classList.add('actif');
     if(c.charge) c.f.contentWindow.postMessage(ordre,location.origin); else c.ordre=ordre; }
   else { $dans=cadre(app,app+'/?dans=accueil'+(params?'&'+params:'')+(hash?'#'+hash:'')); $dans.classList.add('actif'); }
   dansT=setTimeout(()=>{ if($dans){ $dans.classList.add('vu'); $fond.classList.add('vu'); } },9000); }
 function fermerDans(){ if(!$dans) return; const f=$dans; $dans=null; clearTimeout(dansT);
   if(Object.values(CH).some(c=>c.f===f)) f.classList.remove('vu','actif'); else f.remove();
-  if($fond) $fond.remove(); if($x) $x.remove(); $fond=$x=null; document.body.style.overflow='';
-  Promise.all([tirer(),PB?PB.tirer():null]).then(render); }
+  if($fond) $fond.remove(); if($x) $x.remove(); $fond=$x=null; if($plein.hidden) document.body.style.overflow='';
+  Promise.all([tirer(),PB?PB.tirer():null]).then(()=>{ render(); if(!$plein.hidden&&$plein.dataset.e) vRoutine(); }); }
 addEventListener('message',e=>{ const d=e.data; if(e.origin!==location.origin||!d||d.locus!==1) return;
   const c=Object.values(CH).find(x=>x.f.contentWindow===e.source), actif=$dans&&e.source===$dans.contentWindow;
   if(!c&&!actif) return;
   if(d.toast){ if(d.toast!==derToast.t||Date.now()-derToast.le>1500) toast(d.toast); derToast={t:d.toast,le:Date.now()}; }
   if(c&&d.etat==='charge'){ c.charge=true; if(c.ordre){ const o=c.ordre; c.ordre=null; c.f.contentWindow.postMessage(o,location.origin); } }
   if(!actif) return;
-  if(d.etat==='pret'){ clearTimeout(dansT); $dans.classList.add('vu'); $fond.classList.add('vu'); $x.hidden=true; }
+  if(d.banque) banqueFaite(d.banque);
+  if(d.etat==='pret'||(d.etat==='charge'&&!c)){ clearTimeout(dansT); $dans.classList.add('vu'); $fond.classList.add('vu'); if(c) $x.hidden=true; }
   if(d.etat==='fermer') fermerDans(); });
 
 /* =============================== Connexion (une seule, pour toutes les apps) =============================== */

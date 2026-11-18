@@ -2277,7 +2277,10 @@ document.addEventListener('click',e=>{
   else if(a==='gdtok'){ if(!gdtP) return; const n=appliquerGdt(gdtP,gdtP.ajout); gdtP=null; fermer(); render(); setTimeout(()=>alert('GDT : '+n+' changement'+(n>1?'s':'')+' dans Banque.'),50); }
   else if(a==='gretour'){ ui.gChoix=null; vGdt(); }
   else if(a==='gplus'){ ui.gLim=9999; vGdt(); }
-  else if(a==='pointok'){ S.regl.point=lundiDe(today()); save(); render(); }
+  else if(a==='pointok'){ S.regl.point=lundiDe(today()); save(); render();
+    /* ouvert depuis la routine du lundi de l'accueil : on rend la main, avec les dépenses de la semaine passée */
+    if(DANS_ACC){ const L=lundiDe(today()), plus=(d,n)=>isoD(new Date(Date.parse(d+'T12:00')+n*864e5)), W=depSemaine(plus(L,-7),plus(L,-1));
+      try{ parent.postMessage({locus:1,etat:'fermer',toast:'Point de la Banque terminé',banque:{point:L,depenses:Math.abs(W.s)}},location.origin); }catch(e){} } }
   else if(a==='reglages'){ ui.tab='reglages'; render(); }
   else if(a==='charger') document.getElementById('fichier').click();
   else if(a==='synchro'){ syncErr=''; pull().then(()=>push()).then(()=>render()); }
