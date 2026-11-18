@@ -411,7 +411,8 @@ select.input{appearance:auto}
 
 /* Planning : jours en colonnes, projets en lignes */
 .gnav{display:flex;align-items:stretch;border:1px solid var(--bd);margin:14px 0 10px;background:var(--cell)}
-.gnav button{border:0;border-left:1px solid var(--bd);background:var(--cell);padding:9px 12px;font-weight:700;font-size:.88rem}
+.gnav button{border:0;border-left:1px solid var(--bd);background:var(--cell);padding:9px 10px;font-weight:700;font-size:.84rem;white-space:nowrap}
+@media (max-width:460px){.gnav button{padding:9px 6px;font-size:.78rem}}
 .gnav button:first-child{border-left:0}
 .gnav .mid{flex:1}
 .gantt{overflow-x:auto;border:1px solid var(--bd);background:var(--cell);--cw:28px;--lw:0px}
@@ -645,6 +646,18 @@ details.more .field{margin-top:10px}
 .freecol input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .freecol span{width:34px;height:24px;background:var(--sw);border:2px solid var(--line)}
 .freecol span.on{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--cell)}
+.dcards{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.dcard{border:1px solid var(--bd);background:var(--cell);border-left:8px solid var(--pc);overflow:hidden}
+.dhead{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:10px 12px;text-align:left}
+.dhead .emo{font-size:1.4rem}
+.dhead b{flex:1;font-size:1.02rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dhead .dn{font-family:var(--mono);font-size:.74rem;color:var(--muted);white-space:nowrap}
+.dhead .vgo{font-size:1.2rem;color:var(--muted)}
+.dps{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
+.dp{border:0;background:var(--pc);color:var(--pt);padding:5px 10px;font-weight:600;font-size:.85rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp.idee{background:transparent;color:var(--ink);border:1px dashed var(--pc)}
+.dacts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.dacts .btn{flex:1 1 auto}
 .pinfo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pinfo .pdue,.pinfo .pplan{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.78rem;padding:2px 8px;border:1px solid var(--line);background:var(--cell)}
 .pinfo .pplan.off{color:var(--muted);border-style:dashed;background:transparent}
@@ -717,6 +730,7 @@ body{background:var(--page);letter-spacing:.005em;-webkit-font-smoothing:antiali
 <nav class="ot" aria-label="Vues">
   <button class="tab ot-t" data-view="planning">Planning</button>
   <button class="tab ot-t" data-view="projets">Projets</button>
+  <button class="tab ot-t" data-view="domaines">Domaines</button>
   <button class="tab ot-t" data-view="vrac">En vrac<span class="badge" id="vbadge" hidden></span></button>
 </nav></header>
 <div class="wrap">
@@ -923,7 +937,7 @@ function money(id){let dep=0,rec=0; S.entries.forEach(e=>{if(e.pid!==id)return; 
 const folderPath=p=>p.closed?'~/Projets/_Archives/'+p.closed.slice(0,4)+'/'+p.folder:'~/Projets/'+p.folder;
 const tagPv=()=>'--pc:var(--cell);--pt:var(--ink)';
 
-const VIEWS=['planning','projets','vrac'];
+const VIEWS=['planning','projets','domaines','vrac'];
 const ui={view:'planning',wk:CUR,filter:'ouverts',sort:'prio',tag:null,tagSel:[],taskAdmin:false,kind:'h',pid:null,amount:'',note:'',date:null,planMore:0,planStart:null};
 try{const h=(location.hash||'').slice(1); if(VIEWS.includes(h)) ui.view=h;}catch(e){}
 
@@ -932,9 +946,19 @@ function render(){ recolor();
   const c=inWeek(CUR);
   document.getElementById('sub').textContent='S'+wkNum(CUR);
   document.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.view===ui.view) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); });
-  ({semaine:vSemaine,mini:vMiniHome,planning:vPlanning,projets:vProjets,vrac:vVrac})[ui.view]();
+  ({semaine:vSemaine,mini:vMiniHome,planning:vPlanning,projets:vProjets,domaines:vDomaines,vrac:vVrac})[ui.view]();
   const vb=document.getElementById('vbadge'); if(vb){vb.textContent=S.inbox.length; vb.hidden=!S.inbox.length;}
   if(MINI&&ui.view!=='mini') $view.insertAdjacentHTML('afterbegin',`<div class="mback"><button data-act="goView" data-v="mini"><span class="kb">0</span>‹ Accueil</button></div>`);
+}
+/* Onglet Domaines : chaque domaine avec ses projets ouverts et ses petites tâches */
+function vDomaines(){
+  const ds=S.domains.filter(d=>!d.auto&&!d.closed).sort((a,b)=>a.name.localeCompare(b.name,'fr')), arch=S.domains.filter(d=>!d.auto&&d.closed);
+  const card=d=>{ const ps=domProjects(d.id).filter(p=>!p.closed).sort((x,y)=>(Projets.etat(x,todayS)==='idee')-(Projets.etat(y,todayS)==='idee')||prioSort(x,y)), nt=(d.tasks||[]).filter(t=>!t.d&&!t.s).length;
+    return `<div class="dcard" style="${pv(d)}"><button class="dhead" data-act="dom" data-id="${d.id}"><span class="emo">${d.emoji||'📁'}</span><b>${esc(d.name)}</b><span class="dn">${ps.length} projet${ps.length>1?'s':''}${nt?' · '+nt+' tâche'+(nt>1?'s':''):''}</span><span class="vgo">›</span></button>
+    ${ps.length?`<div class="dps">${ps.map(p=>`<button class="dp${p.later?' idee':''}" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${isPerm(p)?' ∞':''}</button>`).join('')}</div>`:''}</div>`; };
+  $view.innerHTML=`<div class="dcards">${ds.map(card).join('')}${card(autresD())}</div>
+  <div class="dacts"><button class="btn ghost" data-act="newDom">+ Domaine</button><button class="btn ghost" data-act="minis">${pic('note')} Petites tâches · ${nPetites()}</button>${FB?`<button class="btn ghost" data-act="atrier">${pic('entree')} À trier · ${fichiersDe(Dossier.A_TRIER).length}</button>`:''}</div>
+  ${arch.length?`<details class="more"><summary>Domaines archivés · ${arch.length}</summary><div class="pchips" style="margin-top:8px">${arch.map(d=>`<button class="pchip dom closed" style="${pv(d)}" data-act="dom" data-id="${d.id}">${d.emoji} ${esc(d.name)}</button>`).join('')}</div></details>`:''}`;
 }
 /* Petites tâches : les tâches des domaines (moins de 4 h, hors projet) */
 function petitesList(){ const out=[]; [...domsOpen(),autresD()].forEach(h=>{ let sec=''; (h.tasks||[]).forEach((x,i)=>{ if(x.s){ sec=x.t; return; } if(!x.d) out.push({h,x,i,sec}); }); }); return out; }
@@ -1036,7 +1060,7 @@ function vPlanning(){
   const tgt=ui.planStart||todayS, tD=parse(tgt), m0=monday(tD), k0=wkKey(m0);
   let lastP=tgt; open().forEach(p=>{ p.weeks.forEach(k=>{const e=wkDates(k)[1]; if(e>lastP) lastP=e;}); p.days.forEach(d=>{ if(d>lastP) lastP=d; }); });
   const W=Math.max(10,Math.ceil((parse(lastP)-m0)/864e5/7)+2)+(ui.planExtra||0), N=W*7;
-  const pm=new Date(tD.getFullYear(),tD.getMonth()-1,1), nm=new Date(tD.getFullYear(),tD.getMonth()+1,1);
+  const pm=new Date(tD.getFullYear(),tD.getMonth()-1,1), nm=new Date(tD.getFullYear(),tD.getMonth()+1,1), pw=new Date(m0), nw=new Date(m0); pw.setDate(pw.getDate()-7); nw.setDate(nw.getDate()+7);
   const mlab=d=>MOIS_L[d.getMonth()]+(d.getFullYear()!==today.getFullYear()?' '+d.getFullYear():'');
   const dayS=[]; for(let i=0;i<N;i++){const d=new Date(m0); d.setDate(m0.getDate()+i); dayS.push(iso(d));}
   const idx=s=>dayS.indexOf(s), first=dayS[0], last=dayS[N-1];
@@ -1075,7 +1099,7 @@ function vPlanning(){
   }).join('');
   const cw=inWeek(CUR), cwl=[...weekOrder(CUR,cw.n),...cw.s];
   $view.innerHTML=`<div class="wkline"><button class="wklab" data-act="goWk" data-k="${CUR}"><b>S${wkNum(CUR)}</b><span>${cw.all.length}/${MAXT}</span></button><div class="wkchips">${cwl.map(p=>`<button class="mini${small(p)?' sm':''}" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}</button>`).join('')||'<span class="note" style="margin:0">Rien cette semaine.</span>'}</div></div>
-  <div class="gnav"><button data-act="planM" data-d="${iso(pm)}">‹ ${mlab(pm)}</button><button class="mid" data-act="planM" data-d="">Aujourd'hui</button><button data-act="planM" data-d="${iso(nm)}">${mlab(nm)} ›</button></div>
+  <div class="gnav"><button data-act="planM" data-d="${iso(pm)}" aria-label="Mois précédent">« ${MOIS[pm.getMonth()]}</button><button data-act="planM" data-d="${iso(pw)}" aria-label="Semaine précédente">‹ S${wkNum(wkKey(pw))}</button><button class="mid" data-act="planM" data-d="">Aujourd'hui</button><button data-act="planM" data-d="${iso(nw)}" aria-label="Semaine suivante">S${wkNum(wkKey(nw))} ›</button><button data-act="planM" data-d="${iso(nm)}" aria-label="Mois suivant">${MOIS[nm.getMonth()]} »</button></div>
   <div class="gantt" id="gantt"><div class="gwrap"><div class="gin" style="--n:${N}">
    <div class="grow hm"><div class="gl"></div><div class="gg">${mo}</div></div>
    <div class="grow hw"><div class="gl" style="font-size:.7rem;font-family:var(--mono)">sem.</div><div class="gg">${wk}</div></div>
@@ -1086,7 +1110,7 @@ function vPlanning(){
   <div class="planlegend"><span><b style="background:#EE9DC0"></b>vacances et congés</span><span><b style="background:#E2DFD5"></b>week-end</span><span>2/5 = projets dans la semaine (5 au plus, dont 3 sur la semaine entière)</span></div>
   <p class="note">Pour placer un projet : touche une case ou un numéro de semaine, ou glisse sur plusieurs jours ou plusieurs semaines (au doigt : appuie longuement d'abord). Touche une barre pour l'ouvrir, glisse-la pour la déplacer.</p>
   <button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés prévus${S.offs.length?' ('+S.offs.length+')':''}</button>`;
-  const g=document.getElementById('gantt'), ti=idx(tgt); if(g){ try{ if(ui.planScroll!=null){ g.scrollLeft=ui.planScroll; ui.planScroll=null; } else if(ti>=0) g.scrollLeft=ti*28; }catch(e){} }
+  const g=document.getElementById('gantt'), ti=idx(tgt); if(g){ try{ if(ui.planScroll!=null){ g.scrollLeft=ui.planScroll; ui.planScroll=null; } else g.scrollLeft=0; }catch(e){} } /* la frise commence au lundi de la semaine */
 }
 
 /* Vue projets */
@@ -1122,8 +1146,6 @@ function vProjets(){
   <div class="ctrl"><div class="seg"><button data-act="sort" data-s="prio" aria-pressed="${sort==='prio'}">Par priorité</button><button data-act="sort" data-s="etat" aria-pressed="${sort==='etat'}">Par état</button><button data-act="sort" data-s="parent" aria-pressed="${sort==='parent'}">Par domaine</button></div>
   <div class="chips">${F.map(([k,l])=>`<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div></div>
   <p class="cnt">En cours : <b>${nCours}</b> · Prévus : ${nPrevu} · Idées : ${nIdee}</p>
-  ${(()=>{ const ds=S.domains.filter(d=>!d.auto&&(f==='fini'?true:!d.closed)).sort((a,b)=>(!!a.closed-!!b.closed)||a.name.localeCompare(b.name,'fr')); if(!S.domaines&&!ds.length) return ''; const nP=d=>domProjects(d.id).filter(p=>!p.closed).length, na=domProjects(AUTRES).filter(p=>!p.closed).length;
-    return `<div class="infrow"><span class="lbl">Domaines <small>· ils rangent tes projets, tes petites tâches et tes notes</small></span><div class="pchips">${ds.map(d=>`<button class="pchip dom${d.closed?' closed':''}" style="${pv(d)}" data-act="dom" data-id="${d.id}">${d.emoji} ${esc(d.name)}${nP(d)?' · '+nP(d):''}</button>`).join('')}<button class="pchip dom" style="${pv(autresD())}" data-act="dom" data-id="${AUTRES}">📦 Autres${na?' · '+na:''}</button><button class="pchip add" data-act="newDom">+ Domaine</button><button class="pchip add" data-act="minis">${pic('note')} Petites tâches · ${nPetites()}</button>${FB?`<button class="pchip add" data-act="atrier">${pic('entree')} À trier · ${fichiersDe(Dossier.A_TRIER).length}</button>`:''}</div></div>`; })()}
   ${inf.length?`<div class="infrow"><span class="lbl">∞ Toujours là <small>· sans fin, ils ne comptent pas dans les projets en cours</small></span><div class="pchips">${inf.map(p=>{ const n=kidsOf(p.id).filter(k=>!k.closed).length; return `<button class="pchip" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${n?' · '+n:''}</button>`; }).join('')}</div></div>`:''}
   <div class="tablebox" style="margin-top:12px"><table class="ptable"><thead><tr><th class="pth">Projet</th><th>État</th><th>Importance</th><th>Échéance</th><th>${f==='prevu'?'Début':'Taille'}</th><th>Domaine</th></tr></thead>
   <tbody>${body||'<tr class="qrow"><td class="empty" colspan="6"><span class="quad">Aucun projet ici.</span></td></tr>'}</tbody></table></div>
@@ -1409,34 +1431,33 @@ function syncDraft(){ if(!draft) return; const di=document.querySelector('[data-
 /* Choix d'émoji */
 let emojiFor=null;
 const segE=list=>Array.from(window.Intl&&Intl.Segmenter?new Intl.Segmenter('fr',{granularity:'grapheme'}).segment(list):list).map(x=>typeof x==='string'?x:x.segment);
-const EMO_GROUPS={0:'Visages',1:'Personnes et gestes',3:'Animaux et nature',4:'Nourriture et boissons',5:'Voyages et lieux',6:'Activités',7:'Objets',8:'Symboles',9:'Drapeaux'};
-let EMODB=null, emoLoading=null;
+let EMODB=null, EMOCATS=null, emoLoading=null;
 const nrm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-function emoLoad(){ if(EMODB) return Promise.resolve(EMODB); if(!emoLoading) emoLoading=fetch('emojis.json').then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(j=>{ EMODB=j.e.map(([e,l,t,g])=>({e,l,g,h:' '+nrm(l+' '+t).replace(/[^a-z0-9]+/g,' ')+' ',hl:' '+nrm(l).replace(/[^a-z0-9]+/g,' ')+' '})); return EMODB; }).catch(()=>{ emoLoading=null; return null; }); return emoLoading; }
-const emoBtn=(e,t)=>`<button data-act="emojiSet" data-e="${e}"${t?` title="${esc(t)}"`:''}>${e}</button>`;
+function emoLoad(){ if(EMODB) return Promise.resolve(EMODB);
+  if(!emoLoading) emoLoading=new Promise(res=>{ if(window.LocusEmojis) return res(); const sc=document.createElement('script'); sc.src='../commun/emojis.js'; sc.onload=()=>res(); sc.onerror=()=>res(); document.head.appendChild(sc); })
+    .then(()=>{ if(!window.LocusEmojis){ emoLoading=null; return null; } EMODB=[]; EMOCATS=[];
+      window.LocusEmojis.forEach(([cat,txt],g)=>{ let n=0, prev=[]; String(txt).split('\n').forEach(l=>{ const i=l.indexOf('\t'), e=i<0?l:l.slice(0,i), t=i<0?'':l.slice(i+1); if(!e) return; n++; if(prev.length<5) prev.push(e); EMODB.push({e,l:t,g,h:' '+nrm(t).replace(/[^a-z0-9]+/g,' ')+' '}); }); EMOCATS.push({cat,n,prev}); });
+      return EMODB; });
+  return emoLoading; }
+const emoBtn=(e,t)=>`<button data-act="emojiSet" data-e="${e}"${t?` title="${esc(t.split(' ').slice(0,6).join(' '))}"`:''}>${e}</button>`;
 function emoSearch(q){ const res=document.getElementById('emores'), cats=document.getElementById('emocats'); if(!res) return;
   const words=nrm(q).replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean);
   if(!words.length){ res.innerHTML=''; cats.hidden=false; return; } cats.hidden=true;
-  if(!EMODB){ res.innerHTML='<p class="note">Chargement…</p>'; emoLoad().then(db=>{ if(!db){ res.innerHTML='<p class="note">Recherche indisponible hors ligne : ouvre une catégorie.</p>'; return; } const i=document.getElementById('f-emosearch'); if(i) emoSearch(i.value); }); return; }
-  const fromCats=EMOJIS.filter(([c])=>words.every(w=>(' '+nrm(c)).includes(' '+w))).flatMap(([,l])=>segE(l));
-  const hit=EMODB.filter(x=>words.every(w=>x.h.includes(' '+w))).sort((a,b)=>(b.hl.includes(' '+words[0])-a.hl.includes(' '+words[0])));
-  const seen=new Set(), list=[]; hit.forEach(x=>{ if(!seen.has(x.e)){ seen.add(x.e); list.push(emoBtn(x.e,x.l)); } }); fromCats.forEach(e=>{ if(!seen.has(e)){ seen.add(e); list.push(emoBtn(e)); } });
-  res.innerHTML=list.length?`<span class="lbl">${list.length} résultat${list.length>1?'s':''}</span><div class="emogrid" style="margin-top:4px">${list.slice(0,160).join('')}</div>`:'<p class="note">Rien trouvé. Essaie un autre mot (au singulier : « arbre », « vélo », « maison »).</p>'; }
-function emoFillGroup(det){ const g=det.dataset.g, box=det.querySelector('.emogrid'); if(g==null||!box||box.childElementCount) return; box.innerHTML='<p class="note">Chargement…</p>';
-  emoLoad().then(db=>{ box.innerHTML=db?db.filter(x=>String(x.g)===g).map(x=>emoBtn(x.e,x.l)).join(''):'<p class="note">Indisponible hors ligne.</p>'; }); }
+  if(!EMODB){ res.innerHTML='<p class="note">Chargement…</p>'; emoLoad().then(db=>{ if(!db){ res.innerHTML='<p class="note">Recherche indisponible pour l\'instant.</p>'; return; } const i=document.getElementById('f-emosearch'); if(i) emoSearch(i.value); }); return; }
+  const hit=EMODB.filter(x=>words.every(w=>x.h.includes(' '+w))).sort((a,b)=>(b.h.startsWith(' '+words[0])-a.h.startsWith(' '+words[0])));
+  res.innerHTML=hit.length?`<span class="lbl">${hit.length} résultat${hit.length>1?'s':''}</span><div class="emogrid" style="margin-top:4px">${hit.slice(0,160).map(x=>emoBtn(x.e,x.l)).join('')}</div>`:'<p class="note">Rien trouvé. Essaie un autre mot (au singulier : « arbre », « vélo », « maison »).</p>'; }
+function emoFillGroup(det){ const g=Number(det.dataset.g), box=det.querySelector('.emogrid'); if(isNaN(g)||!box||box.childElementCount) return;
+  emoLoad().then(db=>{ box.innerHTML=db?db.filter(x=>x.g===g).map(x=>emoBtn(x.e,x.l)).join(''):'<p class="note">Indisponible pour l\'instant.</p>'; }); }
+function emoCatsHtml(){ return EMOCATS?EMOCATS.map((c,g)=>`<details class="ecat" data-g="${g}"><summary><b>${esc(c.cat)}</b><span class="eprev">${c.prev.join('')}</span><span class="en">${c.n}</span></summary><div class="emogrid"></div></details>`).join(''):'<p class="note">Chargement…</p>'; }
 function emojiSheet(forWhat){
   emojiFor=forWhat; if(forWhat==='new') syncDraft(); if(forWhat==='newdom'&&ui.ndom){ const i=document.getElementById('f-ndom'); if(i) ui.ndom.name=i.value; }
   openSheet(`<div class="shead"><h2>Choisir un émoji</h2><button class="xbtn" data-act="emojiBack">Retour</button></div><div class="sbody">
    <input class="input" type="search" id="f-emosearch" placeholder="Chercher : carotte, vélo, maison…" autocomplete="off" autocorrect="off" aria-label="Chercher un émoji">
    <div id="emores"></div>
-   <div id="emocats" class="ecats">
-   ${EMOJIS.map(([cat,list])=>{ const l=segE(list); return `<details class="ecat"><summary><b>${cat}</b><span class="eprev">${l.slice(0,5).join('')}</span><span class="en">${l.length}</span></summary><div class="emogrid">${l.map(e=>emoBtn(e)).join('')}</div></details>`; }).join('')}
-   <span class="lbl" style="margin-top:10px">Tous les émojis</span>
-   ${Object.entries(EMO_GROUPS).map(([g,n])=>`<details class="ecat" data-g="${g}"><summary><b>${n}</b></summary><div class="emogrid"></div></details>`).join('')}
-   </div>
+   <div id="emocats" class="ecats">${emoCatsHtml()}</div>
    <form class="inline" data-act="emojiOther"><input class="input" id="f-emo" placeholder="Autre émoji (clavier)" aria-label="Autre émoji" maxlength="8"><button class="btn" type="submit">OK</button></form>
   </div>`,'emo');
-  emoLoad();
+  if(!EMOCATS) emoLoad().then(()=>{ const c=document.getElementById('emocats'); if(c&&sheetKey==='emo') c.innerHTML=emoCatsHtml()||'<p class="note">Indisponible pour l\'instant.</p>'; });
 }
 document.addEventListener('input',e=>{ if(e.target&&e.target.id==='f-emosearch') emoSearch(e.target.value); });
 document.addEventListener('toggle',e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains('ecat')&&t.open) emoFillGroup(t); },true);
@@ -1603,16 +1624,27 @@ function notesPlacer(){ const slot=$sheet.querySelector('.nbslot'); if(!slot) re
   if(nbFrame&&nbFrame.dataset.id===id&&nbFrame.isConnected){ if(slot.moveBefore) try{ slot.moveBefore(nbFrame,null); return; }catch(e){} }
   if(nbFrame) nbFrame.remove();
   nbFrame=document.createElement('iframe'); nbFrame.className='nbframe'; nbFrame.title='Notes du projet'; nbFrame.dataset.id=id;
-  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; slot.appendChild(nbFrame); }
+  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; nbFrame.addEventListener('load',()=>nbStyle(nbFrame)); slot.appendChild(nbFrame); }
 addEventListener('message',e=>{ const d=e.data; if(!d||typeof d.biblioH!=='number'||e.origin!==location.origin) return;
   [nbFrame,document.querySelector('#notesbib iframe')].forEach(f=>{ if(f&&f.classList.contains('nbframe')&&f.contentWindow===e.source) f.style.height=Math.max(60,Math.ceil(d.biblioH))+'px'; }); });
 function notesBib(id){ const p=P(id); let o=document.getElementById('notesbib');
   if(!o){ o=document.createElement('div'); o.id='notesbib'; document.body.appendChild(o); }
-  o.innerHTML=`<div class="nb-bar"><button class="xbtn" data-act="notesBibOk">‹ Fiche</button><b>${esc(p?(p.emoji?p.emoji+' ':'')+p.name:'Projet')}</b><span>Notes</span></div><iframe src="../bibliotheque/?seul=p:${id}" title="Notes du projet"></iframe>`;
+  o.innerHTML=`<div class="nb-bar"><button class="xbtn" data-act="notesBibOk">‹ Fiche</button><b>${esc(p?(p.emoji?p.emoji+' ':'')+p.name:'Projet')}</b><span>Notes</span></div><iframe src="../bibliotheque/?seul=p:${id}" title="Notes du projet"></iframe>`; const fr=o.querySelector('iframe'); if(fr) fr.addEventListener('load',()=>nbStyle(fr));
   o.dataset.id=id; o.hidden=false; document.body.classList.add('nb-open'); histNotes=true; histPush('notes');
   if(nbFrame){ nbFrame.remove(); nbFrame=null; } /* une seule Bibliothèque ouverte à la fois sur ces notes */ }
 function notesBibFermer(fromPop){ const o=document.getElementById('notesbib'); if(!o||o.hidden) return; if(fromPop!==true&&histNotes){ histNotes=false; histDrop(1); } const id=o.dataset.id; o.hidden=true; o.innerHTML=''; document.body.classList.remove('nb-open');
   notesPlacer(); }
+/* L'éditeur vient de la Bibliothèque (même adresse) : l'Établi lui donne ses couleurs (graphite, jaune du mètre) et une barre d'outils qui tient sur une ligne */
+const NB_CSS=`.outils{background:#E9DDC6!important;border:1px solid #B79F78;border-radius:12px;gap:3px!important;padding:5px!important;flex-wrap:nowrap!important;justify-content:stretch!important}
+.outils button{background:#2F2C29!important;color:#F2C230!important;border-radius:9px!important;flex:1 1 0!important;min-width:0!important;height:38px!important;padding:0!important}
+.outils button:active{background:#4A4540!important}
+.outils .ic{width:19px!important;height:19px!important}`;
+function nbStyle(fr){ try{ const d=fr.contentDocument; if(!d||d.getElementById('etabli-nb')) return; const st=d.createElement('style'); st.id='etabli-nb'; st.textContent=NB_CSS; d.head.appendChild(st); }catch(e){} }
+/* clavier fermé (flèche ↓ d'Android) : on quitte l'écriture des notes */
+(()=>{ const vv=window.visualViewport; if(!vv) return; let maxH=vv.height;
+  let kb=false; vv.addEventListener('resize',()=>{ if(vv.height>maxH) maxH=vv.height; if(vv.height<maxH-120){ kb=true; return; } if(!kb) return; kb=false;
+    [nbFrame,document.querySelector('#notesbib iframe')].forEach(f=>{ try{ const d=f&&f.contentDocument, a=d&&d.activeElement; if(a&&a!==d.body&&a.blur) a.blur(); }catch(e){} }); });
+  addEventListener('orientationchange',()=>{ maxH=0; setTimeout(()=>{ maxH=vv.height; },400); }); })();
 /* ouvrir une fiche depuis une autre app : ../etabli/#p:<id> (la Bibliothèque, par exemple) */
 let hashFait=false;
 function ouvrirHash(){ if(hashFait) return; const h=decodeURIComponent((location.hash||'').slice(1)); if(!h.startsWith('p:')){ hashFait=true; return; }
