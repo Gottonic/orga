@@ -287,6 +287,8 @@ body.minimode .mdue{font-size:.88rem}
 .tasks .drag{flex:none;width:42px;align-self:stretch;display:grid;place-items:center;font-size:1.2rem;color:var(--muted);cursor:grab;touch-action:none;border-left:1px solid var(--line);user-select:none}
 .tasks li.dragging{background:var(--hl);box-shadow:0 4px 0 var(--ink);position:relative;z-index:2}
 .tasks li.done .tt{color:var(--muted);text-decoration:line-through}
+.tasks .achx{all:unset;box-sizing:border-box;flex:none;width:42px;align-self:stretch;display:grid;place-items:center;color:var(--muted);cursor:pointer;border-left:1px solid var(--line);font-size:1.05rem}
+.tasks li.done .ta{color:var(--muted);text-decoration:line-through}
 .tedit{flex:1;min-width:0;padding:6px 8px;font-size:1rem}
 .tdur{font-family:var(--mono);font-size:.78rem;font-weight:600;background:var(--thead);border:1px solid var(--line);padding:0 4px;white-space:nowrap}
 .tadm{font-size:.72rem;font-weight:700;background:var(--ink);color:var(--paper);padding:0 5px;text-transform:uppercase;letter-spacing:.05em}
@@ -883,11 +885,14 @@ const D=id=>id===AUTRES?autresD():S.domains.find(d=>d.id===id)||null;
 const isDom=x=>Projets.estDomaine(x);
 const H=id=>P(id)||D(id); /* qui porte les tâches et les notes : un projet ou un domaine */
 /* Achats du projet (choix de Nicolas, 18.11) : une liste dans la fiche ; chaque ligne est un article du Marché lié au projet */
-function achatsBlock(p,closed){ if(!AB) return ''; const L=AB.liste(p.id), n=L.length, f=L.filter(a=>!a.liste).length;
+function achatsListe(p,closed){ const L=AB.liste(p.id), n=L.length, f=L.filter(a=>!a.liste).length;
+  return `<span class="lbl" data-achats-lbl>Achats ${n?f+'/'+n:''}</span><div data-achats-l>${n?`<ul class="list tasks">${L.map(a=>`<li class="${a.liste?'':'done'}"><input type="checkbox" data-achat="${esc(a.id)}" ${a.liste?'':'checked'} ${closed?'disabled':''} aria-label="Acheté : ${esc(a.nom)}"><span class="t ta">${esc(a.nom)}</span>${closed?'':`<button class="achx" data-act="achatDel" data-id="${esc(a.id)}" aria-label="Retirer ${esc(a.nom)}">✕</button>`}</li>`).join('')}</ul>`:''}</div>`; }
+function achatsBlock(p,closed){ if(!AB) return ''; const n=AB.liste(p.id).length;
   if(closed&&!n) return '';
-  return `<div class="field"><span class="lbl">Achats ${n?f+'/'+n:''}</span>
-   ${n?`<ul class="list tasks">${L.map(a=>`<li class="${a.liste?'':'done'}"><input type="checkbox" data-achat="${esc(a.id)}" ${a.liste?'':'checked'} ${closed?'disabled':''} aria-label="Acheté : ${esc(a.nom)}"><span class="t">${esc(a.nom)}</span>${closed?'':`<button class="linkbtn" data-act="achatDel" data-id="${esc(a.id)}" aria-label="Retirer ${esc(a.nom)}">✕</button>`}</li>`).join('')}</ul>`:''}
-   ${closed?'':`<form class="inline" data-act="addAchat"><input class="input" id="f-achat" autocomplete="off" placeholder="Un achat pour ce projet" aria-label="Nouvel achat"><button class="btn" type="submit">+</button></form><p class="note thint">Ils vont sur la liste du Marché, avec le filtre de ce projet.</p>`}</div>`; }
+  return `<div class="field" data-achats="${esc(p.id)}"><div data-achats-haut style="display:contents">${achatsListe(p,closed)}</div>
+   ${closed?'':`<form class="inline" data-act="addAchat"><input class="input" id="f-achat" autocomplete="off" enterkeyhint="enter" placeholder="Un achat pour ce projet" aria-label="Nouvel achat"><button class="btn" type="submit" data-garde-clavier>+</button></form><p class="note thint">Ils vont sur la liste du Marché (onglet Liste), avec le filtre de ce projet.</p>`}</div>`; }
+/* redessiner seulement la liste des achats : le champ garde le curseur et le clavier reste ouvert */
+function achatsMaj(){ const b=document.querySelector('[data-achats-haut]'), p=P(sheetId); if(!b||!p||!AB){ refresh(sheetId); return; } b.innerHTML=achatsListe(p,!!p.closed); }
 /* nombre de lignes de notes d'un projet, d'après la copie locale de la Bibliothèque (-1 : on ne sait pas, on montre les notes) */
 function notesNb(id){ try{ const c=JSON.parse(localStorage.getItem('biblio-cache-'+UID)||'null'); if(!c||!c.prev) return -1; let n=0; for(const k in c.prev){ if(!k.startsWith('n:')) continue; const d=JSON.parse(c.prev[k]); if(d&&d.p==='p:'+id&&!d.a&&String(d.t||'').trim()) n++; } return n; }catch(e){ return -1; } }
 const refresh=id=>{ if(id&&!P(id)&&D(id)) domainSheet(id); else detail(id); };
@@ -1545,6 +1550,7 @@ async function chargerApercu(p){
 /* Dossiers de projet (étape 3) : fichiers sur l'ordinateur, fiches dans Supabase (commun/dossier.js) */
 let FB=null, fsEtat='non';
 let AB=null; /* achats des projets, au Marché (commun/achats.js, 18.11) */
+document.addEventListener('pointerdown',e=>{ if(e.target.closest&&e.target.closest('[data-garde-clavier]')) e.preventDefault(); },true);
 const fTaille=n=>n<1024?n+' o':n<1048576?Math.round(n/1024)+' Ko':(n/1048576).toFixed(1).replace('.',',')+' Mo';
 const fDate=ms=>{ try{ const d=new Date(ms); return d.getDate()+' '+MOIS[d.getMonth()]+' '+d.getFullYear(); }catch(e){ return ''; } };
 function fichiersDe(chemin){ return FB&&chemin?Dossier.dans(FB,chemin).sort((a,b)=>(a.chemin+'/'+a.nom).localeCompare(b.chemin+'/'+b.nom,'fr')):[]; }
@@ -2001,7 +2007,7 @@ document.addEventListener('click',e=>{
   const a=el.dataset.act, id=el.dataset.id;
   if(a==='task'||a==='ptask'||a==='petiteDone'||a==='miniChk') return;
   if(a==='ouvrirSec'){ const k=el.dataset.s, o=ui.ouv&&ui.ouv.id===sheetId?ui.ouv.s:[]; ui.ouv={id:sheetId,s:[...new Set([...o,k])]}; refresh(sheetId); setTimeout(()=>{ const f=document.getElementById(k==='taches'?'f-task':k==='achats'?'f-achat':''); if(f) try{f.focus();}catch(err){} },60); return; }
-  if(a==='achatDel'){ if(AB){ AB.supprimer(id); refresh(sheetId); } return; }
+  if(a==='achatDel'){ if(AB){ AB.supprimer(id); achatsMaj(); } return; }
   if(a==='open') detail(id);
   else if(a==='mkDossier'){ const p=P(sheetId); if(!p) return; p.dossier=Dossier.cheminProjet(p,domOf(p)); save(); toast('Locus/'+p.dossier+(fsEtat==='granted'?'':' · créé à la prochaine ouverture sur l\'ordinateur')); syncFichiers().then(fichiersChanges); detail(p.id); }
   else if(a==='fopen'){ const x=FB&&FB.get(el.dataset.f); if(!x) return; if(x.etat==='transit'){ toast('En route vers l\'ordinateur'); return; } if(fsEtat!=='granted'){ toast('Le fichier est sur l\'ordinateur'); return; } Dossier.lire(x.chemin,x.nom).then(fi=>{ const u=URL.createObjectURL(fi); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),60000); }).catch(()=>toast('Fichier introuvable : il a peut-être été déplacé')); }
@@ -2155,7 +2161,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
-  if(t.dataset&&t.dataset.achat){ if(AB){ AB.basculer(t.dataset.achat); refresh(sheetId); } return; }
+  if(t.dataset&&t.dataset.achat){ if(AB){ AB.basculer(t.dataset.achat); achatsMaj(); } return; }
   if(t.dataset.freecol==='color'){ const p=P(sheetId); if(p){ p.color=t.value.toUpperCase(); save(); detail(sheetId); } return; }
   if(t.dataset.freecol==='ncolor'){ if(draft){ syncDraft(); draft.color=t.value.toUpperCase(); newSheet(true); } return; }
   if(t.dataset.freecol){ const c=t.value.toUpperCase(); if(t.dataset.freecol==='domColor'){ const d=D(sheetId); if(d){ d.color=c; save(); domainSheet(sheetId); } } else if(ui.ndom){ const i=document.getElementById('f-ndom'); if(i) ui.ndom.name=i.value; ui.ndom.color=c; newDomSheet(); } return; }
@@ -2199,7 +2205,7 @@ document.addEventListener('submit',e=>{e.preventDefault(); const f=e.target.data
   if(f==='addMini'){ const i=document.getElementById('f-mini'), v=i.value.trim(); if(!v) return; S.projects.push(newMini(v)); save(); render(); minisSheet(); const n=document.getElementById('f-mini'); if(n) try{n.focus();}catch(err){} toast('Mini projet ajouté'); }
   if(f==='addVracQ'){const i=document.getElementById('q-vrac'), v=i.value.trim(); if(!v) return; versVide(v); render(); toast('Noté dans le vide-tête'); closeSheet();}
   if(f==='addOff'){let a=document.getElementById('o-s').value, b=document.getElementById('o-e').value||a; if(!a) return; if(b<a){const x=a; a=b; b=x;} S.offs.push({id:'o'+Date.now(),s:a,e:b,l:document.getElementById('o-l').value.trim()||'Congé'}); save(); render(); offsSheet(); toast('Ajouté au planning');}
-  if(f==='addAchat'){ const i=document.getElementById('f-achat'), v=i.value.trim(); if(!v||!AB) return; AB.ajouter(P(sheetId),v); refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-achat'); if(n) try{n.focus();}catch(err){} },30); toast('Ajouté à la liste du Marché'); return; }
+  if(f==='addAchat'){ const i=document.getElementById('f-achat'), v=i.value.trim(); if(!v||!AB){ if(i) i.focus(); return; } AB.ajouter(P(sheetId),v); i.value=''; achatsMaj(); try{ i.focus(); }catch(err){} return; }
   if(f==='addTask'){const v=document.getElementById('f-task').value.trim(); if(!v) return; const h=H(sheetId); if(/^#/.test(v)){ const t2=v.replace(/^#+\s*/,''); if(t2) h.tasks.push({t:t2,s:true}); } else { h.tasks.push({t:v,d:false}); sinkDone(h); } save(); refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-task'); if(n) try{n.focus();}catch(err){} },40);}
   if(f==='addPetite'){const i=document.getElementById('f-petite'), v=i.value.trim(); if(!v) return; const sel=document.getElementById('f-pdom'); const h=(sel&&H(sel.value))||autresD(); ui.ptDom=h.id; h.tasks.push({t:v,d:false}); sinkDone(h); save(); petitesSheet(); setTimeout(()=>{ const n=document.getElementById('f-petite'); if(n) try{n.focus();}catch(err){} },40);}
   if(f==='emojiOther'){const v=document.getElementById('f-emo').value.trim(); emojiDone(v||null);}
