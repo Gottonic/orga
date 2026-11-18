@@ -658,6 +658,7 @@ details.more .field{margin-top:10px}
 .dp.idee{background:transparent;color:var(--ink);border:1px dashed var(--pc)}
 .dacts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .dacts .btn{flex:1 1 auto}
+.nbframe{transition:opacity .12s}
 .pinfo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pinfo .pdue,.pinfo .pplan{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.78rem;padding:2px 8px;border:1px solid var(--line);background:var(--cell)}
 .pinfo .pplan.off{color:var(--muted);border-style:dashed;background:transparent}
@@ -1623,7 +1624,7 @@ function notesPlacer(){ const slot=$sheet.querySelector('.nbslot'); if(!slot) re
   if(nbFrame&&nbFrame.dataset.id===id&&nbFrame.isConnected){ if(slot.moveBefore) try{ slot.moveBefore(nbFrame,null); return; }catch(e){} }
   if(nbFrame) nbFrame.remove();
   nbFrame=document.createElement('iframe'); nbFrame.className='nbframe'; nbFrame.title='Notes du projet'; nbFrame.dataset.id=id;
-  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; nbFrame.addEventListener('load',()=>nbStyle(nbFrame)); slot.appendChild(nbFrame); }
+  nbFrame.src='../bibliotheque/?seul=p:'+encodeURIComponent(id)+'&dans=fiche'; nbFrame.style.opacity='0'; const fr=nbFrame, voir=()=>{ fr.style.opacity=''; }; fr.addEventListener('load',()=>{ nbStyle(fr); requestAnimationFrame(()=>requestAnimationFrame(voir)); }); setTimeout(voir,2500); slot.appendChild(nbFrame); }
 addEventListener('message',e=>{ const d=e.data; if(!d||typeof d.biblioH!=='number'||e.origin!==location.origin) return;
   [nbFrame,document.querySelector('#notesbib iframe')].forEach(f=>{ if(f&&f.classList.contains('nbframe')&&f.contentWindow===e.source) f.style.height=Math.max(60,Math.ceil(d.biblioH))+'px'; }); });
 function notesBib(id){ const p=P(id); let o=document.getElementById('notesbib');
