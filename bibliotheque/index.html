@@ -560,7 +560,8 @@ function lireHash(){ if(SEUL){ ui.tab='projets'; ui.page=null; return; } const h
 addEventListener('hashchange',()=>{ lireHash(); ui.zoom=null; render(); });
 function showLogin(msg){ booted=false; document.getElementById('login').hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; }
 /* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
-const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
+const DANS_ACC=/[?&]dans=accueil/.test(location.search)&&window.parent!==window; /* ouverte au premier plan sur l'accueil (commun/cadre.js) */
+const versLocus=app=>{ try{ if(DANS_ACC) return Object.fromEntries(new URLSearchParams(location.search)); const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
 async function enter(user){
   UID=user.id; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}

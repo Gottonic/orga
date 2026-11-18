@@ -1276,6 +1276,7 @@ function render(){
   const sk = {}; app.querySelectorAll("[data-sk]").forEach(el => { sk[el.dataset.sk] = el.scrollTop; });
   app.innerHTML = (views[S.view] || vCalendar)() + ovHtml() + runBar();
   publierLocus();
+  if (DANS_RUN && !S.run && !S.ui.ov) { DANS_RUN = false; try { parent.postMessage({ locus:1, etat:"fermer" }, location.origin); } catch(e) {} }
   document.body.classList.toggle("runbar-on", !!app.querySelector(".runbar"));
   app.querySelectorAll("[data-sk]").forEach(el => { if (sk[el.dataset.sk]) el.scrollTop = sk[el.dataset.sk]; });
   document.body.classList.toggle("ov-open", !!(S.ui.ov && (S.view === "semaine" || S.ui.ov.type === "pe" || S.ui.ov.type === "exo")));
@@ -3312,13 +3313,14 @@ async function enter(user){
   push(); render();
   /* depuis l'accueil de Locus : démarrer la séance du jour */
   const v = versLocus("forge");
-  if (v && v.seance) { setView("semaine", v.wk || currentWeekId()); setTimeout(() => runStart(v.seance), 50); }
+  if (v && v.seance) { setView("semaine", v.wk || currentWeekId()); setTimeout(() => { runStart(v.seance); if (DANS_ACC) { DANS_RUN = !!S.run; try { parent.postMessage({ locus:1, etat: DANS_RUN ? "pret" : "fermer" }, location.origin); } catch(e) {} if (!DANS_RUN) toast("Séance introuvable"); } }, 50); }
 }
 /* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
-const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
+const DANS_ACC=/[?&]dans=accueil/.test(location.search)&&window.parent!==window; /* ouverte au premier plan sur l'accueil (commun/cadre.js) */
+const versLocus=app=>{ try{ if(DANS_ACC) return Object.fromEntries(new URLSearchParams(location.search)); const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
 /* Locus (accueil du jour et routine du lundi, 18.11) : les séances de cette semaine et de la suivante, avec leur jour,
    dans la ligne `locus/semaines` de la table carnet (hors des collections du carnet) et dans localStorage « locus-forge ». */
-let locusT = null;
+let locusT = null, DANS_RUN = false;
 function publierLocus(){
   clearTimeout(locusT);
   locusT = setTimeout(() => { try {

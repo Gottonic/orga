@@ -934,6 +934,22 @@ function demanderRayon(aid){ const a=S.arts[aid]; if(!a) return; cacherToast(); 
   <div class="chips">${ordreRayons(mid).filter(id=>id!=='divers').map(id=>`<button type="button" class="chip" data-act="qray" data-id="${id}">${esc(catNom(id))}</button>`).join('')}</div>
   <button class="btn2" data-act="qray" data-id="divers">Divers</button>`;
   ouvrir(); }
+/* Ajout depuis l'accueil de Locus (18.11) : une seule feuille, « où l'acheter ? » et le rayon s'il est inconnu, puis elle se ferme */
+function dansAjout(nom){ nom=String(nom||'').trim().replace(/\s+/g,' '); if(!nom) return;
+  const ex=arts().find(a=>norm(a.nom)===norm(nom));
+  if(ex&&ex.liste){ toast('« '+ex.nom+' » est déjà sur la liste'); dansFin(); return; }
+  const connu=ex?(ex.cat&&S.cats[ex.cat]?ex.cat:''):trouverRayon(nom);
+  ed={k:'dans',nom:ex?ex.nom:nom,ex:ex?ex.id:null,ref:ex?(prim(ex)||''):'',cat:connu||'',connu:!!connu}; vDans(); ouvrir(); }
+function vDans(){ const d=ed, ms=mags(), mid=magDeRef(d.ref)||'';
+  const chip=(act,v,l,on)=>`<button type="button" class="chip${on?' on':''}" data-act="${act}" data-id="${esc(v)}" aria-pressed="${on}">${esc(l)}</button>`;
+  $sheet.innerHTML=tete('« '+d.nom+' »')+`<p class="lab">Où l’acheter ?</p><div class="chips">${chip('dans-ou','','N’importe où',!d.ref)}${ms.map(m=>chip('dans-ou','m:'+m.id,m.nom,d.ref==='m:'+m.id)).join('')}</div>`+
+  (d.connu?`<p class="aide">Rayon : ${esc(catNom(d.cat))}</p>`:`<p class="lab">Quel rayon ?</p><div class="chips">${ordreRayons(mid).map(id=>chip('dans-ray',id,catNom(id),d.cat===id)).join('')}</div>`)+
+  `<button type="button" class="btn" data-act="dans-ok" style="margin-top:14px;width:100%">Ajouter à la liste</button>`; }
+function dansOk(){ const d=ed; if(!d||d.k!=='dans') return; let a=d.ex&&S.arts[d.ex];
+  if(!a){ a={id:uid(),nom:d.nom,qte:'',note:'',ou:[],basique:false,rythme:0,achats:[],cree:nowIso(),cat:d.cat||deviner(d.nom)}; S.arts[a.id]=a; }
+  a.ou=d.ref?[d.ref]:(d.ex?a.ou:[]); if(d.cat&&!d.connu){ ajouterNom(d.cat,a.nom); a.cat=d.cat; }
+  surListe(a); save(); render(); fermer(); toast('« '+a.nom+' » sur la liste'+(d.ref?' · '+refNom(d.ref):'')); }
+function dansFin(){ setTimeout(()=>{ try{ parent.postMessage({locus:1,etat:'fermer'},location.origin); }catch(e){} },900); }
 function texteListe(){
   const mi=ui.ici&&S.mags[ui.ici], act=arts().filter(a=>a.liste&&(!mi||dispo(a,mi.id)));
   const gs=mi?[{ref:'m:'+mi.id,items:act}]:grouper(act,'');
@@ -954,6 +970,9 @@ document.addEventListener('click',e=>{
   if(act!=='toast'&&act!=='plus') cacherToast();
   switch(act){
     case 'toast': { const f=toastFn; cacherToast(); if(f) f(); break; }
+    case 'dans-ou': if(ed&&ed.k==='dans'){ ed.ref=id||''; vDans(); } break;
+    case 'dans-ray': if(ed&&ed.k==='dans'){ ed.cat=id; vDans(); } break;
+    case 'dans-ok': dansOk(); break;
     case 'plus': if(ui.tab==='magasins') ouvrirMag(null); else if(ui.tab==='mijote') ouvrirEnvie(null); else ouvrirArt(null,{basique:ui.tab==='basiques'}); break;
     case 'fermer': fermer(); break;
     case 'reglages': vReglages(); break;
@@ -1092,12 +1111,14 @@ async function enter(user){
   if(accentuerRayons()){ save(); render(); }
   entretien(); push();
   /* depuis l'accueil : la ligne d'achat, et les idées du vide-tête envoyées au Marché par la routine du lundi */
+  const v=versLocus('marche'); if(DANS_ACC){ if(v&&v.q) dansAjout(v.q); return; }
   let L=[]; try{ L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); localStorage.removeItem('locus-vers-marche'); }catch(e){}
-  const v=versLocus('marche'); if(v&&v.q) L.push(v.q);
+  if(v&&v.q) L.push(v.q);
   L.forEach(q=>{ ui.q=q; ajoutRapide(); });
 }
 /* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
-const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
+const DANS_ACC=/[?&]dans=accueil/.test(location.search)&&window.parent!==window; /* ouverte au premier plan sur l'accueil (commun/cadre.js) */
+const versLocus=app=>{ try{ if(DANS_ACC) return Object.fromEntries(new URLSearchParams(location.search)); const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
 
 document.getElementById('loginForm').addEventListener('submit',async e=>{
   e.preventDefault(); const mail=document.getElementById('l-mail').value.trim(), pass=document.getElementById('l-pass').value;

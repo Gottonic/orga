@@ -27,6 +27,31 @@
     document.addEventListener('locus:annulable', (e) => { const n = (e.detail && e.detail.n) || 0; b.disabled = !n; b.title = n ? 'Annuler (Ctrl+Z)' : 'Rien à annuler'; });
     amp.before(b);
   }
+  /* Au premier plan sur l'accueil (18.11, demande de Nicolas) : l'accueil de Locus ouvre l'app dans un cadre par-dessus lui
+     (?dans=accueil). Seule la feuille de l'app (#scrim) se voit, sur l'accueil assombri ; quand elle se ferme, le cadre dit
+     « fermer » et l'accueil reprend la main. Les messages (toasts) de l'app sont montrés par l'accueil.
+     Avec &plein=1 (la Forge), toute l'app se voit, et c'est elle qui dit quand fermer. */
+  function premierPlan() {
+    const q = new URLSearchParams(location.search); if (q.get('dans') !== 'accueil' || window.parent === window) return;
+    const dire = (o) => { try { parent.postMessage(Object.assign({ locus: 1 }, o), location.origin); } catch (e) {} };
+    const html = document.documentElement; html.classList.add('dans-acc');
+    if (!q.get('plein')) {
+      const st = document.createElement('style');
+      st.textContent = 'html.dans-acc,html.dans-acc body{background:transparent!important}html.dans-acc body::before{display:none!important}' +
+        'html.dans-acc body>*:not(#scrim):not(#toast):not(.toast):not(#login):not(script){display:none!important}';
+      document.head.appendChild(st);
+    }
+    const sc = document.getElementById('scrim'); let vu = false, t = null;
+    if (sc && !q.get('plein')) {
+      const voir = () => { if (!sc.hidden) { vu = true; clearTimeout(t); dire({ etat: 'pret' }); } else if (vu) { clearTimeout(t); t = setTimeout(() => { if (sc.hidden) dire({ etat: 'fermer' }); }, 350); } };
+      new MutationObserver(voir).observe(sc, { attributes: true, attributeFilter: ['hidden'] }); voir();
+    }
+    const lg = document.getElementById('login');
+    if (lg) { const v = () => { if (!lg.hidden) dire({ etat: 'pret' }); }; new MutationObserver(v).observe(lg, { attributes: true, attributeFilter: ['hidden'] }); v(); }
+    const to = document.getElementById('toast') || document.querySelector('.toast');
+    if (to) { let der = ''; new MutationObserver(() => { if (to.hidden) { der = ''; return; } const s = to.querySelector('span'), x = ((s || to).textContent || '').trim(); if (x && x !== der) { der = x; dire({ toast: x }); } }).observe(to, { attributes: true, childList: true, subtree: true, characterData: true }); }
+  }
+  premierPlan();
   function tout() { appliquer(); annuler(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tout); else tout();
 })();

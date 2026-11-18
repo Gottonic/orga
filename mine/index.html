@@ -1311,6 +1311,9 @@ function restaurer(s){ S=s; save(); render(); }
 function mandatCourant(){ const p=page(); return p&&p.k==='mandat'?S.mands[p.id]:null; }
 function docCourant(){ const p=page(); return p&&p.k==='doc'?S.docs[p.id]:null; }
 function chronoStart(mid){ if(!S.mands[mid]) return; if(S.chrono) chronoStop(true); S.chrono={id:'chrono',mandat:mid,debut:nowIso(),note:''}; save(); render(); toast('Chrono lancé : '+S.mands[mid].nom); }
+/* Depuis l'accueil de Locus (18.11) : la feuille du chrono seule (choisir le mandat et lancer, ou arrêter) */
+const DANS_ACC=/[?&]dans=accueil/.test(location.search)&&window.parent!==window;
+function dansChrono(){ const c=carteChrono(); montrer(sh('Chrono')+(c||'<p class="aide">Aucun mandat ouvert : crée-en un dans la Mine.</p>')); }
 function chronoStop(silencieux){ const c=S.chrono; if(!c) return; const min=Math.round((Date.now()-new Date(c.debut))/60000); S.chrono=null;
   if(min>=1&&S.mands[c.mandat]){ const id=uid(); S.heures[id]={id,mandat:c.mandat,date:jourDe(c.debut),min,note:(c.note||'').trim(),fact:true,src:'chrono',cree:nowIso()}; save(); toucherProjet(c.mandat); render(); if(!silencieux) toast(fH(min)+' notées sur '+S.mands[c.mandat].nom,'Modifier',()=>ouvrirHeure(id)); }
   else { save(); render(); if(!silencieux) toast('Moins d’une minute : rien de noté'); } }
@@ -1374,10 +1377,10 @@ document.addEventListener('click',e=>{
     case 'gdt-cle': gdtCleAction(); break;
     case 'gdt-lire': gdtHeures().then(()=>{ if(ed&&ed.k==='regl') vReglages(); toast(GH.err?'Pas possible : '+(GH.detail||GH.err):'Heures GDT relues'); }); break;
     case 'gdt-copier': { const t=`curl -s "${gdtLien()}" -H "apikey: ${GDT_KEY}"`; (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Lien copié'),()=>prompt('Le lien :',t)); break; }
-    case 'chrono-m': ui.chronoM=id; render(); break;
+    case 'chrono-m': ui.chronoM=id; render(); if(DANS_ACC) dansChrono(); break;
     case 'chrono-go': if(!$scrim.hidden) fermer(); chronoStart(id); break;
-    case 'chrono-stop': chronoStop(false); break;
-    case 'chrono-annuler': { const c=S.chrono; S.chrono=null; save(); render(); toast('Chrono annulé','Reprendre',()=>{ S.chrono=c; save(); render(); }); break; }
+    case 'chrono-stop': chronoStop(false); if(DANS_ACC&&!$scrim.hidden) fermer(); break;
+    case 'chrono-annuler': { const c=S.chrono; S.chrono=null; save(); render(); if(DANS_ACC&&!$scrim.hidden) fermer(); toast('Chrono annulé','Reprendre',()=>{ S.chrono=c; save(); render(); }); break; }
     case 'seg': ui.seg=b.dataset.s; render(); break;
     case 'voir': ui[b.dataset.cle]=true; render(); break;
     case 'an': ui.an=Math.min(new Date().getFullYear(),ui.an+(+b.dataset.n)); render(); break;
@@ -1477,6 +1480,7 @@ async function enter(user){
   booted=true; render(); setSync();
   const [,tire]=await Promise.all([bPull(!bLast),pull(!c),PB.tirer()]);
   if(relierDepuisProjets()) save(); render();
+  if(DANS_ACC&&/[?&]act=chrono/.test(location.search)) dansChrono();
   push(); PB.pousser(); gdtHeures(tire===true); /* clé créée seulement si les réglages sont à jour */
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{

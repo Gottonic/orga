@@ -33,6 +33,17 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .obj .eyebrow{color:color-mix(in srgb,var(--on-acc) 75%,transparent)}
 .obj b{font-weight:600}
 .obj span{font-size:13.5px}
+.obj .conseil{font-style:italic}
+/* une app au premier plan sur l'accueil (cadre transparent, commun/cadre.js) */
+.dans-fond{position:fixed;inset:0;z-index:69;background:rgba(20,16,28,.45);display:grid;place-items:center}
+.dans-fond.vu{background:transparent;pointer-events:none}
+.dans-fond .att{width:34px;height:34px;border-radius:99px;border:3px solid var(--accent);border-right-color:transparent;animation:tour 0.8s linear infinite}
+.dans-fond.vu .att{display:none}
+@keyframes tour{to{transform:rotate(360deg)}}
+iframe.dans{position:fixed;inset:0;z-index:70;width:100%;height:100%;border:0;background:transparent;opacity:0;transition:opacity .15s}
+iframe.dans.vu{opacity:1}
+.dans-x{position:fixed;z-index:72;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;width:40px;height:40px;border:0;border-radius:99px;background:rgba(0,0,0,.35);color:#fff;display:grid;place-items:center;cursor:pointer}
+.dans-x .ic{width:16px;height:16px}
 .tuile-sem{display:flex;align-items:center;gap:14px;background:var(--on-page);color:var(--on-acc);border:0;border-radius:20px;padding:16px;text-align:left;cursor:pointer;width:100%}
 .tuile-sem .pl{width:50px;height:50px;border-radius:15px;background:var(--page);color:var(--on-page);display:grid;place-items:center;flex:none}
 .tuile-sem .pl .ic{width:22px;height:22px}
@@ -240,9 +251,9 @@ function vAccueil(){
   let h='';
   if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, vide-tête, semaine, puis Claude</small></span>${P('suivant')}</button>`;
   h+=`<form class="ligne" id="f-vide" autocomplete="off"><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
-  if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}<span>${[o.secondaire,o.conseil].filter(Boolean).map(esc).join(' · ')}</span></section>`;
+  if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
   const grandes=[], carres=[];
-  if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
+  if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
   else carres.push(carre('etabli','L’Établi','etabli/'));
   if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">Séance du jour</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${s.min?'≈ '+fmtMin(s.min):''}${s.run?' · en cours':''}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}</article>`);
   else carres.push(carre('forge','La Forge','forge/'));
@@ -377,7 +388,7 @@ async function chercher(qBrut){ const q=plain(qBrut).trim(), $r=document.getElem
   const ou=n=>{ const p=String(n.p||''); if(p==='vide') return 'Vide-tête'; if(p.startsWith('j:')) return 'Journal S'+wkNum(p.slice(2)); if(p.startsWith('p:')){ const x=PB&&PB.get(p.slice(2)); return x?'Notes · '+x.name:'Notes'; } return 'Bibliothèque'; };
   const bloc=(t,L)=>L.length?`<span class="eyebrow">${t}</span><ul class="res">${L.join('')}</ul>`:'';
   $r.innerHTML=[
-    bloc('Projets',proj.map(p=>`<li><a href="etabli/#p:${esc(p.id)}">${esc(p.emoji||'')} ${marque(p.name,q)}<small>${esc(Projets.ETATS[Projets.etat(p)]||'')}</small></a></li>`).concat(dom.map(d=>`<li><a href="bibliotheque/#d:${esc(d.id)}">${esc(d.emoji||'')} ${marque(d.name,q)}<small>Domaine</small></a></li>`))),
+    bloc('Projets',proj.map(p=>`<li><a href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}">${esc(p.emoji||'')} ${marque(p.name,q)}<small>${esc(Projets.ETATS[Projets.etat(p)]||'')}</small></a></li>`).concat(dom.map(d=>`<li><a href="bibliotheque/#d:${esc(d.id)}">${esc(d.emoji||'')} ${marque(d.name,q)}<small>Domaine</small></a></li>`))),
     bloc('Notes',notes.map(n=>`<li><a href="bibliotheque/" data-ligne="${esc(n.id)}">${marque(n.t,q)}<small>${esc(ou(n))}${n.a?' · archivée':''}</small></a></li>`)),
     bloc('La Mine',mandats.map(m=>`<li><a href="mine/" data-mine="mandats">${marque(m.nom,q)}<small>Mandat</small></a></li>`)),
     bloc('Le Marché',arts.map(x=>`<li><a href="marche/">${marque(x.nom,q)}<small>${x.liste?'Sur la liste':'Article'}</small></a></li>`))
@@ -390,12 +401,32 @@ $plein.addEventListener('click',e=>{ const a=e.target.closest('a[data-ligne]'); 
 document.getElementById('b-chercher').addEventListener('click',()=>{ if(UID) ouvrirChercher(); });
 $main.addEventListener('submit',e=>{ e.preventDefault();
   if(e.target.id==='f-vide'){ const i=document.getElementById('i-vide'), v=i.value.trim(); if(!v) return; const L=lignes('vide'); const n={id:uid(),p:'vide',o:L.length?Math.min(...L.map(x=>x.o||0))-1:1,t:v,cree:AUJ()}; ecrireB('n:'+n.id,n); i.value=''; toast('Noté dans le vide-tête'); i.focus(); return; }
-  if(e.target.id==='f-marche'){ const v=document.getElementById('i-marche').value.trim(); if(!v){ location.href='marche/'; return; } vers('marche',{q:v}); return; } });
+  if(e.target.id==='f-marche'){ const i=document.getElementById('i-marche'), v=i.value.trim(); if(!v){ location.href='marche/'; return; } i.value=''; i.blur(); ouvrirDans('marche','q='+encodeURIComponent(v)); return; } });
 $main.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
-  if(b.id==='b-chrono'){ try{ localStorage.setItem('mine-tab','heures'); }catch(x){} location.href='mine/'; return; }
-  if(b.id==='b-saisie'){ vers('banque',{act:'saisie'}); return; }
-  if(b.dataset.forge){ vers('forge',{seance:b.dataset.forge,wk:CUR()}); return; } });
+  if(b.id==='b-chrono'){ ouvrirDans('mine','act=chrono'); return; }
+  if(b.id==='b-saisie'){ ouvrirDans('banque','act=saisie'); return; }
+  if(b.dataset.forge){ ouvrirDans('forge','seance='+encodeURIComponent(b.dataset.forge)+'&wk='+CUR()+'&plein=1'); return; } });
+/* liens « au premier plan » (projets de l'Établi) */
+document.addEventListener('click',e=>{ const a=e.target.closest('a[data-dans]'); if(!a||e.ctrlKey||e.metaKey) return; e.preventDefault(); if(!$plein.hidden) fermerPlein(); ouvrirDans(a.dataset.dans,'',a.dataset.hash||''); });
+
+/* =============================== Une app au premier plan =============================== */
+let $dans=null, $fond=null, $x=null, dansT=null, derDans=null, derToast={t:'',le:0};
+function ouvrirDans(app,params,hash){
+  if($dans) return;
+  $fond=document.createElement('div'); $fond.className='dans-fond'; $fond.innerHTML='<span class="att" aria-label="Ouverture…"></span>'; document.body.appendChild($fond);
+  const f=document.createElement('iframe'); f.className='dans'; f.title=app; f.style.colorScheme=['forge','banque'].includes(app)?'dark':'light';
+  f.src=app+'/?dans=accueil'+(params?'&'+params:'')+(hash?'#'+hash:''); document.body.appendChild(f); $dans=f; derDans=f.contentWindow;
+  $x=document.createElement('button'); if(/plein=1/.test(params||'')) $x.hidden=true; $x.type='button'; $x.className='dans-x'; $x.setAttribute('aria-label','Revenir à l’accueil'); $x.innerHTML=P('supprimer'); $x.addEventListener('click',fermerDans); document.body.appendChild($x);
+  document.body.style.overflow='hidden';
+  dansT=setTimeout(()=>{ if($dans){ $dans.classList.add('vu'); $fond.classList.add('vu'); } },8000); }
+function fermerDans(){ if(!$dans) return; $dans.remove(); $fond.remove(); $x.remove(); $dans=$fond=$x=null; clearTimeout(dansT); document.body.style.overflow='';
+  Promise.all([tirer(),PB?PB.tirer():null]).then(render); }
+addEventListener('message',e=>{ const d=e.data; if(e.origin!==location.origin||!d||!d.locus) return; if(!$dans&&e.source!==derDans) return;
+  if(d.toast){ if(d.toast!==derToast.t||Date.now()-derToast.le>1500) toast(d.toast); derToast={t:d.toast,le:Date.now()}; }
+  if(!$dans||e.source!==$dans.contentWindow) return;
+  if(d.etat==='pret'){ clearTimeout(dansT); $dans.classList.add('vu'); $fond.classList.add('vu'); $x.hidden=true; }
+  if(d.etat==='fermer') fermerDans(); });
 
 /* =============================== Connexion (une seule, pour toutes les apps) =============================== */
 function vLogin(msg){ $main.innerHTML=`<form class="login" id="f-login"><h2>Bienvenue dans Locus</h2><p class="note">Connecte-toi une fois : toutes les apps s'ouvriront avec ce compte.</p><input type="email" id="l-mail" autocomplete="username" placeholder="Adresse e-mail" aria-label="Adresse e-mail" required><input type="password" id="l-pass" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe" required><button type="submit">Se connecter</button>${msg?`<p class="err">${esc(msg)}</p>`:''}</form>`;
