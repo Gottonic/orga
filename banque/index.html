@@ -2341,6 +2341,8 @@ document.getElementById('fichier').addEventListener('change',async e=>{
 
 /* =============================== Démarrage =============================== */
 function showLogin(msg){ booted=false; document.getElementById('login').hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; try{ document.getElementById('l-mail').focus(); }catch(e){} }
+/* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
+const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
 async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
@@ -2348,6 +2350,7 @@ async function enter(user){
   S=fromRows(prev); booted=true; render(); setSync();
   try{ if(window.Projets&&sb){ PB=Projets.base(sb,UID); PB.tirer(); } }catch(e){ PB=null; }
   await pull(!c); if(!Object.keys(S.cats).length){ semerCategories(); save(); render(); }
+  { const v=versLocus('banque'); if(v&&v.act==='saisie'){ const f=document.querySelector('.fab'); if(f) f.click(); } }
   push(); setTimeout(envoyerDocs,2500);
   if(gdtCfg().me) setTimeout(()=>syncGdt(false),1500);
 }

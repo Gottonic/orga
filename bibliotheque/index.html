@@ -559,6 +559,8 @@ function lireHash(){ if(SEUL){ ui.tab='projets'; ui.page=null; return; } const h
   if(h.startsWith('p:')||h.startsWith('d:')){ ui.tab='projets'; ui.page=h; } else if(['vide','projets','journal','chercher'].includes(h)){ ui.tab=h; ui.page=null; } }
 addEventListener('hashchange',()=>{ lireHash(); ui.zoom=null; render(); });
 function showLogin(msg){ booted=false; document.getElementById('login').hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; }
+/* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
+const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
 async function enter(user){
   UID=user.id; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
@@ -569,6 +571,7 @@ async function enter(user){
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(booted&&!editing()) render(); });
   render(); setSync();
   await Promise.all([pull(!c),PB.tirer()]); sansEmojisJournal(); if(!editing()) render(); push();
+  { const v=versLocus('bibliotheque'); if(v&&v.id&&N[v.id]){ const b=document.createElement('button'); b.hidden=true; b.dataset.act='aller'; b.dataset.id=v.id; document.body.appendChild(b); b.click(); b.remove(); } }
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{ e.preventDefault();
   try{ const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById('l-mail').value.trim(),password:document.getElementById('l-pass').value}); if(error) throw error; await enter(data.user); }

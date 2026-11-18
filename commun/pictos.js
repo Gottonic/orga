@@ -37,7 +37,11 @@
     projet: '<path d="M10 2v16M2 10h16M4.5 4.5l11 11M15.5 4.5l-11 11"/>',
     echeance: '<circle cx="10" cy="11" r="7"/><path d="M10 7.5V11l2.5 2M7.5 2h5"/>',
     conge: '<path d="M2 17.5h16M10 17.5V8M3 8c1.5-5 12.5-5 14 0z"/>',
-    alerte: '<path d="M10 2 18.5 17h-17zM10 8v4M10 14v1"/>'
+    alerte: '<path d="M10 2 18.5 17h-17zM10 8v4M10 14v1"/>',
+    /* accueil du jour (18.11) */
+    chercher: '<circle cx="8" cy="8" r="5.5"/><path d="M12 12l5.5 5.5"/>',
+    lecture: '<path d="M5 3.5v13l11-6.5z"/>',
+    copier: '<path d="M7 7h10v10H7zM13 7V3H3v10h4"/>'
   };
   const svg = (k, cls) => P[k] ? `<svg class="ic${cls ? ' ' + cls : ''}" viewBox="0 0 20 20" aria-hidden="true">${P[k]}</svg>` : '';
   window.Pictos = { P, svg, plaque: (k, cls) => `<span class="plaque${cls ? ' ' + cls : ''}">${svg(k)}</span>` };

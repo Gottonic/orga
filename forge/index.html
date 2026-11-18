@@ -1275,6 +1275,7 @@ function render(){
   const views = { calendrier: vCalendar, semaine: vWeek, exos: vExos, suivi: vStats, nutrition: vNutrition, donnees: vData };
   const sk = {}; app.querySelectorAll("[data-sk]").forEach(el => { sk[el.dataset.sk] = el.scrollTop; });
   app.innerHTML = (views[S.view] || vCalendar)() + ovHtml() + runBar();
+  publierLocus();
   document.body.classList.toggle("runbar-on", !!app.querySelector(".runbar"));
   app.querySelectorAll("[data-sk]").forEach(el => { if (sk[el.dataset.sk]) el.scrollTop = sk[el.dataset.sk]; });
   document.body.classList.toggle("ov-open", !!(S.ui.ov && (S.view === "semaine" || S.ui.ov.type === "pe" || S.ui.ov.type === "exo")));
@@ -3309,6 +3310,29 @@ async function enter(user){
   const ok = await pull(!c);
   if (ok) { if (isEmpty()) { if (S.view !== "donnees") setView("donnees"); } else await checkProgramme(false); }
   push(); render();
+  /* depuis l'accueil de Locus : démarrer la séance du jour */
+  const v = versLocus("forge");
+  if (v && v.seance) { setView("semaine", v.wk || currentWeekId()); setTimeout(() => runStart(v.seance), 50); }
+}
+/* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
+const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
+/* Locus (accueil du jour et routine du lundi, 18.11) : les séances de cette semaine et de la suivante, avec leur jour,
+   dans la ligne `locus/semaines` de la table carnet (hors des collections du carnet) et dans localStorage « locus-forge ». */
+let locusT = null;
+function publierLocus(){
+  clearTimeout(locusT);
+  locusT = setTimeout(() => { try {
+    if (!UID || isEmpty()) return;
+    const w0 = currentWeekId(), w1 = isoWeekId(addDays(todayUTC(), 7)), semaines = {};
+    [w0, w1].forEach(wk => { const log = S.data.logs[wk] || {};
+      semaines[wk] = planOf(wk).sessions.map(s => { const st = (log.sessions && log.sessions[s.id]) || {};
+        return { id:s.id, t:s.title || "", day:st.day == null ? null : st.day, done:!!st.done, run:!!(st.run && !st.done), min:s.min || null, opt:!!s.optional }; }); });
+    const sig = canon(semaines), cle = "forge-locus-" + UID; const data = { semaines, le:new Date().toISOString() };
+    let avant = null; try { avant = JSON.parse(localStorage.getItem("locus-forge") || "null"); } catch(e) {}
+    if (!avant || canon(avant.semaines) !== sig) { try { localStorage.setItem("locus-forge", JSON.stringify(data)); } catch(e) {} }
+    if (!sb || !navigator.onLine || localStorage.getItem(cle) === sig) return;
+    sb.from(TABLE).upsert({ user_id:UID, key:"locus/semaines", data, deleted:false }, { onConflict:"user_id,key" }).then(({ error }) => { if (!error) try { localStorage.setItem(cle, sig); } catch(e) {} });
+  } catch(e) {} }, 1500);
 }
 async function startApp(){
   if ("serviceWorker" in navigator) { try { navigator.serviceWorker.register("../sw.js", { scope:"../" }); } catch(e) {} }

@@ -1091,7 +1091,14 @@ async function enter(user){
   if(!Object.keys(S.cats).length){ semerRayons(); save(); render(); }
   if(accentuerRayons()){ save(); render(); }
   entretien(); push();
+  /* depuis l'accueil : la ligne d'achat, et les idées du vide-tête envoyées au Marché par la routine du lundi */
+  let L=[]; try{ L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); localStorage.removeItem('locus-vers-marche'); }catch(e){}
+  const v=versLocus('marche'); if(v&&v.q) L.push(v.q);
+  L.forEach(q=>{ ui.q=q; ajoutRapide(); });
 }
+/* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
+const versLocus=app=>{ try{ const v=JSON.parse(sessionStorage.getItem('locus-vers')||'null'); if(v&&v.app===app){ sessionStorage.removeItem('locus-vers'); return v; } }catch(e){} return null; };
+
 document.getElementById('loginForm').addEventListener('submit',async e=>{
   e.preventDefault(); const mail=document.getElementById('l-mail').value.trim(), pass=document.getElementById('l-pass').value;
   try{ const {data,error}=await sb.auth.signInWithPassword({email:mail,password:pass}); if(error) throw error; await enter(data.user); }
