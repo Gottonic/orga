@@ -1236,6 +1236,8 @@ function basMouvements(L){
     else if((k=pr.match(/^Ordre permanent (.*)$/))){ canal='ordre'; tiers=k[1]; }
     else if(/^Taxe annuelle/i.test(pr)){ canal='frais'; tiers='Taxe annuelle carte BAS'; }
     tiers=tiers.replace(/\s*Numéro de carte.*$/,'').replace(/\s+/g,' ').replace(/^[ ,]+|[ ,]+$/g,'');
+    /* « Bonification 350.944.100-06 » : un numéro de compte, le titulaire est sur la ligne suivante (ex. un virement entre tes comptes BAS) */
+    if(/^[\d.\-]{8,}$/.test(tiers)&&lignes[1]&&lignes[1].trim()) tiers=lignes[1].trim().replace(/\s+/g,' ');
     if(['virement','ordre'].includes(canal)&&estMoi(tiers)) canal='moi';
     const base=r.ordre||[r.compta,r.compte,r.montant,pr].join('|'); vus[base]=(vus[base]||0)+1;
     return {src:'bas',compte:r.compte,ref:'bas|'+base+(vus[base]>1?'#'+vus[base]:''),date:date||r.valeur,compta:r.compta,chf:r2(r.montant),orig:null,tiers,banque:tiers,canal,lieu:'',vers,cat:null,note}; });
@@ -1313,7 +1315,7 @@ function appliquerImport(I){
     const t={id,date:m.date,compte:m.compte,montant:m.chf,tiers:m.tiers,banque_nom:m.banque,cat:m.cat||null,tags:tagsActifs(m.date),note:m.note||'',parts:null,autre:null,lien:null,source:src,ref:m.ref,orig:m.orig||null,lieu:m.lieu||'',canal:m.canal,cree:now};
     if(m.paire){ t.cat=VIR; t.autre=m.paire.compte; t.lien=idDe(m.paire); }
     else if(m.face&&S.tx[m.face]){ const f=S.tx[m.face]; t.cat=VIR; t.autre=f.compte; t.lien=f.id; f.lien=id; f.autre=m.compte; f.cat=VIR; }
-    else if(m.vers&&S.comptes[m.vers]&&sansHisto(m.vers,m.date)){ t.cat=VIR; t.autre=m.vers; }
+    else if(m.vers&&S.comptes[m.vers]&&sansHisto(m.vers,m.date)&&!(src==='yuh'&&['yuh-epargne','yuh-placements'].includes(m.vers))){ t.cat=VIR; t.autre=m.vers; }  /* Yuh Épargne et Placements : leur histoire est dans le relevé Yuh, le miroir est créé */
     else if(m.vers&&S.comptes[m.vers]){ const mid=id+'m'; t.cat=VIR; t.autre=m.vers; t.lien=mid;
       S.tx[mid]={id:mid,date:m.date,compte:m.vers,montant:-m.chf,tiers:m.tiers,cat:VIR,autre:m.compte,lien:id,tags:[],note:'',parts:null,source:'miroir',cree:now}; }
     S.tx[id]=t; n++; });
