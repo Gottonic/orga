@@ -947,16 +947,18 @@ function preparerClassement(J,nom){
   if(!J||J.type!=='classement'||!Array.isArray(J.elements)) throw new Error('ce fichier n’est pas un classement.');
   const parRef=new Map(); Object.values(S.tx).forEach(t=>{ if(t.ref) parRef.set(t.ref,t); });
   const R={nom,J,ok:[],deja:0,absent:0,catInconnue:0,par:{}};
+  const nouv=new Set((J.categories||[]).filter(c=>c&&c.id&&c.nom&&c.parent&&S.cats[c.parent]&&!S.cats[c.id]).map(c=>c.id)); R.nouv=[...nouv];  /* sous-catégories à créer (ex. pro.formation) */
   J.elements.forEach(e=>{ const t=parRef.get(e.ref); if(!t){ R.absent++; return; }
-    if(e.cat&&!S.cats[e.cat]){ R.catInconnue++; return; }
+    if(e.cat&&!S.cats[e.cat]&&!nouv.has(e.cat)){ R.catInconnue++; return; }
     if(!e.force&&((t.cat&&t.cat!==VIR)||(t.parts&&t.parts.length)||estVir(t)&&e.cat!==VIR)){ R.deja++; return; }  /* force : décision explicite de Nicolas (ex. un virement qui était en fait une dépense) */
     if(!e.cat&&!(e.tags&&e.tags.length)){ return; }
     R.ok.push([e,t]); R.par[e.par||'?']=(R.par[e.par||'?']||0)+1; });
   return R; }
 function vClassement(){
-  if(!cl) return; const lib={'historique':'d’après tes opérations de 2026','compta':'d’après tes anciennes compta','wallet':'d’après Wallet','mot-clé':'d’après le nom du commerçant','règle':'règles (salaire, frais, crypto…)','étiquette':'étiquette seulement','décision':'tes réponses'};
+  if(!cl) return; const lib={'historique':'d’après tes opérations de 2026','compta':'d’après tes anciennes compta','wallet':'d’après Wallet','mot-clé':'d’après le nom du commerçant','règle':'règles (salaire, frais, crypto…)','étiquette':'étiquette seulement','décision':'tes réponses','Nicolas':'tes réponses','Nicolas+Claude':'tes réponses et le nom du commerçant'};
   let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans appliquer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Classement</h2>'+okBtn('clok')+'</div>';
   h+='<p class="note">'+esc(cl.nom)+' : <b>'+cl.ok.length+'</b> opération'+(cl.ok.length>1?'s':'')+' à classer d’office. Ce que tu as déjà classé n’est pas touché.</p>';
+  if(cl.nouv.length) h+='<p class="note">Nouvelle'+(cl.nouv.length>1?'s':'')+' catégorie'+(cl.nouv.length>1?'s':'')+' : <b>'+cl.nouv.map(id=>{ const c=cl.J.categories.find(x=>x.id===id); return esc(S.cats[c.parent].nom+' › '+c.nom); }).join(', ')+'</b>.</p>';
   h+='<section class="card"><ul class="plain">'+Object.entries(cl.par).sort((a,b)=>b[1]-a[1]).map(([k,n])=>'<li><b class="num">'+n+'</b> '+esc(lib[k]||k)+'</li>').join('')+'</ul>'
     +(cl.deja?'<p class="note">'+cl.deja+' déjà classée'+(cl.deja>1?'s':'')+' : laissée'+(cl.deja>1?'s':'')+' comme elle'+(cl.deja>1?'s sont':' est')+'.</p>':'')
     +(cl.absent?'<p class="note">'+cl.absent+' introuvable'+(cl.absent>1?'s':'')+' : importe d’abord les relevés qui vont avec, puis recharge ce fichier.</p>':'')
@@ -964,6 +966,7 @@ function vClassement(){
   h+='<button class="btn" data-act="clok">'+svg(P.check,20)+'Classer '+cl.ok.length+' opération'+(cl.ok.length>1?'s':'')+'</button>';
   ouvrir(h); }
 function appliquerClassement(){
+  cl.nouv.forEach(id=>{ const c=cl.J.categories.find(x=>x.id===id); S.cats[id]={id,nom:c.nom,parent:c.parent,ordre:Object.values(S.cats).filter(x=>x.parent===c.parent).length}; });
   (cl.J.etiquettes||[]).forEach(g=>{ if(g&&g.id&&!S.tags[g.id]) S.tags[g.id]={id:g.id,nom:g.nom||g.id,genre:g.genre||null}; });
   let n=0;
   cl.ok.forEach(([e,t])=>{ if(e.force&&e.cat!==VIR&&estVir(t)&&!t.lien) t.autre=null;
