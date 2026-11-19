@@ -254,6 +254,7 @@ input[type=checkbox]{accent-color:var(--acc)}
 .ij-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .ij-l{display:flex;justify-content:space-between;gap:8px}
 .ij-l b:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .gdt-f{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .gdt-f .input{flex:1 1 180px}
 .sem{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
@@ -359,7 +360,7 @@ h1,h2,h3,.card>h2,.sect>.st h2{letter-spacing:-.02em}
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-titre"></div></div>
 <input type="file" id="fichier" accept=".json,application/json" hidden>
 <input type="file" id="f-just" accept=".zip,application/zip,application/x-zip-compressed" hidden>
-<input type="file" id="f-yuh" accept=".csv,.xlsx,text/csv,text/comma-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+<input type="file" id="f-yuh" accept=".csv,.xlsx,.json,application/json,text/csv,text/comma-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 <script src="../commun/supabase.js"></script>
 <script src="../commun/projets.js"></script>
 <script>
@@ -938,6 +939,39 @@ async function appliquerJustificatifs(){
   ij.E.forEach(it=>{ if(it.url) URL.revokeObjectURL(it.url); }); ij=null;
   save(); envoyerDocs(); return [j,c]; }
 
+/* =============================== Classement préparé par Claude (historique) =============================== */
+/* Fichier JSON { type:"classement", version:1, etiquettes:[{id,nom}], elements:[{ref, cat, autre?, tags?, note?, par}] }.
+   Appliqué aux opérations importées qui ont cette ref (`ref` du relevé) et qui ne sont pas encore classées : rien de ce que tu as déjà classé n'est touché. */
+let cl=null;
+function preparerClassement(J,nom){
+  if(!J||J.type!=='classement'||!Array.isArray(J.elements)) throw new Error('ce fichier n’est pas un classement.');
+  const parRef=new Map(); Object.values(S.tx).forEach(t=>{ if(t.ref) parRef.set(t.ref,t); });
+  const R={nom,J,ok:[],deja:0,absent:0,catInconnue:0,par:{}};
+  J.elements.forEach(e=>{ const t=parRef.get(e.ref); if(!t){ R.absent++; return; }
+    if(e.cat&&!S.cats[e.cat]){ R.catInconnue++; return; }
+    if(!e.force&&((t.cat&&t.cat!==VIR)||(t.parts&&t.parts.length)||estVir(t)&&e.cat!==VIR)){ R.deja++; return; }  /* force : décision explicite de Nicolas (ex. un virement qui était en fait une dépense) */
+    if(!e.cat&&!(e.tags&&e.tags.length)){ return; }
+    R.ok.push([e,t]); R.par[e.par||'?']=(R.par[e.par||'?']||0)+1; });
+  return R; }
+function vClassement(){
+  if(!cl) return; const lib={'historique':'d’après tes opérations de 2026','compta':'d’après tes anciennes compta','wallet':'d’après Wallet','mot-clé':'d’après le nom du commerçant','règle':'règles (salaire, frais, crypto…)','étiquette':'étiquette seulement','décision':'tes réponses'};
+  let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans appliquer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Classement</h2>'+okBtn('clok')+'</div>';
+  h+='<p class="note">'+esc(cl.nom)+' : <b>'+cl.ok.length+'</b> opération'+(cl.ok.length>1?'s':'')+' à classer d’office. Ce que tu as déjà classé n’est pas touché.</p>';
+  h+='<section class="card"><ul class="plain">'+Object.entries(cl.par).sort((a,b)=>b[1]-a[1]).map(([k,n])=>'<li><b class="num">'+n+'</b> '+esc(lib[k]||k)+'</li>').join('')+'</ul>'
+    +(cl.deja?'<p class="note">'+cl.deja+' déjà classée'+(cl.deja>1?'s':'')+' : laissée'+(cl.deja>1?'s':'')+' comme elle'+(cl.deja>1?'s sont':' est')+'.</p>':'')
+    +(cl.absent?'<p class="note">'+cl.absent+' introuvable'+(cl.absent>1?'s':'')+' : importe d’abord les relevés qui vont avec, puis recharge ce fichier.</p>':'')
+    +(cl.catInconnue?'<p class="note retard">'+cl.catInconnue+' avec une catégorie qui n’existe plus chez toi : ignorée'+(cl.catInconnue>1?'s':'')+'.</p>':'')+'</section>';
+  h+='<button class="btn" data-act="clok">'+svg(P.check,20)+'Classer '+cl.ok.length+' opération'+(cl.ok.length>1?'s':'')+'</button>';
+  ouvrir(h); }
+function appliquerClassement(){
+  (cl.J.etiquettes||[]).forEach(g=>{ if(g&&g.id&&!S.tags[g.id]) S.tags[g.id]={id:g.id,nom:g.nom||g.id,genre:g.genre||null}; });
+  let n=0;
+  cl.ok.forEach(([e,t])=>{ if(e.force&&e.cat!==VIR&&estVir(t)&&!t.lien) t.autre=null;
+    if(e.cat){ t.cat=e.cat; if(e.cat===VIR&&e.autre&&!t.autre) t.autre=e.autre; }
+    if(e.tags&&e.tags.length){ e.tags.forEach(g=>{ if(!S.tags[g]) S.tags[g]={id:g,nom:g}; }); t.tags=[...new Set((t.tags||[]).concat(e.tags))]; }
+    if(e.note&&!t.note) t.note=String(e.note); n++; });
+  cl=null; save(); return n; }
+
 function vReglages(){
   let h='<section class="card"><h2>Compte</h2><p class="note" style="margin-top:6px">Connecté : <b>'+esc(EMAIL)+'</b></p><p class="note">'+esc(document.getElementById('sync').title)+(dirty.size?' ('+dirty.size+' en attente)':'')+'</p><div class="pills" style="margin-top:12px"><button class="btn ghost sm" data-act="synchro">Synchroniser maintenant</button><button class="btn warn sm" data-act="logout">Se déconnecter</button></div></section>';
   if(!comptesTous().length) h+='<section class="card"><h2>Données de départ</h2><p class="note" style="margin-top:6px">Charge le fichier <b>cash_depart.json</b> (ta remise en ordre 2026). Le recharger ne crée pas de doublons et ne touche pas à ce que tu as déjà modifié.</p><p style="margin:12px 0 0"><button class="btn sm" data-act="charger">Choisir le fichier…</button></p><p class="note" id="r-import"></p></section>';
@@ -958,7 +992,8 @@ function vReglages(){
 let draft=null, sheetErr='';
 function okBtn(act){ return '<button class="okb" data-act="'+act+'">'+svg(P.check,16,null,2.6)+'Enregistrer</button>'; }
 function ouvrir(html){ const sc=$sheet.scrollTop; $sheet.innerHTML=html; $scrim.hidden=false; document.body.style.overflow='hidden'; $sheet.scrollTop=sc; }
-function fermer(){ if(draft&&draft.newId&&!S.tx[draft.newId]&&draft.docs&&draft.docs.length){ draft.docs.forEach(supprimerDoc); save(); }
+function fermer(){ cl=null;
+ if(draft&&draft.newId&&!S.tx[draft.newId]&&draft.docs&&draft.docs.length){ draft.docs.forEach(supprimerDoc); save(); }
   $scrim.hidden=true; $sheet.innerHTML=''; draft=null; imp=null; dd=null; ec=null; et=null; eb=null; ex=null; er=null; document.body.style.overflow=''; }
 function dernierCompte(){ return (S.regl.dernierCompte&&S.comptes[S.regl.dernierCompte])?S.regl.dernierCompte:(comptesTri()[0]||{}).id; }
 function nouvelleSaisie(){
@@ -2228,6 +2263,7 @@ document.addEventListener('click',e=>{
   else if(a==='importyuh') document.getElementById('f-yuh').click();
   else if(a==='importjust') document.getElementById('f-just').click();
   else if(a==='fermerdoc') fermerDoc();
+  else if(a==='clok'){ if(!cl) return; const n=appliquerClassement(); fermer(); render(); setTimeout(()=>alert(n+' opération'+(n>1?'s':'')+' classée'+(n>1?'s':'')+'.'),50); }
   else if(a==='ijok'){ if(!ij) return; appliquerJustificatifs().then(([j,c])=>{ fermer(); render(); setTimeout(()=>alert(j+' justificatif'+(j>1?'s':'')+' joint'+(j>1?'s':'')+', '+c+' opération'+(c>1?'s':'')+' créée'+(c>1?'s':'')+'.'),50); }); }
   else if(a==='importok'){ if(!imp) return; const n=appliquerImport(imp); fermer(); const o=orphelines().length; if(aClasser().length||o) ui.tab='rappro'; ui.limite=150; window.scrollTo(0,0); render(); setTimeout(()=>alert(n+' ligne'+(n>1?'s':'')+' du relevé importée'+(n>1?'s':'')+'.'+(o?'\n\n⚠ '+o+' saisie'+(o>1?'s':'')+' pas retrouvée'+(o>1?'s':'')+' dans le relevé : à vérifier, sinon le solde est faux.':'')),50); }
   else if(a==='toutvalider'){ const H=historique(); let n=0; aClasser().forEach(t=>{ const dm=detteQuiColle(t); if(dm){ reglerAvec(t,dm); n++; return; } const p=twintPersonne(t)?null:proposer(t,H); if(p&&p.sure&&S.cats[p.cat]){ t.cat=p.cat; n++; } }); if(n){ save(); render(); } }
@@ -2335,6 +2371,7 @@ document.getElementById('f-just').addEventListener('change',async e=>{
 });
 document.getElementById('f-yuh').addEventListener('change',async e=>{
   const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  if(/\.json$/i.test(f.name)){ try{ cl=preparerClassement(JSON.parse(await f.text()),f.name); draft=null; vClassement(); }catch(err){ cl=null; alert('Impossible de lire ce classement : '+(err.message||err)); } return; }
   try{ imp=await preparerFichier(f); draft=null; vImport(); }
   catch(err){ imp=null; alert('Impossible de lire ce relevé : '+(err.message||err)); }
 });
