@@ -955,9 +955,9 @@ function preparerClassement(J,nom){
     R.ok.push([e,t]); R.par[e.par||'?']=(R.par[e.par||'?']||0)+1; });
   return R; }
 function vClassement(){
-  if(!cl) return; const lib={'historique':'d’après tes opérations de 2026','compta':'d’après tes anciennes compta','wallet':'d’après Wallet','mot-clé':'d’après le nom du commerçant','règle':'règles (salaire, frais, crypto…)','étiquette':'étiquette seulement','décision':'tes réponses','Nicolas':'tes réponses','Nicolas+Claude':'tes réponses et le nom du commerçant'};
+  if(!cl) return; const lib={'historique':'d’après tes opérations de 2026','compta':'d’après tes anciennes compta','wallet':'d’après Wallet','mot-clé':'d’après le nom du commerçant','règle':'règles (salaire, frais, crypto…)','étiquette':'étiquette seulement','décision':'tes réponses','Nicolas':'tes réponses','Nicolas+Claude':'tes réponses et le nom du commerçant','correction':'corrections (remplacent le classement actuel)'};
   let h='<div class="sh"><button class="ibtn" data-act="fermer" aria-label="Fermer sans appliquer">'+svg(P.x,24)+'</button><h2 id="sh-titre">Classement</h2>'+okBtn('clok')+'</div>';
-  h+='<p class="note">'+esc(cl.nom)+' : <b>'+cl.ok.length+'</b> opération'+(cl.ok.length>1?'s':'')+' à classer d’office. Ce que tu as déjà classé n’est pas touché.</p>';
+  h+='<p class="note">'+esc(cl.nom)+' : <b>'+cl.ok.length+'</b> opération'+(cl.ok.length>1?'s':'')+' à classer d’office. '+(cl.ok.some(([e])=>e.force)?'Correction : la catégorie actuelle est remplacée.':'Ce que tu as déjà classé n’est pas touché.')+'</p>';
   if(cl.nouv.length) h+='<p class="note">Nouvelle'+(cl.nouv.length>1?'s':'')+' catégorie'+(cl.nouv.length>1?'s':'')+' : <b>'+cl.nouv.map(id=>{ const c=cl.J.categories.find(x=>x.id===id); return esc(S.cats[c.parent].nom+' › '+c.nom); }).join(', ')+'</b>.</p>';
   h+='<section class="card"><ul class="plain">'+Object.entries(cl.par).sort((a,b)=>b[1]-a[1]).map(([k,n])=>'<li><b class="num">'+n+'</b> '+esc(lib[k]||k)+'</li>').join('')+'</ul>'
     +(cl.deja?'<p class="note">'+cl.deja+' déjà classée'+(cl.deja>1?'s':'')+' : laissée'+(cl.deja>1?'s':'')+' comme elle'+(cl.deja>1?'s sont':' est')+'.</p>':'')
