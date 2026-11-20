@@ -42,10 +42,10 @@
     if (st.dirty.length) setTimeout(pousser, 800); /* achats écrits avant, pas encore partis */
     const liste = (pid) => Object.values(st.prev).filter((a) => a && a.projet === pid).sort((a, b) => (a.liste === b.liste ? String(a.cree).localeCompare(String(b.cree)) : a.liste ? -1 : 1));
     function ajouter(p, nom) {
-      nom = String(nom || '').trim().replace(/\s+/g, ' '); if (!p || !nom) return null;
+      nom = String(nom || '').trim().replace(/\s+/g, ' '); if (!nom) return null;
       const now = new Date().toISOString();
-      const a = { id: uid(), nom, qte: '', note: '', ou: [], basique: false, rythme: 0, achats: [], cree: now, cat: '', liste: true, ajoute: now, auto: false, panier: null,
-        projet: p.id, projetNom: p.name || '', projetE: p.emoji || '' };
+      const a = Object.assign({ id: uid(), nom, qte: '', note: '', ou: [], basique: false, rythme: 0, achats: [], cree: now, cat: '', liste: true, ajoute: now, auto: false, panier: null },
+        p ? { projet: p.id, projetNom: p.name || '', projetE: p.emoji || '' } : {}); /* sans projet : un achat ordinaire du Marché */
       ecrire('a:' + a.id, a); return a;
     }
     function basculer(id) {

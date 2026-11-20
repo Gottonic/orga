@@ -68,7 +68,7 @@
     }
     const D = {};
     try { const rs = await Promise.all(req.map((x) => x[1])); rs.forEach((r, i) => { D[req[i][0]] = ((r && r.data) || []).filter((x) => x && x.data).map((x) => Object.assign({ _k: x.key }, x.data)); }); } catch (e) {}
-    const ou = (n) => { const p = String(n.p || ''); if (p === 'vide') return 'Vide-tête'; if (p.startsWith('j:')) return 'Journal S' + wkNum(p.slice(2));
+    const ou = (n) => { const p = String(n.p || ''); if (p === 'vide') return 'Vide-tête'; if (p === 'taches') return n.m2 ? 'Tâches · 2 min' : 'Tâches'; if (p.startsWith('j:')) return 'Journal S' + wkNum(p.slice(2));
       if (p.startsWith('p:')) { const x = PB && PB.get(p.slice(2)); return x ? 'Notes · ' + x.name : 'Notes'; } if (p.startsWith('d:')) { const x = PB && PB.domaine(p.slice(2)); return x ? 'Notes · ' + x.name : 'Notes'; } return 'Notes'; };
     (D.notes || []).forEach((n) => { const ent = plain(n.t).includes(q); R.push({ app: 'bibliotheque', type: 'ligne', id: n.id, t: n.t || '…', sm: ent ? '' : n.d, s: ou(n) + (n.a ? ' · archivée' : '') }); });
     (D.mands || []).forEach((m) => R.push({ app: 'mine', type: 'mandat', id: m.id, t: m.nom, s: 'Mandat' }));

@@ -152,6 +152,7 @@ pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius
 <script src="commun/pictos.js"></script>
 <script src="commun/projets.js"></script>
 <script src="commun/chercher.js"></script>
+<script src="commun/achats.js"></script>
 <script>
 'use strict';
 /* =====================================================================================================
@@ -193,7 +194,7 @@ const semainePrec=k=>wkKey(parse(plusJ(Projets.lundi(k),-7)));
 const jourRoutine=()=>[0,1,2].includes(new Date().getDay());
 
 /* --------- état --------- */
-let sb=null, UID=null, PB=null;
+let sb=null, UID=null, PB=null, AB=null;
 let B={}; /* biblio_rows utiles : clé → données */
 let FORGE=null, CHRONO=null, sync='';
 const LS=()=>'locus-accueil-'+UID;
@@ -219,7 +220,7 @@ function ecrireB(key,data){ if(data==null) delete B[key]; else B[key]=data; gard
 async function tirer(){
   if(!sb||!UID||!navigator.onLine) return;
   const N=semaineRoutine(), Pr=semainePrec(N), C=CUR();
-  const racines=['vide','j:'+C,'j:'+Pr,'j:'+N];
+  const racines=['vide','taches','j:'+C,'j:'+Pr,'j:'+N];
   try{
     const [a,b,f,m]=await Promise.all([
       sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).in('data->>p',racines),
@@ -252,7 +253,7 @@ function vAccueil(){
   const N=semaineRoutine(), fait=((B['s:routine']||{}).fait||[]).includes(N);
   const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour();
   let h='';
-  if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, boîtes, Banque, vide-tête, semaine, puis Claude</small></span>${P('suivant')}</button>`;
+  if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, boîtes, Banque, vide-tête, tâches, semaine, puis Claude</small></span>${P('suivant')}</button>`;
   h+=`<form class="ligne" id="f-vide" autocomplete="off"><span class="sem-n" title="Semaine ${wkNum(CUR())}" aria-label="Semaine ${wkNum(CUR())}">${wkNum(CUR())}</span><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
   if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
   const grandes=[], carres=[];
@@ -281,8 +282,8 @@ function render(){ if(!UID) return; if(document.activeElement&&$main.contains(do
 const $plein=document.getElementById('plein');
 const R={etape:1, sel:null, note:null};
 /* ordre voulu par Nicolas (19.11) : humeur, journal, boîtes à vider, Banque, vide-tête, agenda, projets, entraînements, Claude */
-const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Vider la tête','L’agenda','Placer les projets','Placer les entraînements','Pour Claude'];
-const CLES=['humeur','journal','boites','banque','vide','agenda','projets','forge','claude'];
+const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Pour Claude'];
+const CLES=['humeur','journal','boites','banque','vide','deuxmin','agenda','projets','forge','claude'];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
 function ouvrirRoutine(){ R.etape=1; R.sel=null; R.note=null; $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
 function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
@@ -311,8 +312,12 @@ function vRoutine(){
        ?`<span class="note">Projets placés sur des jours ou des semaines, et séances de la Forge, dans un calendrier « Locus ». Proton le relit toutes les 8 à 16 heures.</span><input readonly value="${esc(lien)}" aria-label="Lien de l’agenda Locus" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-r="agendaCopier">Copier le lien</button><button type="button" class="chip" data-r="agendaNouveau">Nouveau lien</button></div>`
        :`<span class="note">Une fois : crée le lien, puis dans Proton Calendar (sur l’ordi) : Paramètres › Tous les paramètres › Calendriers › Autres calendriers › Ajouter un calendrier depuis une URL, et colle-le.</span><button type="button" class="chip" data-r="agendaNouveau" style="align-self:flex-start">Créer le lien</button>`)+`</div>`; }
   if(k==='vide'){ const L=lignes('vide');
-    const opts=PB?[...PB.domaines().filter(d=>!d.auto).map(d=>['d:'+d.id,(d.emoji||'')+' '+d.name]),...PB.liste().filter(p=>!p.closed).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['p:'+p.id,(p.emoji||'')+' '+p.name])]:[];
-    c=tete('Vider la tête','Range chaque idée dans un projet ou un domaine, garde-la pour plus tard, ou archive-la.')+(L.length?L.map(n=>`<div class="idee"><span class="t">${esc(n.t||'…')}</span><div class="act"><select data-r="ranger" data-id="${esc(n.id)}" aria-label="Ranger dans"><option value="">Ranger dans…</option>${opts.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select><button type="button" data-r="marche" data-id="${esc(n.id)}">Au Marché</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div></div>`).join(''):`<div class="boite"><b>Le vide-tête est vide.</b><span class="note">Rien à trier cette semaine.</span></div>`)+(L.length?`<p class="note">Ce que tu ne ranges pas reste dans le vide-tête.</p>`:''); }
+    c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Ce que tu ne ranges pas reste dans le vide-tête.')+(L.length?L.map(n=>`<div class="idee"><span class="t">${esc(n.t||'…')}</span>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act"><button type="button" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div>`}</div>`).join(''):`<div class="boite"><b>Le vide-tête est vide.</b><span class="note">Rien à trier cette semaine.</span></div>`); }
+  if(k==='deuxmin'){ const D=taches(true), A=taches(false);
+    const li=(n)=>`<label class="eval" style="cursor:pointer"><input type="checkbox" data-tache="${esc(n.id)}" ${n.x?'checked':''} style="width:22px;height:22px;accent-color:#C3B6DF"><span class="q" style="font-size:15px;${n.x?'text-decoration:line-through;opacity:.6':''}">${esc(n.t)}</span></label>`;
+    c=tete('Les tâches de 2 minutes','Fais-les maintenant et coche-les. Les autres tâches vont sur ta feuille du lundi et dans le texte pour Claude.')
+     +(D.length?`<div class="boite">${D.map(li).join('')}</div>`:`<div class="boite"><span class="note">Aucune tâche de 2 minutes. Range-en depuis le vide-tête (Tâche › 2 minutes).</span></div>`)
+     +(A.length?`<div class="boite"><span class="eyebrow">Tâches à faire · ${A.filter(n=>!n.x).length}</span>${A.map(li).join('')}</div>`:''); }
   if(k==='projets') c=tete('Placer les projets','Choisis un projet ou un mandat, puis touche un jour, ou « Semaine » pour toute la semaine. Touche-le sur un jour pour l’enlever. 5 projets au plus, dont 3 sur la semaine entière.')+vPlacer(N,'p');
   if(k==='forge') c=tete('Placer les entraînements','Choisis une séance de la Forge, puis touche son jour. Touche-la sur un jour pour l’enlever.')+vPlacer(N,'f');
   if(k==='banque'){ const b=((B['s:routine']||{}).banque)||{}, ok=b.sem===N;
@@ -351,6 +356,55 @@ function vPlacer(N,mode){
   h+='</div>';
   h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Les projets de la semaine sont en fond, pour voir les jours chargés.</p>`;
   return h; }
+/* ===== Vider la tête : ranger en arborescence (idée de Nicolas, 20.11) =====
+   Premier niveau : une tâche (2 minutes, ou liste de tâches) ou une app. Dans l'app, on descend : Établi › projet › note / tâche / achat,
+   ou nouveau projet / nouveau domaine ; Mine › mandat › note / tâche ; Bibliothèque › notes / journal ; Marché › achat ;
+   Banque › saisir la dépense ; Forge › remarque de la semaine. Les tâches vivent dans la racine « taches » de biblio_rows
+   (m2 = tâche de 2 minutes, x = faite) en attendant le système de tâches (étape 12 du plan). */
+const NOMS_APP={etabli:'L’Établi',bibliotheque:'La Bibliothèque',marche:'Le Marché',mine:'La Mine',banque:'La Banque',forge:'La Forge'};
+function taches(m2){ const a=AUJ(); return lignes('taches').filter(n=>!!n.m2===m2&&(!n.x||n.xLe===a)); }
+function triHtml(n){
+  const ch=R.tri.ch, der=ch[ch.length-1]||'', chip=(v,l,r)=>`<button type="button" data-r="${r||'triV'}" data-v="${esc(v)}" data-id="${esc(n.id)}">${l}</button>`;
+  const bas=`<div class="act">${ch.length?chip('','‹ Retour','triRetour'):''}${chip('','Annuler','triAnnuler')}</div>`;
+  const choix=(L,ph)=>`<select data-r="triSel" data-id="${esc(n.id)}" aria-label="${ph}"><option value="">${ph}</option>${L.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select>`;
+  const pro=p=>Projets.nature(p)==='pro';
+  const projets=f=>PB?PB.liste().filter(p=>!p.closed&&f(p)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['x:p:'+p.id,((p.emoji||'')+' '+p.name).trim()]):[];
+  let h='';
+  if(!ch.length) h=`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).map(([a,l])=>chip('a:'+a,l)).join('')}</div>`;
+  else if(der==='a:etabli') h=`<span class="eyebrow">L’Établi</span>${choix([...projets(()=>true),...(PB?PB.domaines().filter(d=>!d.auto).map(d=>['x:d:'+d.id,'Domaine · '+((d.emoji||'')+' '+d.name).trim()]):[])],'Dans un projet ou un domaine…')}<div class="act">${chip('np','+ Nouveau projet')}${chip('nd','+ Nouveau domaine')}</div>`;
+  else if(der==='a:mine') h=`<span class="eyebrow">La Mine</span>${choix(projets(pro),'Dans quel mandat ?')}`;
+  else if(der.startsWith('x:p:')){ const p=PB&&PB.get(der.slice(4)); h=`<span class="eyebrow">${esc(p?((p.emoji||'')+' '+p.name).trim():'Projet')}</span><div class="act">${chip('pn','Note')}${chip('pt','Tâche')}${chip('pa','Achat')}</div>`; }
+  else if(der.startsWith('x:d:')){ const d=PB&&PB.domaine(der.slice(4)); h=`<span class="eyebrow">${esc(d?((d.emoji||'')+' '+d.name).trim():'Domaine')}</span><div class="act">${chip('dn','Note')}${chip('dt','Tâche')}</div>`; }
+  else if(der==='a:bibliotheque') h=`<span class="eyebrow">La Bibliothèque</span><div class="act">${chip('bn','Notes')}${chip('bj','Journal de la semaine')}</div>`;
+  else if(der==='a:marche') h=`<span class="eyebrow">Le Marché</span><div class="act">${chip('ma','Sur la liste de courses')}</div>`;
+  else if(der==='a:banque') h=`<span class="eyebrow">La Banque</span><div class="act">${chip('bs','Saisir la dépense')}</div>`;
+  else if(der==='a:forge') h=`<span class="eyebrow">La Forge</span><div class="act">${chip('fr','Remarque de la semaine')}</div>`;
+  return `<div class="tri" style="display:flex;flex-direction:column;gap:8px;padding-top:4px">${h}${bas}</div>`; }
+const FEUILLES=['t2','tl','np','nd','pn','pt','pa','dn','dt','bn','bj','ma','bs','fr'];
+function triFaire(id,v){
+  const n=Object.assign({},B['n:'+id]); if(!n.id) return; const ch=R.tri?R.tri.ch:[], cible=ch[ch.length-1]||'', N=semaineRoutine();
+  const ranger=(p,extra)=>{ delete B['n:'+n.id]; ecrireB('n:'+n.id,Object.assign(n,{p,o:Date.now()/1e6},extra||{})); };
+  const archiver=()=>{ n.a=AUJ(); ecrireB('n:'+n.id,n); };
+  const P_=cible.startsWith('x:p:')&&PB?PB.get(cible.slice(4)):null, D_=cible.startsWith('x:d:')&&PB?PB.domaine(cible.slice(4)):null;
+  let msg='';
+  if(v==='t2'){ ranger('taches',{m2:true}); msg='Tâche de 2 minutes'; }
+  else if(v==='tl'){ ranger('taches',{}); msg='Dans la liste de tâches'; }
+  else if(v==='np'&&PB){ const p=Projets.nouveau({name:n.t,later:true,emoji:'💡'}); PB.ecrire(p); archiver(); msg='Nouveau projet (Idée) : '+n.t; }
+  else if(v==='nd'&&PB){ const d=Projets.nouveauDomaine({name:n.t}); PB.ecrire(d); archiver(); msg='Nouveau domaine : '+n.t; }
+  else if(v==='pn'&&P_){ ranger('p:'+P_.id); msg='Note de '+P_.name; }
+  else if(v==='pt'&&P_){ const p=Object.assign({},P_); p.tasks=(p.tasks||[]).concat([{t:n.t,d:false}]); p.touche=AUJ(); PB.ecrire(p); archiver(); msg='Tâche de '+P_.name; }
+  else if(v==='pa'&&P_&&AB){ AB.ajouter(P_,n.t); archiver(); msg='Achat de '+P_.name+' (au Marché)'; }
+  else if(v==='dn'&&D_){ ranger('d:'+D_.id); msg='Note de '+D_.name; }
+  else if(v==='dt'&&D_){ const d=Object.assign({},D_); d.tasks=(d.tasks||[]).concat([{t:n.t,d:false}]); PB.ecrire(d); archiver(); msg='Tâche de '+D_.name; }
+  else if(v==='bn'){ ranger('arbre'); msg='Dans les notes'; }
+  else if(v==='bj'){ ranger('j:'+N); msg='Dans le journal S'+wkNum(N); }
+  else if(v==='ma'&&AB){ AB.ajouter(null,n.t); archiver(); msg='Sur la liste du Marché'; }
+  else if(v==='bs'){ archiver(); R.tri=null; ouvrirDans('banque','act=saisie'); return; }
+  else if(v==='fr'){ archiver(); remarqueForge(N,n.t); msg='Remarque ajoutée à la Forge'; }
+  else return;
+  R.tri=null; vRoutine(); if(msg) toast(msg); }
+async function remarqueForge(N,t){ try{ const {data,error}=await sb.from('carnet').select('data,deleted').eq('key','logs/'+N).maybeSingle(); if(error) throw error;
+  const log=data&&!data.deleted&&data.data?data.data:{}; log.notes=(log.notes?log.notes.replace(/\s+$/,'')+'\n':'')+t; await envoyer('carnet','logs/'+N,log); }catch(e){ toast('Remarque non envoyée : '+((e&&e.message)||e)); } }
 /* lien privé de l'agenda Locus pour Proton (supabase/agenda.sql + fonction « agenda ») : gardé sur l'appareil */
 const lienAgenda=()=>{ try{ return localStorage.getItem('locus-agenda-lien-'+UID)||''; }catch(e){ return ''; } };
 const chf=x=>'CHF '+(Math.round((+x||0)*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -379,6 +433,9 @@ function texteClaude(N,Pr){
   for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
   const nf=FS.filter(s=>typeof s.day!=='number'&&!s.opt); if(nf.length) L.push('- Forge pas encore placée : '+nf.map(s=>s.t).join(' ; '));
   const v=lignes('vide').length; L.push('VIDE-TÊTE : '+(v?v+' idée'+(v>1?'s':'')+' encore à trier':'vide'));
+  const T2=taches(true).filter(n=>!n.x), TL=taches(false).filter(n=>!n.x);
+  if(T2.length) L.push('TÂCHES DE 2 MINUTES PAS FAITES : '+T2.map(n=>n.t).join(' ; '));
+  L.push('TÂCHES À FAIRE (feuille du lundi) :'+(TL.length?'\n'+TL.map(n=>'- '+n.t).join('\n'):' aucune'));
   const bx=(((B['s:routine']||{}).boites)||{})[N]||[]; L.push('BOÎTES : '+(bx.length===BOITES.length?'toutes vidées':BOITES.map(([id,l])=>l+(bx.includes(id)?' ✓':' ✗')).join(' · ')));
   const bq=((B['s:routine']||{}).banque)||{}; L.push('BANQUE : '+(bq.sem===N?'point fait · '+chf(bq.depenses)+' dépensés la semaine passée (privé)':'point pas encore fait'));
   return L.join('\n'); }
@@ -398,6 +455,10 @@ $plein.addEventListener('click',e=>{
     if(k==='stress'){ const avant=w.stress!=null?w.stress:(w.calme!=null?10-w.calme:null); if(avant===n){ delete w.stress; delete w.calme; } else { w.stress=n; w.calme=Math.min(10,Math.max(1,10-n)); } }
     else if(w[k]===n) delete w[k]; else w[k]=n; ecrireB('w:'+Pr,w); vRoutine(); return; }
   if(a==='obj'){ garderNote(); const w=Object.assign({},B['w:'+Pr]||{}), ev=Object.assign({},w.obj||{}), k=el.dataset.k, v=el.dataset.v; if(ev[k]===v) delete ev[k]; else ev[k]=v; w.obj=ev; ecrireB('w:'+Pr,w); vRoutine(); return; }
+  if(a==='tri'){ R.tri={id:el.dataset.id,ch:[]}; vRoutine(); return; }
+  if(a==='triAnnuler'){ R.tri=null; vRoutine(); return; }
+  if(a==='triRetour'){ if(R.tri) R.tri.ch.pop(); vRoutine(); return; }
+  if(a==='triV'){ const v=el.dataset.v; if(FEUILLES.includes(v)){ triFaire(el.dataset.id,v); return; } if(R.tri){ R.tri.ch.push(v); vRoutine(); } return; }
   if(a==='archiver'){ const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return; n.a=AUJ(); ecrireB('n:'+n.id,n); vRoutine(); toast('Archivée'); return; }
   if(a==='marche'){ const n=B['n:'+el.dataset.id]; if(!n) return; const L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); L.push(n.t); localStorage.setItem('locus-vers-marche',JSON.stringify(L)); const x=Object.assign({},n); x.a=AUJ(); ecrireB('n:'+x.id,x); vRoutine(); toast('Ira au Marché à sa prochaine ouverture'); return; }
   if(a==='sel'||a==='selF'){ e.stopPropagation(); const k=(a==='sel'?'p:':'f:')+el.dataset.id; R.sel=R.sel===k?null:k; vRoutine(); return; }
@@ -414,6 +475,8 @@ function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProje
 $plein.addEventListener('change',e=>{ const el=e.target;
   if(el.dataset.boite){ const N=semaineRoutine(), r=Object.assign({},B['s:routine']||{}), bx=Object.assign({},r.boites||{}), L=new Set(bx[N]||[]); if(el.checked) L.add(el.dataset.boite); else L.delete(el.dataset.boite);
     bx[N]=[...L]; Object.keys(bx).sort().slice(0,-6).forEach(x=>delete bx[x]); r.boites=bx; ecrireB('s:routine',r); return; }
+  if(el.dataset.r==='triSel'&&el.value){ if(R.tri){ R.tri.ch.push(el.value); vRoutine(); } return; }
+  if(el.dataset.tache){ const n=Object.assign({},B['n:'+el.dataset.tache]); if(!n.id) return; if(el.checked){ n.x=true; n.xLe=AUJ(); } else { delete n.x; delete n.xLe; } ecrireB('n:'+n.id,n); vRoutine(); return; }
   if(el.dataset.r!=='ranger'||!el.value) return; const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return;
   n.p=el.value; n.o=Date.now()/1e6; delete B['n:'+n.id]; ecrireB('n:'+n.id,n); toast('Rangée dans '+el.options[el.selectedIndex].text.trim()); vRoutine(); });
 
@@ -481,7 +544,7 @@ function vLogin(msg){ $main.innerHTML=`<form class="login" id="f-login"><h2>Bien
     try{ const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById('l-mail').value.trim(),password:document.getElementById('l-pass').value}); if(error) throw error; await entrer(data.user); }
     catch(err){ vLogin(/invalid/i.test((err&&err.message)||'')?'E-mail ou mot de passe incorrect.':'Connexion impossible : '+((err&&err.message)||err)); } }); }
 async function entrer(user){
-  UID=user.id; reprendre(); PB=Projets.base(sb,UID); PB.surChangement(()=>{ if($plein.hidden) render(); else if($plein.dataset.e) vRoutine(); });
+  UID=user.id; reprendre(); PB=Projets.base(sb,UID); try{ AB=window.Achats?Achats.base(sb,UID):null; }catch(e){ AB=null; } PB.surChangement(()=>{ if($plein.hidden) render(); else if($plein.dataset.e) vRoutine(); });
   render(); await Promise.all([tirer(),PB.tirer()]); render(); vider(); prechauffer(); }
 (async function(){
   const d=new Date(); document.getElementById('date').textContent=JOURS[(d.getDay()+6)%7]+' '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+' · S'+wkNum(wkKey(d));
