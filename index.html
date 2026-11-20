@@ -226,7 +226,8 @@ async function tirer(){
       sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).in('data->>p',racines),
       sb.from('biblio_rows').select('key,data,deleted').in('key',['w:'+Pr,'w:'+C,'s:routine']),
       sb.from('carnet').select('data,deleted').eq('key','locus/semaines').maybeSingle(),
-      sb.from('mine_rows').select('data,deleted').eq('key','s:chrono').maybeSingle()]);
+      sb.from('mine_rows').select('data,deleted').eq('key','s:chrono').maybeSingle(),
+      sb.from('marche_rows').select('data').like('key','c:%').eq('deleted',false)]).then(r=>{ const c=r[4]; if(c&&!c.error){ MARCHE_C=(c.data||[]).map(x=>x.data).filter(Boolean); MARCHE_MOTS=null; } return r; });
     if(a.error) throw a.error;
     const nB={}; (a.data||[]).forEach(r=>{ if(r.data) nB[r.key]=r.data; }); (b.data||[]).forEach(r=>{ if(r.data&&!r.deleted) nB[r.key]=r.data; });
     attente().filter(x=>x.table==='biblio_rows').forEach(x=>{ if(x.data==null) delete nB[x.key]; else nB[x.key]=x.data; });
@@ -244,6 +245,8 @@ function objectifs(k){ const L=lignes('j:'+k).map(n=>String(n.t||'')); const g=r
   return { principal:g(/^objectif principal\s*:\s*/i), secondaire:g(/^objectif secondaire\s*:\s*/i), conseil:g(/^conseil(?: perso)?\s*:\s*/i) }; }
 function projetsDuJour(){ if(!PB) return []; const a=AUJ(); return PB.liste().filter(p=>!p.closed&&!p.later&&Projets.places(p).includes(a)).sort((x,y)=>(y.imp||0)-(x.imp||0)); }
 function prochaine(p){ const t=Projets.tachesSeules(p.tasks).find(x=>!x.d); return t?t.t:''; }
+/* tâches placées sur aujourd'hui (ou avant, pas faites), et celles cochées aujourd'hui */
+function tachesDuJour(){ const a=AUJ(); return lignes('taches').filter(n=>n.jour&&(n.x?n.xLe===a&&n.jour<=a:n.jour<=a)).sort((x,y)=>(x.jour<y.jour?-1:x.jour>y.jour?1:0)); }
 function seancesDuJour(){ const f=forge(); if(!f||!f.semaines) return []; const L=f.semaines[CUR()]||[], j=(new Date().getDay()+6)%7; return L.filter(s=>s.day===j&&!s.done); }
 const fmtMin=m=>m>=60?Math.floor(m/60)+' h'+(m%60?' '+pad(m%60):''):m+' min';
 function chronoTxt(){ if(!CHRONO||!CHRONO.debut) return ''; const m=Math.max(0,Math.floor((Date.now()-new Date(CHRONO.debut))/60000)); return Math.floor(m/60)+':'+pad(m%60); }
@@ -265,7 +268,9 @@ function vAccueil(){
   const ch=chronoTxt();
   carres.push(carre('mine','La Mine','mine/',`<button class="rond" type="button" id="b-chrono" aria-label="${ch?'Chrono en cours : '+ch:'Démarrer le chrono'}">${ch?esc(ch):P('lecture')}</button>`));
   carres.push(carre('banque','La Banque','banque/',`<button class="rond" type="button" id="b-saisie" aria-label="Nouvelle opération">${P('plus')}</button>`));
-  carres.push(carre('bibliotheque','La Bibliothèque','bibliotheque/'));
+  const TJ=tachesDuJour();
+  if(TJ.length) grandes.push(`<article class="carte" data-lieu="bibliotheque"><a class="c-tete" href="bibliotheque/">${PL('bibliotheque')}<h2>La Bibliothèque</h2><span class="eyebrow">Tâches du jour</span></a>${TJ.map(n=>`<label class="proj" style="cursor:pointer"><input type="checkbox" data-tache-acc="${esc(n.id)}" ${n.x?'checked':''} style="width:20px;height:20px;flex:none;accent-color:currentColor"><span class="tx"><b style="${n.x?'text-decoration:line-through;opacity:.6':''}">${esc(n.t)}</b>${!n.x&&n.jour<AUJ()?'<small>en retard</small>':''}</span></label>`).join('')}</article>`);
+  else carres.push(carre('bibliotheque','La Bibliothèque','bibliotheque/'));
   /* le Marché prend 2/3 ou toute la largeur, pour que les carrés remplissent leurs lignes (demande de Nicolas, 18.11) :
      grille de 6 ; un carré = 2. S'il reste 2 carrés seuls sur la dernière ligne, ils prennent la moitié chacun. */
   const n=carres.length, mL=n%3===1?4:6;
@@ -280,12 +285,12 @@ function render(){ if(!UID) return; if(document.activeElement&&$main.contains(do
 
 /* =============================== La routine du lundi =============================== */
 const $plein=document.getElementById('plein');
-const R={etape:1, sel:null, note:null};
-/* ordre voulu par Nicolas (19.11) : humeur, journal, boîtes à vider, Banque, vide-tête, agenda, projets, entraînements, Claude */
-const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Pour Claude'];
-const CLES=['humeur','journal','boites','banque','vide','deuxmin','agenda','projets','forge','claude'];
+const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
+/* ordre voulu par Nicolas (19.11, 20.11) : humeur, journal, boîtes à vider, Banque, vide-tête, tâches de 2 minutes, agenda, projets, entraînements, tâches, Claude */
+const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
+const CLES=['humeur','journal','boites','banque','vide','deuxmin','agenda','projets','forge','taches','claude'];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
-function ouvrirRoutine(){ R.etape=1; R.sel=null; R.note=null; $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
+function ouvrirRoutine(){ R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
 function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
 function vRoutine(){
@@ -309,10 +314,16 @@ function vRoutine(){
     c=tete('L’agenda','Regarde ta semaine dans Proton et ajuste tes rendez-vous s’il y a un souci. Ce que tu places ensuite dans Locus s’ajoute à Proton.')
      +`<a class="btn-acc" href="https://calendar.proton.me/" target="_blank" rel="noopener" style="height:50px;justify-content:center;text-decoration:none">Ouvrir Proton Calendar</a>`
      +`<div class="boite"><span class="eyebrow">Locus dans Proton</span>`+(lien
-       ?`<span class="note">Projets placés sur des jours ou des semaines, et séances de la Forge, dans un calendrier « Locus ». Proton le relit toutes les 8 à 16 heures.</span><input readonly value="${esc(lien)}" aria-label="Lien de l’agenda Locus" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-r="agendaCopier">Copier le lien</button><button type="button" class="chip" data-r="agendaNouveau">Nouveau lien</button></div>`
+       ?`<span class="note">Projets placés sur des jours ou des semaines, séances de la Forge et tâches, dans un calendrier « Locus ». Proton le relit toutes les 8 à 16 heures.</span><input readonly value="${esc(lien)}" aria-label="Lien de l’agenda Locus" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-r="agendaCopier">Copier le lien</button><button type="button" class="chip" data-r="agendaNouveau">Nouveau lien</button></div>`
        :`<span class="note">Une fois : crée le lien, puis dans Proton Calendar (sur l’ordi) : Paramètres › Tous les paramètres › Calendriers › Autres calendriers › Ajouter un calendrier depuis une URL, et colle-le.</span><button type="button" class="chip" data-r="agendaNouveau" style="align-self:flex-start">Créer le lien</button>`)+`</div>`; }
-  if(k==='vide'){ const L=lignes('vide');
-    c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Ce que tu ne ranges pas reste dans le vide-tête.')+(L.length?L.map(n=>`<div class="idee"><span class="t">${esc(n.t||'…')}</span>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act"><button type="button" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div>`}</div>`).join(''):`<div class="boite"><b>Le vide-tête est vide.</b><span class="note">Rien à trier cette semaine.</span></div>`); }
+  if(k==='vide'){ const T=lignes('vide'), L=T.filter(n=>!(n.garde&&n.garde>=N)), G=T.filter(n=>n.garde&&n.garde>=N);
+    [...R.coche].forEach(x=>{ if(!L.some(n=>n.id===x)) R.coche.delete(x); });
+    const ligne=n=>{ const dv=R.tri&&R.tri.id===n.id?null:devine(n);
+      return `<div class="idee"><label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;flex:none;margin-top:1px;accent-color:#C3B6DF"><span class="t">${esc(n.t||'…')}</span></label>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act">${dv?devBouton(n,dv):''}<button type="button" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button><button type="button" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div>`}</div>`; };
+    const grp=R.coche.size?`<div class="idee" style="outline:2px solid var(--on-page);position:sticky;top:0;z-index:2"><b>${R.coche.size} idée${R.coche.size>1?'s':''} cochée${R.coche.size>1?'s':''}</b>${R.tri&&R.tri.id==='*'?triHtml({id:'*'}):`<div class="act"><button type="button" data-r="tri" data-id="*">Ranger ensemble ›</button><button type="button" data-r="garder" data-id="*">Plus tard</button><button type="button" data-r="archiver" data-id="*">Archiver</button><button type="button" data-r="decocher">Décocher</button></div>`}</div>`:'';
+    c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Coche plusieurs idées pour les ranger ensemble. « Plus tard » la garde pour la semaine prochaine.')+grp
+     +(L.length?L.map(ligne).join(''):`<div class="boite"><b>${G.length?'Tout est trié.':'Le vide-tête est vide.'}</b><span class="note">Rien d’autre à trier cette semaine.</span></div>`)
+     +(G.length?`<details class="boite"><summary class="note" style="cursor:pointer">Gardées pour la semaine prochaine (${G.length})</summary>${G.map(n=>`<div class="idee" style="background:var(--surface-2)"><span class="t">${esc(n.t||'…')}</span><div class="act"><button type="button" data-r="reprendre" data-id="${esc(n.id)}">Trier maintenant</button></div></div>`).join('')}</details>`:''); }
   if(k==='deuxmin'){ const D=taches(true), A=taches(false);
     const li=(n)=>`<label class="eval" style="cursor:pointer"><input type="checkbox" data-tache="${esc(n.id)}" ${n.x?'checked':''} style="width:22px;height:22px;accent-color:#C3B6DF"><span class="q" style="font-size:15px;${n.x?'text-decoration:line-through;opacity:.6':''}">${esc(n.t)}</span></label>`;
     c=tete('Les tâches de 2 minutes','Fais-les maintenant et coche-les. Les autres tâches vont sur ta feuille du lundi et dans le texte pour Claude.')
@@ -320,6 +331,7 @@ function vRoutine(){
      +(A.length?`<div class="boite"><span class="eyebrow">Tâches à faire · ${A.filter(n=>!n.x).length}</span>${A.map(li).join('')}</div>`:''); }
   if(k==='projets') c=tete('Placer les projets','Choisis un projet ou un mandat, puis touche un jour, ou « Semaine » pour toute la semaine. Touche-le sur un jour pour l’enlever. 5 projets au plus, dont 3 sur la semaine entière.')+vPlacer(N,'p');
   if(k==='forge') c=tete('Placer les entraînements','Choisis une séance de la Forge, puis touche son jour. Touche-la sur un jour pour l’enlever.')+vPlacer(N,'f');
+  if(k==='taches') c=tete('Placer les tâches','Choisis une tâche, puis touche son jour. Elle s’affichera ce jour-là sur l’accueil et dans Proton. Les autres restent sur ta liste.')+vPlacer(N,'t');
   if(k==='banque'){ const b=((B['s:routine']||{}).banque)||{}, ok=b.sem===N;
     c=tete('La Banque','Le point de la semaine : importer le relevé Yuh, classer les opérations, vérifier les saisies.')+(ok?`<div class="boite"><b>Point fait</b><span class="note">${esc(chf(b.depenses))} dépensés la semaine passée (privé).</span><button type="button" class="chip" data-r="banque" style="align-self:flex-start">Rouvrir la Banque</button></div>`:`<button type="button" class="btn-acc" data-r="banque" style="height:50px;justify-content:center;background:#D6B15E;color:#15302A">${P('banque')}Ouvrir le point de la Banque</button><p class="note">« Point terminé » dans la Banque te ramène ici. Tu peux aussi passer cette étape.</p>`); }
   if(k==='claude') c=tete('Pour Claude','Tout est prêt : copie le texte et colle-le dans la séance du lundi.')+`<pre class="claude" id="t-claude">${esc(texteClaude(N,Pr))}</pre><button class="btn-acc" type="button" data-r="copier" style="height:50px;justify-content:center">${P('copier')}Copier pour Claude</button>`;
@@ -335,76 +347,120 @@ function vPlacer(N,mode){
   const m=Projets.lundi(N), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[];
   const P_=PB?PB.liste().filter(p=>!p.closed&&!p.later&&p.size!=='perm'):[];
   const sem=P_.filter(p=>enSemaine(p,N)), autres=P_.filter(p=>!enSemaine(p,N)).sort((a,b)=>(b.imp||0)-(a.imp||0)||(plain(a.name)<plain(b.name)?-1:1));
-  const chipP=(p,act,extra)=>mode==='f'?`<span class="chip" style="background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'};opacity:.45;cursor:default">${esc(p.emoji||'')} ${esc(p.name)}</span>`
+  const chipP=(p,act,extra)=>mode!=='p'?`<span class="chip" style="background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'};opacity:.45;cursor:default">${esc(p.emoji||'')} ${esc(p.name)}</span>`
     :`<button type="button" class="chip" data-r="${act}" data-id="${esc(p.id)}"${extra||''} style="background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'}" aria-pressed="${R.sel==='p:'+p.id}">${esc(p.emoji||'')} ${esc(p.name)}</button>`;
   const chipF=(s,act,extra)=>`<button type="button" class="chip forge" data-r="${act}" data-id="${esc(s.id)}"${extra||''} aria-pressed="${R.sel==='f:'+s.id}">${P('forge').replace('class="ic"','class="ic" style="width:13px;height:13px"')} ${esc(s.t)}${s.min?' · '+fmtMin(s.min):''}</button>`;
   const libresF=FS.filter(s=>typeof s.day!=='number'&&!s.opt), optF=FS.filter(s=>typeof s.day!=='number'&&s.opt);
+  const fS=plusJ(m,6), TT=lignes('taches').filter(n=>!n.m2&&!n.x), libresT=TT.filter(n=>!n.jour||n.jour<m);
+  const chipT=(n,act,extra)=>act?`<button type="button" class="chip" data-r="${act}" data-id="${esc(n.id)}"${extra||''} style="box-shadow:inset 0 0 0 1px var(--line)" aria-pressed="${R.sel==='t:'+n.id}">☐ ${esc(n.t)}</button>`:`<span class="chip" style="opacity:.45;cursor:default;box-shadow:inset 0 0 0 1px var(--line)">☐ ${esc(n.t)}</span>`;
   let h='<div class="boite"><span class="eyebrow">À placer</span>';
   if(mode==='p'){
     h+=`<div class="chips">${sem.map(p=>chipP(p,'sel')).join('')}</div>`;
     if(!sem.length) h+=`<span class="note">Rien n'est encore prévu pour cette semaine : choisis dans les autres projets.</span>`;
     h+=`<details><summary class="note" style="cursor:pointer">Autres projets en cours ou prévus (${autres.length})</summary><div class="chips" style="margin-top:8px">${autres.map(p=>chipP(p,'sel')).join('')}</div></details>`; }
+  else if(mode==='t'){
+    h+=libresT.length?`<div class="chips">${libresT.map(n=>chipT(n,'selT')).join('')}</div>`:`<span class="note">${TT.length?'Toutes les tâches sont placées.':'Aucune tâche à faire. Range-en depuis le vide-tête (Une tâche › Liste de tâches).'}</span>`; }
   else {
     h+=libresF.length?`<div class="chips">${libresF.map(s=>chipF(s,'selF')).join('')}</div>`:`<span class="note">${f?(FS.length?'Toutes les séances sont placées.':'Pas de séance prévue cette semaine.'):'Les séances apparaîtront après la prochaine ouverture de la Forge.'}</span>`;
     if(optF.length) h+=`<details><summary class="note" style="cursor:pointer">Séances facultatives (${optF.length})</summary><div class="chips" style="margin-top:8px">${optF.map(s=>chipF(s,'selF')).join('')}</div></details>`; }
   h+='</div>';
   const touteSem=P_.filter(p=>(p.weeks||[]).includes(N));
-  h+=`<div><div role="button" tabindex="0" class="jour${mode==='p'&&R.sel?' cible':''}" data-r="jour" data-j="sem"><span class="j">Semaine</span><span class="chips">${touteSem.length?touteSem.map(p=>chipP(p,'oter',' data-j="sem"')).join(''):'<span class="libre">toute la semaine : rien</span>'}</span></div>`;
+  h+=`<div>`+(mode==='t'?'':`<div role="button" tabindex="0" class="jour${mode==='p'&&R.sel?' cible':''}" data-r="jour" data-j="sem"><span class="j">Semaine</span><span class="chips">${touteSem.length?touteSem.map(p=>chipP(p,'oter',' data-j="sem"')).join(''):'<span class="libre">toute la semaine : rien</span>'}</span></div>`);
   for(let i=0;i<7;i++){ const d=plusJ(m,i), dd=parse(d);
-    const ps=P_.filter(p=>(p.days||[]).includes(d)), ss=FS.filter(s=>s.day===i);
-    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${mode==='f'?ss.map(s=>chipF(s,'oterF',` data-j="${i}"`)).join('')+ps.map(p=>chipP(p)).join(''):ps.map(p=>chipP(p,'oter',` data-j="${i}"`)).join('')+ss.map(s=>`<span class="chip forge" style="opacity:.45;cursor:default">${esc(s.t)}</span>`).join('')}${!ps.length&&!ss.length?'<span class="libre">libre</span>':''}</span></div>`; }
+    const ps=P_.filter(p=>(p.days||[]).includes(d)), ss=FS.filter(s=>s.day===i), ts=TT.filter(n=>n.jour===d);
+    const sF=s=>`<span class="chip forge" style="opacity:.45;cursor:default">${esc(s.t)}</span>`, dj=` data-j="${i}"`;
+    const inner=mode==='f'?ss.map(s=>chipF(s,'oterF',dj)).join('')+ps.map(p=>chipP(p)).join('')+ts.map(n=>chipT(n)).join('')
+      :mode==='t'?ts.map(n=>chipT(n,'oterT',dj)).join('')+ps.map(p=>chipP(p)).join('')+ss.map(sF).join('')
+      :ps.map(p=>chipP(p,'oter',dj)).join('')+ss.map(sF).join('')+ts.map(n=>chipT(n)).join('');
+    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${inner||'<span class="libre">libre</span>'}</span></div>`; }
   h+='</div>';
-  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Les projets de la semaine sont en fond, pour voir les jours chargés.</p>`;
+  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Le reste de la semaine est en fond, pour voir les jours chargés.</p>`;
   return h; }
 /* ===== Vider la tête : ranger en arborescence (idée de Nicolas, 20.11) =====
    Premier niveau : une tâche (2 minutes, ou liste de tâches) ou une app. Dans l'app, on descend : Établi › projet › note / tâche / achat,
-   ou nouveau projet / nouveau domaine ; Mine › mandat › note / tâche ; Bibliothèque › notes / journal ; Marché › achat ;
+   ou nouveau projet / nouveau domaine ; Mine › mandat › note / tâche / achat ; Bibliothèque › notes / journal ; Marché › achat ;
    Banque › saisir la dépense ; Forge › remarque de la semaine. Les tâches vivent dans la racine « taches » de biblio_rows
-   (m2 = tâche de 2 minutes, x = faite) en attendant le système de tâches (étape 12 du plan). */
+   (m2 = tâche de 2 minutes, x = faite, jour = AAAA-MM-JJ si placée) en attendant le système de tâches (étape 12 du plan).
+   Améliorations voulues par Nicolas (20.11) : destination devinée, « Plus tard » (garde = semaine), ranger plusieurs lignes d'un coup,
+   et placer les tâches sur les jours (étape « Placer les tâches »). */
 const NOMS_APP={etabli:'L’Établi',bibliotheque:'La Bibliothèque',marche:'Le Marché',mine:'La Mine',banque:'La Banque',forge:'La Forge'};
 function taches(m2){ const a=AUJ(); return lignes('taches').filter(n=>!!n.m2===m2&&(!n.x||n.xLe===a)); }
+const nomPD=p=>((p.emoji||'')+' '+p.name).trim();
 function triHtml(n){
-  const ch=R.tri.ch, der=ch[ch.length-1]||'', chip=(v,l,r)=>`<button type="button" data-r="${r||'triV'}" data-v="${esc(v)}" data-id="${esc(n.id)}">${l}</button>`;
+  const ch=R.tri.ch, der=ch[ch.length-1]||'', groupe=n.id==='*', chip=(v,l,r)=>`<button type="button" data-r="${r||'triV'}" data-v="${esc(v)}" data-id="${esc(n.id)}">${l}</button>`;
   const bas=`<div class="act">${ch.length?chip('','‹ Retour','triRetour'):''}${chip('','Annuler','triAnnuler')}</div>`;
   const choix=(L,ph)=>`<select data-r="triSel" data-id="${esc(n.id)}" aria-label="${ph}"><option value="">${ph}</option>${L.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select>`;
   const pro=p=>Projets.nature(p)==='pro';
-  const projets=f=>PB?PB.liste().filter(p=>!p.closed&&f(p)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['x:p:'+p.id,((p.emoji||'')+' '+p.name).trim()]):[];
+  const projets=f=>PB?PB.liste().filter(p=>!p.closed&&f(p)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['x:p:'+p.id,nomPD(p)]):[];
+  const dv=groupe||ch.length?null:devine(n);
   let h='';
-  if(!ch.length) h=`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).map(([a,l])=>chip('a:'+a,l)).join('')}</div>`;
-  else if(der==='a:etabli') h=`<span class="eyebrow">L’Établi</span>${choix([...projets(()=>true),...(PB?PB.domaines().filter(d=>!d.auto).map(d=>['x:d:'+d.id,'Domaine · '+((d.emoji||'')+' '+d.name).trim()]):[])],'Dans un projet ou un domaine…')}<div class="act">${chip('np','+ Nouveau projet')}${chip('nd','+ Nouveau domaine')}</div>`;
+  if(!ch.length) h=(dv?`<span class="eyebrow">Proposé</span><div class="act">${devBouton(n,dv)}</div>`:'')+`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).filter(([a])=>!(groupe&&a==='banque')).map(([a,l])=>chip('a:'+a,l)).join('')}</div>`;
+  else if(der==='a:etabli') h=`<span class="eyebrow">L’Établi</span>${choix([...projets(()=>true),...(PB?PB.domaines().filter(d=>!d.auto).map(d=>['x:d:'+d.id,'Domaine · '+nomPD(d)]):[])],'Dans un projet ou un domaine…')}<div class="act">${chip('np',groupe?'+ Un nouveau projet par idée':'+ Nouveau projet')}${chip('nd',groupe?'+ Un nouveau domaine par idée':'+ Nouveau domaine')}</div>`;
   else if(der==='a:mine') h=`<span class="eyebrow">La Mine</span>${choix(projets(pro),'Dans quel mandat ?')}`;
-  else if(der.startsWith('x:p:')){ const p=PB&&PB.get(der.slice(4)); h=`<span class="eyebrow">${esc(p?((p.emoji||'')+' '+p.name).trim():'Projet')}</span><div class="act">${chip('pn','Note')}${chip('pt','Tâche')}${chip('pa','Achat')}</div>`; }
-  else if(der.startsWith('x:d:')){ const d=PB&&PB.domaine(der.slice(4)); h=`<span class="eyebrow">${esc(d?((d.emoji||'')+' '+d.name).trim():'Domaine')}</span><div class="act">${chip('dn','Note')}${chip('dt','Tâche')}</div>`; }
+  else if(der.startsWith('x:p:')){ const p=PB&&PB.get(der.slice(4)); h=`<span class="eyebrow">${esc(p?nomPD(p):'Projet')}</span><div class="act">${chip('pn','Note')}${chip('pt','Tâche')}${chip('pa','Achat')}</div>`; }
+  else if(der.startsWith('x:d:')){ const d=PB&&PB.domaine(der.slice(4)); h=`<span class="eyebrow">${esc(d?nomPD(d):'Domaine')}</span><div class="act">${chip('dn','Note')}${chip('dt','Tâche')}</div>`; }
   else if(der==='a:bibliotheque') h=`<span class="eyebrow">La Bibliothèque</span><div class="act">${chip('bn','Notes')}${chip('bj','Journal de la semaine')}</div>`;
   else if(der==='a:marche') h=`<span class="eyebrow">Le Marché</span><div class="act">${chip('ma','Sur la liste de courses')}</div>`;
   else if(der==='a:banque') h=`<span class="eyebrow">La Banque</span><div class="act">${chip('bs','Saisir la dépense')}</div>`;
   else if(der==='a:forge') h=`<span class="eyebrow">La Forge</span><div class="act">${chip('fr','Remarque de la semaine')}</div>`;
   return `<div class="tri" style="display:flex;flex-direction:column;gap:8px;padding-top:4px">${h}${bas}</div>`; }
 const FEUILLES=['t2','tl','np','nd','pn','pt','pa','dn','dt','bn','bj','ma','bs','fr'];
-function triFaire(id,v){
-  const n=Object.assign({},B['n:'+id]); if(!n.id) return; const ch=R.tri?R.tri.ch:[], cible=ch[ch.length-1]||'', N=semaineRoutine();
+/* range une ligne ; renvoie le message, ou '' si rien n'a été fait. Les remarques de la Forge sont rassemblées dans « forge » (un seul envoi). */
+function triUn(id,v,cible,N,forge){
+  const n=Object.assign({},B['n:'+id]); if(!n.id) return ''; delete n.garde;
   const ranger=(p,extra)=>{ delete B['n:'+n.id]; ecrireB('n:'+n.id,Object.assign(n,{p,o:Date.now()/1e6},extra||{})); };
   const archiver=()=>{ n.a=AUJ(); ecrireB('n:'+n.id,n); };
   const P_=cible.startsWith('x:p:')&&PB?PB.get(cible.slice(4)):null, D_=cible.startsWith('x:d:')&&PB?PB.domaine(cible.slice(4)):null;
-  let msg='';
-  if(v==='t2'){ ranger('taches',{m2:true}); msg='Tâche de 2 minutes'; }
-  else if(v==='tl'){ ranger('taches',{}); msg='Dans la liste de tâches'; }
-  else if(v==='np'&&PB){ const p=Projets.nouveau({name:n.t,later:true,emoji:'💡'}); PB.ecrire(p); archiver(); msg='Nouveau projet (Idée) : '+n.t; }
-  else if(v==='nd'&&PB){ const d=Projets.nouveauDomaine({name:n.t}); PB.ecrire(d); archiver(); msg='Nouveau domaine : '+n.t; }
-  else if(v==='pn'&&P_){ ranger('p:'+P_.id); msg='Note de '+P_.name; }
-  else if(v==='pt'&&P_){ const p=Object.assign({},P_); p.tasks=(p.tasks||[]).concat([{t:n.t,d:false}]); p.touche=AUJ(); PB.ecrire(p); archiver(); msg='Tâche de '+P_.name; }
-  else if(v==='pa'&&P_&&AB){ AB.ajouter(P_,n.t); archiver(); msg='Achat de '+P_.name+' (au Marché)'; }
-  else if(v==='dn'&&D_){ ranger('d:'+D_.id); msg='Note de '+D_.name; }
-  else if(v==='dt'&&D_){ const d=Object.assign({},D_); d.tasks=(d.tasks||[]).concat([{t:n.t,d:false}]); PB.ecrire(d); archiver(); msg='Tâche de '+D_.name; }
-  else if(v==='bn'){ ranger('arbre'); msg='Dans les notes'; }
-  else if(v==='bj'){ ranger('j:'+N); msg='Dans le journal S'+wkNum(N); }
-  else if(v==='ma'&&AB){ AB.ajouter(null,n.t); archiver(); msg='Sur la liste du Marché'; }
-  else if(v==='bs'){ archiver(); R.tri=null; ouvrirDans('banque','act=saisie'); return; }
-  else if(v==='fr'){ archiver(); remarqueForge(N,n.t); msg='Remarque ajoutée à la Forge'; }
-  else return;
-  R.tri=null; vRoutine(); if(msg) toast(msg); }
+  if(v==='t2'){ ranger('taches',{m2:true}); return 'Tâche de 2 minutes'; }
+  if(v==='tl'){ ranger('taches',{}); return 'Dans la liste de tâches'; }
+  if(v==='np'&&PB){ PB.ecrire(Projets.nouveau({name:n.t,later:true,emoji:'💡'})); archiver(); return 'Nouveau projet (Idée)'; }
+  if(v==='nd'&&PB){ PB.ecrire(Projets.nouveauDomaine({name:n.t})); archiver(); return 'Nouveau domaine'; }
+  if(v==='pn'&&P_){ ranger('p:'+P_.id); return 'Note de '+P_.name; }
+  if(v==='pt'&&P_){ const p=Object.assign({},P_); p.tasks=(p.tasks||[]).concat([{t:n.t,d:false}]); p.touche=AUJ(); PB.ecrire(p); archiver(); return 'Tâche de '+P_.name; }
+  if(v==='pa'&&P_&&AB){ AB.ajouter(P_,n.t); archiver(); return 'Achat de '+P_.name+' (au Marché)'; }
+  if(v==='dn'&&D_){ ranger('d:'+D_.id); return 'Note de '+D_.name; }
+  if(v==='dt'&&D_){ const d=Object.assign({},D_); d.tasks=(d.tasks||[]).concat([{t:n.t,d:false}]); PB.ecrire(d); archiver(); return 'Tâche de '+D_.name; }
+  if(v==='bn'){ ranger('arbre'); return 'Dans les notes'; }
+  if(v==='bj'){ ranger('j:'+N); return 'Dans le journal S'+wkNum(N); }
+  if(v==='ma'&&AB){ AB.ajouter(null,n.t); archiver(); return 'Sur la liste du Marché'; }
+  if(v==='fr'){ archiver(); forge.push(n.t); return 'Remarque ajoutée à la Forge'; }
+  return ''; }
+function triFaire(id,v){
+  const ch=R.tri?R.tri.ch:[], cible=ch[ch.length-1]||'', N=semaineRoutine(), ids=id==='*'?[...R.coche].filter(x=>B['n:'+x]):[id];
+  if(!ids.length) return;
+  if(v==='bs'){ if(ids.length!==1) return; const n=Object.assign({},B['n:'+ids[0]]); n.a=AUJ(); ecrireB('n:'+n.id,n); R.tri=null; ouvrirDans('banque','act=saisie'); return; }
+  const forge=[]; let msg=''; ids.forEach(x=>{ const m=triUn(x,v,cible,N,forge); if(m) msg=m; });
+  if(forge.length) remarqueForge(N,forge.join('\n'));
+  if(!msg) return; ids.forEach(x=>R.coche.delete(x)); R.tri=null; vRoutine(); toast(ids.length>1?ids.length+' idées · '+msg:msg); }
 async function remarqueForge(N,t){ try{ const {data,error}=await sb.from('carnet').select('data,deleted').eq('key','logs/'+N).maybeSingle(); if(error) throw error;
   const log=data&&!data.deleted&&data.data?data.data:{}; log.notes=(log.notes?log.notes.replace(/\s+$/,'')+'\n':'')+t; await envoyer('carnet','logs/'+N,log); }catch(e){ toast('Remarque non envoyée : '+((e&&e.message)||e)); } }
+
+/* ----- Destination devinée (20.11) : le nom d'un projet ou d'un domaine, un mot de la Forge, ou un article du Marché.
+   Le Marché : ses rayons (mots et noms appris) et ses articles, lus dans sa copie locale (marche-cache-<uid>), sinon dans les rayons tirés. */
+let MARCHE_C=[], MARCHE_MOTS=null;
+const toksM=s=>plain(s).replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).map(t=>t.length>3&&/[sx]$/.test(t)?t.slice(0,-1):t);
+function motsMarche(){ if(MARCHE_MOTS) return MARCHE_MOTS; const single=new Set(), multi=[], noms=new Set(), cats=[];
+  let c=null; try{ c=JSON.parse(localStorage.getItem('marche-cache-'+UID)||'null'); }catch(e){}
+  Object.entries((c&&c.prev)||{}).forEach(([k,v])=>{ let d=null; try{ d=JSON.parse(v); }catch(e){} if(!d) return; if(k.startsWith('c:')) cats.push(d); if(k.startsWith('a:')&&d.nom) noms.add(toksM(d.nom).join(' ')); });
+  (cats.length?cats:MARCHE_C).forEach(c=>{ (c.appris||[]).forEach(n=>noms.add(n)); String(c.mots||'').split(/[\s,;]+/).filter(Boolean).forEach(w=>{ const t=toksM(w.replace(/_/g,' ')); if(t.length>1) multi.push(t.join(' ')); else if(t.length) single.add(t[0]); }); });
+  return MARCHE_MOTS={single,multi,noms}; }
+const ARTICLES=new Set(['de','du','des','la','le','les','un','une','l','d']), ACHAT=new Set(['acheter','racheter','achat','prendre']);
+function estCourse(t){ let ts=toksM(t); if(ACHAT.has(ts[0])) ts=ts.slice(1).filter(x=>!ARTICLES.has(x)); if(!ts.length||ts.length>4) return false;
+  const M=motsMarche(), k=ts.join(' '), k2=' '+k+' '; if(M.noms.has(k)||M.multi.some(m=>k2.includes(' '+m+' '))) return true;
+  if(/(er|ir)$/.test(ts[0])&&ts[0].length>4&&ts.length>1) return false; /* « Rappeler le garage » : un verbe, pas une course */
+  return ts.some(x=>[...M.single].some(w=>w.length<=3?x===w:x.startsWith(w))); }
+const MOTS_FORGE=['entrainement','seance','parkour','forge','genou','cheville','epaule','poignet','saut','precision','reception','muscu','etirement','mobilite','sprint','footing','echauffement','gainage','traction','squat','courbature','blessure'];
+function devine(n){ const t=String(n.t||''), x=' '+toksM(t).join(' ')+' ';
+  if(PB){ let best=null, bl=0;
+    const tous=[...PB.liste().filter(p=>!p.closed).map(p=>[p,'p']),...PB.domaines().filter(d=>!d.auto).map(d=>[d,'d'])];
+    for(const [p,g] of tous){ const nm=toksM(p.name); if(!nm.length) continue; const tout=nm.join(' ');
+      if(tout.length>=4&&x.includes(' '+tout+' ')&&tout.length>bl){ best=[p,g]; bl=tout.length; continue; }
+      if(g==='p') for(const w of nm) if(w.length>=5&&x.includes(' '+w+' ')&&w.length>bl){ best=[p,g]; bl=w.length; } }
+    if(best) return {ch:['a:etabli','x:'+best[1]+':'+best[0].id], l:nomPD(best[0])}; }
+  const ts=toksM(t); if(ts.some(w=>MOTS_FORGE.some(m=>w.startsWith(m)))) return {ch:['a:forge'], v:'fr', l:'Forge · remarque'};
+  if(estCourse(t)) return {ch:['a:marche'], v:'ma', l:'Le Marché'};
+  return null; }
+const devBouton=(n,d)=>`<button type="button" data-r="triDev" data-id="${esc(n.id)}" style="background:var(--surface-2);border-color:transparent;font-weight:600">→ ${esc(d.l)}</button>`;
 /* lien privé de l'agenda Locus pour Proton (supabase/agenda.sql + fonction « agenda ») : gardé sur l'appareil */
 const lienAgenda=()=>{ try{ return localStorage.getItem('locus-agenda-lien-'+UID)||''; }catch(e){ return ''; } };
 const chf=x=>'CHF '+(Math.round((+x||0)*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -417,6 +473,7 @@ function placerProjet(id,j){ const p=PB&&PB.get(id); if(!p) return; const N=sema
 function oterProjet(id,j){ const p=PB&&PB.get(id); if(!p) return; const N=semaineRoutine();
   if(j==='sem') p.weeks=(p.weeks||[]).filter(w=>w!==N); else { const d=plusJ(Projets.lundi(N),+j); p.days=(p.days||[]).filter(x=>x!==d); }
   p.touche=AUJ(); PB.ecrire(p); }
+function placerTache(id,d){ const n=Object.assign({},B['n:'+id]); if(!n.id) return; if(d) n.jour=d; else delete n.jour; ecrireB('n:'+n.id,n); }
 async function jourSeance(sid,j){ const N=semaineRoutine(), f=forge();
   const s=f&&f.semaines&&(f.semaines[N]||[]).find(x=>x.id===sid); if(s){ if(j==null) delete s.day; else s.day=j; f.le=new Date().toISOString(); FORGE=f; try{ localStorage.setItem('locus-forge',JSON.stringify(f)); }catch(e){} garder(); }
   try{ const {data,error}=await sb.from('carnet').select('data,deleted').eq('key','logs/'+N).maybeSingle(); if(error) throw error;
@@ -430,12 +487,15 @@ function texteClaude(N,Pr){
   const ret=w.retenu&&B['n:'+w.retenu]?B['n:'+w.retenu].t:''; if(ret) L.push('JOURNAL S'+wkNum(Pr)+' : '+ret);
   const m=Projets.lundi(N), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[], P_=PB?PB.liste().filter(p=>!p.closed):[];
   L.push('PLANNING S'+wkNum(N)+' :'); const ts=P_.filter(p=>(p.weeks||[]).includes(N)); if(ts.length) L.push('- toute la semaine : '+ts.map(p=>p.name).join(' ; '));
-  for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
+  const TT=lignes('taches').filter(n=>!n.m2&&!n.x);
+  for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t),...TT.filter(n=>n.jour===d).map(n=>'Tâche : '+n.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
   const nf=FS.filter(s=>typeof s.day!=='number'&&!s.opt); if(nf.length) L.push('- Forge pas encore placée : '+nf.map(s=>s.t).join(' ; '));
-  const v=lignes('vide').length; L.push('VIDE-TÊTE : '+(v?v+' idée'+(v>1?'s':'')+' encore à trier':'vide'));
+  const VT=lignes('vide'), g=VT.filter(n=>n.garde&&n.garde>=N).length, v=VT.length-g;
+  L.push('VIDE-TÊTE : '+(v?v+' idée'+(v>1?'s':'')+' encore à trier':'trié')+(g?' · '+g+' gardée'+(g>1?'s':'')+' pour la semaine prochaine':''));
   const T2=taches(true).filter(n=>!n.x), TL=taches(false).filter(n=>!n.x);
   if(T2.length) L.push('TÂCHES DE 2 MINUTES PAS FAITES : '+T2.map(n=>n.t).join(' ; '));
-  L.push('TÂCHES À FAIRE (feuille du lundi) :'+(TL.length?'\n'+TL.map(n=>'- '+n.t).join('\n'):' aucune'));
+  const jr=n=>{ if(!n.jour||n.jour<m||n.jour>plusJ(m,6)) return ''; const dd=parse(n.jour); return ' ('+JOURS[(dd.getDay()+6)%7]+' '+dd.getDate()+')'; };
+  L.push('TÂCHES À FAIRE (feuille du lundi) :'+(TL.length?'\n'+TL.map(n=>'- '+n.t+jr(n)).join('\n'):' aucune'));
   const bx=(((B['s:routine']||{}).boites)||{})[N]||[]; L.push('BOÎTES : '+(bx.length===BOITES.length?'toutes vidées':BOITES.map(([id,l])=>l+(bx.includes(id)?' ✓':' ✗')).join(' · ')));
   const bq=((B['s:routine']||{}).banque)||{}; L.push('BANQUE : '+(bq.sem===N?'point fait · '+chf(bq.depenses)+' dépensés la semaine passée (privé)':'point pas encore fait'));
   return L.join('\n'); }
@@ -459,10 +519,15 @@ $plein.addEventListener('click',e=>{
   if(a==='triAnnuler'){ R.tri=null; vRoutine(); return; }
   if(a==='triRetour'){ if(R.tri) R.tri.ch.pop(); vRoutine(); return; }
   if(a==='triV'){ const v=el.dataset.v; if(FEUILLES.includes(v)){ triFaire(el.dataset.id,v); return; } if(R.tri){ R.tri.ch.push(v); vRoutine(); } return; }
-  if(a==='archiver'){ const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return; n.a=AUJ(); ecrireB('n:'+n.id,n); vRoutine(); toast('Archivée'); return; }
+  if(a==='triDev'){ const n=B['n:'+el.dataset.id]; if(!n) return; const d=devine(n); if(!d) return; R.tri={id:n.id,ch:d.ch.slice()}; if(d.v) triFaire(n.id,d.v); else vRoutine(); return; }
+  if(a==='decocher'){ R.coche.clear(); R.tri=null; vRoutine(); return; }
+  if(a==='archiver'||a==='garder'){ const ids=el.dataset.id==='*'?[...R.coche]:[el.dataset.id]; let k=0;
+    ids.forEach(id=>{ const n=Object.assign({},B['n:'+id]); if(!n.id) return; if(a==='archiver') n.a=AUJ(); else n.garde=N; ecrireB('n:'+n.id,n); R.coche.delete(id); k++; });
+    if(R.tri&&(R.tri.id==='*'||ids.includes(R.tri.id))) R.tri=null; vRoutine(); toast((k>1?k+' idées ':'')+(a==='archiver'?(k>1?'archivées':'Archivée'):(k>1?'gardées pour la semaine prochaine':'Gardée pour la semaine prochaine'))); return; }
+  if(a==='reprendre'){ const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return; delete n.garde; ecrireB('n:'+n.id,n); vRoutine(); return; }
   if(a==='marche'){ const n=B['n:'+el.dataset.id]; if(!n) return; const L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); L.push(n.t); localStorage.setItem('locus-vers-marche',JSON.stringify(L)); const x=Object.assign({},n); x.a=AUJ(); ecrireB('n:'+x.id,x); vRoutine(); toast('Ira au Marché à sa prochaine ouverture'); return; }
-  if(a==='sel'||a==='selF'){ e.stopPropagation(); const k=(a==='sel'?'p:':'f:')+el.dataset.id; R.sel=R.sel===k?null:k; vRoutine(); return; }
-  if(a==='oter'||a==='oterF'){ e.stopPropagation(); if(R.sel){ const j=el.dataset.j; poser(j); return; } if(a==='oter') oterProjet(el.dataset.id,el.dataset.j); else jourSeance(el.dataset.id,null); vRoutine(); return; }
+  if(a==='sel'||a==='selF'||a==='selT'){ e.stopPropagation(); const k=({sel:'p:',selF:'f:',selT:'t:'})[a]+el.dataset.id; R.sel=R.sel===k?null:k; vRoutine(); return; }
+  if(a==='oter'||a==='oterF'||a==='oterT'){ e.stopPropagation(); if(R.sel){ const j=el.dataset.j; poser(j); return; } if(a==='oter') oterProjet(el.dataset.id,el.dataset.j); else if(a==='oterT') placerTache(el.dataset.id,null); else jourSeance(el.dataset.id,null); vRoutine(); return; }
   if(a==='jour'){ if(!R.sel) return; poser(el.dataset.j); return; }
   if(a==='copier'){ copier(texteClaude(N,Pr)); return; }
   if(a==='banque'){ ouvrirDans('banque','act=point&plein=1'); return; }
@@ -471,10 +536,12 @@ $plein.addEventListener('click',e=>{
     sb.rpc('locus_agenda_cle_nouvelle').then(({data,error})=>{ if(error||!data){ toast(/locus_agenda_cle_nouvelle|schema cache|not find/i.test((error&&error.message)||'')?'Lance d’abord supabase/agenda.sql dans Supabase':'Lien non créé : '+((error&&error.message)||'?')); return; }
       try{ localStorage.setItem('locus-agenda-lien-'+UID,SB_URL+'/functions/v1/agenda?cle='+data); }catch(x){} vRoutine(); toast('Lien créé : copie-le dans Proton'); }); return; }
 });
-function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j); else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
+function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j);
+  else if(s.startsWith('t:')){ if(j==='sem'){ toast('Une tâche va sur un jour'); vRoutine(); return; } placerTache(s.slice(2),plusJ(Projets.lundi(semaineRoutine()),+j)); } else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
 $plein.addEventListener('change',e=>{ const el=e.target;
   if(el.dataset.boite){ const N=semaineRoutine(), r=Object.assign({},B['s:routine']||{}), bx=Object.assign({},r.boites||{}), L=new Set(bx[N]||[]); if(el.checked) L.add(el.dataset.boite); else L.delete(el.dataset.boite);
     bx[N]=[...L]; Object.keys(bx).sort().slice(0,-6).forEach(x=>delete bx[x]); r.boites=bx; ecrireB('s:routine',r); return; }
+  if(el.dataset.coche){ if(el.checked) R.coche.add(el.dataset.coche); else R.coche.delete(el.dataset.coche); if(R.tri&&R.tri.id==='*'&&!R.coche.size) R.tri=null; vRoutine(); return; }
   if(el.dataset.r==='triSel'&&el.value){ if(R.tri){ R.tri.ch.push(el.value); vRoutine(); } return; }
   if(el.dataset.tache){ const n=Object.assign({},B['n:'+el.dataset.tache]); if(!n.id) return; if(el.checked){ n.x=true; n.xLe=AUJ(); } else { delete n.x; delete n.xLe; } ecrireB('n:'+n.id,n); vRoutine(); return; }
   if(el.dataset.r!=='ranger'||!el.value) return; const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return;
@@ -496,6 +563,8 @@ document.getElementById('b-chercher').addEventListener('click',()=>{ if(UID) ouv
 $main.addEventListener('submit',e=>{ e.preventDefault();
   if(e.target.id==='f-vide'){ const i=document.getElementById('i-vide'), v=i.value.trim(); if(!v) return; const L=lignes('vide'); const n={id:uid(),p:'vide',o:L.length?Math.min(...L.map(x=>x.o||0))-1:1,t:v,cree:AUJ()}; ecrireB('n:'+n.id,n); i.value=''; toast('Noté dans le vide-tête'); i.focus(); return; }
   if(e.target.id==='f-marche'){ const i=document.getElementById('i-marche'), v=i.value.trim(); if(!v){ location.href='marche/'; return; } i.value=''; i.blur(); ouvrirDans('marche','q='+encodeURIComponent(v)); return; } });
+$main.addEventListener('change',e=>{ const el=e.target; if(!el.dataset||!el.dataset.tacheAcc) return; const n=Object.assign({},B['n:'+el.dataset.tacheAcc]); if(!n.id) return;
+  if(el.checked){ n.x=true; n.xLe=AUJ(); } else { delete n.x; delete n.xLe; } ecrireB('n:'+n.id,n); if(el.checked) toast('Fait !'); vAccueil(); });
 $main.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
   if(b.id==='b-chrono'){ ouvrirDans('mine','act=chrono'); return; }

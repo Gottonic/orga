@@ -1,5 +1,5 @@
 -- Locus : l'agenda de Locus dans Proton Calendar (19.11.2026, choix de Nicolas : « proposition A »).
--- Ce que tu places dans Locus (projets sur des jours ou des semaines, séances de la Forge) devient un calendrier que Proton
+-- Ce que tu places dans Locus (projets sur des jours ou des semaines, séances de la Forge, tâches) devient un calendrier que Proton
 -- peut suivre (« Ajouter un calendrier depuis une URL »). Lecture seule côté Proton ; Proton le relit toutes les 8 à 16 heures.
 -- À coller une fois dans Supabase > SQL Editor > New query, puis « Run ». (Après schema.sql et carnet.sql.)
 -- Le lien contient une clé secrète créée depuis Locus (routine du lundi › L'agenda) ; Supabase n'en garde que l'empreinte.
@@ -64,6 +64,14 @@ begin
       from public.carnet c, jsonb_each(coalesce(c.data->'semaines', '{}'::jsonb)) as s(wk, arr), jsonb_array_elements(s.arr) x
      where c.user_id = u and c.key = 'locus/semaines' and not c.deleted and s.wk ~ '^\d{4}-W\d{2}$'
        and jsonb_typeof(x->'day') = 'number' and (x->>'day')::int between 0 and 6
+    union all
+    -- tâches placées sur un jour (routine du lundi › Placer les tâches, 20.11) ; une tâche faite ou archivée disparaît
+    select jsonb_build_object('id', 't-' || (b.data->>'id'), 'debut', b.data->>'jour', 'fin', ((b.data->>'jour')::date + 1)::text,
+             'titre', 'Tâche · ' || coalesce(b.data->>'t', '…'))
+      from public.biblio_rows b
+     where b.user_id = u and b.key like 'n:%' and not b.deleted and b.data->>'p' = 'taches'
+       and b.data->>'a' is null and coalesce(b.data->>'x', 'false') <> 'true'
+       and (b.data->>'jour') ~ '^\d{4}-\d{2}-\d{2}$' and (b.data->>'jour')::date between d0 and d1
   ) t), '[]'::jsonb);
 end $$;
 revoke all on function public.locus_agenda(text) from public;
