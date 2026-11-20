@@ -122,6 +122,7 @@ a.carre:active,.carte a:active{filter:brightness(.95)}
 textarea.libre{min-height:180px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:14px;font-size:15px;resize:vertical}
 .idee{background:var(--surface);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .idee .t{font-size:15px}
+.idee .t[contenteditable]:focus{background:var(--surface-2);box-shadow:0 0 0 6px var(--surface-2)}
 .idee .act{display:flex;gap:6px;flex-wrap:wrap}
 .idee .act button,.idee select{border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
 .idee select{background:var(--surface-2);max-width:100%}
@@ -290,7 +291,7 @@ const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
 const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
 const CLES=['humeur','journal','boites','banque','vide','deuxmin','agenda','projets','forge','taches','claude'];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
-function ouvrirRoutine(){ R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
+function ouvrirRoutine(){ NOTES_T=0; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
 function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
 function vRoutine(){
@@ -319,9 +320,9 @@ function vRoutine(){
   if(k==='vide'){ const T=lignes('vide'), L=T.filter(n=>!(n.garde&&n.garde>=N)), G=T.filter(n=>n.garde&&n.garde>=N);
     [...R.coche].forEach(x=>{ if(!L.some(n=>n.id===x)) R.coche.delete(x); });
     const ligne=n=>{ const dv=R.tri&&R.tri.id===n.id?null:devine(n);
-      return `<div class="idee"><label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;flex:none;margin-top:1px;accent-color:#C3B6DF"><span class="t">${esc(n.t||'…')}</span></label>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act">${dv?devBouton(n,dv):''}<button type="button" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button><button type="button" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div>`}</div>`; };
+      return `<div class="idee"><div style="display:flex;gap:10px;align-items:flex-start"><label style="display:flex;cursor:pointer;flex:none;padding:1px 0"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;margin:0;accent-color:#C3B6DF"></label><span class="t" contenteditable="plaintext-only" data-titre="${esc(n.id)}" enterkeyhint="done" spellcheck="true" title="Toucher pour modifier" style="flex:1;min-width:0;outline:none;border-radius:6px;cursor:text">${esc(n.t||'')}</span></div>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act">${dv?devBouton(n,dv):''}<button type="button" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button><button type="button" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div>`}</div>`; };
     const grp=R.coche.size?`<div class="idee" style="outline:2px solid var(--on-page);position:sticky;top:0;z-index:2"><b>${R.coche.size} idée${R.coche.size>1?'s':''} cochée${R.coche.size>1?'s':''}</b>${R.tri&&R.tri.id==='*'?triHtml({id:'*'}):`<div class="act"><button type="button" data-r="tri" data-id="*">Ranger ensemble ›</button><button type="button" data-r="garder" data-id="*">Plus tard</button><button type="button" data-r="archiver" data-id="*">Archiver</button><button type="button" data-r="decocher">Décocher</button></div>`}</div>`:'';
-    c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Coche plusieurs idées pour les ranger ensemble. « Plus tard » la garde pour la semaine prochaine.')+grp
+    c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Touche son texte pour le modifier. Coche plusieurs idées pour les ranger ensemble ; « Plus tard » la garde pour la semaine prochaine.')+grp
      +(L.length?L.map(ligne).join(''):`<div class="boite"><b>${G.length?'Tout est trié.':'Le vide-tête est vide.'}</b><span class="note">Rien d’autre à trier cette semaine.</span></div>`)
      +(G.length?`<details class="boite"><summary class="note" style="cursor:pointer">Gardées pour la semaine prochaine (${G.length})</summary>${G.map(n=>`<div class="idee" style="background:var(--surface-2)"><span class="t">${esc(n.t||'…')}</span><div class="act"><button type="button" data-r="reprendre" data-id="${esc(n.id)}">Trier maintenant</button></div></div>`).join('')}</details>`:''); }
   if(k==='deuxmin'){ const D=taches(true), A=taches(false);
@@ -402,9 +403,10 @@ function triHtml(n){
   else if(der==='a:bibliotheque') h=`<span class="eyebrow">La Bibliothèque</span><div class="act">${chip('bn','Notes')}${chip('bj','Journal de la semaine')}</div>`;
   else if(der==='a:marche') h=`<span class="eyebrow">Le Marché</span><div class="act">${chip('ma','Sur la liste de courses')}</div>`;
   else if(der==='a:banque') h=`<span class="eyebrow">La Banque</span><div class="act">${chip('bs','Saisir la dépense')}</div>`;
+  else if(der==='bn') h=notesHtml(n);
   else if(der==='a:forge') h=`<span class="eyebrow">La Forge</span><div class="act">${chip('fr','Remarque de la semaine')}</div>`;
   return `<div class="tri" style="display:flex;flex-direction:column;gap:8px;padding-top:4px">${h}${bas}</div>`; }
-const FEUILLES=['t2','tl','np','nd','pn','pt','pa','dn','dt','bn','bj','ma','bs','fr'];
+const FEUILLES=['t2','tl','np','nd','pn','pt','pa','dn','dt','bj','ma','bs','fr'];
 /* range une ligne ; renvoie le message, ou '' si rien n'a été fait. Les remarques de la Forge sont rassemblées dans « forge » (un seul envoi). */
 function triUn(id,v,cible,N,forge){
   const n=Object.assign({},B['n:'+id]); if(!n.id) return ''; delete n.garde;
@@ -420,7 +422,8 @@ function triUn(id,v,cible,N,forge){
   if(v==='pa'&&P_&&AB){ AB.ajouter(P_,n.t); archiver(); return 'Achat de '+P_.name+' (au Marché)'; }
   if(v==='dn'&&D_){ ranger('d:'+D_.id); return 'Note de '+D_.name; }
   if(v==='dt'&&D_){ const d=Object.assign({},D_); d.tasks=(d.tasks||[]).concat([{t:n.t,d:false}]); PB.ecrire(d); archiver(); return 'Tâche de '+D_.name; }
-  if(v==='bn'){ ranger('arbre'); return 'Dans les notes'; }
+  if(v==='bn'){ const ici=(R.tri&&R.tri.ici)||{p:'arbre'}, fr=enfantsN(ici.p).filter(x=>x.id!==n.id), os=fr.map(x=>x.o||0);
+    ranger(ici.p,{o:os.length?(ici.haut?Math.min(...os)-1:Math.max(...os)+1):1}); if(NOTES) NOTES[n.id]=n; return 'Rangée dans '+['Notes',...((R.tri&&R.tri.nav)||[]).map(nomLieu)].slice(-1)[0]; }
   if(v==='bj'){ ranger('j:'+N); return 'Dans le journal S'+wkNum(N); }
   if(v==='ma'&&AB){ AB.ajouter(null,n.t); archiver(); return 'Sur la liste du Marché'; }
   if(v==='fr'){ archiver(); forge.push(n.t); return 'Remarque ajoutée à la Forge'; }
@@ -429,6 +432,7 @@ function triFaire(id,v){
   const ch=R.tri?R.tri.ch:[], cible=ch[ch.length-1]||'', N=semaineRoutine(), ids=id==='*'?[...R.coche].filter(x=>B['n:'+x]):[id];
   if(!ids.length) return;
   if(v==='bs'){ if(ids.length!==1) return; const n=Object.assign({},B['n:'+ids[0]]); n.a=AUJ(); ecrireB('n:'+n.id,n); R.tri=null; ouvrirDans('banque','act=saisie'); return; }
+  if(v==='bn'&&R.tri&&R.tri.ici&&R.tri.ici.haut) ids.reverse();
   const forge=[]; let msg=''; ids.forEach(x=>{ const m=triUn(x,v,cible,N,forge); if(m) msg=m; });
   if(forge.length) remarqueForge(N,forge.join('\n'));
   if(!msg) return; ids.forEach(x=>R.coche.delete(x)); R.tri=null; vRoutine(); toast(ids.length>1?ids.length+' idées · '+msg:msg); }
@@ -437,6 +441,46 @@ async function remarqueForge(N,t){ try{ const {data,error}=await sb.from('carnet
 
 /* ----- Destination devinée (20.11) : le nom d'un projet ou d'un domaine, un mot de la Forge, ou un article du Marché.
    Le Marché : ses rayons (mots et noms appris) et ses articles, lus dans sa copie locale (marche-cache-<uid>), sinon dans les rayons tirés. */
+/* ----- Bibliothèque › Notes : choisir où ranger (demande de Nicolas, 20.11) -----
+   On descend dans l'arbre des notes comme dans la Bibliothèque : Notes (racine « arbre »), Domaines › un domaine (d:<id>, ses notes,
+   puis ses projets p:<id>), et dans n'importe quelle ligne (la ligne rangée devient son enfant). « Ranger ici » en haut ou en bas.
+   L'arbre vient de la copie locale de la Bibliothèque (biblio-cache-<uid>), puis de Supabase. */
+let NOTES=null, NOTES_T=0, NOTES_EN=false;
+function notesLocales(){ const m={}; let c=null; try{ c=JSON.parse(localStorage.getItem('biblio-cache-'+UID)||'null'); }catch(e){}
+  Object.entries((c&&c.prev)||{}).forEach(([k,v])=>{ if(!k.startsWith('n:')) return; let d=null; try{ d=JSON.parse(v); }catch(e){} if(d&&d.id&&!d.a) m[d.id]=d; }); return m; }
+async function chargerNotes(){ if(NOTES_EN||(NOTES&&Date.now()-NOTES_T<60000)) return; NOTES_EN=true; if(!NOTES) NOTES=notesLocales();
+  try{ const {data,error}=await sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false); if(error) throw error;
+    const m={}; (data||[]).forEach(r=>{ if(r.data&&r.data.id&&!r.data.a) m[r.data.id]=r.data; });
+    attente().filter(x=>x.table==='biblio_rows'&&String(x.key).startsWith('n:')).forEach(x=>{ const id=x.key.slice(2); if(x.data&&!x.data.a) m[id]=x.data; else delete m[id]; });
+    NOTES=m; }catch(e){} NOTES_T=Date.now(); NOTES_EN=false; if(R.tri&&R.tri.ch.includes('bn')) vRoutine(); }
+const enfantsN=p=>Object.values(NOTES||{}).filter(x=>x.p===p).sort((a,b)=>(a.o||0)-(b.o||0));
+const court=t=>{ t=String(t||'…').trim()||'…'; return t.length>48?t.slice(0,47)+'…':t; };
+function nomLieu(k){ if(!k||k==='arbre') return 'Notes'; if(k==='dom') return 'Domaines'; if(k==='d:autres') return 'Autres projets';
+  if(k.startsWith('d:')){ const d=PB&&PB.domaine(k.slice(2)); return d?nomPD(d):'Domaine'; } if(k.startsWith('p:')){ const p=PB&&PB.get(k.slice(2)); return p?nomPD(p):'Projet'; }
+  const x=NOTES&&NOTES[k]; return x?court(x.t):'…'; }
+/* le chemin (pour « nav ») qui mène à une ligne : Domaines › domaine › projet › lignes parentes */
+function cheminVers(id){ const ch=[]; let k=id, g=0; while(NOTES&&NOTES[k]&&g++<60){ ch.unshift(k); k=NOTES[k].p; }
+  if(k==='arbre') return ch; if(String(k).startsWith('d:')) return ['dom',k,...ch];
+  if(String(k).startsWith('p:')){ const p=PB&&PB.get(k.slice(2)), dom=p&&p.parent&&PB.domaine(p.parent)?'d:'+p.parent:'d:autres'; return ['dom',dom,k,...ch]; }
+  return null; }
+function notesHtml(n){
+  if(!NOTES_T&&!NOTES_EN) chargerNotes(); if(!NOTES) return '<span class="note">Les notes se chargent…</span>';
+  const T=R.tri, nav=T.nav||(T.nav=[]), k=nav[nav.length-1]||'arbre', id=esc(n.id);
+  const ligne=(v,l,plus)=>`<button type="button" data-r="notesVa" data-v="${esc(v)}" data-id="${id}" style="display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;border-radius:10px;padding:8px 12px;border:1px solid var(--line);background:none;color:var(--ink);font-size:14px;cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(l)}</span><span style="opacity:${plus?1:.35}">›</span></button>`;
+  let L=[];
+  if(k==='dom'){ L=(PB?PB.domaines().filter(d=>!d.auto&&!d.closed).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1):[]).map(d=>ligne('d:'+d.id,nomPD(d),true)); L.push(ligne('d:autres','📦 Autres projets',true)); }
+  else { if(k==='arbre') L.push(ligne('dom','📁 Domaines',true));
+    L.push(...enfantsN(k).filter(x=>x.id!==n.id).map(x=>ligne(x.id,court(x.t),enfantsN(x.id).length>0)));
+    if(k.startsWith('d:')&&PB){ const ids=new Set(PB.domaines().filter(d=>!d.auto).map(d=>d.id)), did=k.slice(2);
+      L.push(...PB.liste().filter(p=>!p.closed&&(did==='autres'?(!p.parent||!ids.has(p.parent)):p.parent===did)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>ligne('p:'+p.id,'Projet · '+nomPD(p),enfantsN('p:'+p.id).length>0))); } }
+  const fil=['Notes',...nav.map(nomLieu)].join(' › '), aDesLignes=enfantsN(k).filter(x=>x.id!==n.id).length>0;
+  const ici=k==='dom'?'':`<div class="act"><button type="button" data-r="notesIci" data-v="bas" data-id="${id}" style="background:var(--surface-2);border-color:transparent;font-weight:600">Ranger ici${aDesLignes?' · en bas':''}</button>${aDesLignes?`<button type="button" data-r="notesIci" data-v="haut" data-id="${id}">en haut</button>`:''}</div>`;
+  return `<span class="eyebrow" style="text-transform:none;letter-spacing:0">${esc(fil)}</span>${ici}<input data-r="notesQ" data-id="${id}" placeholder="Chercher une ligne des notes…" aria-label="Chercher une ligne des notes" style="height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font-size:14px"><div class="notes-res" style="display:flex;flex-direction:column;gap:4px"></div><div style="display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow:auto">${L.join('')||'<span class="note">Aucune ligne ici : range-la ici, ou reviens en arrière.</span>'}</div>`; }
+function notesChercher(el){ const q=plain(el.value.trim()), box=el.parentNode.querySelector('.notes-res'); if(!box) return;
+  if(q.length<2){ box.innerHTML=''; return; }
+  const R_=Object.values(NOTES||{}).filter(x=>x.id!==el.dataset.id&&plain(x.t).includes(q)).map(x=>({x,ch:cheminVers(x.id)})).filter(r=>r.ch).slice(0,12);
+  box.innerHTML=R_.length?R_.map(({x,ch})=>`<button type="button" data-r="notesGo" data-v="${esc(x.id)}" data-id="${esc(el.dataset.id)}" style="display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;border-radius:10px;padding:7px 12px;border:0;background:var(--surface-2);color:var(--ink);font-size:14px;cursor:pointer"><span>${esc(court(x.t))}</span><small style="opacity:.6">${esc(['Notes',...ch.slice(0,-1).map(nomLieu)].join(' › '))}</small></button>`).join(''):'<span class="note">Rien trouvé.</span>'; }
+
 let MARCHE_C=[], MARCHE_MOTS=null;
 const toksM=s=>plain(s).replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).map(t=>t.length>3&&/[sx]$/.test(t)?t.slice(0,-1):t);
 function motsMarche(){ if(MARCHE_MOTS) return MARCHE_MOTS; const single=new Set(), multi=[], noms=new Set(), cats=[];
@@ -517,7 +561,10 @@ $plein.addEventListener('click',e=>{
   if(a==='obj'){ garderNote(); const w=Object.assign({},B['w:'+Pr]||{}), ev=Object.assign({},w.obj||{}), k=el.dataset.k, v=el.dataset.v; if(ev[k]===v) delete ev[k]; else ev[k]=v; w.obj=ev; ecrireB('w:'+Pr,w); vRoutine(); return; }
   if(a==='tri'){ R.tri={id:el.dataset.id,ch:[]}; vRoutine(); return; }
   if(a==='triAnnuler'){ R.tri=null; vRoutine(); return; }
-  if(a==='triRetour'){ if(R.tri) R.tri.ch.pop(); vRoutine(); return; }
+  if(a==='triRetour'){ if(R.tri){ if(R.tri.ch[R.tri.ch.length-1]==='bn'&&R.tri.nav&&R.tri.nav.length) R.tri.nav.pop(); else { R.tri.ch.pop(); R.tri.nav=[]; } } vRoutine(); return; }
+  if(a==='notesVa'){ if(R.tri){ (R.tri.nav=R.tri.nav||[]).push(el.dataset.v); vRoutine(); } return; }
+  if(a==='notesGo'){ const c=cheminVers(el.dataset.v); if(R.tri&&c){ R.tri.nav=c; vRoutine(); } return; }
+  if(a==='notesIci'){ if(!R.tri) return; const nav=R.tri.nav||[]; R.tri.ici={p:nav[nav.length-1]||'arbre',haut:el.dataset.v==='haut'}; triFaire(el.dataset.id,'bn'); return; }
   if(a==='triV'){ const v=el.dataset.v; if(FEUILLES.includes(v)){ triFaire(el.dataset.id,v); return; } if(R.tri){ R.tri.ch.push(v); vRoutine(); } return; }
   if(a==='triDev'){ const n=B['n:'+el.dataset.id]; if(!n) return; const d=devine(n); if(!d) return; R.tri={id:n.id,ch:d.ch.slice()}; if(d.v) triFaire(n.id,d.v); else vRoutine(); return; }
   if(a==='decocher'){ R.coche.clear(); R.tri=null; vRoutine(); return; }
@@ -538,6 +585,11 @@ $plein.addEventListener('click',e=>{
 });
 function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j);
   else if(s.startsWith('t:')){ if(j==='sem'){ toast('Une tâche va sur un jour'); vRoutine(); return; } placerTache(s.slice(2),plusJ(Projets.lundi(semaineRoutine()),+j)); } else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
+/* le titre d'une idée se modifie en le touchant (demande de Nicolas, 20.11) ; enregistré en quittant le champ, sans redessiner (le toucher suivant n'est pas perdu) */
+$plein.addEventListener('keydown',e=>{ const el=e.target; if(el.dataset&&el.dataset.titre&&e.key==='Enter'){ e.preventDefault(); el.blur(); } });
+$plein.addEventListener('focusout',e=>{ const el=e.target; if(!el.dataset||!el.dataset.titre) return; const n=Object.assign({},B['n:'+el.dataset.titre]); if(!n.id) return;
+  const v=el.textContent.replace(/\s+/g,' ').trim(); if(!v){ el.textContent=n.t||''; return; } if(v!==n.t){ n.t=v; ecrireB('n:'+n.id,n); } });
+$plein.addEventListener('input',e=>{ const el=e.target; if(el.dataset&&el.dataset.r==='notesQ') notesChercher(el); });
 $plein.addEventListener('change',e=>{ const el=e.target;
   if(el.dataset.boite){ const N=semaineRoutine(), r=Object.assign({},B['s:routine']||{}), bx=Object.assign({},r.boites||{}), L=new Set(bx[N]||[]); if(el.checked) L.add(el.dataset.boite); else L.delete(el.dataset.boite);
     bx[N]=[...L]; Object.keys(bx).sort().slice(0,-6).forEach(x=>delete bx[x]); r.boites=bx; ecrireB('s:routine',r); return; }
