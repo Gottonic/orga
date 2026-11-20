@@ -126,6 +126,11 @@ textarea.libre{min-height:180px;border-radius:16px;border:1px solid var(--line);
 .idee .act{display:flex;gap:6px;flex-wrap:wrap}
 .idee .act button,.idee select{border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
 .idee select{background:var(--surface-2);max-width:100%}
+.idee .act button.disc{border:0;padding:6px 3px;color:var(--ink-3);font-size:12px}
+.idee .act button.ranger{background:#C3B6DF;color:#2A2440;border-color:transparent;font-weight:700;padding:7px 16px}
+.idee .act button.app{background:var(--page);color:var(--on-page);border-color:transparent;font-weight:600}
+.idee .act .ressort{flex:1}
+.idee .act .droite{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:0;display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer;background:var(--surface-2);color:var(--ink);max-width:100%}
 .chip[aria-pressed="true"]{outline:2px solid var(--on-page);outline-offset:2px}
@@ -320,8 +325,8 @@ function vRoutine(){
   if(k==='vide'){ const T=lignes('vide'), L=T.filter(n=>!(n.garde&&n.garde>=N)), G=T.filter(n=>n.garde&&n.garde>=N);
     [...R.coche].forEach(x=>{ if(!L.some(n=>n.id===x)) R.coche.delete(x); });
     const ligne=n=>{ const dv=R.tri&&R.tri.id===n.id?null:devine(n);
-      return `<div class="idee"><div style="display:flex;gap:10px;align-items:flex-start"><label style="display:flex;cursor:pointer;flex:none;padding:1px 0"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;margin:0;accent-color:#C3B6DF"></label><span class="t" contenteditable="plaintext-only" data-titre="${esc(n.id)}" enterkeyhint="done" spellcheck="true" title="Toucher pour modifier" style="flex:1;min-width:0;outline:none;border-radius:6px;cursor:text">${esc(n.t||'')}</span></div>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act">${dv?devBouton(n,dv):''}<button type="button" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button><button type="button" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" data-r="archiver" data-id="${esc(n.id)}">Archiver</button></div>`}</div>`; };
-    const grp=R.coche.size?`<div class="idee" style="outline:2px solid var(--on-page);position:sticky;top:0;z-index:2"><b>${R.coche.size} idée${R.coche.size>1?'s':''} cochée${R.coche.size>1?'s':''}</b>${R.tri&&R.tri.id==='*'?triHtml({id:'*'}):`<div class="act"><button type="button" data-r="tri" data-id="*">Ranger ensemble ›</button><button type="button" data-r="garder" data-id="*">Plus tard</button><button type="button" data-r="archiver" data-id="*">Archiver</button><button type="button" data-r="decocher">Décocher</button></div>`}</div>`:'';
+      return `<div class="idee"><div style="display:flex;gap:10px;align-items:flex-start"><label style="display:flex;cursor:pointer;flex:none;padding:1px 0"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;margin:0;accent-color:#C3B6DF"></label><span class="t" contenteditable="plaintext-only" data-titre="${esc(n.id)}" enterkeyhint="done" spellcheck="true" title="Toucher pour modifier" style="flex:1;min-width:0;outline:none;border-radius:6px;cursor:text">${esc(n.t||'')}</span></div>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act" style="align-items:center"><button type="button" class="disc" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" class="disc" data-r="archiver" data-id="${esc(n.id)}">Archiver</button><span class="droite">${dv?devBouton(n,dv):''}<button type="button" class="ranger" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button></span></div>`}</div>`; };
+    const grp=R.coche.size?`<div class="idee" style="outline:2px solid var(--on-page);position:sticky;top:0;z-index:2"><b>${R.coche.size} idée${R.coche.size>1?'s':''} cochée${R.coche.size>1?'s':''}</b>${R.tri&&R.tri.id==='*'?triHtml({id:'*'}):`<div class="act" style="align-items:center"><button type="button" class="disc" data-r="decocher">Décocher</button><button type="button" class="disc" data-r="garder" data-id="*">Plus tard</button><button type="button" class="disc" data-r="archiver" data-id="*">Archiver</button><span class="ressort"></span><button type="button" class="ranger" data-r="tri" data-id="*">Ranger ensemble ›</button></div>`}</div>`:'';
     c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Touche son texte pour le modifier. Coche plusieurs idées pour les ranger ensemble ; « Plus tard » la garde pour la semaine prochaine.')+grp
      +(L.length?L.map(ligne).join(''):`<div class="boite"><b>${G.length?'Tout est trié.':'Le vide-tête est vide.'}</b><span class="note">Rien d’autre à trier cette semaine.</span></div>`)
      +(G.length?`<details class="boite"><summary class="note" style="cursor:pointer">Gardées pour la semaine prochaine (${G.length})</summary>${G.map(n=>`<div class="idee" style="background:var(--surface-2)"><span class="t">${esc(n.t||'…')}</span><div class="act"><button type="button" data-r="reprendre" data-id="${esc(n.id)}">Trier maintenant</button></div></div>`).join('')}</details>`:''); }
@@ -388,14 +393,16 @@ const NOMS_APP={etabli:'L’Établi',bibliotheque:'La Bibliothèque',marche:'Le 
 function taches(m2){ const a=AUJ(); return lignes('taches').filter(n=>!!n.m2===m2&&(!n.x||n.xLe===a)); }
 const nomPD=p=>((p.emoji||'')+' '+p.name).trim();
 function triHtml(n){
-  const ch=R.tri.ch, der=ch[ch.length-1]||'', groupe=n.id==='*', chip=(v,l,r)=>`<button type="button" data-r="${r||'triV'}" data-v="${esc(v)}" data-id="${esc(n.id)}">${l}</button>`;
-  const bas=`<div class="act">${ch.length?chip('','‹ Retour','triRetour'):''}${chip('','Annuler','triAnnuler')}</div>`;
+  const ch=R.tri.ch, der=ch[ch.length-1]||'', groupe=n.id==='*', appC=ch.length?String(ch[0]).slice(2):'';
+  /* les boutons d'une app prennent ses couleurs (demande de Nicolas, 20.11) */
+  const chip=(v,l,r,app)=>{ const a=app===undefined?(r?'':appC):app; return `<button type="button"${a?` class="app" data-lieu="${a}"`:''} data-r="${r||'triV'}" data-v="${esc(v)}" data-id="${esc(n.id)}">${l}</button>`; };
+  const bas=`<div class="act">${ch.length?`<button type="button" data-r="triRetour" data-id="${esc(n.id)}">‹ Retour</button>`:''}<span class="ressort"></span><button type="button" class="disc" data-r="triAnnuler" data-id="${esc(n.id)}">Annuler</button></div>`;
   const choix=(L,ph)=>`<select data-r="triSel" data-id="${esc(n.id)}" aria-label="${ph}"><option value="">${ph}</option>${L.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select>`;
   const pro=p=>Projets.nature(p)==='pro';
   const projets=f=>PB?PB.liste().filter(p=>!p.closed&&f(p)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['x:p:'+p.id,nomPD(p)]):[];
   const dv=groupe||ch.length?null:devine(n);
   let h='';
-  if(!ch.length) h=(dv?`<span class="eyebrow">Proposé</span><div class="act">${devBouton(n,dv)}</div>`:'')+`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).filter(([a])=>!(groupe&&a==='banque')).map(([a,l])=>chip('a:'+a,l)).join('')}</div>`;
+  if(!ch.length) h=(dv?`<span class="eyebrow">Proposé</span><div class="act">${devBouton(n,dv)}</div>`:'')+`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).filter(([a])=>!(groupe&&a==='banque')).map(([a,l])=>chip('a:'+a,l,'',a)).join('')}</div>`;
   else if(der==='a:etabli') h=`<span class="eyebrow">L’Établi</span>${choix([...projets(()=>true),...(PB?PB.domaines().filter(d=>!d.auto).map(d=>['x:d:'+d.id,'Domaine · '+nomPD(d)]):[])],'Dans un projet ou un domaine…')}<div class="act">${chip('np',groupe?'+ Un nouveau projet par idée':'+ Nouveau projet')}${chip('nd',groupe?'+ Un nouveau domaine par idée':'+ Nouveau domaine')}</div>`;
   else if(der==='a:mine') h=`<span class="eyebrow">La Mine</span>${choix(projets(pro),'Dans quel mandat ?')}`;
   else if(der.startsWith('x:p:')){ const p=PB&&PB.get(der.slice(4)); h=`<span class="eyebrow">${esc(p?nomPD(p):'Projet')}</span><div class="act">${chip('pn','Note')}${chip('pt','Tâche')}${chip('pa','Achat')}</div>`; }
@@ -474,7 +481,7 @@ function notesHtml(n){
     if(k.startsWith('d:')&&PB){ const ids=new Set(PB.domaines().filter(d=>!d.auto).map(d=>d.id)), did=k.slice(2);
       L.push(...PB.liste().filter(p=>!p.closed&&(did==='autres'?(!p.parent||!ids.has(p.parent)):p.parent===did)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>ligne('p:'+p.id,'Projet · '+nomPD(p),enfantsN('p:'+p.id).length>0))); } }
   const fil=['Notes',...nav.map(nomLieu)].join(' › '), aDesLignes=enfantsN(k).filter(x=>x.id!==n.id).length>0;
-  const ici=k==='dom'?'':`<div class="act"><button type="button" data-r="notesIci" data-v="bas" data-id="${id}" style="background:var(--surface-2);border-color:transparent;font-weight:600">Ranger ici${aDesLignes?' · en bas':''}</button>${aDesLignes?`<button type="button" data-r="notesIci" data-v="haut" data-id="${id}">en haut</button>`:''}</div>`;
+  const ici=k==='dom'?'':`<div class="act"><button type="button" class="app" data-lieu="bibliotheque" data-r="notesIci" data-v="bas" data-id="${id}">Ranger ici${aDesLignes?' · en bas':''}</button>${aDesLignes?`<button type="button" data-r="notesIci" data-v="haut" data-id="${id}">en haut</button>`:''}</div>`;
   return `<span class="eyebrow" style="text-transform:none;letter-spacing:0">${esc(fil)}</span>${ici}<input data-r="notesQ" data-id="${id}" placeholder="Chercher une ligne des notes…" aria-label="Chercher une ligne des notes" style="height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font-size:14px"><div class="notes-res" style="display:flex;flex-direction:column;gap:4px"></div><div style="display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow:auto">${L.join('')||'<span class="note">Aucune ligne ici : range-la ici, ou reviens en arrière.</span>'}</div>`; }
 function notesChercher(el){ const q=plain(el.value.trim()), box=el.parentNode.querySelector('.notes-res'); if(!box) return;
   if(q.length<2){ box.innerHTML=''; return; }
@@ -501,10 +508,10 @@ function devine(n){ const t=String(n.t||''), x=' '+toksM(t).join(' ')+' ';
       if(tout.length>=4&&x.includes(' '+tout+' ')&&tout.length>bl){ best=[p,g]; bl=tout.length; continue; }
       if(g==='p') for(const w of nm) if(w.length>=5&&x.includes(' '+w+' ')&&w.length>bl){ best=[p,g]; bl=w.length; } }
     if(best) return {ch:['a:etabli','x:'+best[1]+':'+best[0].id], l:nomPD(best[0])}; }
-  const ts=toksM(t); if(ts.some(w=>MOTS_FORGE.some(m=>w.startsWith(m)))) return {ch:['a:forge'], v:'fr', l:'Forge · remarque'};
-  if(estCourse(t)) return {ch:['a:marche'], v:'ma', l:'Le Marché'};
+  const ts=toksM(t); if(ts.some(w=>MOTS_FORGE.some(m=>w.startsWith(m)))) return {ch:['a:forge'], v:'fr', l:'Forge'};
+  if(estCourse(t)) return {ch:['a:marche'], v:'ma', l:'Marché'};
   return null; }
-const devBouton=(n,d)=>`<button type="button" data-r="triDev" data-id="${esc(n.id)}" style="background:var(--surface-2);border-color:transparent;font-weight:600">→ ${esc(d.l)}</button>`;
+const devBouton=(n,d)=>`<button type="button" class="app" data-lieu="${esc(d.ch[0].slice(2))}" data-r="triDev" data-id="${esc(n.id)}">→ ${esc(d.l)}</button>`;
 /* lien privé de l'agenda Locus pour Proton (supabase/agenda.sql + fonction « agenda ») : gardé sur l'appareil */
 const lienAgenda=()=>{ try{ return localStorage.getItem('locus-agenda-lien-'+UID)||''; }catch(e){ return ''; } };
 const chf=x=>'CHF '+(Math.round((+x||0)*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
