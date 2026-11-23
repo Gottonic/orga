@@ -197,7 +197,8 @@ const CUR=()=>wkKey(new Date());
 /* la semaine que la routine prépare : dimanche → la suivante ; lundi et mardi → celle qui commence */
 function semaineRoutine(){ const d=new Date(), j=d.getDay(); if(j===0){ const x=new Date(d); x.setDate(x.getDate()+1); return wkKey(x); } return wkKey(d); }
 const semainePrec=k=>wkKey(parse(plusJ(Projets.lundi(k),-7)));
-const jourRoutine=()=>[0,1,2].includes(new Date().getDay());
+/* la tuile « Démarrer la semaine » : dès le lundi 6 h, jusqu'à ce que la routine soit faite (ampoule de Nicolas, 23.11) */
+const jourRoutine=()=>{ const d=new Date(), j=d.getDay(); return j!==0&&!(j===1&&d.getHours()<6); };
 
 /* --------- état --------- */
 let sb=null, UID=null, PB=null, AB=null;
@@ -292,9 +293,9 @@ function render(){ if(!UID) return; if(document.activeElement&&$main.contains(do
 /* =============================== La routine du lundi =============================== */
 const $plein=document.getElementById('plein');
 const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
-/* ordre voulu par Nicolas (19.11, 20.11) : humeur, journal, boîtes à vider, Banque, vide-tête, tâches de 2 minutes, agenda, projets, entraînements, tâches, Claude */
-const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
-const CLES=['humeur','journal','boites','banque','vide','deuxmin','agenda','projets','forge','taches','claude'];
+/* ordre voulu par Nicolas (19.11, 20.11, 23.11) : humeur, journal, boîtes à vider, Banque, tâches pas faites, vide-tête, tâches de 2 minutes, agenda, projets, entraînements, tâches, Claude */
+const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Les tâches pas faites','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
+const CLES=['humeur','journal','boites','banque','report','vide','deuxmin','agenda','projets','forge','taches','claude'];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
 function ouvrirRoutine(){ NOTES_T=0; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
 function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
@@ -305,10 +306,10 @@ function vRoutine(){
   const tete=(t,s)=>`${pts}<div class="titre"><span class="eyebrow">Étape ${e}</span><h3>${t}</h3><p>${s}</p></div>`;
   let c='';
   const k=CLES[e-1];
-  if(k==='humeur'){ const w=B['w:'+Pr]||{}; /* Stress (19.11, demande de Nicolas) : 0 = pas du tout stressé, 10 = hyper stressé ; gardé dans « stress », et « calme » = 10 − stress pour la Bibliothèque et le pont du lundi */
-    const st=w.stress!=null?w.stress:(w.calme!=null?10-w.calme:null);
+  if(k==='humeur'){ const w=B['w:'+Pr]||{}; /* Stress (19.11, demande de Nicolas ; de 1 à 10 comme les autres depuis le 23.11) : 1 = pas du tout stressé, 10 = hyper stressé ; gardé dans « stress », et « calme » = 10 − stress pour la Bibliothèque et le pont du lundi */
+    const st=w.stress!=null?w.stress:(w.calme!=null?11-w.calme:null);
     const ech=(k,l,de)=>{ const N=de===0?[0,1,2,3,4,5,6,7,8,9,10]:[1,2,3,4,5,6,7,8,9,10]; const v=k==='stress'?st:w[k]; return `<div class="echelle"><span class="eyebrow">${l}</span><div class="cases" style="grid-template-columns:repeat(${N.length},minmax(0,1fr))">${N.map(n=>`<button type="button" data-r="axe" data-k="${k}" data-n="${n}" aria-pressed="${v===n}">${n}</button>`).join('')}</div></div>`; };
-    c=tete('Ta semaine passée','Trois notes sur 10 pour la '+esc(wkLabel(Pr))+', sans trop réfléchir.')+ech('stress','Stress',0)+ech('energie','Énergie')+ech('prod','Productivité'); }
+    c=tete('Ta semaine passée','Trois notes sur 10 pour la '+esc(wkLabel(Pr))+', sans trop réfléchir.')+ech('stress','Stress')+ech('energie','Énergie')+ech('prod','Productivité'); }
   if(k==='journal'){ const o=objectifs(Pr), ev=(B['w:'+Pr]||{}).obj||{};
     const L=[['principal','Objectif principal'],['secondaire','Objectif secondaire'],['conseil','Conseil']];
     const rang=([k,l])=>`<div class="eval"><span class="q">${o[k]?esc(o[k]):'<i>pas noté</i>'}<small>${l}</small></span><span class="choix">${[['oui','oui'],['moitie','à moitié'],['non','non']].map(([v,t])=>`<button type="button" data-r="obj" data-k="${k}" data-v="${v}" aria-pressed="${ev[k]===v}">${t}</button>`).join('')}</span></div>`;
@@ -322,10 +323,14 @@ function vRoutine(){
      +`<div class="boite"><span class="eyebrow">Locus dans Proton</span>`+(lien
        ?`<span class="note">Projets placés sur des jours ou des semaines, séances de la Forge et tâches, dans un calendrier « Locus ». Proton le relit toutes les 8 à 16 heures.</span><input readonly value="${esc(lien)}" aria-label="Lien de l’agenda Locus" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-r="agendaCopier">Copier le lien</button><button type="button" class="chip" data-r="agendaNouveau">Nouveau lien</button></div>`
        :`<span class="note">Une fois : crée le lien, puis dans Proton Calendar (sur l’ordi) : Paramètres › Tous les paramètres › Calendriers › Autres calendriers › Ajouter un calendrier depuis une URL, et colle-le.</span><button type="button" class="chip" data-r="agendaNouveau" style="align-self:flex-start">Créer le lien</button>`)+`</div>`; }
+  if(k==='report'){ const L=aReporter(N), fait=lignes('taches').filter(n=>n.x&&n.xLe===AUJ()&&n.tri!==N);
+    const li=(n)=>`<div class="idee"><label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-tache="${esc(n.id)}" ${n.x?'checked':''} aria-label="Faite" style="width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:#C3B6DF"><span class="t" style="${n.x?'text-decoration:line-through;opacity:.6':''}">${esc(n.t)}${n.m2?' <small class="note">· 2 min</small>':''}</span></label>${n.x?'':`<div class="act"><span class="droite"><button type="button" class="disc" data-r="archiver" data-id="${esc(n.id)}">Abandonner</button></span></div>`}</div>`;
+    c=tete('Les tâches pas faites','Les tâches de la semaine passée qui restent. Coche celles que tu as faites quand même. Les autres repartent dans le vide-tête : tu les tries à l’étape suivante, avec le reste.')
+     +(L.length||fait.length?L.concat(fait).map(li).join(''):`<div class="boite"><b>Rien à reporter.</b><span class="note">Toutes les tâches de la semaine passée sont faites.</span></div>`); }
   if(k==='vide'){ const T=lignes('vide'), L=T.filter(n=>!(n.garde&&n.garde>=N)), G=T.filter(n=>n.garde&&n.garde>=N);
     [...R.coche].forEach(x=>{ if(!L.some(n=>n.id===x)) R.coche.delete(x); });
     const ligne=n=>{ const dv=R.tri&&R.tri.id===n.id?null:devine(n);
-      return `<div class="idee"><div style="display:flex;gap:10px;align-items:flex-start"><label style="display:flex;cursor:pointer;flex:none;padding:1px 0"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;margin:0;accent-color:#C3B6DF"></label><span class="t" contenteditable="plaintext-only" data-titre="${esc(n.id)}" enterkeyhint="done" spellcheck="true" title="Toucher pour modifier" style="flex:1;min-width:0;outline:none;border-radius:6px;cursor:text">${esc(n.t||'')}</span></div>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act" style="align-items:center"><button type="button" class="disc" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" class="disc" data-r="archiver" data-id="${esc(n.id)}">Archiver</button><span class="droite">${dv?devBouton(n,dv):''}<button type="button" class="ranger" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button></span></div>`}</div>`; };
+      return `<div class="idee"><div style="display:flex;gap:10px;align-items:flex-start"><label style="display:flex;cursor:pointer;flex:none;padding:1px 0"><input type="checkbox" data-coche="${esc(n.id)}" ${R.coche.has(n.id)?'checked':''} aria-label="Choisir" style="width:20px;height:20px;margin:0;accent-color:#C3B6DF"></label><span class="t" contenteditable="plaintext-only" data-titre="${esc(n.id)}" enterkeyhint="done" spellcheck="true" title="Toucher pour modifier" style="flex:1;min-width:0;outline:none;border-radius:6px;cursor:text">${esc(n.t||'')}</span>${n.report?'<span class="eyebrow" style="flex:none;padding-top:3px">reportée</span>':''}</div>${R.tri&&R.tri.id===n.id?triHtml(n):`<div class="act" style="align-items:center"><button type="button" class="disc" data-r="garder" data-id="${esc(n.id)}">Plus tard</button><button type="button" class="disc" data-r="archiver" data-id="${esc(n.id)}">Archiver</button><span class="droite">${dv?devBouton(n,dv):''}<button type="button" class="ranger" data-r="tri" data-id="${esc(n.id)}">Ranger ›</button></span></div>`}</div>`; };
     const grp=R.coche.size?`<div class="idee" style="outline:2px solid var(--on-page);position:sticky;top:0;z-index:2"><b>${R.coche.size} idée${R.coche.size>1?'s':''} cochée${R.coche.size>1?'s':''}</b>${R.tri&&R.tri.id==='*'?triHtml({id:'*'}):`<div class="act" style="align-items:center"><button type="button" class="disc" data-r="decocher">Décocher</button><button type="button" class="disc" data-r="garder" data-id="*">Plus tard</button><button type="button" class="disc" data-r="archiver" data-id="*">Archiver</button><span class="ressort"></span><button type="button" class="ranger" data-r="tri" data-id="*">Ranger ensemble ›</button></div>`}</div>`:'';
     c=tete('Vider la tête','Pour chaque idée : une tâche, ou une app où la ranger. Touche son texte pour le modifier. Coche plusieurs idées pour les ranger ensemble ; « Plus tard » la garde pour la semaine prochaine.')+grp
      +(L.length?L.map(ligne).join(''):`<div class="boite"><b>${G.length?'Tout est trié.':'Le vide-tête est vide.'}</b><span class="note">Rien d’autre à trier cette semaine.</span></div>`)
@@ -390,6 +395,11 @@ function vPlacer(N,mode){
    Améliorations voulues par Nicolas (20.11) : destination devinée, « Plus tard » (garde = semaine), ranger plusieurs lignes d'un coup,
    et placer les tâches sur les jours (étape « Placer les tâches »). */
 const NOMS_APP={etabli:'L’Établi',bibliotheque:'La Bibliothèque',marche:'Le Marché',mine:'La Mine',banque:'La Banque',forge:'La Forge'};
+/* tâches d'avant cette routine, pas faites : elles repartent au tri (étape « Les tâches pas faites », 23.11) */
+function aReporter(N){ return lignes('taches').filter(n=>!n.x&&n.tri!==N); }
+function reporter(N){ const L=aReporter(N); if(!L.length) return 0; const V=lignes('vide'); let o=V.length?Math.min(...V.map(x=>x.o||0)):1;
+  L.forEach(x=>{ const n=Object.assign({},x); delete B['n:'+n.id]; delete n.m2; delete n.jour; delete n.xLe; n.p='vide'; n.o=--o; n.report=N; ecrireB('n:'+n.id,n); });
+  const r=Object.assign({},B['s:routine']||{}); r.report={sem:N,n:L.length}; ecrireB('s:routine',r); return L.length; }
 function taches(m2){ const a=AUJ(); return lignes('taches').filter(n=>!!n.m2===m2&&(!n.x||n.xLe===a)); }
 const nomPD=p=>((p.emoji||'')+' '+p.name).trim();
 function triHtml(n){
@@ -420,8 +430,8 @@ function triUn(id,v,cible,N,forge){
   const ranger=(p,extra)=>{ delete B['n:'+n.id]; ecrireB('n:'+n.id,Object.assign(n,{p,o:Date.now()/1e6},extra||{})); };
   const archiver=()=>{ n.a=AUJ(); ecrireB('n:'+n.id,n); };
   const P_=cible.startsWith('x:p:')&&PB?PB.get(cible.slice(4)):null, D_=cible.startsWith('x:d:')&&PB?PB.domaine(cible.slice(4)):null;
-  if(v==='t2'){ ranger('taches',{m2:true}); return 'Tâche de 2 minutes'; }
-  if(v==='tl'){ ranger('taches',{}); return 'Dans la liste de tâches'; }
+  if(v==='t2'){ ranger('taches',{m2:true,tri:N}); delete n.jour; return 'Tâche de 2 minutes'; }
+  if(v==='tl'){ ranger('taches',{tri:N}); return 'Dans la liste de tâches'; }
   if(v==='np'&&PB){ PB.ecrire(Projets.nouveau({name:n.t,later:true,emoji:'💡'})); archiver(); return 'Nouveau projet (Idée)'; }
   if(v==='nd'&&PB){ PB.ecrire(Projets.nouveauDomaine({name:n.t})); archiver(); return 'Nouveau domaine'; }
   if(v==='pn'&&P_){ ranger('p:'+P_.id); return 'Note de '+P_.name; }
@@ -532,7 +542,7 @@ async function jourSeance(sid,j){ const N=semaineRoutine(), f=forge();
     await envoyer('carnet','logs/'+N,log); }catch(e){ toast('Séance non placée : '+((e&&e.message)||e)); } }
 function texteClaude(N,Pr){
   const w=B['w:'+Pr]||{}, o=objectifs(Pr), ev=w.obj||{}, EV={oui:'oui',moitie:'à moitié',non:'non'};
-  const L=['SEMAINE '+wkNum(N)+' '+wkLabel(N).replace(/^S\d+ /,''), 'BILAN S'+wkNum(Pr)+' : stress '+(w.stress!=null?w.stress:(w.calme!=null?10-w.calme:'?'))+'/10'+' · énergie '+(w.energie||'?')+' · productivité '+(w.prod||'?')];
+  const L=['SEMAINE '+wkNum(N)+' '+wkLabel(N).replace(/^S\d+ /,''), 'BILAN S'+wkNum(Pr)+' : stress '+(w.stress!=null?w.stress:(w.calme!=null?11-w.calme:'?'))+'/10'+' · énergie '+(w.energie||'?')+' · productivité '+(w.prod||'?')];
   const ob=[['principal','principal'],['secondaire','secondaire'],['conseil','conseil']].filter(([k])=>o[k]||ev[k]).map(([k,l])=>'- '+l+(o[k]?' (« '+o[k]+' »)':'')+' : '+(EV[ev[k]]||'?'));
   if(ob.length) L.push('OBJECTIFS S'+wkNum(Pr)+' :',...ob);
   const ret=w.retenu&&B['n:'+w.retenu]?B['n:'+w.retenu].t:''; if(ret) L.push('JOURNAL S'+wkNum(Pr)+' : '+ret);
@@ -541,6 +551,7 @@ function texteClaude(N,Pr){
   const TT=lignes('taches').filter(n=>!n.m2&&!n.x);
   for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t),...TT.filter(n=>n.jour===d).map(n=>'Tâche : '+n.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
   const nf=FS.filter(s=>typeof s.day!=='number'&&!s.opt); if(nf.length) L.push('- Forge pas encore placée : '+nf.map(s=>s.t).join(' ; '));
+  const rp=((B['s:routine']||{}).report)||{}; if(rp.sem===N&&rp.n) L.push('TÂCHES DE LA S'+wkNum(Pr)+' PAS FAITES : '+rp.n+', remises au tri');
   const VT=lignes('vide'), g=VT.filter(n=>n.garde&&n.garde>=N).length, v=VT.length-g;
   L.push('VIDE-TÊTE : '+(v?v+' idée'+(v>1?'s':'')+' encore à trier':'trié')+(g?' · '+g+' gardée'+(g>1?'s':'')+' pour la semaine prochaine':''));
   const T2=taches(true).filter(n=>!n.x), TL=taches(false).filter(n=>!n.x);
@@ -560,10 +571,10 @@ $plein.addEventListener('click',e=>{
   const el=e.target.closest('[data-r]'); if(!el||el.tagName==='SELECT') return; const a=el.dataset.r, N=semaineRoutine(), Pr=semainePrec(N);
   if(a==='fermer'){ if(CLES[R.etape-1]==='journal') garderNote(); fermerPlein(); return; }
   if(a==='prec'){ if(CLES[R.etape-1]==='journal') garderNote(); R.etape=Math.max(1,R.etape-1); R.sel=null; $plein.dataset.e=''; vRoutine(); return; }
-  if(a==='suiv'){ if(CLES[R.etape-1]==='journal') garderNote(); if(R.etape<ETAPES.length){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
+  if(a==='suiv'){ if(CLES[R.etape-1]==='journal') garderNote(); if(CLES[R.etape-1]==='report'){ const k=reporter(N); if(k) toast(k+' tâche'+(k>1?'s':'')+' à retrier'); } if(R.etape<ETAPES.length){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
     const r=Object.assign({},B['s:routine']||{}); r.fait=[...new Set([...(r.fait||[]),N])].slice(-12); r.le=AUJ(); ecrireB('s:routine',r); fermerPlein(); toast('Bonne semaine !'); return; }
   if(a==='axe'){ const w=Object.assign({},B['w:'+Pr]||{}), k=el.dataset.k, n=+el.dataset.n;
-    if(k==='stress'){ const avant=w.stress!=null?w.stress:(w.calme!=null?10-w.calme:null); if(avant===n){ delete w.stress; delete w.calme; } else { w.stress=n; w.calme=Math.min(10,Math.max(1,10-n)); } }
+    if(k==='stress'){ const avant=w.stress!=null?w.stress:(w.calme!=null?11-w.calme:null); if(avant===n){ delete w.stress; delete w.calme; } else { w.stress=n; w.calme=Math.min(10,Math.max(1,11-n)); } }
     else if(w[k]===n) delete w[k]; else w[k]=n; ecrireB('w:'+Pr,w); vRoutine(); return; }
   if(a==='obj'){ garderNote(); const w=Object.assign({},B['w:'+Pr]||{}), ev=Object.assign({},w.obj||{}), k=el.dataset.k, v=el.dataset.v; if(ev[k]===v) delete ev[k]; else ev[k]=v; w.obj=ev; ecrireB('w:'+Pr,w); vRoutine(); return; }
   if(a==='tri'){ R.tri={id:el.dataset.id,ch:[]}; vRoutine(); return; }
