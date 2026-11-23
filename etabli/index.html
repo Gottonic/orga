@@ -2342,7 +2342,12 @@ function setSync(force){
   el.className='sync '+cls; el.textContent=txt; el.title=tip;
 }
 function showLogin(msg){ booted=false; const l=document.getElementById('login'); l.hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; try{ document.getElementById('l-mail').focus(); }catch(e){} }
-document.addEventListener('locus:ouvrir',e=>{ const h=String(e.detail.hash||''); if(h.startsWith('p:')&&P(h.slice(2))){ ui.view='projets'; render(); detail(h.slice(2)); } else parent.postMessage({locus:1,etat:'fermer'},location.origin); });
+/* ouvert au premier plan depuis l'accueil : la fiche s'ouvre tout de suite, puis l'Établi relit les projets (la routine du lundi a pu
+   en placer ou en créer depuis le chargement) ; un projet encore inconnu est cherché après cette relecture (23.11) */
+document.addEventListener('locus:ouvrir',e=>{ const h=String(e.detail.hash||''), id=h.startsWith('p:')?h.slice(2):'';
+  if(id&&P(id)){ ui.view='projets'; render(); detail(id); if(UID) pull().catch(()=>{}); return; }
+  if(id&&UID){ pull().catch(()=>{}).then(()=>{ if(P(id)){ ui.view='projets'; render(); detail(id); } else parent.postMessage({locus:1,etat:'fermer'},location.origin); }); return; }
+  parent.postMessage({locus:1,etat:'fermer'},location.origin); });
 async function enter(user){
   UID=user.id; EMAIL=user.email||''; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
