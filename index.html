@@ -27,7 +27,7 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .ligne{display:flex;gap:8px}
 .ligne input{flex:1;min-width:0;height:48px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);padding:0 16px;font-size:15px}
 .ligne input::placeholder{color:var(--ink-3);opacity:.8}
-.sem-n{flex:none;width:48px;height:48px;border-radius:14px;background:#17141C;color:#F3F1E7;display:grid;place-items:center;font:700 24px/1 var(--f-display);letter-spacing:-.04em}
+.sem-n{flex:none;width:48px;height:48px;border-radius:14px;background:#17141C;color:#F3F1E7;display:grid;place-items:center;font:700 24px/1 var(--f-display);letter-spacing:-.04em;border:0;padding:0;cursor:pointer}
 .rondb{flex:none;border:0;width:48px;height:48px;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);display:grid;place-items:center;cursor:pointer}
 .rondb .ic{width:20px;height:20px}
 .obj{background:var(--accent);color:var(--on-acc);border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
@@ -159,6 +159,8 @@ textarea.libre{min-height:180px;border-radius:16px;border:1px solid var(--line);
 .piste .bloc.flou{outline:1.5px dashed currentColor;outline-offset:-2px}
 .piste .jlong{position:absolute;left:0;right:0;top:0;height:14px;display:flex;gap:3px;overflow:hidden}
 .piste .jlong span{font-size:10px;line-height:14px;padding:0 5px;border-radius:3px;background:var(--surface-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.jour.auj .j{color:var(--ink);font-weight:700}
+.piste .maint{position:absolute;top:-2px;bottom:-2px;width:2px;background:#E8826F;border-radius:1px;z-index:2}
 .tl-tete{display:flex;gap:6px;padding:4px 0 2px}
 .tl-tete .j{width:44px;flex:none}
 .piste-t{position:relative;flex:1;height:12px}
@@ -287,7 +289,7 @@ function vAccueil(){
   const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour();
   let h='';
   if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, boîtes, Banque, vide-tête, tâches, semaine, puis Claude</small></span>${P('suivant')}</button>`;
-  h+=`<form class="ligne" id="f-vide" autocomplete="off"><span class="sem-n" title="Semaine ${wkNum(CUR())}" aria-label="Semaine ${wkNum(CUR())}">${wkNum(CUR())}</span><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
+  h+=`<form class="ligne" id="f-vide" autocomplete="off"><button type="button" class="sem-n" id="b-semaine" title="Voir la semaine ${wkNum(CUR())}" aria-label="Voir le planning de la semaine ${wkNum(CUR())}">${wkNum(CUR())}</button><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
   if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
   const grandes=[], carres=[];
   if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
@@ -320,8 +322,26 @@ const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
 const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Les tâches pas faites','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
 const CLES=['humeur','journal','boites','banque','report','vide','deuxmin','agenda','projets','forge','taches','claude'];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
-function ouvrirRoutine(){ protonLocal(); chargerProton(semaineRoutine()); NOTES_T=0; R.plusieurs=false; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
-function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
+/* =============================== La semaine en cours (toucher le numéro de semaine, demande de Nicolas, 23.11) ===============================
+   Tout le planning : projets sur la semaine entière, puis jour par jour en heures (Proton, projets, séances, tâches). Un projet s'ouvre au premier plan. */
+let VUE_SEM=false;
+function ouvrirSemaine(){ VUE_SEM=true; $plein.dataset.e=''; $plein.hidden=false; document.body.style.overflow='hidden'; vSemaineVue();
+  const P0=protonLocal(); if(!P0||P0.sem!==CUR()||Date.now()-Date.parse(P0.le||0)>5*60000) chargerProton(CUR()); }
+function vSemaineVue(){ const N=CUR(), P0=protonLocal(), y=document.getElementById('corps')?document.getElementById('corps').scrollTop:0;
+  const TS=PB?PB.liste().filter(p=>!p.closed&&(p.weeks||[]).includes(N)):[], f=forge(), nf=((f&&f.semaines&&f.semaines[N])||[]).filter(s=>typeof s.day!=='number'&&!s.opt&&!s.done);
+  const chipP=p=>`<span class="chip" data-ouvrir="${esc(p.id)}" role="button" style="cursor:pointer;background:${esc(p.color||'#888')};color:${clair(p.color)?'#1E1B18':'#FFFFFF'}">${esc(p.emoji||'')} ${esc(p.name)}</span>`;
+  let c='';
+  if(TS.length) c+=`<div class="boite"><span class="eyebrow">Toute la semaine</span><div class="chips">${TS.map(chipP).join('')}</div></div>`;
+  c+=`<div class="boite" style="padding-left:10px;padding-right:10px">${semaineHeures(N,'vue')}`;
+  if(P0&&P0.sem===N&&P0.err&&(P0.cals||[]).length) c+=`<span class="note" style="color:#E8826F">Proton : ${esc(P0.err)}</span>`;
+  if(PROTON_EN&&!(P0&&P0.sem===N)) c+=`<span class="note">Lecture de Proton…</span>`;
+  c+=`</div>`;
+  if(nf.length) c+=`<div class="boite"><span class="eyebrow">Forge pas encore placée</span><div class="chips">${nf.map(s=>`<span class="chip forge" style="cursor:default">${esc(s.t)}${s.min?' · '+fmtMin(s.min):''}</span>`).join('')}</div></div>`;
+  c+=`<p class="note">Touche un projet pour ouvrir sa fiche. Pour changer la semaine, passe par la routine du lundi.</p>`;
+  $plein.innerHTML=cadrePlein('Semaine '+wkNum(N),wkLabel(N).replace(/^S\d+ \(|\)$/g,''),c,`<button class="sec" type="button" data-r="ouvrirRoutine">Ouvrir la routine</button><button class="pri" type="button" data-r="fermer">Fermer</button>`);
+  if(y) document.getElementById('corps').scrollTop=y; }
+function ouvrirRoutine(){ VUE_SEM=false; protonLocal(); chargerProton(semaineRoutine()); NOTES_T=0; R.plusieurs=false; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
+function fermerPlein(){ VUE_SEM=false; $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
 function vRoutine(){
   const N=semaineRoutine(), Pr=semainePrec(N), e=R.etape;
@@ -441,24 +461,25 @@ function blocsJour(N,i,mode){
   function fin(){ out.sort((x,y)=>x.a-y.a||y.b-x.b); const fins=[]; out.forEach(x=>{ let l=fins.findIndex(f=>f<=x.a); if(l<0){ l=fins.length; fins.push(0); } fins[l]=x.b; x.l=l; });
     return {blocs:out, jour, lanes:Math.max(jour.length?0:1,fins.length), d}; } }
 function pisteHtml(N,i,mode){
-  const {blocs,jour,lanes}=blocsJour(N,i,mode), top0=jour.length?16:0, haut=top0+lanes*22+4;
+  const {blocs,jour,lanes,d}=blocsJour(N,i,mode), top0=jour.length?16:0, haut=top0+lanes*22+4;
   const pc=x=>((Math.min(Math.max(x/60,H0),H1)-H0)/PLAGE*100).toFixed(2);
   /* un bloc trop court pour son nom : le nom déborde à droite, jusqu'au bloc suivant de la même ligne (largeur de piste estimée) */
   const pxMin=(Math.min(window.innerWidth||372,620)-32-20-50)/(PLAGE*60);
   let h=`<div class="piste" style="height:${haut}px">`;
+  if(d===AUJ()){ const n=new Date(), mn=n.getHours()*60+n.getMinutes(); if(mn>=H0*60&&mn<=H1*60) h+=`<i class="maint" style="left:${pc(mn)}%"></i>`; }
   if(jour.length) h+=`<div class="jlong">${jour.map(x=>`<span style="box-shadow:inset 3px 0 0 ${esc(x.coul)}">${esc(x.lab)}</span>`).join('')}</div>`;
   for(const x of blocs){ const g=pc(x.a), w=Math.max(2.5,pc(x.b)-g), st=`left:${g}%;width:${w}%;top:${top0+2+x.l*22}px;`;
     const fond=x.k==='p'?`background:${esc(x.coul)};color:${clair(x.coul)?'#1E1B18':'#FFFFFF'};`:x.k==='f'?'background:#2A2420;color:#EFE3CC;':x.k==='t'?'background:var(--surface-2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);':`background:color-mix(in srgb,${esc(x.coul)} 28%,var(--surface));color:var(--ink);box-shadow:inset 3px 0 0 ${esc(x.coul)};`;
     const suiv=blocs.filter(y=>y.l===x.l&&y.a>=x.b).reduce((mn,y)=>Math.min(mn,y.a),H1*60), place=Math.max(0,(Math.min(suiv,H1*60)-Math.max(x.a,H0*60))*pxMin-4);
     const etroit=x.lab.length*5.6+8>(Math.min(x.b,H1*60)-Math.max(x.a,H0*60))*pxMin, lab=etroit?`<span class="lab" style="max-width:${place.toFixed(0)}px">${esc(x.lab)}</span>`:esc(x.lab);
-    const actif=!!x.act, fade=mode&&!actif&&x.k!=='ev'?'opacity:.45;':'', titre=esc((x.tip||x.lab)+' · '+hhmm(x.a)+'–'+hhmm(Math.min(x.b,24*60))+(x.flou?' (heure à choisir)':''));
+    const actif=!!x.act, fade='pft'.includes(mode||'x')&&!actif&&x.k!=='ev'?'opacity:.45;':'', titre=esc((x.tip||x.lab)+' · '+hhmm(x.a)+'–'+hhmm(Math.min(x.b,24*60))+(x.flou?' (heure à choisir)':''));
     const cl=`bloc${x.flou?' flou':''}${etroit?' etroit':''}`;
     h+=actif?`<span class="${cl}" data-drag="${x.k}:${esc(x.id)}" data-de="${i}" data-a="${x.a}" data-b="${x.b}"${x.idx!=null?` data-idx="${x.idx}"`:''} title="${titre}" style="${st}${fond}">${lab}${x.k==='p'?'<i class="poignee g" data-bord="g"></i><i class="poignee d" data-bord="d"></i>':''}</span>`
-      :`<span class="${cl}" title="${titre}" style="${st}${fond}${fade}">${lab}</span>`; }
+      :`<span class="${cl}"${mode==='vue'&&x.k==='p'?` data-ouvrir="${esc(x.id)}" role="button"`:''} title="${titre}" style="${st}${fond}${fade}${mode==='vue'&&x.k==='p'?'cursor:pointer;':''}">${lab}</span>`; }
   return h+'</div>'; }
 function teteHeures(){ let h='<div class="tl-tete"><span class="j"></span><div class="piste-t">'; for(let x=H0+1;x<H1;x+=2) h+=`<span style="left:${((x-H0)/PLAGE*100).toFixed(2)}%">${x}</span>`; return h+'</div></div>'; }
 function semaineHeures(N,mode){ const m=Projets.lundi(N); let h=teteHeures();
-  for(let i=0;i<7;i++){ const d=plusJ(m,i); h+=`<div class="jour tl" data-j="${i}"${'pft'.includes(mode||'x')?' data-depot="1"':''}><span class="j">${JOURS[i]} ${parse(d).getDate()}</span>${pisteHtml(N,i,mode)}</div>`; }
+  for(let i=0;i<7;i++){ const d=plusJ(m,i); h+=`<div class="jour tl${d===AUJ()?' auj':''}" data-j="${i}"${'pft'.includes(mode||'x')?' data-depot="1"':''}><span class="j">${JOURS[i]} ${parse(d).getDate()}</span>${pisteHtml(N,i,mode)}</div>`; }
   return h; }
 /* ===== Vider la tête : ranger en arborescence (idée de Nicolas, 20.11) =====
    Premier niveau : une tâche (2 minutes, ou liste de tâches) ou une app. Dans l'app, on descend : Établi › projet › note / tâche / achat,
@@ -617,7 +638,7 @@ async function chargerProton(N){ if(PROTON_EN||!sb||!UID) return; PROTON_EN=true
     else st.ev=[];
   }catch(e){ st.err=(e&&e.message)||String(e); }
   PROTON=st; try{ localStorage.setItem('locus-proton-'+UID,JSON.stringify(st)); }catch(e){} PROTON_EN=false;
-  if(!$plein.hidden) vRoutine(); }
+  if(!$plein.hidden) (VUE_SEM?vSemaineVue():vRoutine()); }
 const coulCal=id=>{ const P0=protonLocal()||{}, i=(P0.cals||[]).findIndex(c=>c.id===id), c=i>=0?P0.cals[i]:null; return (c&&c.couleur)||COUL_CAL[Math.max(0,i)%COUL_CAL.length]; };
 /* les évènements Proton d'un jour (AAAA-MM-JJ), journées entières d'abord */
 function evDuJour(d){ const P0=protonLocal(); if(!P0||!P0.ev) return [];
@@ -688,8 +709,10 @@ function garderNote(){ const t=document.getElementById('i-retenu'); if(!t) retur
   if(!v) return; const L=lignes('j:'+Pr), n={id:uid(),p:'j:'+Pr,o:L.length?Math.max(...L.map(x=>x.o||0))+1:1,t:v,cree:AUJ()}; ecrireB('n:'+n.id,n); w.retenu=n.id; ecrireB('w:'+Pr,w); }
 
 $plein.addEventListener('click',e=>{
+  const ov=e.target.closest('[data-ouvrir]'); if(ov){ ouvrirDans('etabli','','p:'+ov.dataset.ouvrir); return; }
+  if(e.target.closest('[data-r="ouvrirRoutine"]')){ ouvrirRoutine(); return; }
   const el=e.target.closest('[data-r]'); if(!el||el.tagName==='SELECT') return; const a=el.dataset.r, N=semaineRoutine(), Pr=semainePrec(N);
-  if(a==='fermer'){ if(CLES[R.etape-1]==='journal') garderNote(); fermerPlein(); return; }
+  if(a==='fermer'){ if(!VUE_SEM&&CLES[R.etape-1]==='journal') garderNote(); fermerPlein(); return; }
   if(a==='prec'){ if(CLES[R.etape-1]==='journal') garderNote(); R.etape=Math.max(1,R.etape-1); R.sel=null; $plein.dataset.e=''; vRoutine(); return; }
   if(a==='suiv'){ if(CLES[R.etape-1]==='journal') garderNote(); if(CLES[R.etape-1]==='report'){ const k=reporter(N); if(k) toast(k+' tâche'+(k>1?'s':'')+' à retrier'); } if(R.etape<ETAPES.length){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
     const r=Object.assign({},B['s:routine']||{}); r.fait=[...new Set([...(r.fait||[]),N])].slice(-12); r.le=AUJ(); ecrireB('s:routine',r); fermerPlein(); toast('Bonne semaine !'); return; }
@@ -846,6 +869,7 @@ $main.addEventListener('change',e=>{ const el=e.target; if(!el.dataset||!el.data
   if(el.checked){ n.x=true; n.xLe=AUJ(); } else { delete n.x; delete n.xLe; } ecrireB('n:'+n.id,n); if(el.checked) toast('Fait !'); vAccueil(); });
 $main.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
+  if(b.id==='b-semaine'){ ouvrirSemaine(); return; }
   if(b.id==='b-chrono'){ ouvrirDans('mine','act=chrono'); return; }
   if(b.id==='b-saisie'){ ouvrirDans('banque','act=saisie'); return; }
   if(b.dataset.forge){ ouvrirDans('forge','seance='+encodeURIComponent(b.dataset.forge)+'&wk='+CUR()+'&plein=1'); return; } });
@@ -875,7 +899,7 @@ function ouvrirDans(app,params,hash){
 function fermerDans(){ if(!$dans) return; const f=$dans; $dans=null; clearTimeout(dansT);
   if(Object.values(CH).some(c=>c.f===f)) f.classList.remove('vu','actif'); else f.remove();
   if($fond) $fond.remove(); if($x) $x.remove(); $fond=$x=null; if($plein.hidden) document.body.style.overflow='';
-  Promise.all([tirer(),PB?PB.tirer():null]).then(()=>{ render(); if(!$plein.hidden&&$plein.dataset.e) vRoutine(); }); }
+  Promise.all([tirer(),PB?PB.tirer():null]).then(()=>{ render(); if(!$plein.hidden&&VUE_SEM) vSemaineVue(); else if(!$plein.hidden&&$plein.dataset.e) vRoutine(); }); }
 addEventListener('message',e=>{ const d=e.data; if(e.origin!==location.origin||!d||d.locus!==1) return;
   const c=Object.values(CH).find(x=>x.f.contentWindow===e.source), actif=$dans&&e.source===$dans.contentWindow;
   if(!c&&!actif) return;
