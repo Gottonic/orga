@@ -141,6 +141,20 @@ textarea.libre{min-height:180px;border-radius:16px;border:1px solid var(--line);
 .jour .chips{flex:1;min-height:30px}
 .jour .libre{color:var(--ink-3);font-size:13px;padding-top:5px}
 .jour.cible{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.jour.tl{align-items:stretch;padding:5px 0;gap:6px}
+.jour.tl .j{width:44px;font-size:11px;padding-top:3px}
+.piste{position:relative;flex:1;min-width:0;border-radius:6px;background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:calc(100% / 7.5) 100%;background-position:calc(100% / 15) 0}
+.piste .bloc{position:absolute;height:20px;border:0;border-radius:5px;font:600 10.5px/20px var(--f-body);padding:0 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;cursor:default}
+.piste button.bloc{cursor:pointer}
+.piste .bloc.etroit{overflow:visible;text-overflow:clip}
+.piste .bloc.etroit .lab{display:inline-block;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
+.piste .bloc.flou{outline:1.5px dashed currentColor;outline-offset:-2px}
+.piste .jlong{position:absolute;left:0;right:0;top:0;height:14px;display:flex;gap:3px;overflow:hidden}
+.piste .jlong span{font-size:10px;line-height:14px;padding:0 5px;border-radius:3px;background:var(--surface-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tl-tete{display:flex;gap:6px;padding:4px 0 2px}
+.tl-tete .j{width:44px;flex:none}
+.piste-t{position:relative;flex:1;height:12px}
+.piste-t span{position:absolute;transform:translateX(-50%);font:10px var(--f-mono);color:var(--ink-3)}
 pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius:16px;padding:14px;font:12.5px/1.5 var(--f-mono);color:var(--ink)}
 .res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .res a{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--page);color:var(--on-page);text-decoration:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-page) 10%,transparent)}
@@ -232,7 +246,7 @@ async function tirer(){
   try{
     const [a,b,f,m]=await Promise.all([
       sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false).in('data->>p',racines),
-      sb.from('biblio_rows').select('key,data,deleted').in('key',['w:'+Pr,'w:'+C,'s:routine']),
+      sb.from('biblio_rows').select('key,data,deleted').in('key',['w:'+Pr,'w:'+C,'s:routine','h:'+N,'h:'+C]),
       sb.from('carnet').select('data,deleted').eq('key','locus/semaines').maybeSingle(),
       sb.from('mine_rows').select('data,deleted').eq('key','s:chrono').maybeSingle(),
       sb.from('marche_rows').select('data').like('key','c:%').eq('deleted',false)]).then(r=>{ const c=r[4]; if(c&&!c.error){ MARCHE_C=(c.data||[]).map(x=>x.data).filter(Boolean); MARCHE_MOTS=null; } return r; });
@@ -383,16 +397,53 @@ function vPlacer(N,mode){
   h+='</div>';
   const touteSem=P_.filter(p=>(p.weeks||[]).includes(N));
   h+=`<div>`+(mode==='t'?'':`<div role="button" tabindex="0" class="jour${mode==='p'&&R.sel?' cible':''}" data-r="jour" data-j="sem"><span class="j">Semaine</span><span class="chips">${touteSem.length?touteSem.map(p=>chipP(p,'oter',' data-j="sem"')).join(''):'<span class="libre">toute la semaine : rien</span>'}</span></div>`);
-  for(let i=0;i<7;i++){ const d=plusJ(m,i), dd=parse(d);
-    const ps=P_.filter(p=>(p.days||[]).includes(d)), ss=FS.filter(s=>s.day===i), ts=TT.filter(n=>n.jour===d);
-    const sF=s=>`<span class="chip forge" style="opacity:.45;cursor:default">${esc(s.t)}</span>`, dj=` data-j="${i}"`;
-    const inner=mode==='f'?ss.map(s=>chipF(s,'oterF',dj)).join('')+ps.map(p=>chipP(p)).join('')+ts.map(n=>chipT(n)).join('')
-      :mode==='t'?ts.map(n=>chipT(n,'oterT',dj)).join('')+ps.map(p=>chipP(p)).join('')+ss.map(sF).join('')
-      :ps.map(p=>chipP(p,'oter',dj)).join('')+ss.map(sF).join('')+ts.map(n=>chipT(n)).join('');
-    const pv=evDuJour(d).map(e=>chipEv(e,d,true)).join('');
-    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${pv}${inner||(pv?'':'<span class="libre">libre</span>')}</span></div>`; }
+  h+=semaineHeures(N,mode);
   h+='</div>';
-  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Le reste de la semaine est en fond, avec tes rendez-vous Proton, pour voir les jours chargés.</p>`;
+  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Le reste de la semaine est en fond, avec tes rendez-vous Proton.</p>`;
+  h+=`<p class="note">Choisis, puis touche l’heure de début sur la ligne du jour. Un projet prend 4 h, une séance le temps prévu dans la Forge, une tâche 1 h. Pointillés : heure pas encore choisie.</p>`;
+  return h; }
+/* ===== Vue de la semaine en heures (demande de Nicolas, 23.11) : jours en lignes, heures en colonnes (7 h → 22 h).
+   Un projet placé prend 4 h, une séance le temps inscrit dans la Forge, une tâche 1 h. Les heures sont gardées dans
+   « h:<semaine> » de biblio_rows : { p: {'<projet>|<date>': 'HH:MM'}, f: {'<séance>': 'HH:MM'}, t: {'<tâche>': 'HH:MM'} }
+   (les jours restent dans p.days, logs/<semaine>.sessions[id].day et n.jour, comme avant). */
+const H0=7, H1=22, PLAGE=H1-H0, DUREE_P=240, DUREE_T=60, DEFAUT={p:'08:00',f:'18:00',t:'13:00'};
+const heures=N=>B['h:'+N]||{};
+function mettreHeure(N,g,k,v){ const h=JSON.parse(JSON.stringify(heures(N))); h[g]=h[g]||{}; if(v) h[g][k]=v; else delete h[g][k]; ecrireB('h:'+N,h); }
+const enMin=s=>{ const m=/^(\d\d):(\d\d)/.exec(s||''); return m?+m[1]*60+ +m[2]:null; };
+const hhmm=x=>String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');
+/* l'heure touchée sur la piste d'un jour (au quart d'heure… arrondi à l'heure pleine, plus simple au doigt) */
+function heureTouchee(e,row){ const p=row&&row.querySelector('.piste'); if(!p||!e||e.clientX==null) return null; const r=p.getBoundingClientRect(); if(e.clientX<r.left) return null;
+  const x=Math.min(Math.max(0,(e.clientX-r.left)/r.width),.999); return hhmm(Math.min(H1-1,H0+Math.floor(x*PLAGE))*60); }
+/* les blocs d'un jour : rendez-vous Proton, projets, séances, tâches ; mode = ce qu'on place ('p', 'f', 't') ou null */
+function blocsJour(N,i,mode){
+  const m=Projets.lundi(N), d=plusJ(m,i), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[], H=heures(N), out=[], jour=[];
+  const P_=PB?PB.liste().filter(p=>!p.closed):[], TT=lignes('taches').filter(n=>!n.m2&&!n.x);
+  evDuJour(d).forEach(e=>{ if(e.journee||e.debut.slice(0,10)!==d){ jour.push({lab:e.titre,coul:coulCal(e.cal)}); return; }
+    const a=enMin(e.debut.slice(11)), b=e.fin.slice(0,10)===d?enMin(e.fin.slice(11)):24*60; out.push({a,b:Math.max(b,a+15),lab:e.titre,k:'ev',coul:coulCal(e.cal),tip:e.titre+(e.lieu?' · '+e.lieu:'')}); });
+  P_.filter(p=>(p.days||[]).includes(d)).forEach(p=>{ const v=H.p&&H.p[p.id+'|'+d], a=enMin(v||DEFAUT.p); out.push({a,b:a+DUREE_P,lab:((p.emoji||'')+' '+p.name).trim(),k:'p',id:p.id,coul:p.color||'#888',flou:!v,act:mode==='p'?'oter':''}); });
+  FS.filter(s=>s.day===i).forEach(s=>{ const v=H.f&&H.f[s.id], a=enMin(v||DEFAUT.f); out.push({a,b:a+(s.min||60),lab:s.t,k:'f',id:s.id,flou:!v,act:mode==='f'?'oterF':''}); });
+  TT.filter(n=>n.jour===d).forEach(n=>{ const v=H.t&&H.t[n.id], a=enMin(v||DEFAUT.t); out.push({a,b:a+DUREE_T,lab:'☐ '+n.t,k:'t',id:n.id,flou:!v,act:mode==='t'?'oterT':''}); });
+  out.sort((x,y)=>x.a-y.a||y.b-x.b); const fins=[]; out.forEach(x=>{ let l=fins.findIndex(f=>f<=x.a); if(l<0){ l=fins.length; fins.push(0); } fins[l]=x.b; x.l=l; });
+  return {blocs:out, jour, lanes:Math.max(jour.length?0:1,fins.length), d}; }
+function pisteHtml(N,i,mode){
+  const {blocs,jour,lanes}=blocsJour(N,i,mode), top0=jour.length?16:0, haut=top0+lanes*22+4;
+  const pc=x=>((Math.min(Math.max(x/60,H0),H1)-H0)/PLAGE*100).toFixed(2);
+  /* un bloc trop court pour son nom : le nom déborde à droite, jusqu'au bloc suivant de la même ligne (largeur de piste estimée) */
+  const pxMin=(Math.min(window.innerWidth||372,620)-32-20-50)/(PLAGE*60);
+  let h=`<div class="piste" style="height:${haut}px">`;
+  if(jour.length) h+=`<div class="jlong">${jour.map(x=>`<span style="box-shadow:inset 3px 0 0 ${esc(x.coul)}">${esc(x.lab)}</span>`).join('')}</div>`;
+  for(const x of blocs){ const g=pc(x.a), w=Math.max(2.5,pc(x.b)-g), st=`left:${g}%;width:${w}%;top:${top0+2+x.l*22}px;`;
+    const fond=x.k==='p'?`background:${esc(x.coul)};color:${clair(x.coul)?'#1E1B18':'#FFFFFF'};`:x.k==='f'?'background:#2A2420;color:#EFE3CC;':x.k==='t'?'background:var(--surface-2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);':`background:color-mix(in srgb,${esc(x.coul)} 28%,var(--surface));color:var(--ink);box-shadow:inset 3px 0 0 ${esc(x.coul)};`;
+    const suiv=blocs.filter(y=>y.l===x.l&&y.a>=x.b).reduce((mn,y)=>Math.min(mn,y.a),H1*60), place=Math.max(0,(Math.min(suiv,H1*60)-Math.max(x.a,H0*60))*pxMin-4);
+    const etroit=x.lab.length*5.6+8>(Math.min(x.b,H1*60)-Math.max(x.a,H0*60))*pxMin, lab=etroit?`<span class="lab" style="max-width:${place.toFixed(0)}px">${esc(x.lab)}</span>`:esc(x.lab);
+    const actif=!!x.act, fade=mode&&!actif&&x.k!=='ev'?'opacity:.45;':'', titre=esc((x.tip||x.lab)+' · '+hhmm(x.a)+'–'+hhmm(Math.min(x.b,24*60))+(x.flou?' (heure à choisir)':''));
+    const cl=`bloc${x.flou?' flou':''}${etroit?' etroit':''}`;
+    h+=actif?`<button type="button" class="${cl}" data-r="${x.act}" data-id="${esc(x.id)}" data-j="${i}" title="${titre}" style="${st}${fond}">${lab}</button>`
+      :`<span class="${cl}" title="${titre}" style="${st}${fond}${fade}">${lab}</span>`; }
+  return h+'</div>'; }
+function teteHeures(){ let h='<div class="tl-tete"><span class="j"></span><div class="piste-t">'; for(let x=H0+1;x<H1;x+=2) h+=`<span style="left:${((x-H0)/PLAGE*100).toFixed(2)}%">${x}</span>`; return h+'</div></div>'; }
+function semaineHeures(N,mode){ const m=Projets.lundi(N); let h=teteHeures();
+  for(let i=0;i<7;i++){ const d=plusJ(m,i); h+=`<div${mode?' role="button" tabindex="0"':''} class="jour tl${mode&&R.sel?' cible':''}"${mode?` data-r="jour" data-j="${i}"`:''}><span class="j">${JOURS[i]} ${parse(d).getDate()}</span>${pisteHtml(N,i,mode)}</div>`; }
   return h; }
 /* ===== Vider la tête : ranger en arborescence (idée de Nicolas, 20.11) =====
    Premier niveau : une tâche (2 minutes, ou liste de tâches) ou une app. Dans l'app, on descend : Établi › projet › note / tâche / achat,
@@ -562,14 +613,12 @@ function chipEv(e,d,fond){ const c=coulCal(e.cal), h=heureEv(e,d);
 function vAgendaProton(N){ const P0=protonLocal(), m=Projets.lundi(N), ok=P0&&P0.sem===N;
   const cals=(P0&&P0.cals)||[];
   let h='';
-  if(cals.length){
-    h+=`<div class="boite"><div style="display:flex;align-items:center;gap:8px"><span class="eyebrow" style="flex:1">Ta semaine dans Proton</span><button type="button" class="chip" data-r="protonMaj">${PROTON_EN?'Lecture…':'Actualiser'}</button></div>`;
-    if(P0.err) h+=`<span class="note" style="color:#E8826F">${esc(P0.err)}</span>`;
-    (P0.erreurs||[]).forEach(x=>{ h+=`<span class="note" style="color:#E8826F">${esc(x.nom)} : ${esc(x.message)}</span>`; });
+  { h+=`<div class="boite" style="padding-left:10px;padding-right:10px"><div style="display:flex;align-items:center;gap:8px"><span class="eyebrow" style="flex:1">Ta semaine${cals.length?' · Proton et Locus':''}</span>${cals.length?`<button type="button" class="chip" data-r="protonMaj">${PROTON_EN?'Lecture…':'Actualiser'}</button>`:''}</div>`;
+    if(cals.length&&P0.err) h+=`<span class="note" style="color:#E8826F">${esc(P0.err)}</span>`;
+    ((P0&&P0.erreurs)||[]).forEach(x=>{ h+=`<span class="note" style="color:#E8826F">${esc(x.nom)} : ${esc(x.message)}</span>`; });
     if(!ok&&PROTON_EN) h+=`<span class="note">Lecture des calendriers…</span>`;
-    for(let i=0;i<7;i++){ const d=plusJ(m,i), E=ok?evDuJour(d):[];
-      h+=`<div class="jour" style="cursor:default"><span class="j">${JOURS[i]} ${parse(d).getDate()}</span><span class="chips">${E.map(e=>chipEv(e,d)).join('')||'<span class="libre">rien</span>'}</span></div>`; }
-    if(ok&&P0.le) h+=`<span class="note">Lu à ${esc(new Date(P0.le).toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}))}. Change un rendez-vous dans Proton, puis « Actualiser ».</span>`;
+    h+=semaineHeures(N,null);
+    if(cals.length&&ok&&P0.le) h+=`<span class="note">Lu à ${esc(new Date(P0.le).toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}))}. Change un rendez-vous dans Proton, puis « Actualiser ».</span>`;
     h+=`</div>`; }
   const liste=cals.map(c=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:4px;background:${esc(coulCal(c.id))};flex:none"></span><span style="flex:1;font-size:15px">${esc(c.nom)}</span><button type="button" class="chip" data-r="calOter" data-id="${esc(c.id)}" aria-label="Retirer ${esc(c.nom)}">✕</button></div>`).join('');
   const aide=`<span class="note">Dans Proton Calendar, sur l’ordi : Paramètres › Tous les paramètres › Calendriers › choisis un calendrier › « Partager avec tout le monde » › Créer un lien, en <b>vue complète</b> › Copier. Colle-le ici avec un nom. Un lien par calendrier.</span>`;
@@ -603,7 +652,9 @@ function texteClaude(N,Pr){
   const m=Projets.lundi(N), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[], P_=PB?PB.liste().filter(p=>!p.closed):[];
   L.push('PLANNING S'+wkNum(N)+' :'); const ts=P_.filter(p=>(p.weeks||[]).includes(N)); if(ts.length) L.push('- toute la semaine : '+ts.map(p=>p.name).join(' ; '));
   const TT=lignes('taches').filter(n=>!n.m2&&!n.x);
-  for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...evDuJour(d).map(e=>(heureEv(e,d)?heureEv(e,d)+' ':'')+e.titre+' (Proton)'),...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t),...TT.filter(n=>n.jour===d).map(n=>'Tâche : '+n.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
+  for(let i=0;i<7;i++){ const {blocs,jour,d}=blocsJour(N,i,null); const dur=x=>{ const k=x.b-x.a; return k>=60?' ('+Math.floor(k/60)+' h'+(k%60?' '+String(k%60).padStart(2,'0'):'')+')':' ('+k+' min)'; };
+    const x=[...jour.map(j=>j.lab+' (Proton, journée)'),...blocs.map(b=>(b.flou?'':hhmm(b.a)+' ')+(b.k==='f'?'Forge : ':b.k==='t'?'Tâche : ':'')+b.lab.replace(/^☐ /,'')+(b.k==='ev'?' (Proton)':dur(b)))];
+    if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
   const nf=FS.filter(s=>typeof s.day!=='number'&&!s.opt); if(nf.length) L.push('- Forge pas encore placée : '+nf.map(s=>s.t).join(' ; '));
   const rp=((B['s:routine']||{}).report)||{}; if(rp.sem===N&&rp.n) L.push('TÂCHES DE LA S'+wkNum(Pr)+' PAS FAITES : '+rp.n+', remises au tri');
   const VT=lignes('vide'), g=VT.filter(n=>n.garde&&n.garde>=N).length, v=VT.length-g;
@@ -654,8 +705,12 @@ $plein.addEventListener('click',e=>{
   if(a==='reprendre'){ const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return; delete n.garde; ecrireB('n:'+n.id,n); vRoutine(); return; }
   if(a==='marche'){ const n=B['n:'+el.dataset.id]; if(!n) return; const L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); L.push(n.t); localStorage.setItem('locus-vers-marche',JSON.stringify(L)); const x=Object.assign({},n); x.a=AUJ(); ecrireB('n:'+x.id,x); vRoutine(); toast('Ira au Marché à sa prochaine ouverture'); return; }
   if(a==='sel'||a==='selF'||a==='selT'){ e.stopPropagation(); const k=({sel:'p:',selF:'f:',selT:'t:'})[a]+el.dataset.id; R.sel=R.sel===k?null:k; vRoutine(); return; }
-  if(a==='oter'||a==='oterF'||a==='oterT'){ e.stopPropagation(); if(R.sel){ const j=el.dataset.j; poser(j); return; } if(a==='oter') oterProjet(el.dataset.id,el.dataset.j); else if(a==='oterT') placerTache(el.dataset.id,null); else jourSeance(el.dataset.id,null); vRoutine(); return; }
-  if(a==='jour'){ if(!R.sel) return; poser(el.dataset.j); return; }
+  if(a==='oter'||a==='oterF'||a==='oterT'){ e.stopPropagation(); const j=el.dataset.j; if(R.sel){ poser(j,heureTouchee(e,el.closest('.jour'))); return; }
+    const d=j==='sem'?null:plusJ(Projets.lundi(N),+j);
+    if(a==='oter'){ oterProjet(el.dataset.id,j); if(d) mettreHeure(N,'p',el.dataset.id+'|'+d,null); }
+    else if(a==='oterT'){ placerTache(el.dataset.id,null); mettreHeure(N,'t',el.dataset.id,null); }
+    else { jourSeance(el.dataset.id,null); mettreHeure(N,'f',el.dataset.id,null); } vRoutine(); return; }
+  if(a==='jour'){ if(!R.sel) return; poser(el.dataset.j,heureTouchee(e,el)); return; }
   if(a==='copier'){ copier(texteClaude(N,Pr)); return; }
   if(a==='banque'){ ouvrirDans('banque','act=point&plein=1'); return; }
   if(a==='agendaCopier'){ copier(lienAgenda(),'Copié : colle-le dans Proton'); return; }
@@ -663,7 +718,9 @@ $plein.addEventListener('click',e=>{
     sb.rpc('locus_agenda_cle_nouvelle').then(({data,error})=>{ if(error||!data){ toast(/locus_agenda_cle_nouvelle|schema cache|not find/i.test((error&&error.message)||'')?'Lance d’abord supabase/agenda.sql dans Supabase':'Lien non créé : '+((error&&error.message)||'?')); return; }
       try{ localStorage.setItem('locus-agenda-lien-'+UID,SB_URL+'/functions/v1/agenda?cle='+data); }catch(x){} vRoutine(); toast('Lien créé : copie-le dans Proton'); }); return; }
 });
-function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j);
+function poser(j,hr){ const s=R.sel; R.sel=null; const N=semaineRoutine(), d=j==='sem'?null:plusJ(Projets.lundi(N),+j);
+  if(d&&hr){ if(s.startsWith('p:')) mettreHeure(N,'p',s.slice(2)+'|'+d,hr); else if(s.startsWith('t:')) mettreHeure(N,'t',s.slice(2),hr); else if(s.startsWith('f:')) mettreHeure(N,'f',s.slice(2),hr); }
+  if(s.startsWith('p:')) placerProjet(s.slice(2),j);
   else if(s.startsWith('t:')){ if(j==='sem'){ toast('Une tâche va sur un jour'); vRoutine(); return; } placerTache(s.slice(2),plusJ(Projets.lundi(semaineRoutine()),+j)); } else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
 /* le titre d'une idée se modifie en le touchant (demande de Nicolas, 20.11) ; enregistré en quittant le champ, sans redessiner (le toucher suivant n'est pas perdu) */
 $plein.addEventListener('submit',e=>{ if(e.target.id!=='f-cal') return; e.preventDefault();
