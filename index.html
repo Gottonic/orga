@@ -788,10 +788,13 @@ function deposer(k,id,de,vers,mn,idx,duree){ const N=semaineRoutine(), m=Projets
   if(vers==null){ if(de==null) return;
     if(k==='p'){ if(de==='sem') oterProjet(id,'sem'); else retirerCreneau(); } else if(k==='f'){ jourSeance(id,null); mettreHeure(N,'f',id,null); } else { placerTache(id,null); mettreHeure(N,'t',id,null); }
     vRoutine(); toast('Enlevé de la semaine'); return; }
+  /* la dernière décision gagne (Nicolas, 23.11) : « toute la semaine » et des jours de cette semaine ne vont pas ensemble.
+     Poser sur « Semaine » enlève les jours de la semaine ; poser sur un jour enlève « toute la semaine ». */
   if(vers==='sem'){ if(k!=='p'){ toast('Une séance ou une tâche va sur un jour'); vRoutine(); return; }
-    if(dOld) retirerCreneau(); placerProjet(id,'sem'); vRoutine(); return; }
+    for(let j=0;j<7;j++){ const dj=plusJ(m,j), p=PB&&PB.get(id); if(p&&(p.days||[]).includes(dj)){ ecrireCreneaux(N,id,dj,null); oterProjet(id,j); } }
+    placerProjet(id,'sem'); vRoutine(); toast('Toute la semaine : jours enlevés'); return; }
   const d=plusJ(m,+vers);
-  if(k==='p'){ if(de==='sem') oterProjet(id,'sem'); if(dOld) retirerCreneau();
+  if(k==='p'){ const p0=PB&&PB.get(id); if(de==='sem'||(p0&&(p0.weeks||[]).includes(N))) oterProjet(id,'sem'); if(dOld) retirerCreneau();
     const L=creneaux(N,id,d)||[]; L.push({h:hr||DEFAUT.p,min:duree&&de!=='sem'&&dOld?duree:DUREE_P}); L.sort((x,y)=>x.h<y.h?-1:1); ecrireCreneaux(N,id,d,L); placerProjet(id,+vers); }
   else if(k==='f'){ jourSeance(id,+vers); mettreHeure(N,'f',id,hr); }
   else { placerTache(id,d); mettreHeure(N,'t',id,hr); }
