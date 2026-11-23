@@ -298,7 +298,7 @@ const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
 const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Les tâches pas faites','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
 const CLES=['humeur','journal','boites','banque','report','vide','deuxmin','agenda','projets','forge','taches','claude'];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
-function ouvrirRoutine(){ NOTES_T=0; R.plusieurs=false; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
+function ouvrirRoutine(){ protonLocal(); chargerProton(semaineRoutine()); NOTES_T=0; R.plusieurs=false; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
 function fermerPlein(){ $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
 function vRoutine(){
@@ -319,7 +319,8 @@ function vRoutine(){
   if(k==='boites'){ const fb=(((B['s:routine']||{}).boites)||{})[N]||[];
     c=tete('Vider les boîtes','Tout ce qui attend une réponse. Coche ce qui est fait.')+`<div class="boite">${BOITES.map(([id,l])=>`<label class="eval" style="cursor:pointer"><input type="checkbox" data-boite="${id}" ${fb.includes(id)?'checked':''} style="width:22px;height:22px;accent-color:#C3B6DF"><span class="q" style="font-size:15px">${l}</span></label>`).join('')}</div>`; }
   if(k==='agenda'){ const lien=lienAgenda();
-    c=tete('L’agenda','Regarde ta semaine dans Proton et ajuste tes rendez-vous s’il y a un souci. Ce que tu places ensuite dans Locus s’ajoute à Proton.')
+    c=tete('L’agenda','Ta semaine dans Proton. Ajuste tes rendez-vous s’il y a un souci : ils restent affichés quand tu places tes projets, tes séances et tes tâches. Ce que tu places dans Locus s’ajoute à Proton.')
+     +vAgendaProton(N)
      +`<a class="btn-acc" href="https://calendar.proton.me/" target="_blank" rel="noopener" style="height:50px;justify-content:center;text-decoration:none">Ouvrir Proton Calendar</a>`
      +`<div class="boite"><span class="eyebrow">Locus dans Proton</span>`+(lien
        ?`<span class="note">Projets placés sur des jours ou des semaines, séances de la Forge et tâches, dans un calendrier « Locus ». Proton le relit toutes les 8 à 16 heures.</span><input readonly value="${esc(lien)}" aria-label="Lien de l’agenda Locus" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-r="agendaCopier">Copier le lien</button><button type="button" class="chip" data-r="agendaNouveau">Nouveau lien</button></div>`
@@ -388,9 +389,10 @@ function vPlacer(N,mode){
     const inner=mode==='f'?ss.map(s=>chipF(s,'oterF',dj)).join('')+ps.map(p=>chipP(p)).join('')+ts.map(n=>chipT(n)).join('')
       :mode==='t'?ts.map(n=>chipT(n,'oterT',dj)).join('')+ps.map(p=>chipP(p)).join('')+ss.map(sF).join('')
       :ps.map(p=>chipP(p,'oter',dj)).join('')+ss.map(sF).join('')+ts.map(n=>chipT(n)).join('');
-    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${inner||'<span class="libre">libre</span>'}</span></div>`; }
+    const pv=evDuJour(d).map(e=>chipEv(e,d,true)).join('');
+    h+=`<div role="button" tabindex="0" class="jour${R.sel?' cible':''}" data-r="jour" data-j="${i}"><span class="j">${JOURS[i]} ${dd.getDate()}</span><span class="chips">${pv}${inner||(pv?'':'<span class="libre">libre</span>')}</span></div>`; }
   h+='</div>';
-  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Le reste de la semaine est en fond, pour voir les jours chargés.</p>`;
+  h+=mode==='p'?`<p class="note">${sem.length} projet${sem.length>1?'s':''} cette semaine, dont ${touteSem.length} sur la semaine entière.</p>`:`<p class="note">Le reste de la semaine est en fond, avec tes rendez-vous Proton, pour voir les jours chargés.</p>`;
   return h; }
 /* ===== Vider la tête : ranger en arborescence (idée de Nicolas, 20.11) =====
    Premier niveau : une tâche (2 minutes, ou liste de tâches) ou une app. Dans l'app, on descend : Établi › projet › note / tâche / achat,
@@ -529,6 +531,52 @@ function devine(n){ const t=String(n.t||''), x=' '+toksM(t).join(' ')+' ';
   return null; }
 const devBouton=(n,d)=>`<button type="button" class="app" data-lieu="${esc(d.ch[0].slice(2))}" data-r="triDev" data-id="${esc(n.id)}">→ ${esc(d.l)}</button>`;
 /* lien privé de l'agenda Locus pour Proton (supabase/agenda.sql + fonction « agenda ») : gardé sur l'appareil */
+/* =============================== Calendriers Proton (lecture, 23.11) ===============================
+   Les liens de partage Proton sont dans la table locus_calendriers (supabase/calendriers.sql) ; la fonction « calendriers »
+   (supabase/functions/calendriers) les lit avec la connexion de Nicolas et renvoie les évènements de la semaine.
+   L'app ne voit que les noms et les couleurs. Copie locale « locus-proton-<uid> » pour l'affichage hors ligne. */
+const COUL_CAL=['#8EC9EE','#E8826F','#9BD08F','#F2C230','#C3B6DF','#E7A6C8','#D6B15E'];
+let PROTON=null, PROTON_EN=false;
+function protonLocal(){ if(PROTON) return PROTON; try{ PROTON=JSON.parse(localStorage.getItem('locus-proton-'+UID)||'null'); }catch(e){} return PROTON; }
+async function chargerProton(N){ if(PROTON_EN||!sb||!UID) return; PROTON_EN=true; const m=Projets.lundi(N), P0=protonLocal()||{};
+  const st={sem:N, le:new Date().toISOString(), cals:P0.cals||[], ev:P0.sem===N?(P0.ev||[]):[], erreurs:[], err:''};
+  try{ const {data,error}=await sb.from('locus_calendriers').select('id,nom,couleur').order('cree');
+    if(error) throw new Error(/locus_calendriers|schema cache|does not exist/i.test(error.message||'')?'Lance d’abord supabase/calendriers.sql dans Supabase':error.message);
+    st.cals=data||[];
+    if(st.cals.length){ const ses=(await sb.auth.getSession()).data.session; if(!ses) throw new Error('pas connecté');
+      const r=await fetch(SB_URL+'/functions/v1/calendriers?de='+m+'&a='+plusJ(m,6),{headers:{Authorization:'Bearer '+ses.access_token,apikey:SB_KEY}});
+      if(r.status===404) throw new Error('Crée d’abord la fonction « calendriers » dans Supabase');
+      const j=await r.json().catch(()=>({erreur:'réponse illisible ('+r.status+')'})); if(!r.ok||j.erreur) throw new Error(j.erreur||('erreur '+r.status));
+      st.ev=j.ev||[]; st.erreurs=j.erreurs||[]; }
+    else st.ev=[];
+  }catch(e){ st.err=(e&&e.message)||String(e); }
+  PROTON=st; try{ localStorage.setItem('locus-proton-'+UID,JSON.stringify(st)); }catch(e){} PROTON_EN=false;
+  if(!$plein.hidden) vRoutine(); }
+const coulCal=id=>{ const P0=protonLocal()||{}, i=(P0.cals||[]).findIndex(c=>c.id===id), c=i>=0?P0.cals[i]:null; return (c&&c.couleur)||COUL_CAL[Math.max(0,i)%COUL_CAL.length]; };
+/* les évènements Proton d'un jour (AAAA-MM-JJ), journées entières d'abord */
+function evDuJour(d){ const P0=protonLocal(); if(!P0||!P0.ev) return [];
+  return P0.ev.filter(e=>e.journee?(e.debut<=d&&d<e.fin):(e.debut.slice(0,10)<=d&&(e.debut.slice(0,10)===d||e.fin>d+'T00:00'))).sort((a,b)=>(b.journee-a.journee)||(a.debut<b.debut?-1:1)); }
+const heureEv=(e,d)=>e.journee?'':(e.debut.slice(0,10)===d?e.debut.slice(11,16):'…');
+function chipEv(e,d,fond){ const c=coulCal(e.cal), h=heureEv(e,d);
+  return `<span class="chip" title="${esc(e.titre+(e.lieu?' · '+e.lieu:''))}" style="cursor:default;background:${fond?'transparent':'var(--surface-2)'};box-shadow:inset 3px 0 0 ${esc(c)}${fond?',inset 0 0 0 1px var(--line)':''};font-weight:500;${fond?'opacity:.75':''}">${h?`<b style="font-family:var(--f-mono);font-size:11px">${h}</b> `:''}${esc(e.titre)}</span>`; }
+function vAgendaProton(N){ const P0=protonLocal(), m=Projets.lundi(N), ok=P0&&P0.sem===N;
+  const cals=(P0&&P0.cals)||[];
+  let h='';
+  if(cals.length){
+    h+=`<div class="boite"><div style="display:flex;align-items:center;gap:8px"><span class="eyebrow" style="flex:1">Ta semaine dans Proton</span><button type="button" class="chip" data-r="protonMaj">${PROTON_EN?'Lecture…':'Actualiser'}</button></div>`;
+    if(P0.err) h+=`<span class="note" style="color:#E8826F">${esc(P0.err)}</span>`;
+    (P0.erreurs||[]).forEach(x=>{ h+=`<span class="note" style="color:#E8826F">${esc(x.nom)} : ${esc(x.message)}</span>`; });
+    if(!ok&&PROTON_EN) h+=`<span class="note">Lecture des calendriers…</span>`;
+    for(let i=0;i<7;i++){ const d=plusJ(m,i), E=ok?evDuJour(d):[];
+      h+=`<div class="jour" style="cursor:default"><span class="j">${JOURS[i]} ${parse(d).getDate()}</span><span class="chips">${E.map(e=>chipEv(e,d)).join('')||'<span class="libre">rien</span>'}</span></div>`; }
+    if(ok&&P0.le) h+=`<span class="note">Lu à ${esc(new Date(P0.le).toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}))}. Change un rendez-vous dans Proton, puis « Actualiser ».</span>`;
+    h+=`</div>`; }
+  const liste=cals.map(c=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:4px;background:${esc(coulCal(c.id))};flex:none"></span><span style="flex:1;font-size:15px">${esc(c.nom)}</span><button type="button" class="chip" data-r="calOter" data-id="${esc(c.id)}" aria-label="Retirer ${esc(c.nom)}">✕</button></div>`).join('');
+  const aide=`<span class="note">Dans Proton Calendar, sur l’ordi : Paramètres › Tous les paramètres › Calendriers › choisis un calendrier › « Partager avec tout le monde » › Créer un lien, en <b>vue complète</b> › Copier. Colle-le ici avec un nom. Un lien par calendrier.</span>`;
+  const form=`<form id="f-cal" autocomplete="off" style="display:flex;flex-direction:column;gap:8px"><input id="i-cal-nom" placeholder="Nom (PERSO, Travail…)" aria-label="Nom du calendrier" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font-size:15px"><input id="i-cal-url" placeholder="Lien de partage Proton" aria-label="Lien de partage du calendrier" inputmode="url" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><button type="submit" class="chip" style="align-self:flex-start">Ajouter ce calendrier</button></form>`;
+  h+=cals.length?`<details class="boite"><summary class="eyebrow" style="cursor:pointer">Calendriers lus (${cals.length})</summary>${liste}${aide}${form}</details>`
+    :`<div class="boite"><span class="eyebrow">Lire tes calendriers Proton</span>${P0&&P0.err?`<span class="note" style="color:#E8826F">${esc(P0.err)}</span>`:''}${aide}${form}</div>`;
+  return h; }
 const lienAgenda=()=>{ try{ return localStorage.getItem('locus-agenda-lien-'+UID)||''; }catch(e){ return ''; } };
 const chf=x=>'CHF '+(Math.round((+x||0)*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
 function banqueFaite(b){ const r=Object.assign({},B['s:routine']||{}); r.banque={sem:semaineRoutine(),depenses:b.depenses,le:AUJ()}; ecrireB('s:routine',r); }
@@ -555,7 +603,7 @@ function texteClaude(N,Pr){
   const m=Projets.lundi(N), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[], P_=PB?PB.liste().filter(p=>!p.closed):[];
   L.push('PLANNING S'+wkNum(N)+' :'); const ts=P_.filter(p=>(p.weeks||[]).includes(N)); if(ts.length) L.push('- toute la semaine : '+ts.map(p=>p.name).join(' ; '));
   const TT=lignes('taches').filter(n=>!n.m2&&!n.x);
-  for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t),...TT.filter(n=>n.jour===d).map(n=>'Tâche : '+n.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
+  for(let i=0;i<7;i++){ const d=plusJ(m,i), x=[...evDuJour(d).map(e=>(heureEv(e,d)?heureEv(e,d)+' ':'')+e.titre+' (Proton)'),...P_.filter(p=>(p.days||[]).includes(d)).map(p=>p.name),...FS.filter(s=>s.day===i).map(s=>'Forge : '+s.t),...TT.filter(n=>n.jour===d).map(n=>'Tâche : '+n.t)]; if(x.length) L.push('- '+JOURS[i]+' '+parse(d).getDate()+' : '+x.join(' ; ')); }
   const nf=FS.filter(s=>typeof s.day!=='number'&&!s.opt); if(nf.length) L.push('- Forge pas encore placée : '+nf.map(s=>s.t).join(' ; '));
   const rp=((B['s:routine']||{}).report)||{}; if(rp.sem===N&&rp.n) L.push('TÂCHES DE LA S'+wkNum(Pr)+' PAS FAITES : '+rp.n+', remises au tri');
   const VT=lignes('vide'), g=VT.filter(n=>n.garde&&n.garde>=N).length, v=VT.length-g;
@@ -595,6 +643,9 @@ $plein.addEventListener('click',e=>{
   if(a==='archiver'||a==='garder'){ const ids=el.dataset.id==='*'?[...R.coche]:[el.dataset.id]; let k=0;
     ids.forEach(id=>{ const n=Object.assign({},B['n:'+id]); if(!n.id) return; if(a==='archiver') n.a=AUJ(); else n.garde=N; ecrireB('n:'+n.id,n); R.coche.delete(id); k++; });
     if(R.tri&&(R.tri.id==='*'||ids.includes(R.tri.id))) R.tri=null; vRoutine(); toast((k>1?k+' idées ':'')+(a==='archiver'?(k>1?'archivées':'Archivée'):(k>1?'gardées pour la semaine prochaine':'Gardée pour la semaine prochaine'))); return; }
+  if(a==='protonMaj'){ chargerProton(N); vRoutine(); return; }
+  if(a==='calOter'){ if(!el.dataset.sur){ el.dataset.sur='1'; el.textContent='Retirer ?'; return; }
+    sb.from('locus_calendriers').delete().eq('id',el.dataset.id).then(({error})=>{ if(error){ toast('Pas retiré : '+error.message); return; } toast('Calendrier retiré'); chargerProton(N); }); return; }
   if(a==='plusieurs'){ R.plusieurs=!R.plusieurs; if(!R.plusieurs){ R.coche.clear(); if(R.tri&&R.tri.id==='*') R.tri=null; } vRoutine(); return; }
   if(a==='supprimer'){ if(!el.dataset.sur){ const avant=el.innerHTML; el.dataset.sur='1'; el.textContent='Supprimer ?'; el.style.color='#E8826F'; setTimeout(()=>{ if(el.isConnected){ delete el.dataset.sur; el.innerHTML=avant; el.style.color=''; } },4000); return; }
     const ids=el.dataset.id==='*'?[...R.coche]:[el.dataset.id]; let k=0; ids.forEach(id=>{ if(B['n:'+id]){ ecrireB('n:'+id,null); R.coche.delete(id); k++; } });
@@ -615,6 +666,12 @@ $plein.addEventListener('click',e=>{
 function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j);
   else if(s.startsWith('t:')){ if(j==='sem'){ toast('Une tâche va sur un jour'); vRoutine(); return; } placerTache(s.slice(2),plusJ(Projets.lundi(semaineRoutine()),+j)); } else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
 /* le titre d'une idée se modifie en le touchant (demande de Nicolas, 20.11) ; enregistré en quittant le champ, sans redessiner (le toucher suivant n'est pas perdu) */
+$plein.addEventListener('submit',e=>{ if(e.target.id!=='f-cal') return; e.preventDefault();
+  const nom=document.getElementById('i-cal-nom').value.trim(), url=document.getElementById('i-cal-url').value.trim(), N=semaineRoutine();
+  if(!nom||!/^(https|webcal):\/\/\S+$/i.test(url)){ toast('Il faut un nom et un lien qui commence par https://'); return; }
+  const n=((protonLocal()||{}).cals||[]).length;
+  sb.from('locus_calendriers').insert({nom,url,couleur:COUL_CAL[n%COUL_CAL.length]}).then(({error})=>{ if(error){ toast(/locus_calendriers|schema cache|does not exist/i.test(error.message||'')?'Lance d’abord supabase/calendriers.sql dans Supabase':'Pas ajouté : '+error.message); return; }
+    toast('Calendrier ajouté : lecture…'); chargerProton(N); }); });
 $plein.addEventListener('submit',e=>{ if(e.target.id!=='f-report') return; e.preventDefault(); const i=document.getElementById('i-report'), v=i.value.trim(); if(!v) return;
   const N=semaineRoutine(), V=lignes('vide'), n={id:uid(),p:'vide',o:V.length?Math.min(...V.map(x=>x.o||0))-1:1,t:v,cree:AUJ(),report:N,ajout:true}; ecrireB('n:'+n.id,n);
   vRoutine(); const j=document.getElementById('i-report'); if(j) j.focus(); });
