@@ -151,6 +151,9 @@ textarea.libre{min-height:180px;border-radius:16px;border:1px solid var(--line);
 .jour.survol{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 #fantome{position:fixed;z-index:80;pointer-events:none;height:22px;border-radius:5px;font:600 11px/22px var(--f-body);padding:0 6px;white-space:nowrap;overflow:visible;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.92}
 #fantome small{position:absolute;left:0;top:-17px;font:600 10.5px/14px var(--f-mono);background:var(--ink);color:var(--surface);padding:0 5px;border-radius:4px}
+.piste .poignee{position:absolute;top:0;bottom:0;width:11px;touch-action:none;cursor:ew-resize;z-index:1}
+.piste .poignee.g{left:-3px}.piste .poignee.d{right:-3px}
+.piste .poignee::after{content:"";position:absolute;top:5px;bottom:5px;width:2px;border-radius:1px;background:currentColor;opacity:.55;left:4px}
 .piste .bloc.etroit{overflow:visible;text-overflow:clip}
 .piste .bloc.etroit .lab{display:inline-block;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
 .piste .bloc.flou{outline:1.5px dashed currentColor;outline-offset:-2px}
@@ -414,6 +417,10 @@ function vPlacer(N,mode){
 const H0=7, H1=22, PLAGE=H1-H0, DUREE_P=240, DUREE_T=60, DEFAUT={p:'08:00',f:'18:00',t:'13:00'};
 const heures=N=>B['h:'+N]||{};
 function mettreHeure(N,g,k,v){ const h=JSON.parse(JSON.stringify(heures(N))); h[g]=h[g]||{}; if(v) h[g][k]=v; else delete h[g][k]; ecrireB('h:'+N,h); }
+/* créneaux d'un projet un jour (23.11 : plusieurs par jour, durée réglable) : h:<semaine>.p['<projet>|<date>'] = [{h:'HH:MM', min}, …]
+   (une ancienne valeur 'HH:MM' = un créneau de 4 h) ; null = jour placé sans heure */
+function creneaux(N,pid,d){ const v=(heures(N).p||{})[pid+'|'+d]; if(Array.isArray(v)) return v.filter(x=>x&&x.h).map(x=>({h:x.h,min:x.min||DUREE_P})); if(typeof v==='string') return [{h:v,min:DUREE_P}]; return null; }
+const ecrireCreneaux=(N,pid,d,L)=>mettreHeure(N,'p',pid+'|'+d,L&&L.length?L:null);
 const enMin=s=>{ const m=/^(\d\d):(\d\d)/.exec(s||''); return m?+m[1]*60+ +m[2]:null; };
 const hhmm=x=>String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');
 /* l'heure touchée sur la piste d'un jour (au quart d'heure… arrondi à l'heure pleine, plus simple au doigt) */
@@ -426,7 +433,8 @@ function blocsJour(N,i,mode){
   evDuJour(d).forEach(e=>{ if(e.journee||e.debut.slice(0,10)!==d){ jour.push({lab:e.titre,coul:coulCal(e.cal)}); return; }
     const a=enMin(e.debut.slice(11)), b=e.fin.slice(0,10)===d?enMin(e.fin.slice(11)):24*60; out.push({a,b:Math.max(b,a+15),lab:e.titre,k:'ev',coul:coulCal(e.cal),tip:e.titre+(e.lieu?' · '+e.lieu:'')}); });
   if(mode==='proton') return fin(); /* étape 8 : seulement les calendriers Proton (demande de Nicolas, 23.11) */
-  P_.filter(p=>(p.days||[]).includes(d)).forEach(p=>{ const v=H.p&&H.p[p.id+'|'+d], a=enMin(v||DEFAUT.p); out.push({a,b:a+DUREE_P,lab:((p.emoji||'')+' '+p.name).trim(),k:'p',id:p.id,coul:p.color||'#888',flou:!v,act:mode==='p'?'oter':''}); });
+  P_.filter(p=>(p.days||[]).includes(d)).forEach(p=>{ const L=creneaux(N,p.id,d), lab=((p.emoji||'')+' '+p.name).trim();
+    (L||[{h:DEFAUT.p,min:DUREE_P,flou:true}]).forEach((c,idx)=>{ const a=enMin(c.h); out.push({a,b:a+c.min,lab,k:'p',id:p.id,idx:L?idx:-1,coul:p.color||'#888',flou:!L,act:mode==='p'?'oter':''}); }); });
   FS.filter(s=>s.day===i).forEach(s=>{ const v=H.f&&H.f[s.id], a=enMin(v||DEFAUT.f); out.push({a,b:a+(s.min||60),lab:s.t,k:'f',id:s.id,flou:!v,act:mode==='f'?'oterF':''}); });
   TT.filter(n=>n.jour===d).forEach(n=>{ const v=H.t&&H.t[n.id], a=enMin(v||DEFAUT.t); out.push({a,b:a+DUREE_T,lab:'☐ '+n.t,k:'t',id:n.id,flou:!v,act:mode==='t'?'oterT':''}); });
   return fin();
@@ -445,7 +453,7 @@ function pisteHtml(N,i,mode){
     const etroit=x.lab.length*5.6+8>(Math.min(x.b,H1*60)-Math.max(x.a,H0*60))*pxMin, lab=etroit?`<span class="lab" style="max-width:${place.toFixed(0)}px">${esc(x.lab)}</span>`:esc(x.lab);
     const actif=!!x.act, fade=mode&&!actif&&x.k!=='ev'?'opacity:.45;':'', titre=esc((x.tip||x.lab)+' · '+hhmm(x.a)+'–'+hhmm(Math.min(x.b,24*60))+(x.flou?' (heure à choisir)':''));
     const cl=`bloc${x.flou?' flou':''}${etroit?' etroit':''}`;
-    h+=actif?`<span class="${cl}" data-drag="${x.k}:${esc(x.id)}" data-de="${i}" data-a="${x.a}" title="${titre}" style="${st}${fond}">${lab}</span>`
+    h+=actif?`<span class="${cl}" data-drag="${x.k}:${esc(x.id)}" data-de="${i}" data-a="${x.a}" data-b="${x.b}"${x.idx!=null?` data-idx="${x.idx}"`:''} title="${titre}" style="${st}${fond}">${lab}${x.k==='p'?'<i class="poignee g" data-bord="g"></i><i class="poignee d" data-bord="d"></i>':''}</span>`
       :`<span class="${cl}" title="${titre}" style="${st}${fond}${fade}">${lab}</span>`; }
   return h+'</div>'; }
 function teteHeures(){ let h='<div class="tl-tete"><span class="j"></span><div class="piste-t">'; for(let x=H0+1;x<H1;x+=2) h+=`<span style="left:${((x-H0)/PLAGE*100).toFixed(2)}%">${x}</span>`; return h+'</div></div>'; }
@@ -737,9 +745,12 @@ function minuteSous(row,x,decal){ const p=row&&row.querySelector('.piste'); if(!
   let mn=H0*60+(x-r.left)/r.width*PLAGE*60-(decal||0); mn=Math.round(mn/30)*30; return Math.min(Math.max(mn,H0*60),H1*60-30); }
 function finGlisse(){ if(!GL) return; if(GL.fant) GL.fant.remove(); if(GL.row) GL.row.classList.remove('survol'); if(GL.src) GL.src.style.opacity=''; cancelAnimationFrame(GL.raf); GL=null; }
 $plein.addEventListener('pointerdown',e=>{ const s=e.target.closest('[data-drag]'); if(!s||(e.button&&e.button!==0)) return;
+  const bord=e.target.closest('[data-bord]');
+  if(bord){ e.preventDefault(); GL={bord:bord.dataset.bord,src:s,k:'p',id:s.dataset.drag.slice(2),de:s.dataset.de,idx:+s.dataset.idx,x0:e.clientX,x:e.clientX,y:e.clientY,a0:+s.dataset.a,b0:+s.dataset.b,on:true,pm:pxParMin()};
+    GL.a=GL.a0; GL.b=GL.b0; const f=document.createElement('div'); f.id='fantome'; f.style.cssText='left:0;top:0;width:0;padding:0;box-shadow:none;background:none'; f.innerHTML='<small></small>'; document.body.appendChild(f); GL.fant=f; redim(); return; }
   const [k,id]=[s.dataset.drag.slice(0,1),s.dataset.drag.slice(2)], N=semaineRoutine();
   let decal=0; if(s.dataset.a!=null){ const r=s.getBoundingClientRect(); decal=Math.round((e.clientX-r.left)/pxParMin()); }
-  GL={src:s,k,id,de:s.dataset.de==null?null:s.dataset.de,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,decal,dur:dureeDe(k,id,N),lab:s.textContent.trim(),fond:getComputedStyle(s).backgroundColor,coul:getComputedStyle(s).color}; });
+  GL={src:s,k,id,idx:s.dataset.idx==null?null:+s.dataset.idx,de:s.dataset.de==null?null:s.dataset.de,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,decal,dur:dureeDe(k,id,N),lab:s.textContent.trim(),fond:getComputedStyle(s).backgroundColor,coul:getComputedStyle(s).color}; });
 function bougerFantome(){ if(!GL||!GL.on) return; const g=GL, row=cibleSous(g.x,g.y);
   if(row!==g.row){ if(g.row) g.row.classList.remove('survol'); if(row) row.classList.add('survol'); g.row=row; }
   const pm=pxParMin(), larg=Math.max(46,g.dur*pm), mn=row&&row.dataset.j!=='sem'?minuteSous(row,g.x,g.decal):null;
@@ -751,24 +762,37 @@ function bougerFantome(){ if(!GL||!GL.on) return; const g=GL, row=cibleSous(g.x,
 function defiler(){ if(!GL||!GL.on) return; const c=document.getElementById('corps'); if(c){ const r=c.getBoundingClientRect(), z=56;
     const v=GL.y<r.top+z?-Math.ceil((r.top+z-GL.y)/6):GL.y>r.bottom-z?Math.ceil((GL.y-(r.bottom-z))/6):0; if(v){ c.scrollTop+=v; bougerFantome(); } }
   GL.raf=requestAnimationFrame(defiler); }
+/* étirer un créneau de projet par un bord (au quart… à la demi-heure), 30 min au moins */
+function redim(){ const g=GL, dm=Math.round((g.x-g.x0)/g.pm/30)*30;
+  if(g.bord==='g') g.a=Math.min(Math.max(g.a0+dm,H0*60),g.b0-30); else g.b=Math.max(Math.min(g.b0+dm,H1*60),g.a0+30);
+  const pc=x=>((Math.min(Math.max(x/60,H0),H1)-H0)/PLAGE*100); g.src.style.left=pc(g.a).toFixed(2)+'%'; g.src.style.width=Math.max(2.5,pc(g.b)-pc(g.a)).toFixed(2)+'%';
+  const r=g.src.getBoundingClientRect(), k=g.b-g.a; g.fant.style.transform=`translate(${Math.round(Math.min(Math.max(4,g.bord==='g'?r.left:r.right-60),(window.innerWidth||372)-130))}px,${Math.round(r.top)}px)`;
+  g.fant.querySelector('small').textContent=hhmm(g.a)+'–'+hhmm(g.b)+' · '+Math.floor(k/60)+' h'+(k%60?' 30':''); }
 window.addEventListener('pointermove',e=>{ if(!GL) return; GL.x=e.clientX; GL.y=e.clientY;
+  if(GL.bord){ e.preventDefault(); redim(); return; }
   if(!GL.on){ if(Math.hypot(GL.x-GL.x0,GL.y-GL.y0)<6) return; GL.on=true;
     const f=document.createElement('div'); f.id='fantome'; f.style.left='0'; f.style.top='0'; f.style.background=GL.fond&&GL.fond!=='rgba(0, 0, 0, 0)'?GL.fond:'var(--surface-2)'; f.style.color=GL.coul;
     f.innerHTML='<small></small>'+esc(GL.lab); document.body.appendChild(f); GL.fant=f; GL.src.style.opacity='.35'; GL.raf=requestAnimationFrame(defiler); }
   e.preventDefault(); bougerFantome(); },{passive:false});
-window.addEventListener('pointerup',e=>{ if(!GL) return; const g=GL; if(!g.on){ finGlisse(); return; } bougerFantome(); const row=g.row, mn=g.min; finGlisse();
-  AVALE=true; setTimeout(()=>{ AVALE=false; },60); deposer(g.k,g.id,g.de,row?row.dataset.j:null,mn); });
+window.addEventListener('pointerup',e=>{ if(!GL) return; const g=GL; if(!g.on){ finGlisse(); return; }
+  if(g.bord){ finGlisse(); AVALE=true; setTimeout(()=>{ AVALE=false; },60); if(g.a===g.a0&&g.b===g.b0){ vRoutine(); return; }
+    const N=semaineRoutine(), d=plusJ(Projets.lundi(N),+g.de), L=creneaux(N,g.id,d)||[], c={h:hhmm(g.a),min:g.b-g.a}; if(g.idx>=0&&L[g.idx]) L[g.idx]=c; else L.push(c);
+    ecrireCreneaux(N,g.id,d,L); vRoutine(); return; } bougerFantome(); const row=g.row, mn=g.min; finGlisse();
+  AVALE=true; setTimeout(()=>{ AVALE=false; },60); deposer(g.k,g.id,g.de,row?row.dataset.j:null,mn,g.idx,g.src.dataset.b!=null?(+g.src.dataset.b- +g.src.dataset.a):null); });
 window.addEventListener('pointercancel',finGlisse);
 $plein.addEventListener('click',e=>{ if(AVALE){ e.stopPropagation(); e.preventDefault(); } },true);
 /* poser ce qu'on a glissé : k = 'p' | 'f' | 't' ; de = jour d'origine (0–6, 'sem') ou null ; vers = jour (0–6), 'sem' ou null (enlever) */
-function deposer(k,id,de,vers,mn){ const N=semaineRoutine(), m=Projets.lundi(N), dOld=de!=null&&de!=='sem'?plusJ(m,+de):null, hr=mn!=null?hhmm(mn):null;
+function deposer(k,id,de,vers,mn,idx,duree){ const N=semaineRoutine(), m=Projets.lundi(N), dOld=de!=null&&de!=='sem'?plusJ(m,+de):null, hr=mn!=null?hhmm(mn):null;
+  /* un projet : on retire le créneau d'origine (et le jour s'il n'en reste aucun), puis on ajoute le nouveau ; depuis « À placer », c'est un créneau de plus */
+  const retirerCreneau=()=>{ if(!dOld) return; const L=creneaux(N,id,dOld)||[]; if(idx>=0) L.splice(idx,1); else L.length=0; ecrireCreneaux(N,id,dOld,L); if(!L.length) oterProjet(id,de); };
   if(vers==null){ if(de==null) return;
-    if(k==='p'){ oterProjet(id,de); if(dOld) mettreHeure(N,'p',id+'|'+dOld,null); } else if(k==='f'){ jourSeance(id,null); mettreHeure(N,'f',id,null); } else { placerTache(id,null); mettreHeure(N,'t',id,null); }
+    if(k==='p'){ if(de==='sem') oterProjet(id,'sem'); else retirerCreneau(); } else if(k==='f'){ jourSeance(id,null); mettreHeure(N,'f',id,null); } else { placerTache(id,null); mettreHeure(N,'t',id,null); }
     vRoutine(); toast('Enlevé de la semaine'); return; }
   if(vers==='sem'){ if(k!=='p'){ toast('Une séance ou une tâche va sur un jour'); vRoutine(); return; }
-    if(dOld){ oterProjet(id,de); mettreHeure(N,'p',id+'|'+dOld,null); } placerProjet(id,'sem'); vRoutine(); return; }
+    if(dOld) retirerCreneau(); placerProjet(id,'sem'); vRoutine(); return; }
   const d=plusJ(m,+vers);
-  if(k==='p'){ if(de==='sem') oterProjet(id,'sem'); if(dOld&&dOld!==d){ oterProjet(id,de); mettreHeure(N,'p',id+'|'+dOld,null); } placerProjet(id,+vers); mettreHeure(N,'p',id+'|'+d,hr); }
+  if(k==='p'){ if(de==='sem') oterProjet(id,'sem'); if(dOld) retirerCreneau();
+    const L=creneaux(N,id,d)||[]; L.push({h:hr||DEFAUT.p,min:duree&&de!=='sem'&&dOld?duree:DUREE_P}); L.sort((x,y)=>x.h<y.h?-1:1); ecrireCreneaux(N,id,d,L); placerProjet(id,+vers); }
   else if(k==='f'){ jourSeance(id,+vers); mettreHeure(N,'f',id,hr); }
   else { placerTache(id,d); mettreHeure(N,'t',id,hr); }
   vRoutine(); }

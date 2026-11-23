@@ -39,6 +39,12 @@ language sql stable set search_path = public as $$
   select h.data -> g ->> k from public.biblio_rows h where h.user_id = u and h.key = 'h:' || w and not h.deleted
 $$;
 revoke all on function public.locus_heure(uuid, text, text, text) from public, anon, authenticated;
+-- la même chose en jsonb : pour les projets, une liste de créneaux [{h:'HH:MM', min}, …] (23.11 : plusieurs par jour, durée réglable)
+create or replace function public.locus_heure_j(u uuid, w text, g text, k text) returns jsonb
+language sql stable set search_path = public as $$
+  select h.data -> g -> k from public.biblio_rows h where h.user_id = u and h.key = 'h:' || w and not h.deleted
+$$;
+revoke all on function public.locus_heure_j(uuid, text, text, text) from public, anon, authenticated;
 
 -- un évènement : journée entière, ou de l'heure placée pendant « duree » minutes (heure de Zurich)
 create or replace function public.locus_ev(id text, d date, hr text, duree int, titre text) returns jsonb
@@ -60,11 +66,17 @@ begin
   select user_id into u from public.locus_agenda_cles where cle_hash = encode(digest(coalesce(cle, ''), 'sha256'), 'hex');
   if u is null then raise exception 'clé inconnue'; end if;
   return coalesce((select jsonb_agg(e order by e->>'debut') from (
-    -- projets placés sur des jours
-    select public.locus_ev('p-' || (r.data->>'id') || '-' || d, d::date,
-             public.locus_heure(u, to_char(d::date, 'IYYY-"W"IW'), 'p', (r.data->>'id') || '|' || d), 240,
+    -- projets placés sur des jours : un évènement par créneau (ou la journée entière s'il n'y a pas d'heure)
+    select public.locus_ev('p-' || (r.data->>'id') || '-' || d || '-' || c.n, d::date, c.hr, c.mn,
              trim(coalesce(r.data->>'emoji', '') || ' ' || coalesce(r.data->>'name', 'Projet'))) as e
-      from public.rows r, jsonb_array_elements_text(coalesce(r.data->'days', '[]'::jsonb)) d
+      from public.rows r
+      cross join lateral jsonb_array_elements_text(coalesce(r.data->'days', '[]'::jsonb)) d
+      cross join lateral (select public.locus_heure_j(u, to_char(d::date, 'IYYY-"W"IW'), 'p', (r.data->>'id') || '|' || d) as v) hv
+      cross join lateral (
+        select x->>'h' as hr, coalesce(nullif(x->>'min', '')::int, 240) as mn, t.n from jsonb_array_elements(hv.v) with ordinality as t(x, n) where jsonb_typeof(hv.v) = 'array'
+        union all select hv.v #>> '{}', 240, 1 where jsonb_typeof(hv.v) = 'string'
+        union all select null, 240, 1 where hv.v is null or jsonb_typeof(hv.v) not in ('array', 'string')
+      ) c
      where r.user_id = u and r.key like 'p:%' and not r.deleted and r.data->>'closed' is null
        and d ~ '^\d{4}-\d{2}-\d{2}$' and d::date between d0 and d1
     union all
