@@ -425,11 +425,13 @@ function blocsJour(N,i,mode){
   const P_=PB?PB.liste().filter(p=>!p.closed):[], TT=lignes('taches').filter(n=>!n.m2&&!n.x);
   evDuJour(d).forEach(e=>{ if(e.journee||e.debut.slice(0,10)!==d){ jour.push({lab:e.titre,coul:coulCal(e.cal)}); return; }
     const a=enMin(e.debut.slice(11)), b=e.fin.slice(0,10)===d?enMin(e.fin.slice(11)):24*60; out.push({a,b:Math.max(b,a+15),lab:e.titre,k:'ev',coul:coulCal(e.cal),tip:e.titre+(e.lieu?' · '+e.lieu:'')}); });
+  if(mode==='proton') return fin(); /* étape 8 : seulement les calendriers Proton (demande de Nicolas, 23.11) */
   P_.filter(p=>(p.days||[]).includes(d)).forEach(p=>{ const v=H.p&&H.p[p.id+'|'+d], a=enMin(v||DEFAUT.p); out.push({a,b:a+DUREE_P,lab:((p.emoji||'')+' '+p.name).trim(),k:'p',id:p.id,coul:p.color||'#888',flou:!v,act:mode==='p'?'oter':''}); });
   FS.filter(s=>s.day===i).forEach(s=>{ const v=H.f&&H.f[s.id], a=enMin(v||DEFAUT.f); out.push({a,b:a+(s.min||60),lab:s.t,k:'f',id:s.id,flou:!v,act:mode==='f'?'oterF':''}); });
   TT.filter(n=>n.jour===d).forEach(n=>{ const v=H.t&&H.t[n.id], a=enMin(v||DEFAUT.t); out.push({a,b:a+DUREE_T,lab:'☐ '+n.t,k:'t',id:n.id,flou:!v,act:mode==='t'?'oterT':''}); });
-  out.sort((x,y)=>x.a-y.a||y.b-x.b); const fins=[]; out.forEach(x=>{ let l=fins.findIndex(f=>f<=x.a); if(l<0){ l=fins.length; fins.push(0); } fins[l]=x.b; x.l=l; });
-  return {blocs:out, jour, lanes:Math.max(jour.length?0:1,fins.length), d}; }
+  return fin();
+  function fin(){ out.sort((x,y)=>x.a-y.a||y.b-x.b); const fins=[]; out.forEach(x=>{ let l=fins.findIndex(f=>f<=x.a); if(l<0){ l=fins.length; fins.push(0); } fins[l]=x.b; x.l=l; });
+    return {blocs:out, jour, lanes:Math.max(jour.length?0:1,fins.length), d}; } }
 function pisteHtml(N,i,mode){
   const {blocs,jour,lanes}=blocsJour(N,i,mode), top0=jour.length?16:0, haut=top0+lanes*22+4;
   const pc=x=>((Math.min(Math.max(x/60,H0),H1)-H0)/PLAGE*100).toFixed(2);
@@ -448,7 +450,7 @@ function pisteHtml(N,i,mode){
   return h+'</div>'; }
 function teteHeures(){ let h='<div class="tl-tete"><span class="j"></span><div class="piste-t">'; for(let x=H0+1;x<H1;x+=2) h+=`<span style="left:${((x-H0)/PLAGE*100).toFixed(2)}%">${x}</span>`; return h+'</div></div>'; }
 function semaineHeures(N,mode){ const m=Projets.lundi(N); let h=teteHeures();
-  for(let i=0;i<7;i++){ const d=plusJ(m,i); h+=`<div class="jour tl" data-j="${i}"${mode?' data-depot="1"':''}><span class="j">${JOURS[i]} ${parse(d).getDate()}</span>${pisteHtml(N,i,mode)}</div>`; }
+  for(let i=0;i<7;i++){ const d=plusJ(m,i); h+=`<div class="jour tl" data-j="${i}"${'pft'.includes(mode||'x')?' data-depot="1"':''}><span class="j">${JOURS[i]} ${parse(d).getDate()}</span>${pisteHtml(N,i,mode)}</div>`; }
   return h; }
 /* ===== Vider la tête : ranger en arborescence (idée de Nicolas, 20.11) =====
    Premier niveau : une tâche (2 minutes, ou liste de tâches) ou une app. Dans l'app, on descend : Établi › projet › note / tâche / achat,
@@ -618,11 +620,11 @@ function chipEv(e,d,fond){ const c=coulCal(e.cal), h=heureEv(e,d);
 function vAgendaProton(N){ const P0=protonLocal(), m=Projets.lundi(N), ok=P0&&P0.sem===N;
   const cals=(P0&&P0.cals)||[];
   let h='';
-  { h+=`<div class="boite" style="padding-left:10px;padding-right:10px"><div style="display:flex;align-items:center;gap:8px"><span class="eyebrow" style="flex:1">Ta semaine${cals.length?' · Proton et Locus':''}</span>${cals.length?`<button type="button" class="chip" data-r="protonMaj">${PROTON_EN?'Lecture…':'Actualiser'}</button>`:''}</div>`;
+  if(cals.length){ h+=`<div class="boite" style="padding-left:10px;padding-right:10px"><div style="display:flex;align-items:center;gap:8px"><span class="eyebrow" style="flex:1">Ta semaine dans Proton</span>${cals.length?`<button type="button" class="chip" data-r="protonMaj">${PROTON_EN?'Lecture…':'Actualiser'}</button>`:''}</div>`;
     if(cals.length&&P0.err) h+=`<span class="note" style="color:#E8826F">${esc(P0.err)}</span>`;
     ((P0&&P0.erreurs)||[]).forEach(x=>{ h+=`<span class="note" style="color:#E8826F">${esc(x.nom)} : ${esc(x.message)}</span>`; });
     if(!ok&&PROTON_EN) h+=`<span class="note">Lecture des calendriers…</span>`;
-    h+=semaineHeures(N,null);
+    h+=semaineHeures(N,'proton');
     if(cals.length&&ok&&P0.le) h+=`<span class="note">Lu à ${esc(new Date(P0.le).toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}))}. Change un rendez-vous dans Proton, puis « Actualiser ».</span>`;
     h+=`</div>`; }
   const liste=cals.map(c=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:4px;background:${esc(coulCal(c.id))};flex:none"></span><span style="flex:1;font-size:15px">${esc(c.nom)}</span><button type="button" class="chip" data-r="calOter" data-id="${esc(c.id)}" aria-label="Retirer ${esc(c.nom)}">✕</button></div>`).join('');
