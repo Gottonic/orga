@@ -323,10 +323,13 @@ function vRoutine(){
      +`<div class="boite"><span class="eyebrow">Locus dans Proton</span>`+(lien
        ?`<span class="note">Projets placés sur des jours ou des semaines, séances de la Forge et tâches, dans un calendrier « Locus ». Proton le relit toutes les 8 à 16 heures.</span><input readonly value="${esc(lien)}" aria-label="Lien de l’agenda Locus" style="height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 12px;font:12px var(--f-mono)"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-r="agendaCopier">Copier le lien</button><button type="button" class="chip" data-r="agendaNouveau">Nouveau lien</button></div>`
        :`<span class="note">Une fois : crée le lien, puis dans Proton Calendar (sur l’ordi) : Paramètres › Tous les paramètres › Calendriers › Autres calendriers › Ajouter un calendrier depuis une URL, et colle-le.</span><button type="button" class="chip" data-r="agendaNouveau" style="align-self:flex-start">Créer le lien</button>`)+`</div>`; }
-  if(k==='report'){ const L=aReporter(N), fait=lignes('taches').filter(n=>n.x&&n.xLe===AUJ()&&n.tri!==N);
+  if(k==='report'){ const AJ=lignes('vide').filter(n=>n.report===N&&n.ajout), L=aReporter(N), fait=lignes('taches').filter(n=>n.x&&n.xLe===AUJ()&&n.tri!==N);
     const li=(n)=>`<div class="idee"><label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-tache="${esc(n.id)}" ${n.x?'checked':''} aria-label="Faite" style="width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:#C3B6DF"><span class="t" style="${n.x?'text-decoration:line-through;opacity:.6':''}">${esc(n.t)}${n.m2?' <small class="note">· 2 min</small>':''}</span></label>${n.x?'':`<div class="act"><span class="droite"><button type="button" class="disc" data-r="archiver" data-id="${esc(n.id)}">Abandonner</button></span></div>`}</div>`;
     c=tete('Les tâches pas faites','Les tâches de la semaine passée qui restent. Coche celles que tu as faites quand même. Les autres repartent dans le vide-tête : tu les tries à l’étape suivante, avec le reste.')
-     +(L.length||fait.length?L.concat(fait).map(li).join(''):`<div class="boite"><b>Rien à reporter.</b><span class="note">Toutes les tâches de la semaine passée sont faites.</span></div>`); }
+     +(L.length||fait.length?L.concat(fait).map(li).join(''):`<div class="boite"><b>Rien à reporter.</b><span class="note">Toutes les tâches de la semaine passée sont faites.</span></div>`)
+     /* ajouter ici une tâche pas faite oubliée : elle va droit dans le vide-tête, « reportée », triée à l'étape suivante (ampoule du 23.11) */
+     +`<form class="ligne" id="f-report" autocomplete="off" style="margin-top:4px"><input id="i-report" placeholder="Une autre tâche pas faite…" aria-label="Ajouter une tâche pas faite" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form>`
+     +(AJ.length?`<div class="boite"><span class="eyebrow">Ajoutées · à trier à l’étape suivante</span>${AJ.map(n=>`<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:15px">${esc(n.t)}</span><button type="button" class="chip" data-r="reportOter" data-id="${esc(n.id)}" aria-label="Retirer">✕</button></div>`).join('')}</div>`:''); }
   if(k==='vide'){ const T=lignes('vide'), L=T.filter(n=>!(n.garde&&n.garde>=N)), G=T.filter(n=>n.garde&&n.garde>=N);
     [...R.coche].forEach(x=>{ if(!L.some(n=>n.id===x)) R.coche.delete(x); });
     const ligne=n=>{ const dv=R.tri&&R.tri.id===n.id?null:devine(n);
@@ -397,9 +400,10 @@ function vPlacer(N,mode){
 const NOMS_APP={etabli:'L’Établi',bibliotheque:'La Bibliothèque',marche:'Le Marché',mine:'La Mine',banque:'La Banque',forge:'La Forge'};
 /* tâches d'avant cette routine, pas faites : elles repartent au tri (étape « Les tâches pas faites », 23.11) */
 function aReporter(N){ return lignes('taches').filter(n=>!n.x&&n.tri!==N); }
-function reporter(N){ const L=aReporter(N); if(!L.length) return 0; const V=lignes('vide'); let o=V.length?Math.min(...V.map(x=>x.o||0)):1;
+function reporter(N){ const L=aReporter(N), aj=lignes('vide').filter(n=>n.report===N&&n.ajout).length;
+  if(!L.length){ if(aj){ const r=Object.assign({},B['s:routine']||{}); r.report={sem:N,n:aj}; ecrireB('s:routine',r); } return 0; } const V=lignes('vide'); let o=V.length?Math.min(...V.map(x=>x.o||0)):1;
   L.forEach(x=>{ const n=Object.assign({},x); delete B['n:'+n.id]; delete n.m2; delete n.jour; delete n.xLe; n.p='vide'; n.o=--o; n.report=N; ecrireB('n:'+n.id,n); });
-  const r=Object.assign({},B['s:routine']||{}); r.report={sem:N,n:L.length}; ecrireB('s:routine',r); return L.length; }
+  const r=Object.assign({},B['s:routine']||{}); r.report={sem:N,n:L.length+aj}; ecrireB('s:routine',r); return L.length; }
 function taches(m2){ const a=AUJ(); return lignes('taches').filter(n=>!!n.m2===m2&&(!n.x||n.xLe===a)); }
 const nomPD=p=>((p.emoji||'')+' '+p.name).trim();
 function triHtml(n){
@@ -589,6 +593,7 @@ $plein.addEventListener('click',e=>{
   if(a==='archiver'||a==='garder'){ const ids=el.dataset.id==='*'?[...R.coche]:[el.dataset.id]; let k=0;
     ids.forEach(id=>{ const n=Object.assign({},B['n:'+id]); if(!n.id) return; if(a==='archiver') n.a=AUJ(); else n.garde=N; ecrireB('n:'+n.id,n); R.coche.delete(id); k++; });
     if(R.tri&&(R.tri.id==='*'||ids.includes(R.tri.id))) R.tri=null; vRoutine(); toast((k>1?k+' idées ':'')+(a==='archiver'?(k>1?'archivées':'Archivée'):(k>1?'gardées pour la semaine prochaine':'Gardée pour la semaine prochaine'))); return; }
+  if(a==='reportOter'){ ecrireB('n:'+el.dataset.id,null); vRoutine(); return; }
   if(a==='reprendre'){ const n=Object.assign({},B['n:'+el.dataset.id]); if(!n.id) return; delete n.garde; ecrireB('n:'+n.id,n); vRoutine(); return; }
   if(a==='marche'){ const n=B['n:'+el.dataset.id]; if(!n) return; const L=JSON.parse(localStorage.getItem('locus-vers-marche')||'[]'); L.push(n.t); localStorage.setItem('locus-vers-marche',JSON.stringify(L)); const x=Object.assign({},n); x.a=AUJ(); ecrireB('n:'+x.id,x); vRoutine(); toast('Ira au Marché à sa prochaine ouverture'); return; }
   if(a==='sel'||a==='selF'||a==='selT'){ e.stopPropagation(); const k=({sel:'p:',selF:'f:',selT:'t:'})[a]+el.dataset.id; R.sel=R.sel===k?null:k; vRoutine(); return; }
@@ -604,6 +609,9 @@ $plein.addEventListener('click',e=>{
 function poser(j){ const s=R.sel; R.sel=null; if(s.startsWith('p:')) placerProjet(s.slice(2),j);
   else if(s.startsWith('t:')){ if(j==='sem'){ toast('Une tâche va sur un jour'); vRoutine(); return; } placerTache(s.slice(2),plusJ(Projets.lundi(semaineRoutine()),+j)); } else { if(j==='sem'){ toast('Une séance va sur un jour'); vRoutine(); return; } jourSeance(s.slice(2),+j); } vRoutine(); }
 /* le titre d'une idée se modifie en le touchant (demande de Nicolas, 20.11) ; enregistré en quittant le champ, sans redessiner (le toucher suivant n'est pas perdu) */
+$plein.addEventListener('submit',e=>{ if(e.target.id!=='f-report') return; e.preventDefault(); const i=document.getElementById('i-report'), v=i.value.trim(); if(!v) return;
+  const N=semaineRoutine(), V=lignes('vide'), n={id:uid(),p:'vide',o:V.length?Math.min(...V.map(x=>x.o||0))-1:1,t:v,cree:AUJ(),report:N,ajout:true}; ecrireB('n:'+n.id,n);
+  vRoutine(); const j=document.getElementById('i-report'); if(j) j.focus(); });
 $plein.addEventListener('keydown',e=>{ const el=e.target; if(el.dataset&&el.dataset.titre&&e.key==='Enter'){ e.preventDefault(); el.blur(); } });
 $plein.addEventListener('focusout',e=>{ const el=e.target; if(!el.dataset||!el.dataset.titre) return; const n=Object.assign({},B['n:'+el.dataset.titre]); if(!n.id) return;
   const v=el.textContent.replace(/\s+/g,' ').trim(); if(!v){ el.textContent=n.t||''; return; } if(v!==n.t){ n.t=v; ecrireB('n:'+n.id,n); } });
