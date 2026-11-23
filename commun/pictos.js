@@ -29,6 +29,7 @@
     note: '<path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/>',
     archiver: '<path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/>',
     supprimer: '<path d="M4 4l12 12M16 4 4 16"/>',
+    corbeille: '<path d="M3 5.5h14M8 5.5V3.5h4v2M5 5.5l1 11.5h8l1-11.5M8.5 9v5M11.5 9v5"/>',
     entree: '<path d="M2 11h5l1.5 3h3L13 11h5M2 11l3-8h10l3 8v6H2z"/>',
     journal: '<path d="M4 2h12v16H4zM7.5 2v16"/>',
     autres: '<path d="M10 2l8 8-8 8-8-8z"/>',
