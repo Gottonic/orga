@@ -286,7 +286,11 @@ function projetsDuJour(){ if(!PB) return []; const a=AUJ(); return PB.liste().fi
 function prochaine(p){ const t=Projets.tachesSeules(p.tasks).find(x=>!x.d); return t?t.t:''; }
 /* tâches placées sur aujourd'hui (ou avant, pas faites), et celles cochées aujourd'hui */
 function tachesDuJour(){ const a=AUJ(); return lignes('taches').filter(n=>n.jour&&(n.x?n.xLe===a&&n.jour<=a:n.jour<=a)).sort((x,y)=>(x.jour<y.jour?-1:x.jour>y.jour?1:0)); }
-function seancesDuJour(){ const f=forge(); if(!f||!f.semaines) return []; const L=f.semaines[CUR()]||[], j=(new Date().getDay()+6)%7; return L.filter(s=>s.day===j&&!s.done); }
+/* l'entraînement reste sur l'accueil tant qu'il n'est pas terminé (ampoule du 24.11) : commencé (quel que soit son jour),
+   prévu aujourd'hui, ou prévu un jour passé de la semaine et pas fait ; le commencé d'abord, puis aujourd'hui, puis le retard */
+function seancesDuJour(){ const f=forge(); if(!f||!f.semaines) return []; const L=f.semaines[CUR()]||[], j=(new Date().getDay()+6)%7;
+  const rang=s=>s.run?0:s.day===j?1:2;
+  return L.filter(s=>!s.done&&(s.run||(typeof s.day==='number'&&s.day<=j))).map(s=>Object.assign({},s,{retard:!s.run&&s.day<j})).sort((a,b)=>rang(a)-rang(b)||(a.day??9)-(b.day??9)); }
 const fmtMin=m=>m>=60?Math.floor(m/60)+' h'+(m%60?' '+pad(m%60):''):m+' min';
 function chronoTxt(){ if(!CHRONO||!CHRONO.debut) return ''; const m=Math.max(0,Math.floor((Date.now()-new Date(CHRONO.debut))/60000)); return Math.floor(m/60)+':'+pad(m%60); }
 
@@ -301,7 +305,7 @@ function vAccueil(){
   const grandes=[], carres=[];
   if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
   else carres.push(carre('etabli','L’Établi','etabli/'));
-  if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">Séance du jour</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${s.min?'≈ '+fmtMin(s.min):''}${s.run?' · en cours':''}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}</article>`);
+  if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">${S_.some(s=>s.run)?'En cours':S_.length>1?'Entraînements':'Entraînement'}</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${[s.min?'≈ '+fmtMin(s.min):'',s.run?'commencée':s.retard?'prévue '+JOURS[s.day]+', pas encore faite':''].filter(Boolean).join(' · ')}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}</article>`);
   else carres.push(carre('forge','La Forge','forge/'));
   const marche=(`<article class="carte" data-lieu="marche" style="grid-column:span MARCHE"><a class="c-tete" href="marche/">${PL('marche')}<h2>Le Marché</h2></a><form class="ligne" id="f-marche" autocomplete="off"><input id="i-marche" placeholder="Un achat à faire…" aria-label="Ajouter un achat au Marché" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form></article>`);
   const ch=chronoTxt();
