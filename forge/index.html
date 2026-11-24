@@ -842,6 +842,12 @@ body.runbar-on main{padding-bottom:110px}
 /* page « Alléger la séance » */
 .lt-why{margin:2px 0 0;font-size:13.5px;text-align:center}
 .lt-why span{opacity:.72;font-size:12.5px}
+/* annuler une séance en cours */
+.run-cancel{all:unset;cursor:pointer;height:34px;padding:0 12px;border-radius:99px;font-size:13px;font-weight:600;background:rgba(26,23,20,.1);color:var(--on-ph)}
+.run-cancel.on{background:var(--on-ph);color:var(--sc)}
+.run-cancel:focus-visible{outline:2px solid var(--on-ph)}
+.sstat-x{all:unset;cursor:pointer;margin-left:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.sstat-x.on{text-decoration:none;background:var(--on-ph);color:var(--sc)}
 .lt-list{display:flex;flex-direction:column;gap:2px;margin-top:6px;background:rgba(26,23,20,.1);border-radius:14px;padding:8px 12px}
 .lt-row{display:flex;flex-direction:column;gap:1px;padding:6px 0;border-top:1px dashed rgba(26,23,20,.2);font-size:13.5px}
 .lt-row:first-child{border-top:0}
@@ -1597,7 +1603,7 @@ function sessRow(wk, s, log, hint, plus){
   const st = (log.sessions && log.sessions[s.id]) || {};
   const steps = guided(s) ? runSteps(s, st) : []; const inRun = !st.done && st.run && steps.length;
   const status = st.done ? `<span class="sstat ok">Faite ✓${st.date ? " · " + dayShort(st.date) : ""}</span>`
-    : inRun ? `<span class="sstat run">En cours · ${Math.min(st.run.i, steps.length)}/${steps.length}</span>` : "";
+    : inRun ? `<span class="sstat run">En cours · ${Math.min(st.run.i, steps.length)}/${steps.length} <button class="sstat-x ${S.ui.cancelAsk === s.id ? "on" : ""}" data-action="sess-cancel" data-sid="${esc(s.id)}">${S.ui.cancelAsk === s.id ? "Annuler la séance ?" : "Annuler"}</button></span>` : "";
   const sph = sessPh(wk, s);
   return `<article class="srow ${st.done ? "done" : "col"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
@@ -2680,11 +2686,22 @@ function lightView(c){
     <button class="btn small ghost lt-keep" data-action="run-lkeep">${R.lightKept ? "Proposition retenue ✓" : `Proposer ce réglage les prochaines fois (fatigue ${Math.max(f.phys || 0, f.ment || 0) || lightTh()}, ${esc(LIGHT_TYPE_L[t] || t)})`}</button>
   </div>`;
 }
+/* annuler une séance en cours : elle redevient comme jamais commencée
+   (progression, temps, pause, fatigue, allègement, variantes et séries notées pendant la séance) */
+function runCancel(wk, sid){
+  patchLog(wk, l => {
+    const cur = { ...((l.sessions || {})[sid] || {}) }; ["run", "fatigue", "light", "choice"].forEach(k => delete cur[k]);
+    l.sessions = { ...(l.sessions || {}) }; if (Object.keys(cur).length) l.sessions[sid] = cur; else delete l.sessions[sid];
+    if (l.actual) Object.keys(l.actual).forEach(k => { if (k.startsWith(sid + ":")) delete l.actual[k]; });
+  });
+  if (RUN.bg && RUN.bg.wk === wk && RUN.bg.sid === sid) RUN.bg = null;
+  toast("Séance annulée");
+}
 function runView(){
   const c = runCtx(); if (!c) return "";
   const { R, s, log, st, steps } = c; const n = steps.length;
   const pct = R.phase === "done" ? 100 : R.phase === "check" ? 0 : Math.round(R.i / n * 100);
-  const top = `<div class="run-top"><button class="x" data-action="ov-close" aria-label="Quitter la séance (la progression est gardée)">✕</button>
+  const top = `<div class="run-top"><button class="x" data-action="ov-close" aria-label="Quitter la séance (la progression est gardée)">✕</button>${R.phase === "set" || R.phase === "rest" ? `<button class="run-cancel ${R.cancelAsk ? "on" : ""}" data-action="run-cancel">${R.cancelAsk ? "Annuler la séance ?" : "Annuler"}</button>` : ""}
     <span class="run-sn">${esc(s.short || s.title)}</span>${st.run && st.run.t0 && (R.phase === "set" || R.phase === "rest") ? `<span class="run-el" id="run-el" title="Temps depuis le début">${elapsedTxt(st.run.t0)}</span>` : ""}<span class="run-ct">${R.phase === "set" || R.phase === "rest" ? (R.i + 1) + " / " + n : ""}</span></div>
     <div class="run-pb"><i style="width:${pct}%"></i></div>`;
   let body = "", foot = "";
@@ -2830,6 +2847,8 @@ function runAction(a, b){
   else if (a === "run-go" || a === "run-lopen") { const f = st.fatigue || {}; const mx = Math.max(f.phys || 0, f.ment || 0);
     if (mx >= lightTh() || a === "run-lopen") { const pct = mx >= lightTh() ? lightPctFor(Math.min(5, mx)) : 70; R.lightPick = { pct, m: lightDef(lightType(R.wk, s), pct), auto: true }; R.phase = "light"; render(); return; }
     runAction("run-full", b); }
+  else if (a === "run-cancel") { if (!R.cancelAsk) { R.cancelAsk = true; render(); clearTimeout(RUN.ct); RUN.ct = setTimeout(() => { if (S.run) { S.run.cancelAsk = false; render(); } }, 4000); return; }
+    const wk = R.wk, sid = R.sid; S.run = null; clearInterval(RUN.iv); RUN.iv = null; runCancel(wk, sid); ovClose(); }
   else if (a === "run-lpct") { const P = R.lightPick; P.pct = +b.dataset.v; if (P.auto) P.m = lightDef(lightType(R.wk, s), P.pct); R.lightKept = false; render(); }
   else if (a === "run-lm") { const P = R.lightPick; const k = b.dataset.v; P.m = P.m.includes(k) ? P.m.filter(x => x !== k) : [...P.m, k].sort((x, y) => Object.keys(LIGHT_M).indexOf(x) - Object.keys(LIGHT_M).indexOf(y)); P.auto = false; R.lightKept = false; render(); }
   else if (a === "run-lkeep") { const P = R.lightPick; const f = st.fatigue || {}; const mx = Math.min(5, Math.max(f.phys || 0, f.ment || 0)); const t = lightType(R.wk, s); const cfg = clone(lightCfg());
@@ -3265,6 +3284,7 @@ app.addEventListener("click", async e => {
   else if (a === "setv") { const k = b.dataset.k, f = b.dataset.f, v = +b.dataset.v; patchLog(S.week, l => { l.actual ||= {}; const cur = { ...(l.actual[k] || {}), ex: b.dataset.ex }; if (cur[f] === v) delete cur[f]; else cur[f] = v; l.actual[k] = cur; }); }
   else if (a === "load") { const k = b.dataset.k, d = +b.dataset.d, base = +b.dataset.base; patchLog(S.week, l => { l.actual ||= {}; const cur = { ...(l.actual[k] || {}), ex: b.dataset.ex }; const now = numOrNull(cur.load);
       if (d === 0) { if (now == null) cur.load = base; else delete cur.load; } else cur.load = Math.max(0, Math.round(((now ?? base) + d) * 100) / 100); l.actual[k] = cur; }); }
+  else if (a === "sess-cancel") { const sid = b.dataset.sid; if (S.ui.cancelAsk !== sid) { S.ui.cancelAsk = sid; render(); } else { S.ui.cancelAsk = null; runCancel(S.week, sid); } }
   else if (a === "off-ask") { if (S.ui.offAsk === b.dataset.sid) { S.ui.offAsk = null; offSession(S.week, b.dataset.sid); } else { S.ui.offAsk = b.dataset.sid; render(); } }
   else if (a === "off-undo") { const sid = b.dataset.sid; patchLog(S.week, l => { if (l.off) { delete l.off[sid]; if (!Object.keys(l.off).length) delete l.off; } }); }
   else if (a === "extra-del") { const i = b.dataset.i; patchLog(S.week, l => { if (l.extra) delete l.extra[i]; }); }
