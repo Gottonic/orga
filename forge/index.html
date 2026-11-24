@@ -836,6 +836,17 @@ body.runbar-on main{padding-bottom:110px}
 .nx.grp .nx-nm{font-size:15.5px}
 .nx.grp .nx-rx{font-size:13px}
 .sh-tips .breath{margin-top:6px}
+/* page « Alléger la séance » */
+.lt-why{margin:2px 0 0;font-size:13.5px;text-align:center}
+.lt-why span{opacity:.72;font-size:12.5px}
+.lt-list{display:flex;flex-direction:column;gap:2px;margin-top:6px;background:rgba(26,23,20,.1);border-radius:14px;padding:8px 12px}
+.lt-row{display:flex;flex-direction:column;gap:1px;padding:6px 0;border-top:1px dashed rgba(26,23,20,.2);font-size:13.5px}
+.lt-row:first-child{border-top:0}
+.lt-nm{min-width:0;font-weight:600}
+.lt-v{font-family:var(--f-mono);font-size:12.5px;overflow-wrap:anywhere}
+.lt-v s{opacity:.55}
+.lt-keep{align-self:center;margin-top:4px;text-decoration:underline;text-underline-offset:3px}
+.ov.run.col .run-body .fq{width:100%}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -1070,10 +1081,11 @@ function loadPlan(wk, s, it){
   let last = null;
   if (b) for (const id of blockWeeks(b).filter(x => x < wk).reverse()) {
     const a = S.data.logs[id] && S.data.logs[id].actual && S.data.logs[id].actual[key];
-    const v = a && numOrNull(a.load); if (v != null) { last = { id, v, a }; break; }
+    const v = a && numOrNull(a.load); if (v != null) { last = { id, v: a.light && a.light.kg != null ? a.light.kg : v, a, light: !!a.light }; break; }
   }
   const step = mode === "lineaire" && !dl ? progStep(it) : 0;
   if (fm && (!last || fm.from > last.id)) return { base: r2(fm.load + step), from: fm.from, up: step, missed: false, src: "mod", mode };
+  if (last && last.light) return { base: last.v, from: last.id, up: 0, missed: false, src: "log", mode, aim: mode === "double" && cur ? cur[0] : undefined, light: true };
   if (last) {
     const pit = itemOf(last.id, s.id, it.id); const need = pit ? numRange(pit.reps) : null;
     const sets = (last.a.done || []).filter(x => x && x.r != null).map(x => x.r); const reps = sets.length ? sets : [numOrNull(last.a.reps)].filter(x => x != null);
@@ -1586,7 +1598,7 @@ function sessRow(wk, s, log, hint, plus){
   const sph = sessPh(wk, s);
   return `<article class="srow ${st.done ? "done" : "col"}" style="--sc:${sph ? "var(--ph-" + sph + ")" : "var(--anth)"}">
     <div class="srow-t">
-      <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional && !plus ? `<span class="tag opt">optionnelle</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
+      <div class="row">${s.kind ? `<span class="tag">${esc(KINDS[s.kind] || s.kind)}</span>` : ""}${s.optional && !plus ? `<span class="tag opt">optionnelle</span>` : ""}${st.light ? `<span class="tag">allégée ${st.light.pct} %</span>` : ""}${fxIcons(s)}${s.min || s.duration ? `<span class="muted" style="font-size:12.5px">${s.min ? "≈ " + fmtMin(s.min) : esc(s.duration)}</span>` : ""}</div>
       <h3><span class="semo" aria-hidden="true">${sessEmoji(s)}</span>${esc(s.title)}</h3>${s.series ? `<span class="sbadge">${(S.data.series[s.series] || {}).movedFrom ? "↪ reportée de " + wkLabel(S.data.series[s.series].movedFrom) : (S.data.series[s.series] || {}).every ? "↻ ajoutée, répétée" : "ajoutée cette semaine"}</span>` : s.over ? `<span class="sbadge">modifiée cette semaine</span>` : ""}${status}${hint && s.nerv && !st.done ? `<span class="shint">${esc(hint)}</span>` : ""}
     </div>
     <div class="srow-b ${guided(s) ? "" : "two"}">
@@ -2557,7 +2569,8 @@ const RUN = { iv:null, lock:null };
 function runCtx(){
   const R = S.run; if (!R) return null; const plan = planOf(R.wk); const s = plan.sessions.find(x => x.id === R.sid); if (!s) return null;
   const log = S.data.logs[R.wk] || {}; const st = (log.sessions && log.sessions[s.id]) || {};
-  return { R, s, log, st, steps: runSteps(s, st), skip: new Set((st.run && st.run.skip) || []) };
+  const sl = R.phase === "light" || R.phase === "check" ? s : lightSess(s, st.light);
+  return { R, s: sl, s0: s, log, st, steps: runSteps(sl, st), skip: new Set((st.run && st.run.skip) || []) };
 }
 const loggable = it => it.log !== false && !it.tests;
 const repsRange = it => !isTimeOrDist(it.reps) ? numRange(it.reps) : null;
@@ -2568,7 +2581,7 @@ function stepKg(step, log){
   const d = ((log.actual && log.actual[step.key]) || {}).done || [];
   if (d[step.set-1] && d[step.set-1].kg != null) return d[step.set-1].kg;
   for (let x = step.set - 2; x >= 0; x--) if (d[x] && d[x].kg != null) return d[x].kg;
-  const lp = loadPlan(S.run.wk, { id: S.run.sid }, it); return lp ? lp.base : null;
+  const lp = loadPlan(S.run.wk, { id: S.run.sid }, it); return lp ? lightKg(lp.base, it, lightOfRun()) : null;
 }
 function stepReps(step, log){
   const rr = repsRange(step.it); if (!rr || !loggable(step.it)) return null; const k = step.key + "#" + step.set;
@@ -2608,6 +2621,62 @@ function nextBox(steps, i, skip, log){
   return `<div class="nx grp"><span class="eyebrow">Ensuite · ${esc(nx.bname)}${nx.rounds > 1 ? " · tour " + nx.set + "/" + nx.rounds : ""}</span>
     ${seq.map((x, k) => (k ? `<div class="nx-sep">${seq[k-1].rest ? "pause " + restTxt(seq[k-1].rest) : "↓ enchaîné"}</div>` : "") + `<div class="nx-it ${k ? "" : "first"}">${line(x)}</div>`).join("")}</div>`;
 }
+/* ---------- séance allégée ----------
+   Au départ, si la fatigue physique ou mentale est à 4 ou plus (réglable), une page propose de faire 40 à 80 % de la séance.
+   Ce qu'on réduit dépend du cycle : séries (force, puissance, contraste, vitesse, plyo, parkour), séries + reps (hypertrophie),
+   reps ou durée (endurance, VO2max, mobilité, le reste) ; sous 60 % en force : séries + charge.
+   Réglages retenus dans config/light : { th, pct: { 4: 70, 5: 50 }, m: { <type>: ["sets"|"reps"|"load", …] } }.
+   La séance du jour garde son choix dans logs[semaine].sessions[séance].light = { pct, m }. */
+const LIGHT_M = { sets: "Séries", reps: "Reps / durée", load: "Charge" };
+const LIGHT_TYPE_L = { force: "force", maintien: "maintien", puissance: "puissance", contraste: "french contrast", vitesse: "vitesse", plyo: "plyo", specifique: "parkour", parkour: "parkour", hypertrophie: "hypertrophie", endurance: "endurance", intervalles: "VO2max", mobilite: "mobilité", test: "tests" };
+const lightCfg = () => S.data.config.light || {};
+const lightTh = () => lightCfg().th || 4;
+const lightPctFor = fat => (lightCfg().pct || {})[fat] || (fat >= 5 ? 50 : 70);
+function lightType(wk, s){ const trk = s.id === "s-haut" ? "haut" : s.id === "s-bas" ? "bas" : s.track || null; const w = weekById(wk); const p = trk && w ? phaseOf(w, trk) : null; return (p && p.type) || s.kind || "autre"; }
+function lightDef(t, pct){
+  const own = (lightCfg().m || {})[t]; if (own && own.length) return own;
+  if (t === "force" || t === "maintien") return pct < 60 ? ["sets", "load"] : ["sets"];
+  if (["puissance", "contraste", "vitesse", "plyo", "specifique", "parkour"].includes(t)) return ["sets"];
+  if (t === "hypertrophie") return ["sets", "reps"];
+  return ["reps"];
+}
+const LIGHT_WHY = { sets: "moins de séries", reps: "séries plus courtes (moins de reps ou de durée)", load: "charge plus légère" };
+/* pourquoi la proposition, selon le cycle */
+const lightRule = t => (t === "force" || t === "maintien") ? "on garde la charge lourde et on enlève des séries ; sous 60 %, on allège aussi la charge"
+  : ["puissance", "contraste", "vitesse", "plyo", "specifique", "parkour"].includes(t) ? "la qualité et la vitesse d'abord : moins de séries, mêmes charges"
+  : t === "hypertrophie" ? "moins de séries et des séries un peu plus courtes"
+  : "on raccourcit l'effort (moins de reps ou de durée)";
+/* facteur par levier : réduire plusieurs leviers à la fois se partage la réduction (70 % sur 2 leviers ≈ 84 % chacun) */
+const lightF = L => L && L.pct < 100 && L.m && L.m.length ? Math.pow(L.pct / 100, 1 / L.m.length) : 1;
+function scaleReps(t, f){ const x = String(t ?? ""); if (!x || /\d\s*m(?!in)\b/.test(x)) return t;
+  return x.replace(/\d+(?:[.,]\d+)?/g, n => String(Math.max(1, Math.round(parseFloat(n.replace(",", ".")) * f)))); }
+function lightSess(s, L){
+  if (!L || !L.m || !L.m.length || L.pct >= 100) return s; const f = lightF(L); const d = clone(s);
+  (d.blocks || []).forEach(b => (b.items || []).forEach(it => { if (it.tests) return;
+    if (L.m.includes("sets") && typeof it.sets === "number" && it.sets > 1) it.sets = Math.max(1, Math.round(it.sets * f));
+    if (L.m.includes("reps") && it.reps) it.reps = scaleReps(it.reps, f); }));
+  d.light = L; return d;
+}
+const lightKg = (kg, it, L) => kg == null || !L || !L.m || !L.m.includes("load") ? kg : Math.max(0, Math.round(kg * lightF(L) / kgInc(it)) * kgInc(it));
+const lightOfRun = () => { const R = S.run; if (!R) return null; const st = ((S.data.logs[R.wk] || {}).sessions || {})[R.sid]; return (st && st.light) || null; };
+function lightView(c){
+  const { R, s, st } = c; const f = st.fatigue || {}; const P = R.lightPick;
+  const L = { pct: P.pct, m: P.m }; const ls = lightSess(s, L); const t = lightType(R.wk, s);
+  const rows = []; (s.blocks || []).forEach((b, bi) => (b.items || []).forEach((it, ii) => { if (it.off || it.tests) return;
+    const nb = ls.blocks[bi].items[ii]; const lp = hasKg(it) ? loadPlan(R.wk, s, it) : null; const kg0 = lp ? lp.base : null; const kg1 = lightKg(kg0, it, L);
+    const txt = (x, kg) => [(typeof x.sets === "number" && x.sets > 0 ? x.sets + "×" : "") + (x.reps ? String(x.reps).replace(/\s+/g, " ") : ""), kg != null ? kgTxt(it, kg) : ""].filter(Boolean).join(" · ");
+    const a = txt(it, kg0), z = txt(nb, kg1);
+    rows.push(`<div class="lt-row"><span class="lt-nm">${esc(it.name)}</span><span class="lt-v">${a === z ? `<span class="muted">${esc(a)}</span>` : `<s>${esc(a)}</s> → <b>${esc(z)}</b>`}</span></div>`); }));
+  return `<div class="run-body" data-sk="light">
+    <span class="eyebrow">Fatigue physique ${f.phys || "–"} · mentale ${f.ment || "–"}</span>
+    <h2 class="run-h">Alléger la séance ?</h2>
+    <div class="fq"><span class="fq-l">Je fais</span><div class="fq-c">${[40, 50, 60, 70, 80].map(v => `<button class="wide ${P.pct === v ? "on" : ""}" aria-pressed="${P.pct === v}" data-action="run-lpct" data-v="${v}">${v} %</button>`).join("")}</div></div>
+    <div class="fq"><span class="fq-l">Je réduis</span><div class="fq-c">${Object.entries(LIGHT_M).map(([k, l]) => `<button class="wide ${P.m.includes(k) ? "on" : ""}" aria-pressed="${P.m.includes(k)}" data-action="run-lm" data-v="${k}">${l}</button>`).join("")}</div></div>
+    <p class="lt-why">${P.m.length ? "Réduction : " + P.m.map(k => LIGHT_WHY[k]).join(" + ") + (P.m.length > 1 ? " (chacun ≈ " + Math.round(lightF(L) * 100) + " %)" : "") + "." : "Choisis au moins un levier."}<br><span>${P.auto ? "Proposition pour le cycle " + esc(LIGHT_TYPE_L[t] || t) + " : " + lightRule(t) + "." : "Réglage à ta main."}</span></p>
+    <div class="lt-list">${rows.join("")}</div>
+    <button class="btn small ghost lt-keep" data-action="run-lkeep">${R.lightKept ? "Proposition retenue ✓" : `Proposer ce réglage les prochaines fois (fatigue ${Math.max(f.phys || 0, f.ment || 0) || lightTh()}, ${esc(LIGHT_TYPE_L[t] || t)})`}</button>
+  </div>`;
+}
 function runView(){
   const c = runCtx(); if (!c) return "";
   const { R, s, log, st, steps } = c; const n = steps.length;
@@ -2620,8 +2689,11 @@ function runView(){
     const f = st.fatigue || {};
     const scale = (k, l) => `<div class="fq"><span class="fq-l">${l}</span><div class="fq-c" role="group" aria-label="${l}">${[1,2,3,4,5].map(v => `<button class="${f[k] === v ? "on" : ""}" aria-pressed="${f[k] === v}" data-action="run-fat" data-k="${k}" data-v="${v}">${v}</button>`).join("")}</div></div>`;
     const ch = Object.entries(choiceGroups(s)).filter(([, o]) => o.length > 1).map(([k, o]) => `<div class="fq"><span class="fq-l">Au choix</span><div class="fq-c">${o.map(n => `<button class="wide ${chosen(s, st, k) === n ? "on" : ""}" aria-pressed="${chosen(s, st, k) === n}" data-action="run-choice" data-k="${esc(k)}" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`).join("");
-    body = `<div class="run-body mid"><h2 class="run-h">${esc(s.title)}</h2>${ch}${scale("phys", "Fatigue physique")}${scale("ment", "Fatigue mentale")}<p class="muted fq-h">1 = en forme · 5 = vidé</p></div>`;
+    body = `<div class="run-body mid"><h2 class="run-h">${esc(s.title)}</h2>${ch}${scale("phys", "Fatigue physique")}${scale("ment", "Fatigue mentale")}<p class="muted fq-h">1 = en forme · 5 = vidé · dès ${lightTh()}, la séance peut être allégée</p><button class="btn small ghost" data-action="run-lopen">Alléger la séance…</button></div>`;
     foot = `<button class="btn primary big" data-action="run-go">Démarrer l'entraînement</button>`;
+  } else if (R.phase === "light") {
+    body = lightView(c);
+    foot = `<button class="btn" data-action="run-full">Séance normale</button><button class="btn primary big" data-action="run-light" ${R.lightPick.m.length ? "" : "disabled"}>Séance à ${R.lightPick.pct} %</button>`;
   } else if (R.phase === "set") {
     const step = steps[R.i]; const it = step.it; const kg = stepKg(step, log); const reps = stepReps(step, log); const rr = repsRange(it);
     const inc = kgInc(it);
@@ -2651,7 +2723,7 @@ function runView(){
     foot = `<button class="btn" data-action="run-plus">+15 s</button><button class="btn primary big" data-action="run-next">Passer la pause</button>`;
   } else {
     const fin = (log.sessions && log.sessions[s.id]) || {};
-    body = `<div class="run-body mid bravo" data-sk="bravo"><div class="bv-ic" aria-hidden="true">${ico("bravo")}</div><h2 class="run-h">Bravo !</h2><p class="bv-t">${esc(s.title)}</p>
+    body = `<div class="run-body mid bravo" data-sk="bravo"><div class="bv-ic" aria-hidden="true">${ico("bravo")}</div><h2 class="run-h">Bravo !</h2><p class="bv-t">${esc(s.title)}${fin.light ? ` · allégée à ${fin.light.pct} %` : ""}</p>
       <p class="muted">${[fin.nSets ? fin.nSets + " série" + (fin.nSets > 1 ? "s" : "") : "", fin.dur ? fmtMin(Math.max(1, fin.dur)) : ""].filter(Boolean).join(" · ")}</p>
       ${feelForm(s.id, fin)}
       <div class="field bv-note"><label for="bv-note">Note (facultatif)</label><input id="bv-note" type="text" data-snote="${esc(s.id)}" value="${esc(fin.note || "")}"></div></div>`;
@@ -2749,10 +2821,20 @@ function runAdvance(c, j, rest){
   render(); const ov = app.querySelector(".ov.run .run-body"); if (ov) ov.scrollTop = 0;
 }
 function runAction(a, b){
-  const c = runCtx(); if (!c) return; const { R, s, log, steps, skip } = c;
+  const c = runCtx(); if (!c) return; const { R, s, log, st, steps, skip } = c;
   if (a === "run-fat") { const k = b.dataset.k, v = +b.dataset.v; patchLog(R.wk, l => { l.sessions ||= {}; const cur = { ...(l.sessions[s.id] || {}) }; cur.fatigue = { ...(cur.fatigue || {}), [k]: v }; l.sessions[s.id] = cur; }); }
   else if (a === "run-choice") { const k = b.dataset.k, v = b.dataset.v; patchLog(R.wk, l => { l.sessions ||= {}; const cur = { ...(l.sessions[s.id] || {}) }; cur.choice = { ...(cur.choice || {}), [k]: v }; l.sessions[s.id] = cur; }); }
-  else if (a === "run-go") { patchLog(R.wk, l => { l.sessions ||= {}; const cur = { ...(l.sessions[s.id] || {}) }; cur.done = false; delete cur.date; cur.run = { i: 0, t0: Date.now(), skip: [] }; l.sessions[s.id] = cur; }); R.i = 0; R.phase = "set"; render(); }
+  else if (a === "run-go" || a === "run-lopen") { const f = st.fatigue || {}; const mx = Math.max(f.phys || 0, f.ment || 0);
+    if (mx >= lightTh() || a === "run-lopen") { const pct = mx >= lightTh() ? lightPctFor(Math.min(5, mx)) : 70; R.lightPick = { pct, m: lightDef(lightType(R.wk, s), pct), auto: true }; R.phase = "light"; render(); return; }
+    runAction("run-full", b); }
+  else if (a === "run-lpct") { const P = R.lightPick; P.pct = +b.dataset.v; if (P.auto) P.m = lightDef(lightType(R.wk, s), P.pct); R.lightKept = false; render(); }
+  else if (a === "run-lm") { const P = R.lightPick; const k = b.dataset.v; P.m = P.m.includes(k) ? P.m.filter(x => x !== k) : [...P.m, k].sort((x, y) => Object.keys(LIGHT_M).indexOf(x) - Object.keys(LIGHT_M).indexOf(y)); P.auto = false; R.lightKept = false; render(); }
+  else if (a === "run-lkeep") { const P = R.lightPick; const f = st.fatigue || {}; const mx = Math.min(5, Math.max(f.phys || 0, f.ment || 0)); const t = lightType(R.wk, s); const cfg = clone(lightCfg());
+    cfg.pct = { ...(cfg.pct || {}) }; if (mx >= lightTh()) cfg.pct[mx] = P.pct; cfg.m = { ...(cfg.m || {}), [t]: P.m }; put("config", "light", cfg); R.lightKept = true; toast("Proposition retenue pour le cycle " + (LIGHT_TYPE_L[t] || t)); }
+  else if (a === "run-light" || a === "run-full") { const P = R.lightPick; const L = a === "run-light" && P && P.m.length ? { pct: P.pct, m: P.m } : null;
+    patchLog(R.wk, l => { l.sessions ||= {}; const cur = { ...(l.sessions[s.id] || {}) }; if (L) cur.light = L; else delete cur.light; l.sessions[s.id] = cur; });
+    runAction("run-go-now", b); }
+  else if (a === "run-go" || a === "run-go-now") { patchLog(R.wk, l => { l.sessions ||= {}; const cur = { ...(l.sessions[s.id] || {}) }; cur.done = false; delete cur.date; cur.run = { i: 0, t0: Date.now(), skip: [] }; l.sessions[s.id] = cur; }); R.i = 0; R.phase = "set"; render(); }
   else if (a === "run-kg") { const step = steps[R.i]; const cur = stepKg(step, log); if (cur == null) return; R.kg[step.key + "#" + step.set] = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); render(); }
   else if (a === "run-reps") { const step = steps[R.i]; R.reps[step.key + "#" + step.set] = +b.dataset.v; render(); }
   else if (a === "run-done") {
@@ -2761,6 +2843,7 @@ function runAction(a, b){
       const kg = stepKg(step, log), r = stepReps(step, log);
       if (kg != null || r != null) patchLog(R.wk, l => {
         l.actual ||= {}; const cur = { ...(l.actual[step.key] || {}), ex: it.ex || it.id }; const d = [...(cur.done || [])];
+        const L = st.light; if (L) { const lp = hasKg(it) ? loadPlan(R.wk, { id: R.sid }, it) : null; cur.light = { pct: L.pct, m: L.m, kg: lp ? lp.base : null }; } else delete cur.light;
         d[step.set - 1] = { r, kg }; cur.done = d; const ok = d.filter(Boolean); cur.sets = ok.length;
         const kgs = ok.map(x => x.kg).filter(x => x != null);
         if (kgs.length) { cur.load = Math.max(...kgs); const rs = ok.filter(x => x.kg === cur.load && x.r != null).map(x => x.r); if (rs.length) cur.reps = Math.min(...rs); }
