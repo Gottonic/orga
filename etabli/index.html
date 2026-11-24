@@ -712,6 +712,10 @@ details.more .field{margin-top:10px}
 .wpj .gbar{margin:5px 1px;border-radius:8px;font-size:.76rem;padding:0 5px;display:flex;align-items:center;gap:3px;overflow:hidden;white-space:nowrap}
 .wpj .gbar .gt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;-webkit-line-clamp:unset}
 .wpj .gbar.s{justify-content:center;padding:0;font-size:.95rem}
+.calrow{border:1px solid var(--bd);border-left:8px solid var(--cc);border-radius:14px;background:var(--cell);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.calh{display:flex;align-items:center;gap:8px}
+.calh i{display:none}
+.calh .input{flex:1;padding:8px 10px}
 .evd{display:flex;flex-direction:column;gap:2px}
 .evd b{font-size:1rem}
 .gbx{justify-self:end;align-self:start;z-index:6;width:26px;height:26px;margin:-8px -8px 0 0;border:2px solid var(--paper,#fff);border-radius:50%;background:#C2452D;color:#fff;font-weight:800;font-size:.85rem;line-height:1;padding:0;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
@@ -1180,7 +1184,30 @@ function evSheet(i){ const e=EVW[i]; if(!e) return; const c=coulCal(e.cal), cal=
   openSheet(`<div class="shead" style="--pc:${c};--pt:${ink(c)}"><h2>${esc(e.titre||'(sans titre)')}<small>${esc(cal?cal.nom:'Calendrier')}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
   <div class="evd"><span class="lbl">Quand</span><b>${esc(evQuand(e))}</b></div>
   ${e.lieu?`<div class="evd"><span class="lbl">Où</span><b>${esc(e.lieu)}</b></div>`:''}
-  <p class="note" style="margin:0">Ce rendez-vous vient de Proton : il se modifie dans Proton. Tu peux quand même placer un projet par-dessus.</p></div>`,'ev'); }
+  <a class="btn" style="text-align:center;text-decoration:none" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar pour le modifier</a>
+  <p class="note" style="margin:0">Ce rendez-vous vient de Proton : il se modifie là-bas, puis apparaît ici au prochain rafraîchissement. Tu peux quand même placer un projet par-dessus.</p></div>`,'ev'); }
+/* Agendas lus (table locus_calendriers, la même que la routine du lundi) : nom, couleur, ajouter, retirer */
+let calMsg='', calDel=null;
+async function calsSheet(){ sheetId=null; ctx=null;
+  const L=CALS||[];
+  openSheet(`<div class="shead"><h2>Agendas<small>les calendriers Proton montrés au planning</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
+  ${calMsg?`<div class="alert"><div>${esc(calMsg)}</div></div>`:''}
+  ${L.length?L.map(c=>`<div class="calrow" data-cal="${esc(c.id)}" style="--cc:${coulCal(c.id)}">
+    <div class="calh"><i></i><input class="input" data-calnom="${esc(c.id)}" value="${esc(c.nom)}" aria-label="Nom de l'agenda" autocomplete="off"><button class="xbtn" data-act="calDelAsk" data-id="${esc(c.id)}" aria-label="Retirer ${esc(c.nom)}">✕</button></div>
+    ${calDel===c.id?`<div class="danger"><div>Ne plus lire <b>${esc(c.nom)}</b> ? Il reste dans Proton ; Locus ne le montre plus.</div><div class="actions"><button class="btn ghost" data-act="calDelNo">Annuler</button><button class="btn warn" data-act="calDelOk" data-id="${esc(c.id)}">Retirer</button></div></div>`:''}
+    <details class="more"><summary>Couleur</summary>${colorGrid(c.couleur||coulCal(c.id),'calColor')}</details></div>`).join(''):'<p class="note" style="margin:0">Aucun agenda pour l\'instant.</p>'}
+  <div class="field"><span class="lbl">Ajouter un agenda</span>
+   <input class="input" id="f-calnom" placeholder="Nom (Perso, Travail…)" autocomplete="off">
+   <input class="input" id="f-calurl" placeholder="Lien de partage Proton (https://…)" autocomplete="off" inputmode="url">
+   <button class="btn" data-act="calAdd">Ajouter</button>
+   <p class="note" style="margin:0">Dans Proton Calendar : réglages de l'agenda › Partager › « Partager avec tout le monde » (vue complète), puis copier le lien. Le lien reste dans ta base ; l'app ne garde que le nom et la couleur.</p></div>
+  </div>`,'cals');
+  calMsg='';
+}
+async function calsRelire(){ try{ const {data,error}=await sb.from('locus_calendriers').select('id,nom,couleur').order('cree'); if(error) throw error; CALS=data||[]; }catch(e){ calMsg='Agendas illisibles : '+String(e&&e.message||e); }
+  EV_LE={}; if(ui.wkShown) evCharger(ui.wkShown,true); }
+async function calMaj(id,champs){ try{ const {error}=await sb.from('locus_calendriers').update(champs).eq('id',id); if(error) throw error; const c=CALS.find(x=>x.id===id); if(c) Object.assign(c,champs);
+    try{ localStorage.setItem(evK(),JSON.stringify({w:EVS||{},cals:CALS})); }catch(e){} }catch(e){ calMsg='Pas enregistré : '+String(e&&e.message||e); } }
 function vPlanning(){
   const tgt=ui.planStart||todayS, m0=monday(parse(tgt)), k=wkKey(m0); ui.wkShown=k;
   const pw=new Date(m0), nw=new Date(m0); pw.setDate(pw.getDate()-7); nw.setDate(nw.getDate()+7);
@@ -1219,7 +1246,7 @@ function vPlanning(){
   </div>
   <div class="planlegend"><span><b style="background:#EE9DC0"></b>vacances et congés</span><span><b style="background:#D8C9AA"></b>week-end</span>${CALS.length?CALS.map(x=>`<span><b style="background:${coulCal(x.id)}"></b>${esc(x.nom)}</span>`).join(''):''}</div>
   <p class="note">Pour placer un projet : touche une demi-journée, ou glisse sur plusieurs (au doigt : appuie longuement d'abord) ; le numéro de semaine place sur toute la semaine. Touche un rendez-vous pour ses détails, une barre pour ouvrir le projet ; glisse une barre pour la déplacer, appuie longuement dessus pour l'enlever.</p>
-  <button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés prévus${S.offs.length?' ('+S.offs.length+')':''}</button>`;
+  <div class="dacts"><button class="btn ghost" data-act="cals">${pic('journal')} Agendas${CALS.length?' ('+CALS.length+')':''}</button><button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés${S.offs.length?' ('+S.offs.length+')':''}</button></div>`;
 }
 
 /* Vue projets */
@@ -2243,6 +2270,14 @@ document.addEventListener('click',e=>{
   else if(a==='clearDone'){S.lists.petites=S.lists.petites.filter(v=>!v.d); save(); render();}
   else if(a==='tags') tagsSheet();
   else if(a==='offs') offsSheet();
+  else if(a==='cals'){ calDel=null; calsSheet(); if(navigator.onLine) calsRelire().then(()=>{ if(sheetKey==='cals') calsSheet(); }); }
+  else if(a==='calColor'){ const w=el.closest('[data-cal]'); if(w) calMaj(w.dataset.cal,{couleur:el.dataset.c}).then(()=>{ calsSheet(); }); }
+  else if(a==='calDelAsk'){ calDel=el.dataset.id; calsSheet(); }
+  else if(a==='calDelNo'){ calDel=null; calsSheet(); }
+  else if(a==='calDelOk'){ const id=el.dataset.id; calDel=null; (async()=>{ try{ const {error}=await sb.from('locus_calendriers').delete().eq('id',id); if(error) throw error; CALS=CALS.filter(c=>c.id!==id); toast('Agenda retiré'); }catch(e){ calMsg='Pas retiré : '+String(e&&e.message||e); } await calsRelire(); calsSheet(); })(); }
+  else if(a==='calAdd'){ const n=document.getElementById('f-calnom'), u=document.getElementById('f-calurl'), nom=(n&&n.value||'').trim(), url=(u&&u.value||'').trim();
+    if(!nom||!/^(https|webcal):\/\//i.test(url)){ calMsg='Il faut un nom et un lien qui commence par https:// (ou webcal://).'; calsSheet(); return; }
+    (async()=>{ try{ const {error}=await sb.from('locus_calendriers').insert({nom,url,couleur:BASE_COLORS[(CALS||[]).length%BASE_COLORS.length]}); if(error) throw error; toast('Agenda ajouté'); }catch(e){ calMsg=/locus_calendriers|schema cache|does not exist/i.test(String(e&&e.message))?'Lance d\'abord supabase/calendriers.sql dans Supabase.':'Pas ajouté : '+String(e&&e.message||e); } await calsRelire(); calsSheet(); })(); }
   else if(a==='cell'){ if(el.dataset.i!=null&&ui.wkShown) rangeSheet({m:'h',k:ui.wkShown,a:+el.dataset.i,b:+el.dataset.i}); else rangeSheet({m:'j',a:el.dataset.d,b:el.dataset.d}); }
   else if(a==='ev') evSheet(+el.dataset.i);
   else if(a==='segDel'){ const p=P(id), A=el.dataset.a, B=el.dataset.b; ui.barX=null; if(p){ const g=document.getElementById('gantt'); ui.planScroll=g?g.scrollLeft:null;
@@ -2348,6 +2383,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset&&t.dataset.achat){ if(AB){ AB.basculer(t.dataset.achat); achatsMaj(); } return; }
+  if(t.dataset.freecol==='calColor'){ const w=t.closest('[data-cal]'); if(w) calMaj(w.dataset.cal,{couleur:t.value.toUpperCase()}).then(()=>calsSheet()); return; }
+  if(t.dataset.calnom){ const v=t.value.trim(); if(v) calMaj(t.dataset.calnom,{nom:v}).then(()=>toast('Renommé')); return; }
   if(t.dataset.freecol==='color'){ const p=P(sheetId); if(p){ p.color=t.value.toUpperCase(); save(); detail(sheetId); } return; }
   if(t.dataset.freecol==='ncolor'){ if(draft){ syncDraft(); draft.color=t.value.toUpperCase(); newSheet(true); } return; }
   if(t.dataset.freecol){ const c=t.value.toUpperCase(); if(t.dataset.freecol==='domColor'){ const d=D(sheetId); if(d){ d.color=c; save(); domainSheet(sheetId); } } else if(ui.ndom){ const i=document.getElementById('f-ndom'); if(i) ui.ndom.name=i.value; ui.ndom.color=c; newDomSheet(); } return; }
