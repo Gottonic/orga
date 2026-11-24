@@ -55,7 +55,14 @@
       ecrire('a:' + id, b);
     }
     function supprimer(id) { if (st.prev['a:' + id]) ecrire('a:' + id, null); }
-    return { tirer, pousser, liste, ajouter, basculer, supprimer };
+    /* une envie « à mijoter » du Marché (24.11, depuis le vide-tête) : même forme que nouvelleEnvie() du Marché, 14 jours */
+    function envie(nom, pourquoi) {
+      nom = String(nom || '').trim().replace(/\s+/g, ' '); if (!nom) return null;
+      const d = new Date(); d.setDate(d.getDate() + 14); const fin = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const e = { id: uid(), nom, pourquoi: pourquoi || '', budget: null, cree: new Date().toISOString(), duree: 14, jusqua: fin, etat: 'mijote', relances: 0, options: [], fav: null };
+      ecrire('e:' + e.id, e); return e;
+    }
+    return { tirer, pousser, liste, ajouter, basculer, supprimer, envie };
   }
   window.Achats = { base };
 })();
