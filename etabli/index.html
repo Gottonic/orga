@@ -340,6 +340,15 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .tasks.arbre li.dragging{padding-left:calc(36px + var(--dn,var(--n,0)) * 24px)}
 .tasks.arbre li.etape.dragging{padding-left:calc(2px + var(--dn,var(--n,0)) * 24px)}
 .tasks li.suit{display:none}
+.tasks li[data-i]{touch-action:pan-y}
+.tasks li.glisse{transition:none;background:linear-gradient(to left,#C8432B 0,#C8432B var(--gx,0px),var(--cell) var(--gx,0px))}
+.tasks li.glisse>*{transform:translateX(calc(-1 * var(--gx,0px)))}
+.tasks li.glisse{position:relative;overflow:hidden}
+.tasks li.glisse::after{content:'Supprimer';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#fff;font-weight:800;font-size:.85rem;pointer-events:none}
+.tasks li.tsupconf{padding:0;gap:0;background:#C8432B}
+.tasks li.tsupconf button{all:unset;box-sizing:border-box;min-height:46px;display:grid;place-items:center;cursor:pointer;font-weight:800;color:#fff}
+.tasks li.tsupconf .tsupok{flex:1;padding:0 14px;justify-content:start}
+.tasks li.tsupconf .tsupno{flex:none;padding:0 16px;font-weight:600;border-left:1px solid rgba(255,255,255,.35)}
 .tasks li.cible{background:color-mix(in srgb,var(--ink) 16%,var(--cell));box-shadow:inset 0 0 0 2px var(--ink)}
 .tasks li.dragging.dedans{opacity:.55}
 .tasks li.dragging[data-suit]::after{content:'+ ' attr(data-suit);font-size:.72rem;color:var(--muted);margin:0 6px;flex:none}
@@ -1647,6 +1656,8 @@ function tasksBlock(p,closed,word){
   const sub=ui.subNew&&ui.subNew.pid===p.id&&L[ui.subNew.i]&&et(ui.subNew.i)?ui.subNew.i:-1, subEnd=sub>=0?Projets.finBranche(L,sub):-1;
   const drag=closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer (lâcher au milieu d\'une tâche : la ranger dedans)">≡</span>';
   const row=({x,i})=>{ const lv=only?0:N(x), step=et(i);
+    if(ui.tSup&&ui.tSup.pid===p.id&&ui.tSup.i===i&&!closed){ const k=step?Projets.finBranche(L,i)-i-1:0;
+      return `<li class="tsupconf" data-i="${i}" data-n="${lv}" style="--n:${lv}"><button class="tsupok" data-act="tsupOk" data-i="${i}">${k?`Supprimer l'étape et ses ${k} tâche${k>1?'s':''} ?`:'Supprimer ?'}</button><button class="tsupno" data-act="tsupNo">Annuler</button></li>`; }
     if(step){ const fin=Projets.finBranche(L,i), F=L.slice(i+1,fin).filter((y,k)=>!et(i+1+k)), fd=F.filter(y=>y.d).length, pl=estPlie(p,x);
       return `<li class="etape${x.d?' done':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}">${fin>i+1?`<button class="tplie" data-act="tplie" data-i="${i}" aria-expanded="${!pl}" aria-label="${pl?'Déplier':'Replier'} l'étape">${pl?'▸':'▾'}</button>`:'<span class="tplie" aria-hidden="true"></span>'}<input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider l'étape et tout ce qu'elle contient"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${F.length?`<span class="tcnt">${fd}/${F.length}</span>`:''}${closed?'':`<button class="tsub" data-act="tsub" data-i="${i}" aria-label="Ajouter une tâche dans l'étape">+</button>`}${drag}</li>`; }
     return `<li class="${x.d?'done':''}${i===firstOpen?' next':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}"><input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider la ${word}"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${drag}</li>`; };
@@ -1656,7 +1667,7 @@ function tasksBlock(p,closed,word){
    ${adminN?`<div class="seg tfilt"><button data-act="tfilt" data-v="0" aria-pressed="${!only}">Toutes</button><button data-act="tfilt" data-v="1" aria-pressed="${only}">Admin (${adminN})</button></div>`:''}
    ${html?`<ul class="list tasks${!only&&L.some((y,k)=>et(k))?' arbre':''}" data-pid="${p.id}">${html}</ul>`:''}
    ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
-   ${closed?'':`${ui.secNew===p.id?`<form class="secpop" data-act="addSecF"><input class="input" id="f-sec" autocomplete="off" autocorrect="off" placeholder="Nom de l'étape" aria-label="Nom de la nouvelle étape" enterkeyhint="done"><button class="btn" type="submit">OK</button><button class="xbtn" type="button" data-act="secNo" aria-label="Annuler">✕</button></form>`:`<button class="linkbtn secadd" data-act="addSec">+ Étape</button>`}<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Une étape : « + Étape » au-dessus, ou commence la ligne par #. Pour ranger une tâche dans une autre, glisse-la (≡) au milieu de celle-ci : elle s'assombrit, lâche.</p>`}</div>`;
+   ${closed?'':`<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Pour ranger une tâche dans une autre, glisse-la (≡) au milieu de celle-ci : elle s'assombrit, lâche. Pour supprimer une tâche, glisse-la vers la gauche.</p>`}</div>`;
 }
 function durPick(mode,dur,act){ const isM=mode===true||mode==='mini', isP=mode==='perm'; return `<div class="durrow"><div class="dfree${isM||isP?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&!isP&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="perm" aria-pressed="${isP}">∞ Perpétuel<small>sans fin ni durée</small></button></div>`; }
 function applyDur(p,v){ if(v==='perm'){ if(isPerm(p)){ p.size='proj'; p.dur=p.dur||5; return; } if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='perm'; p.due=null; return; } if(v!=='mini'&&Number(v)<0.5) v=0.5; if(v==='mini'){ p.size='mini'; p.dur=null; p.emoji=''; p.color=MINI_COLOR; p.weeks=[]; p.days=[]; return; } const n=Number(v); if(!(n>0)) return; if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='proj'; p.dur=n; }
@@ -2186,6 +2197,19 @@ document.addEventListener('focusout',e=>{ const t=e.target; if(!t||!t.classList|
   else { p.tasks.splice(i,1); sinkDone(p); toast('Tâche supprimée'); }
   save(); setTimeout(()=>refresh(sheetId),0); });
 document.addEventListener('keydown',e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains('tedit')&&e.key==='Enter'){ e.preventDefault(); t.blur(); } });
+/* Glisser une ligne vers la gauche = « Supprimer ? » (25.11) ; vers la droite ou ailleurs : rien */
+let tsw=null;
+document.addEventListener('pointerdown',()=>{ window.__supTache=false; },true);
+document.addEventListener('pointerdown',e=>{ if(drag) return; const li=e.target.closest&&e.target.closest('.tasks li[data-i]'); if(!li||li.classList.contains('tsupconf')||e.target.closest('.drag,input,button,.tedit')) return; const ul=li.parentNode; if(!ul.dataset.pid) return; const p=H(ul.dataset.pid); if(!p||p.closed) return;
+  tsw={li,pid:ul.dataset.pid,x0:e.clientX,y0:e.clientY,on:false}; },true);
+document.addEventListener('pointermove',e=>{ if(!tsw) return; const dx=e.clientX-tsw.x0, dy=e.clientY-tsw.y0;
+  if(!tsw.on){ if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){ tsw=null; return; } if(dx<-12&&Math.abs(dx)>Math.abs(dy)*1.5){ tsw.on=true; tsw.li.classList.add('glisse'); try{ tsw.li.setPointerCapture(e.pointerId); }catch(err){} } else return; }
+  e.preventDefault(); tsw.li.style.setProperty('--gx',Math.max(0,Math.min(160,-dx))+'px'); },{passive:false});
+const finTsw=e=>{ if(!tsw) return; const {li,pid,on,x0}=tsw; tsw=null; if(!on) return; window.__supTache=true; const dx=(e&&e.clientX!=null?e.clientX:x0)-x0; li.classList.remove('glisse'); li.style.removeProperty('--gx');
+  if(e&&e.type==='pointerup'&&dx<-70){ ui.tSup={pid,i:+li.dataset.i}; refresh(pid); } };
+document.addEventListener('pointerup',finTsw); document.addEventListener('pointercancel',finTsw);
+document.addEventListener('click',e=>{ if(window.__supTache){ window.__supTache=false; e.stopPropagation(); e.preventDefault(); return; }
+  if(ui.tSup&&!(e.target.closest&&e.target.closest('.tsupconf'))){ const pid=ui.tSup.pid; ui.tSup=null; if(sheetId===pid&&!e.target.closest('[data-act]')) refresh(pid); } },true);
 /* Glisser une tâche (≡) : en haut / en bas pour la déplacer, vers la droite pour la ranger dans l'étape au-dessus,
    vers la gauche pour l'en sortir ; une étape bouge avec tout ce qu'elle contient (25.11) */
 let drag=null;
@@ -2517,6 +2541,8 @@ document.addEventListener('click',e=>{
   else if(a==='tplie'){ const p=H(sheetId), x=p&&p.tasks[Number(el.dataset.i)]; if(x){ plier(p,x); if(ui.subNew&&ui.subNew.pid===p.id) ui.subNew=null; refresh(sheetId); } }
   else if(a==='tsub'){ const p=H(sheetId), x=p&&p.tasks[Number(el.dataset.i)]; if(!x) return; if(estPlie(p,x)) plier(p,x); ui.subNew={pid:p.id,i:Number(el.dataset.i)}; refresh(sheetId); setTimeout(()=>{ const i=document.getElementById('f-sub'); if(i) try{ i.focus(); }catch(err){} },60); }
   else if(a==='subNo'){ ui.subNew=null; refresh(sheetId); }
+  else if(a==='tsupNo'){ ui.tSup=null; refresh(sheetId); }
+  else if(a==='tsupOk'){ const p=H(sheetId), i=Number(el.dataset.i); ui.tSup=null; if(!p||!p.tasks[i]){ refresh(sheetId); return; } const j=Projets.finBranche(p.tasks,i), t=p.tasks[i].t; p.tasks.splice(i,j-i); sinkDone(p); save(); refresh(sheetId); toast(j-i>1?'Étape supprimée avec ses tâches':'« '+t+' » supprimée'); }
   else if(a==='tedit'){ const p=H(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp); try{ inp.focus(); const L=inp.value.length; inp.setSelectionRange(L,L); }catch(err){} }
   else if(a==='minis'){ if(MINI) petitesSheet(); else goView('taches'); }
   else if(a==='tFaites'){ ui.tFaites=!ui.tFaites; render(); }
