@@ -80,6 +80,12 @@ iframe.dans.actif.vu{opacity:1;pointer-events:auto}
 .carre .nom{font:700 12px/1.2 var(--f-display);letter-spacing:-.02em;text-align:center}
 .carre .rond{border:0;width:52px;height:52px;border-radius:var(--pill);background:var(--accent);color:var(--on-acc);display:grid;place-items:center;cursor:pointer;font:500 13px var(--f-mono)}
 .carre .rond .ic{width:22px;height:22px}
+.prot-j{display:flex;align-items:baseline;gap:8px;color:inherit;text-decoration:none;border-top:1px dashed color-mix(in srgb,var(--on-page) 18%,transparent);padding-top:8px}
+.prot-j b{font:700 16px var(--f-display)}
+.prot-j small{color:var(--on-page-2);font-size:12px}
+.prot-c{display:flex;flex-direction:column;align-items:center;color:inherit;text-decoration:none;line-height:1.1}
+.prot-c b{font:700 13px var(--f-mono)}
+.prot-c small{font-size:10.5px;color:var(--on-page-2)}
 a.carre:active,.carte a:active{filter:brightness(.95)}
 .note{color:var(--on-page-2);font-size:13px;margin:0}
 .lien-r{align-self:center;border:0;background:none;color:var(--on-page-2);font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px}
@@ -291,13 +297,15 @@ function tachesDuJour(){ const a=AUJ(); return lignes('taches').filter(n=>n.jour
 function seancesDuJour(){ const f=forge(); if(!f||!f.semaines) return []; const L=f.semaines[CUR()]||[], j=(new Date().getDay()+6)%7;
   const rang=s=>s.run?0:s.day===j?1:2;
   return L.filter(s=>!s.done&&(s.run||(typeof s.day==='number'&&s.day<=j))).map(s=>Object.assign({},s,{retard:!s.run&&s.day<j})).sort((a,b)=>rang(a)-rang(b)||(a.day??9)-(b.day??9)); }
+/* protéines du jour, calculées par la Forge d'après les séances placées et faites (25.11) */
+function protJour(){ const f=forge(); return (f&&f.prot&&f.prot[AUJ()])||null; }
 const fmtMin=m=>m>=60?Math.floor(m/60)+' h'+(m%60?' '+pad(m%60):''):m+' min';
 function chronoTxt(){ if(!CHRONO||!CHRONO.debut) return ''; const m=Math.max(0,Math.floor((Date.now()-new Date(CHRONO.debut))/60000)); return Math.floor(m/60)+':'+pad(m%60); }
 
 function carre(app,nom,href,bouton){ return `<article class="carre" data-lieu="${app}"><a href="${href}">${PL(app)}<span class="nom">${nom}</span></a>${bouton||''}</article>`; }
 function vAccueil(){
   const N=semaineRoutine(), fait=((B['s:routine']||{}).fait||[]).includes(N);
-  const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour();
+  const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour(), pj=protJour();
   let h='';
   if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, boîtes, Banque, vide-tête, tâches, semaine, puis Claude</small></span>${P('suivant')}</button>`;
   h+=`<form class="ligne" id="f-vide" autocomplete="off"><button type="button" class="sem-n" id="b-semaine" title="Voir la semaine ${wkNum(CUR())}" aria-label="Voir le planning de la semaine ${wkNum(CUR())}">${wkNum(CUR())}</button><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
@@ -305,8 +313,8 @@ function vAccueil(){
   const grandes=[], carres=[];
   if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
   else carres.push(carre('etabli','L’Établi','etabli/'));
-  if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">${S_.some(s=>s.run)?'En cours':S_.length>1?'Entraînements':'Entraînement'}</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${[s.min?'≈ '+fmtMin(s.min):'',s.run?'commencée':s.retard?'prévue '+JOURS[s.day]+', pas encore faite':''].filter(Boolean).join(' · ')}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}</article>`);
-  else carres.push(carre('forge','La Forge','forge/'));
+  if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">${S_.some(s=>s.run)?'En cours':S_.length>1?'Entraînements':'Entraînement'}</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${[s.min?'≈ '+fmtMin(s.min):'',s.run?'commencée':s.retard?'prévue '+JOURS[s.day]+', pas encore faite':''].filter(Boolean).join(' · ')}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}${pj?`<a class="prot-j" href="forge/#nutrition"><span class="eyebrow">Protéines du jour</span><b>${pj.g} g</b><small>${esc(pj.l)}</small></a>`:''}</article>`);
+  else carres.push(carre('forge','La Forge','forge/',pj?`<a class="prot-c" href="forge/#nutrition" title="Protéines du jour : ${esc(pj.l)}"><b>${pj.g} g</b><small>protéines</small></a>`:''));
   const marche=(`<article class="carte" data-lieu="marche" style="grid-column:span MARCHE"><a class="c-tete" href="marche/">${PL('marche')}<h2>Le Marché</h2></a><form class="ligne" id="f-marche" autocomplete="off"><input id="i-marche" placeholder="Un achat à faire…" aria-label="Ajouter un achat au Marché" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form></article>`);
   const ch=chronoTxt();
   carres.push(carre('mine','La Mine','mine/',`<button class="rond" type="button" id="b-chrono" aria-label="${ch?'Chrono en cours : '+ch:'Démarrer le chrono'}">${ch?esc(ch):P('lecture')}</button>`));

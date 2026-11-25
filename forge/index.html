@@ -856,6 +856,20 @@ body.runbar-on main{padding-bottom:110px}
 .lt-v s{opacity:.55}
 .lt-keep{align-self:center;margin-top:4px;text-decoration:underline;text-underline-offset:3px}
 .ov.run.col .run-body .fq{width:100%}
+/* protéines du jour */
+.prot{gap:6px}
+.prot-g{font-family:var(--f-display);font-weight:700;font-size:20px}
+.prot-g b{font-size:40px;letter-spacing:-.03em}
+.prot-g span{font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--ink-3);margin-left:6px}
+.prot-why{margin:0;font-size:13.5px;color:var(--ink-2)}
+.prot-wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:4px 0}
+.prot-wk span{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;border-radius:12px;background:var(--surface-2);font-family:var(--f-mono);font-size:12px}
+.prot-wk span i{font-style:normal;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.prot-wk span.l-lourd{box-shadow:inset 0 -3px 0 var(--ph-force)}
+.prot-wk span.l-moyen{box-shadow:inset 0 -3px 0 var(--ph-specifique)}
+.prot-wk span.l-leger,.prot-wk span.l-recup{box-shadow:inset 0 -3px 0 var(--anth)}
+.prot-wk span.on{background:var(--accent);color:var(--on-acc)}
+.prot-wk span.on i{color:rgba(26,23,20,.7)}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
@@ -3109,10 +3123,47 @@ function drawCharts(){
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(drawCharts, 150); });
 
 /* ---------- views: nutrition ---------- */
+/* ---------- protéines du jour (25.11) ----------
+   Le besoin suit les entraînements prévus (jour placé, logs.sessions.<id>.day) et faits (logs.sessions.<id>.date) :
+   séance lourde (force, maintien, hypertrophie, puissance, contraste) 2,0 g/kg ; séance moyenne (parkour, vitesse,
+   plyo, VO2max, tests) 1,8 ; légère (endurance, mobilité) 1,6 ; repos 1,5, mais 1,7 le lendemain d'une séance lourde
+   (la récupération continue). Poids : le dernier noté dans le bilan de la semaine, sinon 80 kg. Arrondi à 5 g. */
+const PROT_F = { lourd: 2.0, moyen: 1.8, leger: 1.6, repos: 1.5, recup: 1.7 };
+function protLevel(wk, s){ const t = lightType(wk, s);
+  return ["force", "maintien", "hypertrophie", "puissance", "contraste"].includes(t) ? "lourd" : ["endurance", "mobilite"].includes(t) ? "leger" : "moyen"; }
+function protDays(wk){
+  const w = weekById(wk); if (!w) return []; const log = S.data.logs[wk] || {}; const bw = bwAt(wk); const rank = { repos: 0, leger: 1, moyen: 2, lourd: 3 };
+  const days = [0,1,2,3,4,5,6].map(i => ({ d: ds(addDays(w.mon, i)), lvl: "repos", ss: [] }));
+  planOf(wk).sessions.forEach(x => { const st = (log.sessions && log.sessions[x.id]) || {};
+    const i = st.done && st.date ? days.findIndex(y => y.d === st.date) : typeof st.day === "number" ? st.day : -1;
+    if (i < 0 || !days[i] || (x.optional && !st.done)) return; const l = protLevel(wk, x);
+    days[i].ss.push(x.short || x.title || ""); if (rank[l] > rank[days[i].lvl]) days[i].lvl = l; });
+  /* lendemain d'une séance lourde : jour de repos remonté (le dimanche regarde le samedi, le lundi la semaine d'avant) */
+  const prevLvl = i => { if (i > 0) return days[i - 1].lvl; const pw = isoWeekId(addDays(w.mon, -7)); const pd0 = protDaysRaw(pw); return pd0 ? pd0 : "repos"; };
+  return days.map((x, i) => { const recup = x.lvl === "repos" && prevLvl(i) === "lourd"; const f = recup ? PROT_F.recup : PROT_F[x.lvl];
+    const why = x.lvl === "repos" ? (recup ? "repos, lendemain de séance lourde" : "repos") : x.ss.join(" + ");
+    return { d: x.d, lvl: recup ? "recup" : x.lvl, f, g: Math.round(bw * f / 5) * 5, why, bw }; });
+}
+/* niveau du dimanche de la semaine d'avant, sans récursion */
+function protDaysRaw(wk){ const w = weekById(wk); if (!w) return null; const log = S.data.logs[wk] || {}; const sun = ds(addDays(w.mon, 6)); let lvl = "repos";
+  planOf(wk).sessions.forEach(x => { const st = (log.sessions && log.sessions[x.id]) || {}; const on = st.done ? st.date === sun : st.day === 6; if (on && !(x.optional && !st.done) && protLevel(wk, x) === "lourd") lvl = "lourd"; });
+  return lvl; }
+const PROT_L = { lourd: "Jour lourd", moyen: "Jour d'entraînement", leger: "Jour léger", recup: "Récupération", repos: "Repos" };
+function protPanel(){
+  const wk = currentWeekId(); const days = protDays(wk); const t = ds(todayUTC()); const d = days.find(x => x.d === t); if (!d) return "";
+  const avg = Math.round(days.reduce((a, x) => a + x.g, 0) / 7 / 5) * 5; const parts = d.g >= 150 ? 4 : 3;
+  const anyDay = planOf(wk).sessions.some(x => { const st = ((S.data.logs[wk] || {}).sessions || {})[x.id] || {}; return typeof st.day === "number" || st.done; });
+  return `<section class="panel prot"><div class="between"><span class="eyebrow">Protéines aujourd'hui</span><span class="muted" style="font-size:12.5px">${fmtNum(d.bw, 1)} kg</span></div>
+    <div class="prot-g"><b>${d.g}</b> g <span>${esc(PROT_L[d.lvl])} · ${fmtNum(d.f, 1)} g/kg</span></div>
+    <p class="prot-why">${esc(d.why.charAt(0).toUpperCase() + d.why.slice(1))} · en ${parts} prises d'environ ${Math.round(d.g / parts / 5) * 5} g</p>
+    <div class="prot-wk">${days.map((x, i) => `<span class="${x.d === t ? "on" : ""} l-${x.lvl}" title="${esc(x.why)}"><i>${DAYS[i].slice(0, 2)}</i><b>${x.g}</b></span>`).join("")}</div>
+    <p class="muted" style="margin:0;font-size:12.5px">Moyenne de la semaine ≈ ${avg} g par jour. Lourd 2,0 g/kg · entraînement 1,8 · léger 1,6 · lendemain de lourd 1,7 · repos 1,5.${anyDay ? "" : " Les séances ne sont pas encore placées sur des jours : chaque jour compte comme repos tant qu'une séance n'est ni placée ni faite."}</p>
+  </section>`;
+}
 function vNutrition(){
   const c = S.data.content.nutrition;
   if (!c || !c.sections) return `<section><div class="eyebrow">Nutrition</div><h2>Principes</h2></section><div class="empty"><strong>Les principes nutritionnels arrivent ici.</strong> Claude les ajoutera dans la base ; ils s'afficheront sans changer la page.</div>`;
-  return `<section style="display:flex;flex-direction:column;gap:8px"><div class="eyebrow">Nutrition</div><h2>${esc(c.title || "Principes")}</h2>${c.intro ? `<p class="lead">${esc(c.intro)}</p>` : ""}</section>
+  return `${protPanel()}<section style="display:flex;flex-direction:column;gap:8px"><div class="eyebrow">Nutrition</div><h2>${esc(c.title || "Principes")}</h2>${c.intro ? `<p class="lead">${esc(c.intro)}</p>` : ""}</section>
   <section class="nut">${c.sections.map(s => `<div class="panel"><h3>${esc(s.title)}</h3>${s.text ? `<p style="margin:0;color:var(--ink-2)">${esc(s.text)}</p>` : ""}<ul>${(s.points||[]).map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>`).join("")}</section>
   ${c.updated ? `<div class="muted" style="font-size:12.5px">Mis à jour le ${fmtLong(c.updated)}</div>` : ""}`;
 }
@@ -3435,9 +3486,10 @@ function publierLocus(){
     [w0, w1].forEach(wk => { const log = S.data.logs[wk] || {};
       semaines[wk] = planOf(wk).sessions.map(s => { const st = (log.sessions && log.sessions[s.id]) || {};
         return { id:s.id, t:s.title || "", day:st.day == null ? null : st.day, done:!!st.done, run:!!(st.run && !st.done), min:s.min || null, opt:!!s.optional }; }); });
-    const sig = canon(semaines), cle = "forge-locus-" + UID; const data = { semaines, le:new Date().toISOString() };
+    const prot = {}; [w0, w1].forEach(wk => protDays(wk).forEach(x => { prot[x.d] = { g: x.g, l: PROT_L[x.lvl], why: x.why }; }));
+    const sig = canon({ semaines, prot }), cle = "forge-locus-" + UID; const data = { semaines, prot, le:new Date().toISOString() };
     let avant = null; try { avant = JSON.parse(localStorage.getItem("locus-forge") || "null"); } catch(e) {}
-    if (!avant || canon(avant.semaines) !== sig) { try { localStorage.setItem("locus-forge", JSON.stringify(data)); } catch(e) {} }
+    if (!avant || canon({ semaines: avant.semaines, prot: avant.prot }) !== sig) { try { localStorage.setItem("locus-forge", JSON.stringify(data)); } catch(e) {} }
     if (!sb || !navigator.onLine || localStorage.getItem(cle) === sig) return;
     sb.from(TABLE).upsert({ user_id:UID, key:"locus/semaines", data, deleted:false }, { onConflict:"user_id,key" }).then(({ error }) => { if (!error) try { localStorage.setItem(cle, sig); } catch(e) {} });
   } catch(e) {} }, 1500);
