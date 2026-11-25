@@ -734,7 +734,7 @@ details.more .field{margin-top:10px}
 .adl b{display:block;font-family:var(--title,inherit);font-size:1.15rem}
 .adl.tod b{display:inline-block;background:var(--accent,var(--ink));color:var(--metre,#fff);border-radius:6px;padding:0 5px}
 .ahalf{background:rgba(255,255,255,.5);border-radius:11px;padding:5px;display:flex;flex-direction:column;gap:4px;min-height:48px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.ahalf.busy{background:repeating-linear-gradient(135deg,transparent 0 9px,color-mix(in srgb,var(--hc,#A8916A) 20%,transparent) 9px 10.5px),color-mix(in srgb,var(--hc,#A8916A) 6%,rgba(255,255,255,.5))}
+.ahalf.busy{background:color-mix(in srgb,var(--hc,#A8916A) 16%,#FBF7EE)}
 .aday.we .ahalf{background:rgba(255,255,255,.25)}
 .aday.off .ahalf{background:#F7CFE0}
 .ahalf.tod{box-shadow:inset 0 0 0 2px var(--ink)}
@@ -749,7 +749,7 @@ details.more .field{margin-top:10px}
 .ahalf.cible{box-shadow:inset 0 0 0 3px var(--ink);background:var(--hl,#F2C230)!important}
 .aplx{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;background:#C2452D;color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:800;border:2px solid var(--paper,#fff);z-index:2}
 .alibre{flex:1;display:grid;place-items:center;border:1.5px dashed var(--line);border-radius:9px;color:var(--muted);font-size:.76rem;min-height:34px}
-.lg-busy{background:repeating-linear-gradient(135deg,#efe6d4 0 3px,#b9a27a 3px 6px)!important}
+.lg-busy{background:color-mix(in srgb,#8EC9EE 25%,#FBF7EE)!important;outline:1px solid var(--line)}
 .mois{border:1px solid var(--bd);background:var(--cell);border-radius:16px;padding:6px}
 .mgrid2{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
 .mhd{text-align:center;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
@@ -762,7 +762,7 @@ details.more .field{margin-top:10px}
 .mday[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
 .mh2{flex:1;border-radius:4px;background:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;font-size:.72rem;overflow:hidden;min-height:16px}
 .mh2 small{font-size:.6rem;font-weight:700;margin-left:1px}
-.mh2.busy{background:repeating-linear-gradient(135deg,rgba(255,255,255,.65) 0 3px,color-mix(in srgb,var(--hc,#A8916A) 45%,#fff) 3px 6px)}
+.mh2.busy{background:color-mix(in srgb,var(--hc,#A8916A) 30%,#FBF7EE)}
 .mdet2{margin-top:10px;border:1px solid var(--bd);background:var(--cell);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .mdh{display:flex;justify-content:space-between;align-items:baseline}
 .mdh b{font-size:1rem}
@@ -1312,7 +1312,7 @@ function vPlanning(){
   </div>
   ${planBas()}`;
 }
-function planBas(){ return `<div class="planlegend">${CALS.length?CALS.map(x=>`<span><b style="background:${coulCal(x.id)}"></b>${esc(x.nom)}</span>`).join(''):''}<span><b class="lg-busy"></b>pris dans Proton</span><span><b style="background:#EE9DC0"></b>congés</span></div>
+function planBas(){ return `<div class="planlegend">${CALS.length?CALS.map(x=>`<span><b style="background:${coulCal(x.id)}"></b>${esc(x.nom)}</span>`).join(''):''}<span><b class="lg-busy"></b>pris dans un agenda</span><span><b style="background:#EE9DC0"></b>congés</span></div>
   <p class="note">Touche une demi-journée pour y placer un projet, ou glisse sur plusieurs (au doigt : appuie longuement d'abord). Le numéro de semaine place sur toute la semaine. Glisse un projet vers une autre demi-journée pour le déplacer (au doigt : appuie longuement d'abord) ; appui long sans bouger : une croix pour l'enlever de là.</p>
   <div class="dacts"><button class="btn ghost" data-act="cals">${pic('journal')} Agendas${CALS.length?' ('+CALS.length+')':''}</button><button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés${S.offs.length?' ('+S.offs.length+')':''}</button></div>`; }
 function vMois(seg,tgt){
