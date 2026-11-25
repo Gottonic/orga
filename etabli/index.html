@@ -734,7 +734,7 @@ details.more .field{margin-top:10px}
 .adl b{display:block;font-family:var(--title,inherit);font-size:1.15rem}
 .adl.tod b{display:inline-block;background:var(--accent,var(--ink));color:var(--metre,#fff);border-radius:6px;padding:0 5px}
 .ahalf{background:rgba(255,255,255,.5);border-radius:11px;padding:5px;display:flex;flex-direction:column;gap:4px;min-height:48px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.ahalf.busy{background:repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 6px,rgba(168,145,106,.28) 6px 12px)}
+.ahalf.busy{background:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 6px,color-mix(in srgb,var(--hc,#A8916A) 30%,rgba(255,255,255,.55)) 6px 12px)}
 .aday.we .ahalf{background:rgba(255,255,255,.25)}
 .aday.off .ahalf{background:#F7CFE0}
 .ahalf.tod{box-shadow:inset 0 0 0 2px var(--ink)}
@@ -762,7 +762,7 @@ details.more .field{margin-top:10px}
 .mday[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
 .mh2{flex:1;border-radius:4px;background:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;font-size:.72rem;overflow:hidden;min-height:16px}
 .mh2 small{font-size:.6rem;font-weight:700;margin-left:1px}
-.mh2.busy{background:repeating-linear-gradient(135deg,#efe6d4 0 3px,#c4ad84 3px 6px)}
+.mh2.busy{background:repeating-linear-gradient(135deg,rgba(255,255,255,.65) 0 3px,color-mix(in srgb,var(--hc,#A8916A) 45%,#fff) 3px 6px)}
 .mdet2{margin-top:10px;border:1px solid var(--bd);background:var(--cell);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .mdh{display:flex;justify-content:space-between;align-items:baseline}
 .mdh b{font-size:1rem}
@@ -1299,7 +1299,7 @@ function vPlanning(){
   const evBtn=(e,d)=>{ const i=EVW.indexOf(e), h=e.journee?'':(String(e.debut).slice(0,10)===d?String(e.debut).slice(11,16):''); return `<button class="aev" style="--ec:${coulCal(e.cal)}" data-act="ev" data-i="${i}">${h?`<i>${h}</i>`:''}<span>${esc(e.titre||'(sans titre)')}</span></button>`; };
   const rows=[0,1,2,3,4,5,6].map(j=>{ const d=new Date(m0); d.setDate(m0.getDate()+j); const ds=iso(d), inf=demiInfo(ds);
     return `<div class="aday${inf.we?' we':''}${offOn(ds)?' off':''}"><div class="adl${ds===todayS?' tod':''}">${JR[j]}<b>${d.getDate()}</b></div>${[0,1].map(h=>{ const es=inf.es[h], ps=inf.ps[h], i=j*2+h;
-      return `<div class="ahalf${es.length?' busy':''}${ds===todayS?' tod':''}" data-act="cell" data-d="${ds}" data-i="${i}">${es.map(e=>evBtn(e,ds)).join('')}${ps.map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}" data-i="${i}">${ui.chipX&&ui.chipX.id===p.id&&ui.chipX.i===i?`<span class="aplx" data-act="halfDel" data-id="${p.id}" data-i="${i}" role="button" aria-label="Enlever">✕</span>`:''}<span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!es.length&&!ps.length?`<span class="alibre">libre · +</span>`:''}</div>`; }).join('')}</div>`; }).join('');
+      return `<div class="ahalf${es.length?' busy':''}${ds===todayS?' tod':''}"${es.length?` style="--hc:${coulCal(es[0].cal)}"`:''} data-act="cell" data-d="${ds}" data-i="${i}">${es.map(e=>evBtn(e,ds)).join('')}${ps.map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}" data-i="${i}">${ui.chipX&&ui.chipX.id===p.id&&ui.chipX.i===i?`<span class="aplx" data-act="halfDel" data-id="${p.id}" data-i="${i}" role="button" aria-label="Enlever">✕</span>`:''}<span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!es.length&&!ps.length?`<span class="alibre">libre · +</span>`:''}</div>`; }).join('')}</div>`; }).join('');
   $view.innerHTML=`${seg}<div class="gnav"><button data-act="planM" data-d="${iso(pw)}" aria-label="Semaine précédente">‹ S${wkNum(wkKey(pw))}</button><button class="mid" data-act="planM" data-d="">${isCur?'Cette semaine':'Aujourd\'hui'}</button><button data-act="planM" data-d="${iso(nw)}" aria-label="Semaine suivante">S${wkNum(wkKey(nw))} ›</button></div>
   <div class="aweek" id="gantt">
    <button class="wk wkh${isCur?' cur':''}" data-act="wkPick" data-k="${k}"><b>S${wkNum(k)}</b><span>${fmtD(m0)} – ${fmtD(fin)}</span><span class="${c.all.length>=MAXT?'full':''}">${c.all.length}/${MAXT} projets</span></button>
@@ -1318,7 +1318,7 @@ function vMois(seg,tgt){
   const pm=new Date(m1.getFullYear(),m1.getMonth()-1,1), nm=new Date(m1.getFullYear(),m1.getMonth()+1,1);
   const sel=ui.moisSel&&ui.moisSel.slice(0,7)===iso(m1).slice(0,7)?ui.moisSel:(todayS.slice(0,7)===iso(m1).slice(0,7)?todayS:iso(m1));
   let cells=''; for(let i=0;i<ks.length*7;i++){ const d=new Date(g0); d.setDate(g0.getDate()+i); const ds=iso(d), inf=demiInfo(ds), out=d.getMonth()!==m1.getMonth();
-    const band=h=>{ const ps=inf.ps[h]; if(ps.length) return `<span class="mh2" style="background:${ps[0].color};color:${ink(ps[0].color)}">${ps[0].emoji}${ps.length>1?`<small>+${ps.length-1}</small>`:''}</span>`; return `<span class="mh2${inf.es[h].length?' busy':''}"></span>`; };
+    const band=h=>{ const ps=inf.ps[h]; if(ps.length) return `<span class="mh2" style="background:${ps[0].color};color:${ink(ps[0].color)}">${ps[0].emoji}${ps.length>1?`<small>+${ps.length-1}</small>`:''}</span>`; return `<span class="mh2${inf.es[h].length?' busy':''}"${inf.es[h].length?` style="--hc:${coulCal(inf.es[h][0].cal)}"`:''}></span>`; };
     cells+=`<button class="mday${out?' out':''}${inf.we?' we':''}${offOn(ds)?' off':''}${ds===todayS?' tod':''}" data-act="moisJ" data-d="${ds}" aria-pressed="${ds===sel}"><b>${d.getDate()}</b>${band(0)}${band(1)}</button>`; }
   const inf=demiInfo(sel), k=wkKey(parse(sel)); EVW=evTri(EVS[k]||[]); ui.wkShown=k;
   const i0=((parse(sel).getDay()+6)%7)*2;
