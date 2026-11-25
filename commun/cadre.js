@@ -87,9 +87,7 @@
   function monLocus() {
     const app = Object.keys(VILLAGE).find((a) => document.documentElement.dataset.lieu === a) || Object.keys(VILLAGE).find((a) => location.pathname.includes('/' + a + '/'));
     const p = profil(); if (!app || !p) return;
-    /* la palette choisie colore aussi l'app (25.11) : CSS préparé par commun/profil.js au moment d'enregistrer */
-    try { const a = JSON.parse(localStorage.getItem('orga-auth') || 'null'), t = localStorage.getItem('locus-theme-' + (a && a.user && a.user.id));
-      if (t && !document.getElementById('locus-palette')) { const st = document.createElement('style'); st.id = 'locus-palette'; st.textContent = t; document.head.appendChild(st); } } catch (e) {}
+    /* les couleurs de la palette sont posées par commun/couleurs.js, dans le <head>, avant l'affichage */
     if (p.modules && (p.modules[app] === 0 || p.modules[app] === false) && !/[?&]dans=/.test(location.search)) { location.replace(ICI ? new URL('../', ICI).href : '../'); return; }
     const nom = (p.noms && p.noms[app] && String(p.noms[app]).trim()) || (p.style === 'neutre' ? NEUTRE[app] : '');
     if (!nom || nom === VILLAGE[app]) return;

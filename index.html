@@ -81,6 +81,7 @@ iframe.dans.actif.vu{opacity:1;pointer-events:auto}
 .carte .rondb{width:42px;height:42px}
 .carre{background:var(--page);color:var(--on-page);border-radius:18px;padding:12px 6px;min-height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-decoration:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-page) 10%,transparent)}
 .carre>a{display:flex;flex-direction:column;align-items:center;gap:8px;color:inherit;text-decoration:none}
+.apps>.carre,.apps>.carte{cursor:pointer}
 .carre .plaque{width:30px;height:30px;border-radius:8px}
 .carre .plaque .ic{width:18px;height:18px}
 .carre .nom{font:700 12px/1.2 var(--f-display);letter-spacing:-.02em;text-align:center}
@@ -189,6 +190,7 @@ pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius
 .res mark{background:var(--accent);color:var(--on-acc);border-radius:3px;padding:0 1px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:80;background:var(--on-page);color:var(--on-acc);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px)}
 </style>
+<script src="commun/couleurs.js"></script>
 </head>
 <body>
 <header class="oh"><div class="oh-bar"><span class="oh-orga"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></span><h1 class="oh-nom">Locus</h1><span class="oh-sub" id="date"></span><span class="oh-sp"></span><button class="oh-b" type="button" id="b-chercher" data-chercher aria-label="Chercher dans toutes les apps"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M12 12l5.5 5.5"/></svg></button><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><a class="oh-b" href="reglages/" aria-label="Réglages de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></a></div></header>
@@ -349,10 +351,8 @@ function vAccueil(){
 let PROFIL=null;
 function prof(){ if(!window.LocusProfil) return null; return PROFIL||(PROFIL=LocusProfil.lire(UID)); }
 const profilChoisi=()=>!window.LocusProfil||LocusProfil.existe(UID)||!!B['s:routine']||!!(PB&&PB.liste().length); /* Nicolas (données déjà là) ne voit pas l'accueil de bienvenue */
-function appliquerPalette(p){ let st=document.getElementById('palette'); if(!st){ st=document.createElement('style'); st.id='palette'; document.head.appendChild(st); }
-  const c=window.LocusProfil?LocusProfil.css(p,'.apps')+'\n'+LocusProfil.cssFond(p):''; if(st.textContent!==c) st.textContent=c;
-  /* la barre du téléphone suit l'en-tête (Vivaldi : on corrige le contenu de la balise, sans la remplacer) */
-  const m=document.querySelector('meta[name="theme-color"]'), h=document.querySelector('header'); if(m&&h){ const bg=getComputedStyle(h).backgroundColor; if(bg&&bg!=='rgba(0, 0, 0, 0)') m.content=bg; } }
+/* les couleurs : commun/couleurs.js les pose dans le <head> ; ici seulement quand le profil vient d'arriver de Supabase */
+function appliquerPalette(p){ if(window.LocusCouleurs) LocusCouleurs.poser(p); }
 function render(){ if(!UID) return; if(document.activeElement&&$main.contains(document.activeElement)&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.value) return; vAccueil(); }
 
 /* =============================== La routine du lundi =============================== */
@@ -947,6 +947,9 @@ $main.addEventListener('submit',e=>{ e.preventDefault();
   if(e.target.id==='f-marche'){ const i=document.getElementById('i-marche'), v=i.value.trim(); if(!v){ location.href='marche/'; return; } i.value=''; i.blur(); ouvrirDans('marche','q='+encodeURIComponent(v)); return; } });
 $main.addEventListener('change',e=>{ const el=e.target; if(!el.dataset||!el.dataset.tacheAcc) return; const n=Object.assign({},B['n:'+el.dataset.tacheAcc]); if(!n.id) return;
   if(el.checked){ n.x=true; n.xLe=AUJ(); } else { delete n.x; delete n.xLe; } ecrireB('n:'+n.id,n); if(el.checked) toast('Fait !'); vAccueil(); });
+/* toucher une tuile n'importe où (pas seulement son logo) ouvre l'app (25.11, demande de Nicolas) ; ses boutons et champs gardent leur rôle */
+$main.addEventListener('click',e=>{ const t=e.target.closest('.apps>.carre,.apps>.carte'); if(!t||e.target.closest('a,button,input,select,textarea,label,form,[data-r],[data-ouvrir],[data-drag]')) return;
+  const a=t.querySelector('a.c-tete,:scope>a'); if(a){ e.preventDefault(); a.click(); } });
 $main.addEventListener('click',e=>{ if(e.target.closest('section#b-obj')){ ouvrirObjectifs(); return; } const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
   if(b.id==='b-semaine'){ ouvrirSemaine(); return; }

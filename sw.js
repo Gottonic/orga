@@ -4,7 +4,7 @@ const VERSION = 'orga-2026-11-25-13';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
-  'commun/supabase.js', 'commun/projets.js', 'commun/dossier.js', 'commun/ampoule.js', 'commun/cadre.css', 'commun/cadre.js', 'commun/lieux.css', 'commun/pictos.js', 'commun/emojis.js', 'commun/chercher.js', 'commun/achats.js', 'commun/profil.js', 'reglages/',
+  'commun/supabase.js', 'commun/projets.js', 'commun/dossier.js', 'commun/ampoule.js', 'commun/cadre.css', 'commun/cadre.js', 'commun/lieux.css', 'commun/pictos.js', 'commun/emojis.js', 'commun/chercher.js', 'commun/achats.js', 'commun/profil.js','commun/couleurs.js', 'reglages/',
   'commun/fonts/unbounded-latin-500-normal.woff2', 'commun/fonts/unbounded-latin-700-normal.woff2',
   'commun/fonts/space-grotesk-latin-400-normal.woff2', 'commun/fonts/space-grotesk-latin-500-normal.woff2', 'commun/fonts/space-grotesk-latin-600-normal.woff2', 'commun/fonts/space-grotesk-latin-700-normal.woff2',
   'commun/fonts/atkinson-hyperlegible-latin-400-normal.woff2', 'commun/fonts/atkinson-hyperlegible-latin-700-normal.woff2',

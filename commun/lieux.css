@@ -77,6 +77,21 @@
   --good:#276B43;--bad:#B3261E;--warn:#8A5A00;
   --dorure:#9A6E28;--bordeaux:#7A2E3A}
 
+/* ---------- mélanges communs (25.11) ----------
+   Tirés des jetons ci-dessus, donc justes avec n'importe quelle palette (commun/couleurs.js), claire ou sombre.
+   Règle pour les apps : pas de couleur d'interface en dur. Un fond teinté = la teinte mêlée à --surface ;
+   un texte teinté = la teinte mêlée à --ink ; un texte sur fond --ink ou --accent-ink = --on-ink. */
+[data-lieu]{
+  --creux:color-mix(in srgb,var(--page) 82%,#000);            /* fond en creux : barre d'onglets, interrupteurs */
+  --line-2:color-mix(in srgb,var(--line) 55%,var(--ink));     /* filet plus marqué (bords des champs) */
+  --good-soft:color-mix(in srgb,var(--good) 18%,var(--surface));
+  --bad-soft:color-mix(in srgb,var(--bad) 16%,var(--surface));
+  --warn-soft:color-mix(in srgb,var(--warn) 18%,var(--surface));
+  --hl:color-mix(in srgb,#F2C230 40%,var(--surface));          /* surligné : sélection, « la prochaine » */
+  --on-ink:var(--surface);                                      /* texte sur un fond --ink ou --accent-ink */
+  --surface-3:color-mix(in srgb,var(--surface) 35%,#fff);      /* carte posée sur une carte, champs (palettes sombres : commun/couleurs.js) */
+}
+
 /* ---------- base commune (seulement sur les pages qui ont data-lieu) ---------- */
 html[data-lieu]{background:var(--page)}
 html[data-lieu] body{background:var(--page);color:var(--on-page);font-family:var(--f-body);letter-spacing:.005em;-webkit-font-smoothing:antialiased}
