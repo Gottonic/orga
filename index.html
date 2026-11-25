@@ -35,6 +35,7 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .obj b{font-weight:600}
 .obj span{font-size:13.5px}
 .obj .conseil{font-style:italic}
+.obj-vide{border:1.5px dashed color-mix(in srgb,var(--accent) 70%,transparent);background:none;color:var(--ink-2,var(--ink));border-radius:16px;padding:12px 16px;font:600 14px var(--f-body);text-align:left;cursor:pointer}
 /* une app au premier plan sur l'accueil (cadre transparent, commun/cadre.js) */
 .dans-fond{position:fixed;inset:0;z-index:69;background:rgba(20,16,28,.45);display:grid;place-items:center}
 .dans-fond.vu{background:transparent;pointer-events:none}
@@ -309,7 +310,9 @@ function vAccueil(){
   let h='';
   if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, boîtes, Banque, vide-tête, tâches, semaine, puis Claude</small></span>${P('suivant')}</button>`;
   h+=`<form class="ligne" id="f-vide" autocomplete="off"><button type="button" class="sem-n" id="b-semaine" title="Voir la semaine ${wkNum(CUR())}" aria-label="Voir le planning de la semaine ${wkNum(CUR())}">${wkNum(CUR())}</button><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
-  if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" aria-label="Objectifs de la semaine"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
+  /* les objectifs se notent / se corrigent ici (25.11 : avant, il fallait les écrire dans le journal de la Bibliothèque) */
+  if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" id="b-obj" role="button" tabindex="0" style="cursor:pointer" aria-label="Objectifs de la semaine, toucher pour modifier"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
+  else h+=`<button type="button" class="obj-vide" id="b-obj">+ Noter les objectifs de la semaine ${wkNum(CUR())}</button>`;
   const grandes=[], carres=[];
   if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
   else carres.push(carre('etabli','L’Établi','etabli/'));
@@ -342,7 +345,22 @@ const CLES=['humeur','journal','boites','banque','report','vide','deuxmin','agen
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
 /* =============================== La semaine en cours (toucher le numéro de semaine, demande de Nicolas, 23.11) ===============================
    Tout le planning : projets sur la semaine entière, puis jour par jour en heures (Proton, projets, séances, tâches). Un projet s'ouvre au premier plan. */
-let VUE_SEM=false, VUE_MODIF=false;
+let VUE_SEM=false, VUE_MODIF=false, VUE_OBJ=false;
+/* ----- Les objectifs de la semaine (25.11) : trois lignes du journal de la semaine (j:<semaine>, Bibliothèque),
+   « Objectif principal : … », « Objectif secondaire : … », « Conseil : … ». Coller le bloc de Claude dans un champ le répartit. */
+const OBJ_L=[['principal','Objectif principal',/^objectif principal\s*:\s*/i],['secondaire','Objectif secondaire',/^objectif secondaire\s*:\s*/i],['conseil','Conseil',/^conseil(?: perso)?\s*:\s*/i]];
+function ouvrirObjectifs(){ VUE_OBJ=true; VUE_SEM=false; $plein.dataset.e=''; $plein.hidden=false; document.body.style.overflow='hidden'; vObjectifs(); }
+function vObjectifs(){ const N=CUR(), o=objectifs(N);
+  const champ=([k,l])=>`<label class="eyebrow" for="o-${k}" style="margin-top:6px">${l}</label><textarea class="libre" id="o-${k}" data-obj="${k}" rows="2" style="min-height:64px" placeholder="${k==='conseil'?'Un conseil à toi-même pour la semaine':'…'}">${esc(o[k]||'')}</textarea>`;
+  $plein.innerHTML=cadrePlein('Objectifs · S'+wkNum(N),wkLabel(N).replace(/^S\d+ \(|\)$/g,''),`<p class="note">Tu peux coller tout le bloc de Claude dans un des champs (« Objectif principal : … », « Objectif secondaire : … », « Conseil : … ») : il se répartit tout seul. Ils vont dans le journal de la semaine de la Bibliothèque.</p>`+OBJ_L.map(champ).join(''),
+    `<button class="sec" type="button" data-r="fermer">Annuler</button><button class="pri" type="button" data-r="objOk">Enregistrer</button>`); }
+function repartirObjectifs(el){ const t=el.value; if(!/\n/.test(t)||!OBJ_L.some(([,,re])=>new RegExp(re.source,'im').test(t.split('\n').slice(1).join('\n')))) return;
+  const v={}; t.split(/\n+/).map(x=>x.replace(/^[\s•*\-–]+/,'').trim()).forEach(x=>{ for(const [k,,re] of OBJ_L) if(re.test(x)){ v[k]=x.replace(re,'').trim(); return; } });
+  OBJ_L.forEach(([k])=>{ const f=document.getElementById('o-'+k); if(f&&v[k]!=null) f.value=v[k]; }); }
+function ecrireObjectifs(N,v){ const L=lignes('j:'+N); let o=L.length?Math.min(...L.map(x=>x.o||0)):1;
+  OBJ_L.slice().reverse().forEach(([k,l,re])=>{ const t=(v[k]||'').replace(/\s+/g,' ').trim(), n=L.find(x=>re.test(String(x.t||'')));
+    if(n){ if(!t) ecrireB('n:'+n.id,null); else if(n.t!==l+' : '+t) ecrireB('n:'+n.id,Object.assign({},n,{t:l+' : '+t})); }
+    else if(t){ const x={id:uid(),p:'j:'+N,o:--o,t:l+' : '+t,cree:AUJ()}; ecrireB('n:'+x.id,x); } }); }
 function ouvrirSemaine(){ VUE_SEM=true; VUE_MODIF=false; $plein.dataset.e=''; $plein.hidden=false; document.body.style.overflow='hidden'; vSemaineVue();
   const P0=protonLocal(); if(!P0||P0.sem!==CUR()||Date.now()-Date.parse(P0.le||0)>5*60000) chargerProton(CUR()); }
 function vSemaineVue(){ const N=CUR(), P0=protonLocal(), y=document.getElementById('corps')?document.getElementById('corps').scrollTop:0;
@@ -360,7 +378,7 @@ function vSemaineVue(){ const N=CUR(), P0=protonLocal(), y=document.getElementBy
   $plein.innerHTML=cadrePlein('Semaine '+wkNum(N)+(VUE_MODIF?' · modifier':''),wkLabel(N).replace(/^S\d+ \(|\)$/g,''),c,VUE_MODIF?`<button class="pri" type="button" data-r="semFini">Terminer</button>`:`<button class="sec" type="button" data-r="semModif">Modifier</button><button class="pri" type="button" data-r="fermer">Fermer</button>`);
   if(y) document.getElementById('corps').scrollTop=y; }
 function ouvrirRoutine(){ VUE_SEM=false; protonLocal(); chargerProton(semaineRoutine()); NOTES_T=0; R.plusieurs=false; R.etape=1; R.sel=null; R.note=null; R.tri=null; R.coche=new Set(); $plein.hidden=false; document.body.style.overflow='hidden'; vRoutine(); }
-function fermerPlein(){ VUE_SEM=false; VUE_MODIF=false; $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
+function fermerPlein(){ VUE_SEM=false; VUE_MODIF=false; VUE_OBJ=false; $plein.hidden=true; $plein.innerHTML=''; document.body.style.overflow=''; render(); }
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
 function vRoutine(){
   const N=semaineRoutine(), Pr=semainePrec(N), e=R.etape;
@@ -671,7 +689,7 @@ async function chargerProton(N){ if(PROTON_EN||!sb||!UID) return; PROTON_EN=true
     else st.ev=[];
   }catch(e){ st.err=(e&&e.message)||String(e); }
   PROTON=st; try{ localStorage.setItem('locus-proton-'+UID,JSON.stringify(st)); }catch(e){} PROTON_EN=false;
-  if(!$plein.hidden) (VUE_SEM?vSemaineVue():vRoutine()); }
+  if(!$plein.hidden&&!VUE_OBJ) (VUE_SEM?vSemaineVue():vRoutine()); }
 const coulCal=id=>{ const P0=protonLocal()||{}, i=(P0.cals||[]).findIndex(c=>c.id===id), c=i>=0?P0.cals[i]:null; return (c&&c.couleur)||COUL_CAL[Math.max(0,i)%COUL_CAL.length]; };
 /* les évènements Proton d'un jour (AAAA-MM-JJ), journées entières d'abord */
 function evDuJour(d){ const P0=protonLocal(); if(!P0||!P0.ev) return [];
@@ -744,6 +762,7 @@ function garderNote(){ const t=document.getElementById('i-retenu'); if(!t) retur
 
 $plein.addEventListener('click',e=>{
   const ov=e.target.closest('[data-ouvrir]'); if(ov){ ouvrirDans('etabli','','p:'+ov.dataset.ouvrir); return; }
+  if(e.target.closest('[data-r="objOk"]')){ const v={}; OBJ_L.forEach(([k])=>{ const f=document.getElementById('o-'+k); v[k]=f?f.value:''; }); ecrireObjectifs(CUR(),v); fermerPlein(); toast('Objectifs notés'); return; }
   if(e.target.closest('[data-r="semModif"]')){ VUE_MODIF=true; vSemaineVue(); document.getElementById('corps').scrollTop=0; return; }
   if(e.target.closest('[data-r="semFini"]')){ VUE_MODIF=false; vSemaineVue(); return; }
   const el=e.target.closest('[data-r]'); if(!el||el.tagName==='SELECT') return; const a=el.dataset.r, N=semaineRoutine(), Pr=semainePrec(N);
@@ -876,7 +895,7 @@ $plein.addEventListener('submit',e=>{ if(e.target.id!=='f-report') return; e.pre
 $plein.addEventListener('keydown',e=>{ const el=e.target; if(el.dataset&&el.dataset.titre&&e.key==='Enter'){ e.preventDefault(); el.blur(); } });
 $plein.addEventListener('focusout',e=>{ const el=e.target; if(!el.dataset||!el.dataset.titre) return; const n=Object.assign({},B['n:'+el.dataset.titre]); if(!n.id) return;
   const v=el.textContent.replace(/\s+/g,' ').trim(); if(!v){ el.textContent=n.t||''; return; } if(v!==n.t){ n.t=v; ecrireB('n:'+n.id,n); } });
-$plein.addEventListener('input',e=>{ const el=e.target; if(el.dataset&&el.dataset.r==='notesQ') notesChercher(el); });
+$plein.addEventListener('input',e=>{ const el=e.target; if(el.dataset&&el.dataset.obj){ repartirObjectifs(el); return; } if(el.dataset&&el.dataset.r==='notesQ') notesChercher(el); });
 $plein.addEventListener('change',e=>{ const el=e.target;
   if(el.dataset.boite){ const N=semaineRoutine(), r=Object.assign({},B['s:routine']||{}), bx=Object.assign({},r.boites||{}), L=new Set(bx[N]||[]); if(el.checked) L.add(el.dataset.boite); else L.delete(el.dataset.boite);
     bx[N]=[...L]; Object.keys(bx).sort().slice(0,-6).forEach(x=>delete bx[x]); r.boites=bx; ecrireB('s:routine',r); return; }
@@ -904,9 +923,10 @@ $main.addEventListener('submit',e=>{ e.preventDefault();
   if(e.target.id==='f-marche'){ const i=document.getElementById('i-marche'), v=i.value.trim(); if(!v){ location.href='marche/'; return; } i.value=''; i.blur(); ouvrirDans('marche','q='+encodeURIComponent(v)); return; } });
 $main.addEventListener('change',e=>{ const el=e.target; if(!el.dataset||!el.dataset.tacheAcc) return; const n=Object.assign({},B['n:'+el.dataset.tacheAcc]); if(!n.id) return;
   if(el.checked){ n.x=true; n.xLe=AUJ(); } else { delete n.x; delete n.xLe; } ecrireB('n:'+n.id,n); if(el.checked) toast('Fait !'); vAccueil(); });
-$main.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
+$main.addEventListener('click',e=>{ if(e.target.closest('section#b-obj')){ ouvrirObjectifs(); return; } const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
   if(b.id==='b-semaine'){ ouvrirSemaine(); return; }
+  if(b.id==='b-obj'){ ouvrirObjectifs(); return; }
   if(b.id==='b-chrono'){ ouvrirDans('mine','act=chrono'); return; }
   if(b.id==='b-saisie'){ ouvrirDans('banque','act=saisie'); return; }
   if(b.dataset.forge){ ouvrirDans('forge','seance='+encodeURIComponent(b.dataset.forge)+'&wk='+CUR()+'&plein=1'); return; } });
@@ -936,7 +956,7 @@ function ouvrirDans(app,params,hash){
 function fermerDans(){ if(!$dans) return; const f=$dans; $dans=null; clearTimeout(dansT);
   if(Object.values(CH).some(c=>c.f===f)) f.classList.remove('vu','actif'); else f.remove();
   if($fond) $fond.remove(); if($x) $x.remove(); $fond=$x=null; if($plein.hidden) document.body.style.overflow='';
-  Promise.all([tirer(),PB?PB.tirer():null]).then(()=>{ render(); if(!$plein.hidden&&VUE_SEM) vSemaineVue(); else if(!$plein.hidden&&$plein.dataset.e) vRoutine(); }); }
+  Promise.all([tirer(),PB?PB.tirer():null]).then(()=>{ render(); if(VUE_OBJ) return; if(!$plein.hidden&&VUE_SEM) vSemaineVue(); else if(!$plein.hidden&&$plein.dataset.e) vRoutine(); }); }
 addEventListener('message',e=>{ const d=e.data; if(e.origin!==location.origin||!d||d.locus!==1) return;
   const c=Object.values(CH).find(x=>x.f.contentWindow===e.source), actif=$dans&&e.source===$dans.contentWindow;
   if(!c&&!actif) return;
