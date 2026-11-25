@@ -2199,9 +2199,9 @@ document.addEventListener('pointermove',e=>{ if(!drag) return; e.preventDefault(
   drag.fin=false; if(over){ const f=(y-r.top)/r.height; if(f>.25&&f<.75){ dragCible(over); return; } dragCible(null);
     if(f<=.25){ if(D.nextElementSibling!==over){ ul.insertBefore(D,over); drag.moved=true; } } else { const nx=over.nextElementSibling; if(nx!==D){ ul.insertBefore(D,nx); drag.moved=true; } } }
   else { const q=D.getBoundingClientRect(); dragCible(null); if(y<q.top||y>=q.bottom){ const items=[...ul.children].filter(it=>it!==D&&!it.classList.contains('suit')&&it.dataset.i); if(items.length){ if(y<items[0].getBoundingClientRect().top&&D.nextElementSibling!==items[0]){ ul.insertBefore(D,items[0]); drag.moved=true; } else if(y>=Math.max(items[items.length-1].getBoundingClientRect().bottom,q.bottom)){ drag.fin=true; drag.moved=true; if(ul.lastElementChild!==D) ul.appendChild(D); } } } }
-  /* entre deux tâches : le niveau de celle d'en dessous (ou d'au-dessus en bas de liste) ; décaler vers la droite / la gauche l'ajuste */
+  /* entre deux tâches : le niveau de celle d'en dessous (premier niveau sous la liste) */
   const pv=dragVis(D,'previousElementSibling'), nx=dragVis(D,'nextElementSibling'), hi=pv?(+pv.dataset.n||0)+1:0, lo=Math.min(hi,nx?(+nx.dataset.n||0):0), base=drag.fin?0:!drag.moved?drag.n0:nx?lo:(pv?(+pv.dataset.n||0):0);
-  const lv=Math.max(lo,Math.min(hi,base+Math.round((e.clientX-drag.x0)/40))); if(lv!==drag.lvl){ drag.lvl=lv; D.style.setProperty('--dn',lv); } },{passive:false});
+  const lv=Math.max(lo,Math.min(hi,base)); if(lv!==drag.lvl){ drag.lvl=lv; D.style.setProperty('--dn',lv); } },{passive:false});
 const endDrag=()=>{ if(!drag) return; const {li,pid,suit,lvl,n0,cible}=drag; if(cible) cible.classList.remove('cible'); drag=null; li.classList.remove('dragging','dedans'); li.removeAttribute('data-suit'); li.style.removeProperty('--dn'); (suit||[]).forEach(x=>x.classList.remove('suit')); const p=H(pid); if(!p) return;
   const L=p.tasks, i0=+li.dataset.i, i1=Projets.finBranche(L,i0), block=L.slice(i0,i1), rest=L.slice(0,i0).concat(L.slice(i1));
   let pos, dl;
