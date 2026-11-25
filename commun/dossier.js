@@ -6,7 +6,10 @@
 
    Rangement :  Projets/<domaine>/<projet>/…   À trier/   Archives/<année>/<projet>/
    Une fiche : { id, chemin (dossier, depuis la racine), nom, taille, modif (ms), type, projet, etat: 'ici' | 'transit',
-                 transit (chemin dans le stockage), vers (dossier où le déplacer), le } */
+                 transit (chemin dans le stockage), vers (dossier où le déplacer), le,
+                 garder (souhait : garder une copie consultable partout), garde (chemin de cette copie, <uid>/garde/<id>),
+                 garderJusqua (AAAA-MM-JJ : la copie part après, ex. un mois après l'archivage), renommer (nouveau nom demandé) }
+   (25.11, demande de Nicolas : garder sur la fiche, renommer, consulter ; la copie en ligne disparaît un mois après l'archivage) */
 (function () {
   'use strict';
   const TRANSIT = 'transit', TABLE = 'fichiers', A_TRIER = 'À trier', MAX = 50 * 1024 * 1024;
@@ -125,21 +128,43 @@
         try { const { data, error } = await sb.storage.from(TRANSIT).download(f.transit); if (error) throw error;
           const r = await ecrire(f.chemin, f.nom, data);
           if (r.taille !== data.size) throw new Error('taille différente après écriture');
-          await sb.storage.from(TRANSIT).remove([f.transit]);
-          const g = Object.assign({}, f, { nom: r.nom, taille: r.taille, modif: r.modif, etat: 'ici', id: idDe(f.chemin, r.nom) }); delete g.transit;
+          let garde = null;
+          if (f.garder) { const dest = uid + '/garde/' + idDe(f.chemin, r.nom); const { error: em } = await sb.storage.from(TRANSIT).move(f.transit, dest); garde = em ? f.transit : dest; }
+          else await sb.storage.from(TRANSIT).remove([f.transit]);
+          const g = Object.assign({}, f, { nom: r.nom, taille: r.taille, modif: r.modif, etat: 'ici', id: idDe(f.chemin, r.nom) }); delete g.transit; if (garde) g.garde = garde;
           if (g.id !== f.id) fb.oublier(f.id); fb.ecrire(g); B.ranges++;
         } catch (e) { B.erreurs.push(f.nom + ' : ' + ((e && e.message) || e)); } }
       for (const f of fb.liste().filter((x) => x.etat === 'ici' && x.vers && x.vers !== x.chemin)) {
         try { const fi = await lire(f.chemin, f.nom), r = await ecrire(f.vers, f.nom, fi); await effacer(f.chemin, f.nom);
           const g = Object.assign({}, f, { chemin: f.vers, nom: r.nom, id: idDe(f.vers, r.nom) }); delete g.vers; fb.oublier(f.id); fb.ecrire(g); B.deplaces++;
         } catch (e) { B.erreurs.push(f.nom + ' : ' + ((e && e.message) || e)); } }
+      for (const f of fb.liste().filter((x) => x.etat === 'ici' && x.renommer && x.renommer !== x.nom && !x.vers)) {
+        try { const fi = await lire(f.chemin, f.nom), r = await ecrire(f.chemin, f.renommer, fi); await effacer(f.chemin, f.nom);
+          const g = Object.assign({}, f, { nom: r.nom, id: idDe(f.chemin, r.nom) }); delete g.renommer; fb.oublier(f.id); fb.ecrire(g); B.renommes = (B.renommes || 0) + 1;
+        } catch (e) { B.erreurs.push(f.nom + ' : ' + ((e && e.message) || e)); } }
+      if (sb && navigator.onLine) { const auj = new Date().toISOString().slice(0, 10);
+        for (const f of fb.liste().filter((x) => x.etat === 'ici' && (x.garder || x.garde))) {
+          const fini = f.garderJusqua && f.garderJusqua < auj;
+          try {
+            if (f.garde && (!f.garder || fini)) { await sb.storage.from(TRANSIT).remove([f.garde]); const g = Object.assign({}, f, { garder: false }); delete g.garde; delete g.garderJusqua; fb.ecrire(g); }
+            else if (f.garder && !f.garde && !fini) { const fi = await lire(f.chemin, f.nom), dest = uid + '/garde/' + f.id;
+              const { error } = await sb.storage.from(TRANSIT).upload(dest, fi, { upsert: true, contentType: fi.type || 'application/octet-stream' }); if (error) throw error;
+              fb.ecrire(Object.assign({}, f, { garde: dest })); }
+          } catch (e) { B.erreurs.push(f.nom + ' : ' + ((e && e.message) || e)); } } }
       for (const ch of [...new Set(dossiers || [])]) {
         const L = await lister(ch); if (L === null) continue; const vus = new Set();
         for (const x of L) { const id = idDe(x.chemin, x.nom); vus.add(id); const old = fb.get(id);
           if (!old || old.taille !== x.taille || old.modif !== x.modif || old.etat !== 'ici') fb.ecrire(Object.assign({ projet: old ? old.projet : null }, old || {}, x, { id, etat: 'ici', le: (old && old.le) || new Date().toISOString() })); B.vus++; }
-        dans(fb, ch).forEach((f) => { if (f.etat === 'ici' && !f.vers && !vus.has(f.id)) fb.oublier(f.id); }); }
+        dans(fb, ch).forEach((f) => { if (f.etat === 'ici' && !f.vers && !f.renommer && !vus.has(f.id)) { if (f.garde && sb) sb.storage.from(TRANSIT).remove([f.garde]).catch(() => {}); fb.oublier(f.id); } }); }
     } finally { enCours = false; }
     return B; }
 
-  window.Dossier = { A_TRIER, MAX, possible, racine, etat, autoriser, choisir, utiliser, propre, cheminProjet, cheminArchive, idDe, dossier, existe, lister, ecrire, lire, effacer, deplacerDossier, base, dans, envoyer, synchro };
+  /* le contenu d'un fichier, où qu'on soit : sur l'ordinateur, sinon sa copie en ligne (ou le transit) */
+  async function contenu(sb, f) {
+    if (f.etat === 'ici' && (await etat()) === 'granted') { try { return await lire(f.chemin, f.nom); } catch (e) {} }
+    const path = f.etat === 'transit' ? f.transit : f.garde; if (!path || !sb) return null;
+    const { data, error } = await sb.storage.from(TRANSIT).download(path); if (error) throw error; return data; }
+  /* renommer : tout de suite s'il est encore en route ; sinon l'ordinateur le fait à sa prochaine synchro */
+  function renommer(fb, f, nom) { nom = propre(nom); if (!nom || nom === f.nom) return; if (f.etat === 'transit') fb.ecrire(Object.assign({}, f, { nom })); else fb.ecrire(Object.assign({}, f, { renommer: nom })); }
+  window.Dossier = { contenu, renommer,  A_TRIER, MAX, possible, racine, etat, autoriser, choisir, utiliser, propre, cheminProjet, cheminArchive, idDe, dossier, existe, lister, ecrire, lire, effacer, deplacerDossier, base, dans, envoyer, synchro };
 })();

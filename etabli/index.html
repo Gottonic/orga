@@ -334,6 +334,13 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .files{list-style:none;margin:0;padding:0;border:1px solid var(--line);background:var(--cell)}
 .files li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--line)}
 .files li:first-child{border-top:0}
+.files .fg{color:var(--muted);font-size:.85em}
+.fprev{border:1px solid var(--line);border-radius:12px;background:var(--cell);min-height:80px;display:grid;place-items:center;overflow:hidden}
+.fprev img{display:block;max-width:100%;max-height:50vh;object-fit:contain}
+.fkeep{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--cell);cursor:pointer}
+.fkeep input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--ink);flex:none}
+.fkeep span{display:flex;flex-direction:column;gap:2px}
+.fkeep small{color:var(--muted);font-size:.82rem}
 .files .fn{flex:1;min-width:0;border:0;background:none;text-align:left;padding:0;font-weight:700;overflow-wrap:anywhere}
 .files .fm{font-family:var(--mono);font-size:.72rem;color:var(--muted);white-space:nowrap}
 .files select{max-width:46%;padding:4px 6px;border:1px solid var(--bd);background:var(--cell);font-size:.82rem}
@@ -731,7 +738,11 @@ details.more .field{margin-top:10px}
 .aev i{font-style:normal;font-family:var(--mono);font-size:.68rem;opacity:.8;flex:none}
 .achip{position:relative;display:flex;gap:4px;align-items:flex-start;border:0;border-radius:8px;background:var(--pc);color:var(--pt);font-size:.8rem;font-weight:650;line-height:1.22;padding:4px 7px;text-align:left;overflow-wrap:anywhere;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .achip .ae{flex:none}
-.achx{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;background:#C2452D;color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:800;border:2px solid var(--paper,#fff);z-index:2}
+.achip.arme{outline:3px solid var(--ink);outline-offset:1px}
+.achip.parti{opacity:.35}
+.aghost{position:fixed;left:0;top:0;z-index:60;pointer-events:none;opacity:.92;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.ahalf.cible{box-shadow:inset 0 0 0 3px var(--ink);background:var(--hl,#F2C230)!important}
+.aplx{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;background:#C2452D;color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:800;border:2px solid var(--paper,#fff);z-index:2}
 .alibre{flex:1;display:grid;place-items:center;border:1.5px dashed var(--line);border-radius:9px;color:var(--muted);font-size:.76rem;min-height:34px}
 .lg-busy{background:repeating-linear-gradient(135deg,#efe6d4 0 3px,#b9a27a 3px 6px)!important}
 .mois{border:1px solid var(--bd);background:var(--cell);border-radius:16px;padding:6px}
@@ -1234,12 +1245,13 @@ function evQuand(e){ const dl=x=>dayLbl(x)+' '+MOIS[parse(x).getMonth()];
   if(e.journee){ const f=new Date(parse(e.fin)); f.setDate(f.getDate()-1); const fi=iso(f); return fi>e.debut?'du '+dl(e.debut)+' au '+dl(fi)+' · journées entières':dl(e.debut)+' · journée entière'; }
   const s0=String(e.debut).slice(0,10), f=String(e.fin||'').slice(0,10), hs=String(e.debut).slice(11,16), hf=String(e.fin||'').slice(11,16);
   return s0===f||!f?dl(s0)+' · '+hs+(hf?' – '+hf:''):dl(s0)+' '+hs+' → '+dl(f)+' '+hf; }
-function evSheet(i){ const e=EVW[i]; if(!e) return; const c=coulCal(e.cal), cal=CALS.find(x=>x.id===e.cal);
+function evSheet(i){ const e=EVW[i]; if(!e) return; const c=coulCal(e.cal), cal=CALS.find(x=>x.id===e.cal); const gdt=/gdt|gamins|talus/i.test((cal&&cal.nom)||'');
   openSheet(`<div class="shead" style="--pc:${c};--pt:${ink(c)}"><h2>${esc(e.titre||'(sans titre)')}<small>${esc(cal?cal.nom:'Calendrier')}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
   <div class="evd"><span class="lbl">Quand</span><b>${esc(evQuand(e))}</b></div>
   ${e.lieu?`<div class="evd"><span class="lbl">Où</span><b>${esc(e.lieu)}</b></div>`:''}
-  <a class="btn" style="text-align:center;text-decoration:none" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar pour le modifier</a>
-  <p class="note" style="margin:0">Ce rendez-vous vient de Proton : il se modifie là-bas, puis apparaît ici au prochain rafraîchissement. Tu peux quand même placer un projet par-dessus.</p></div>`,'ev'); }
+  ${gdt?`<a class="btn" style="text-align:center;text-decoration:none" href="https://gottonic.github.io/gamins-de-talus/#/calendrier" target="_blank" rel="noopener">Ouvrir le calendrier de GDT</a>`:''}
+  <a class="btn${gdt?' ghost':''}" style="text-align:center;text-decoration:none" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar</a>
+  <p class="note" style="margin:0">${gdt?'Ce rendez-vous vient de l\'app GDT : il se modifie là-bas.':'Ce rendez-vous vient de Proton : il se modifie là-bas.'} Il apparaît ici au prochain rafraîchissement. Tu peux quand même placer un projet par-dessus.</p></div>`,'ev'); }
 /* Agendas lus (table locus_calendriers, la même que la routine du lundi) : nom, couleur, ajouter, retirer */
 let calMsg='', calDel=null;
 async function calsSheet(){ sheetId=null; ctx=null;
@@ -1282,7 +1294,7 @@ function vPlanning(){
   const evBtn=(e,d)=>{ const i=EVW.indexOf(e), h=e.journee?'':(String(e.debut).slice(0,10)===d?String(e.debut).slice(11,16):''); return `<button class="aev" style="--ec:${coulCal(e.cal)}" data-act="ev" data-i="${i}">${h?`<i>${h}</i>`:''}<span>${esc(e.titre||'(sans titre)')}</span></button>`; };
   const rows=[0,1,2,3,4,5,6].map(j=>{ const d=new Date(m0); d.setDate(m0.getDate()+j); const ds=iso(d), inf=demiInfo(ds);
     return `<div class="aday${inf.we?' we':''}${offOn(ds)?' off':''}"><div class="adl${ds===todayS?' tod':''}">${JR[j]}<b>${d.getDate()}</b></div>${[0,1].map(h=>{ const es=inf.es[h], ps=inf.ps[h], i=j*2+h;
-      return `<div class="ahalf${es.length?' busy':''}${ds===todayS?' tod':''}" data-act="cell" data-d="${ds}" data-i="${i}">${es.map(e=>evBtn(e,ds)).join('')}${ps.map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}" data-i="${i}">${ui.chipX&&ui.chipX.id===p.id&&ui.chipX.i===i?`<span class="achx" data-act="halfDel" data-id="${p.id}" data-i="${i}" role="button" aria-label="Enlever">✕</span>`:''}<span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!es.length&&!ps.length?`<span class="alibre">libre · +</span>`:''}</div>`; }).join('')}</div>`; }).join('');
+      return `<div class="ahalf${es.length?' busy':''}${ds===todayS?' tod':''}" data-act="cell" data-d="${ds}" data-i="${i}">${es.map(e=>evBtn(e,ds)).join('')}${ps.map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}" data-i="${i}">${ui.chipX&&ui.chipX.id===p.id&&ui.chipX.i===i?`<span class="aplx" data-act="halfDel" data-id="${p.id}" data-i="${i}" role="button" aria-label="Enlever">✕</span>`:''}<span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!es.length&&!ps.length?`<span class="alibre">libre · +</span>`:''}</div>`; }).join('')}</div>`; }).join('');
   $view.innerHTML=`${seg}<div class="gnav"><button data-act="planM" data-d="${iso(pw)}" aria-label="Semaine précédente">‹ S${wkNum(wkKey(pw))}</button><button class="mid" data-act="planM" data-d="">${isCur?'Cette semaine':'Aujourd\'hui'}</button><button data-act="planM" data-d="${iso(nw)}" aria-label="Semaine suivante">S${wkNum(wkKey(nw))} ›</button></div>
   <div class="aweek" id="gantt">
    <button class="wk wkh${isCur?' cur':''}" data-act="wkPick" data-k="${k}"><b>S${wkNum(k)}</b><span>${fmtD(m0)} – ${fmtD(fin)}</span><span class="${c.all.length>=MAXT?'full':''}">${c.all.length}/${MAXT} projets</span></button>
@@ -1292,7 +1304,7 @@ function vPlanning(){
   ${planBas()}`;
 }
 function planBas(){ return `<div class="planlegend">${CALS.length?CALS.map(x=>`<span><b style="background:${coulCal(x.id)}"></b>${esc(x.nom)}</span>`).join(''):''}<span><b class="lg-busy"></b>pris dans Proton</span><span><b style="background:#EE9DC0"></b>congés</span></div>
-  <p class="note">Touche une demi-journée pour y placer un projet, ou glisse sur plusieurs (au doigt : appuie longuement d'abord). Le numéro de semaine place sur toute la semaine. Appuie longuement sur un projet pour l'enlever de là.</p>
+  <p class="note">Touche une demi-journée pour y placer un projet, ou glisse sur plusieurs (au doigt : appuie longuement d'abord). Le numéro de semaine place sur toute la semaine. Glisse un projet vers une autre demi-journée pour le déplacer (au doigt : appuie longuement d'abord) ; appui long sans bouger : une croix pour l'enlever de là.</p>
   <div class="dacts"><button class="btn ghost" data-act="cals">${pic('journal')} Agendas${CALS.length?' ('+CALS.length+')':''}</button><button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés${S.offs.length?' ('+S.offs.length+')':''}</button></div>`; }
 function vMois(seg,tgt){
   const t=parse(tgt), m1=new Date(t.getFullYear(),t.getMonth(),1), mEnd=new Date(t.getFullYear(),t.getMonth()+1,0), g0=monday(m1);
@@ -1742,7 +1754,26 @@ function fichiersDe(chemin){ return FB&&chemin?Dossier.dans(FB,chemin).sort((a,b
 function fsNote(){ return fsEtat==='absent'?'<p class="note" style="margin:0">Choisis ton dossier Locus sur l\'ordinateur (Réglages de Locus, roue dentée de l\'accueil) : les fichiers y arriveront.</p>'
   :fsEtat==='prompt'?'<button class="btn ghost" data-act="fsAuth">Redonner l\'accès au dossier Locus</button>':''; }
 function filesList(L,base,ranger){ return L.length?`<ul class="files">${L.map(x=>{ const sous=x.chemin.length>base.length?x.chemin.slice(base.length+1)+'/':'';
-  return `<li><button class="fn" data-act="fopen" data-f="${x.id}">${esc(sous+x.nom)}</button><span class="fm">${x.etat==='transit'?'⏳ en route':fTaille(x.taille||0)+' · '+fDate(x.modif)}</span>${ranger?`<select data-fvers="${x.id}" aria-label="Ranger ${esc(x.nom)}"><option value="">Ranger dans…</option>${S.projects.filter(p=>!p.closed&&!isMini(p)).sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(p=>`<option value="${p.id}">${esc((p.emoji?p.emoji+' ':'')+p.name)}</option>`).join('')}</select>`:''}</li>`; }).join('')}</ul>`:''; }
+  return `<li><button class="fn" data-act="fsheet" data-f="${x.id}">${esc(sous+(x.renommer||x.nom))}${x.garde||x.garder?' <span class="fg" title="Consultable partout">☁</span>':''}</button><span class="fm">${x.etat==='transit'?'⏳ en route':fTaille(x.taille||0)+' · '+fDate(x.modif)}</span>${ranger?`<select data-fvers="${x.id}" aria-label="Ranger ${esc(x.nom)}"><option value="">Ranger dans…</option>${S.projects.filter(p=>!p.closed&&!isMini(p)).sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(p=>`<option value="${p.id}">${esc((p.emoji?p.emoji+' ':'')+p.name)}</option>`).join('')}</select>`:''}</li>`; }).join('')}</ul>`:''; }
+/* Fiche d'un fichier (25.11) : consulter, renommer, garder une copie consultable partout */
+const plusJours=(d,n)=>{ const x=parse(d); x.setDate(x.getDate()+n); return iso(x); };
+let fApercu=null;
+function fichierSheet(id){ const x=FB&&FB.get(id); if(!x) return; if(sheetId&&P(sheetId)) ui.fRetour=sheetId; sheetId=null;
+  const p=S.projects.find(q=>q.dossier&&(x.chemin===q.dossier||x.chemin.startsWith(q.dossier+'/'))), img=/^image\//.test(x.type||'')||/\.(jpe?g|png|webp|gif|heic)$/i.test(x.nom);
+  const ou=x.etat==='transit'?'En route vers l\'ordinateur':'Sur l\'ordinateur'+(x.garde?' · et en ligne':x.garder?' · copie en ligne à la prochaine ouverture sur l\'ordinateur':'');
+  const consult=x.garde||x.etat==='transit'||fsEtat==='granted';
+  openSheet(`<div class="shead"><h2>${esc(x.renommer||x.nom)}<small>${esc(ou)}</small></h2><button class="xbtn" data-act="fback">${ui.fRetour?'‹ Fiche':'Fermer'}</button></div><div class="sbody">
+  ${img&&consult?'<div class="fprev" id="fprev"><span class="note">Chargement…</span></div>':''}
+  ${consult?`<button class="btn" data-act="fopen" data-f="${x.id}">Ouvrir</button>`:'<p class="note" style="margin:0">Pour le consulter ici, coche « Garder sur la fiche » : une copie sera mise en ligne à la prochaine ouverture de Locus sur l\'ordinateur.</p>'}
+  <label class="fkeep"><input type="checkbox" data-act="fgarde" data-f="${x.id}" ${x.garder?'checked':''}><span><b>Garder sur la fiche</b><small>une copie en ligne, consultable depuis le téléphone${p&&p.closed?'':' ; elle part un mois après l\'archivage du projet'}${x.garderJusqua?' · jusqu\'au '+fmt(x.garderJusqua):''}</small></span></label>
+  <div class="field"><label class="lbl" for="f-fnom">Nom</label><div class="inline"><input class="input" id="f-fnom" value="${esc(x.renommer||x.nom)}" autocomplete="off"><button class="btn" data-act="fren" data-f="${x.id}">OK</button></div></div>
+  <p class="note" style="margin:0">${fTaille(x.taille||0)} · ${fDate(x.modif)} · Locus/${esc(x.chemin)}</p>
+  </div>`,'fichier');
+  if(img&&consult) Dossier.contenu(sb,x).then(b=>{ const box=document.getElementById('fprev'); if(!box||!b) return; if(fApercu) URL.revokeObjectURL(fApercu); fApercu=URL.createObjectURL(b); box.innerHTML=`<img src="${fApercu}" alt="">`; }).catch(()=>{ const box=document.getElementById('fprev'); if(box) box.innerHTML='<span class="note">Aperçu impossible</span>'; });
+}
+/* un mois après l'archivage, la copie en ligne d'un fichier gardé disparaît (l'ordinateur l'efface à sa synchro) */
+function gardeSuivre(){ if(!FB) return; S.projects.filter(p=>p.dossier).forEach(p=>{ const want=p.closed?plusJours(String(p.closed).slice(0,10),30):null;
+  Dossier.dans(FB,p.dossier).forEach(f=>{ if(!(f.garder||f.garde)) return; if((f.garderJusqua||null)!==want){ const g=Object.assign({},f); if(want) g.garderJusqua=want; else delete g.garderJusqua; FB.ecrire(g); } }); }); }
 function dossierBlock(p,closed){
   if(!p.dossier) return closed?'':`<div class="field"><span class="lbl">Dossier</span><button class="btn ghost" data-act="mkDossier">Créer le dossier du projet</button><p class="note" style="margin:0">Il ira dans Locus/${esc(Dossier.cheminProjet(p,domOf(p)))} sur l'ordinateur.</p></div>`;
   const L=fichiersDe(p.dossier);
@@ -2210,23 +2241,36 @@ function rangeSheet(r,msg){
 /* Vue agenda : glisser d'une demi-journée à l'autre (à la souris, ou au doigt après un appui long) ; appui long sur un projet : une croix pour l'enlever de là */
 let asel=null;
 document.addEventListener('pointerdown',e=>{ if(e.button>0||!e.target.closest) return; const chip=e.target.closest('.aweek .achip');
-  if(chip){ asel={chip,id:chip.dataset.id,i:+chip.dataset.i,x0:e.clientX,y0:e.clientY,on:false,timer:setTimeout(()=>{ if(asel&&asel.chip===chip){ asel.on=true; window.__supChip=true; ui.chipX={id:asel.id,i:asel.i}; try{ navigator.vibrate&&navigator.vibrate(15); }catch(err){} render(); asel=null; } },420)}; return; }
+  if(chip){ asel={chip,id:chip.dataset.id,i:+chip.dataset.i,x0:e.clientX,y0:e.clientY,arme:false,drag:false,touch:e.pointerType!=='mouse',timer:setTimeout(()=>{ if(asel&&asel.chip===chip&&!asel.drag){ asel.arme=true; chip.classList.add('arme'); try{ navigator.vibrate&&navigator.vibrate(15); }catch(err){} } },380)}; return; }
   const h=e.target.closest('.aweek .ahalf'); if(!h||e.target.closest('.aev')) return;
   asel={half:true,i0:+h.dataset.i,i1:+h.dataset.i,x0:e.clientX,y0:e.clientY,on:false,touch:e.pointerType!=='mouse',timer:null};
   if(asel.touch) asel.timer=setTimeout(()=>{ if(asel&&asel.half&&!asel.on){ asel.on=true; aselPaint(); try{ navigator.vibrate&&navigator.vibrate(15); }catch(err){} } },380); });
+/* glisser-déposer un projet d'une demi-journée à une autre (même semaine) */
+function deplacerDemi(pid,de,vers){ const p=P(pid), k=ui.wkShown; if(!p||!k){ render(); return; }
+  const w0=p.weeks.slice(), d0=p.days.slice(), a=rangeToggle(p,{m:'h',k,a:de,b:de});
+  if(a&&a.full){ p.weeks=w0; p.days=d0; render(); return; }
+  if(!rangeOn(p,{m:'h',k,a:vers,b:vers})){ const b=rangeToggle(p,{m:'h',k,a:vers,b:vers}); if(b&&b.full){ rangeToggle(p,{m:'h',k,a:de,b:de}); toast('Semaine pleine : déplacement annulé'); save(); render(); return; } }
+  save(); const m0=wkMon(k), d=new Date(m0); d.setDate(m0.getDate()+(vers>>1)); toast(p.emoji+' '+p.name+' → '+dayLbl(iso(d))+(vers%2?' après-midi':' matin')); render(); }
 function aselPaint(){ const a=Math.min(asel.i0,asel.i1), b=Math.max(asel.i0,asel.i1); document.querySelectorAll('.aweek .ahalf').forEach(x=>x.classList.toggle('rsel',+x.dataset.i>=a&&+x.dataset.i<=b)); }
 document.addEventListener('pointermove',e=>{ if(!asel) return; const dx=e.clientX-asel.x0, dy=e.clientY-asel.y0;
-  if(asel.chip){ if(Math.hypot(dx,dy)>8){ clearTimeout(asel.timer); asel=null; } return; }
+  if(asel.chip){ if(!asel.drag){ if(Math.hypot(dx,dy)<8) return; if(asel.touch&&!asel.arme){ clearTimeout(asel.timer); asel.chip.classList.remove('arme'); asel=null; return; } clearTimeout(asel.timer); asel.drag=true; window.__supChip=true;
+      const g=asel.chip.cloneNode(true); g.classList.add('aghost'); const r=asel.chip.getBoundingClientRect(); g.style.width=r.width+'px'; asel.dx=asel.x0-r.left; asel.dy=asel.y0-r.top; document.body.appendChild(g); asel.ghost=g; asel.chip.classList.add('parti'); }
+    e.preventDefault(); asel.ghost.style.transform=`translate(${e.clientX-asel.dx}px,${e.clientY-asel.dy}px)`;
+    const t=document.elementFromPoint(e.clientX,e.clientY), h=t&&t.closest&&t.closest('.aweek .ahalf'); document.querySelectorAll('.aweek .ahalf.cible').forEach(x=>{ if(x!==h) x.classList.remove('cible'); }); if(h) h.classList.add('cible'); asel.cible=h?+h.dataset.i:null; return; }
   if(!asel.on){ if(asel.touch){ if(Math.hypot(dx,dy)>8){ clearTimeout(asel.timer); asel=null; } return; } if(Math.hypot(dx,dy)<10) return; asel.on=true; }
   e.preventDefault(); const t=document.elementFromPoint(e.clientX,e.clientY), h=t&&t.closest&&t.closest('.aweek .ahalf'); if(h){ asel.i1=+h.dataset.i; aselPaint(); } },{passive:false});
-document.addEventListener('touchmove',e=>{ if(asel&&asel.on&&asel.half) e.preventDefault(); },{passive:false});
-function aselEnd(cancel){ if(!asel) return; const st=asel; asel=null; clearTimeout(st.timer); if(st.chip||!st.on) return;
+document.addEventListener('touchmove',e=>{ if(asel&&((asel.on&&asel.half)||(asel.chip&&(asel.arme||asel.drag)))) e.preventDefault(); },{passive:false});
+function aselEnd(cancel){ if(!asel) return; const st=asel; asel=null; clearTimeout(st.timer);
+  if(st.chip){ st.chip.classList.remove('arme','parti'); if(st.ghost) st.ghost.remove(); document.querySelectorAll('.aweek .ahalf.cible').forEach(x=>x.classList.remove('cible'));
+    if(st.drag){ if(!cancel&&st.cible!=null&&st.cible!==st.i) deplacerDemi(st.id,st.i,st.cible); else render(); return; }
+    if(st.arme&&!cancel){ window.__supChip=true; ui.chipX={id:st.id,i:st.i}; render(); } return; }
+  if(!st.on) return;
   document.querySelectorAll('.aweek .ahalf.rsel').forEach(x=>x.classList.remove('rsel')); window.__noClick=Date.now(); if(cancel||!ui.wkShown) return;
   rangeSheet({m:'h',k:ui.wkShown,a:Math.min(st.i0,st.i1),b:Math.max(st.i0,st.i1)}); }
 document.addEventListener('pointerup',()=>aselEnd(false)); document.addEventListener('pointercancel',()=>aselEnd(true));
-document.addEventListener('click',e=>{ if(window.__supChip){ window.__supChip=false; if(e.target.closest&&!e.target.closest('.achx')){ e.stopPropagation(); e.preventDefault(); return; } }
-  if(window.__noClick&&Date.now()<window.__noClick+400&&e.target.closest&&e.target.closest('.aweek .ahalf,.aweek .achip')&&!e.target.closest('.achx')){ e.stopPropagation(); e.preventDefault(); } },true);
-document.addEventListener('pointerdown',e=>{ if(ui.chipX&&!(e.target.closest&&e.target.closest('.achx'))){ ui.chipX=null; const x=document.querySelector('.achx'); if(x) x.remove(); } },true);
+document.addEventListener('click',e=>{ if(window.__supChip){ window.__supChip=false; if(e.target.closest&&!e.target.closest('.aplx')){ e.stopPropagation(); e.preventDefault(); return; } }
+  if(window.__noClick&&Date.now()<window.__noClick+400&&e.target.closest&&e.target.closest('.aweek .ahalf,.aweek .achip')&&!e.target.closest('.aplx')){ e.stopPropagation(); e.preventDefault(); } },true);
+document.addEventListener('pointerdown',e=>{ window.__supChip=false; if(ui.chipX&&!(e.target.closest&&e.target.closest('.aplx'))){ ui.chipX=null; const x=document.querySelector('.aplx'); if(x) x.remove(); } },true);
 document.addEventListener('contextmenu',e=>{ if(e.target.closest&&e.target.closest('.aweek .ahalf,.aweek .achip')) e.preventDefault(); });
 /* Glisser sur des cases (jours) ou des numéros de semaine pour choisir une plage */
 let rsel=null;
@@ -2295,7 +2339,11 @@ document.addEventListener('click',e=>{
   if(a==='achatDel'){ if(AB){ AB.supprimer(id); achatsMaj(); } return; }
   if(a==='open') detail(id);
   else if(a==='mkDossier'){ const p=P(sheetId); if(!p) return; p.dossier=Dossier.cheminProjet(p,domOf(p)); save(); toast('Locus/'+p.dossier+(fsEtat==='granted'?'':' · créé à la prochaine ouverture sur l\'ordinateur')); syncFichiers().then(fichiersChanges); detail(p.id); }
-  else if(a==='fopen'){ const x=FB&&FB.get(el.dataset.f); if(!x) return; if(x.etat==='transit'){ toast('En route vers l\'ordinateur'); return; } if(fsEtat!=='granted'){ toast('Le fichier est sur l\'ordinateur'); return; } Dossier.lire(x.chemin,x.nom).then(fi=>{ const u=URL.createObjectURL(fi); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),60000); }).catch(()=>toast('Fichier introuvable : il a peut-être été déplacé')); }
+  else if(a==='fsheet') fichierSheet(el.dataset.f);
+  else if(a==='fgarde'){ const x=FB&&FB.get(el.dataset.f); if(!x) return; const g=Object.assign({},x,{garder:!x.garder}); const p=S.projects.find(q=>q.dossier&&(x.chemin===q.dossier||x.chemin.startsWith(q.dossier+'/'))); if(g.garder&&p&&p.closed) g.garderJusqua=plusJours(p.closed,30); if(!g.garder) delete g.garderJusqua; FB.ecrire(g); syncFichiers().then(fichiersChanges); fichierSheet(x.id); }
+  else if(a==='fren'){ const x=FB&&FB.get(el.dataset.f), i=document.getElementById('f-fnom'); if(!x||!i) return; const v=i.value.trim(); if(!v){ toast('Donne un nom'); return; } Dossier.renommer(FB,x,v); toast('Renommé'+(x.etat==='ici'&&fsEtat!=='granted'?' (sur l\'ordinateur à sa prochaine ouverture)':'')); syncFichiers().then(fichiersChanges); fichierSheet(x.id); }
+  else if(a==='fback'){ const id=ui.fRetour; ui.fRetour=null; if(id&&P(id)) detail(id); else if(sheetKey==='fichier') closeSheet(); }
+  else if(a==='fopen'){ const x=FB&&FB.get(el.dataset.f); if(!x) return; if(Dossier.contenu&&(x.garde||x.etat==='transit'||fsEtat==='granted')){ Dossier.contenu(sb,x).then(b=>{ if(!b){ toast('Pas consultable ici'); return; } const u=URL.createObjectURL(b); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),60000); }).catch(()=>toast('Fichier introuvable')); return; } if(x.etat==='transit'){ toast('En route vers l\'ordinateur'); return; } if(fsEtat!=='granted'){ toast('Le fichier est sur l\'ordinateur'); return; } Dossier.lire(x.chemin,x.nom).then(fi=>{ const u=URL.createObjectURL(fi); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),60000); }).catch(()=>toast('Fichier introuvable : il a peut-être été déplacé')); }
   else if(a==='fsAuth'){ Dossier.autoriser().then(r=>{ fsEtat=r; if(r==='granted') syncFichiers().then(fichiersChanges); else toast('Accès refusé'); }); }
   else if(a==='atrier') aTrierSheet();
   else if(a==='dom') domainSheet(id);
@@ -2609,7 +2657,7 @@ function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringi
 let seen={}, quiet=false; /* quiet : enregistrer sans compter comme une activité (reprise, rangements automatiques) */
 const canonP=p=>canon(Object.assign({},p,{touche:undefined,color:undefined}));
 function markSeen(){ seen={}; S.projects.forEach(p=>{ seen[p.id]=canonP(p); }); }
-function save(){ if(!UID) return; recolor();
+function save(){ if(!UID) return; recolor(); try{ gardeSuivre(); }catch(e){}
   S.projects.forEach(p=>{ const c=canonP(p); if(!quiet){ if(seen[p.id]==null){ if(!p.touche) p.touche=todayS; } else if(seen[p.id]!==c) p.touche=todayS; } seen[p.id]=canonP(p); });
   const cur=rowsOf(S); let ch=false;
   for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ prev[k]=v; dirty.add(k); ch=true; } }
