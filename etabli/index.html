@@ -1255,7 +1255,7 @@ function evSheet(i){ const e=EVW[i]; if(!e) return; const c=coulCal(e.cal), cal=
   <div class="evd"><span class="lbl">Quand</span><b>${esc(evQuand(e))}</b></div>
   ${e.lieu?`<div class="evd"><span class="lbl">Où</span><b>${esc(e.lieu)}</b></div>`:''}
   ${gdt?`<a class="btn" style="text-align:center;text-decoration:none" href="https://gottonic.github.io/gamins-de-talus/#/calendrier" target="_blank" rel="noopener">Ouvrir le calendrier de GDT</a>`:''}
-  <a class="btn${gdt?' ghost':''}" style="text-align:center;text-decoration:none" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar</a>
+  ${gdt?'':`<a class="btn" style="text-align:center;text-decoration:none" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar</a>`}
   <p class="note" style="margin:0">${gdt?'Ce rendez-vous vient de l\'app GDT : il se modifie là-bas.':'Ce rendez-vous vient de Proton : il se modifie là-bas.'} Il apparaît ici au prochain rafraîchissement. Tu peux quand même placer un projet par-dessus.</p></div>`,'ev'); }
 /* Agendas lus (table locus_calendriers, la même que la routine du lundi) : nom, couleur, ajouter, retirer */
 let calMsg='', calDel=null;
