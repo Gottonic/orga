@@ -55,7 +55,7 @@ language sql immutable as $$
 $$;
 
 -- Les évènements, de 2 semaines en arrière à 10 semaines en avant : { id, debut, fin (exclue), titre }.
--- Journées entières, ou avec l'heure placée : un projet dure 4 h, une séance le temps prévu dans la Forge, une tâche 1 h.
+-- Journées entières, ou avec l'heure placée : un projet dure 4 h, une séance le temps prévu dans la Forge. Plus de tâches depuis le 25.11.
 create or replace function public.locus_agenda(cle text) returns jsonb
 language plpgsql stable security definer set search_path = public, extensions as $$
 declare
@@ -93,14 +93,7 @@ begin
       from public.carnet c, jsonb_each(coalesce(c.data->'semaines', '{}'::jsonb)) as s(wk, arr), jsonb_array_elements(s.arr) x
      where c.user_id = u and c.key = 'locus/semaines' and not c.deleted and s.wk ~ '^\d{4}-W\d{2}$'
        and jsonb_typeof(x->'day') = 'number' and (x->>'day')::int between 0 and 6
-    union all
-    -- tâches placées sur un jour (routine du lundi › Placer les tâches, 20.11) ; une tâche faite ou archivée disparaît
-    select public.locus_ev('t-' || (b.data->>'id'), (b.data->>'jour')::date,
-             public.locus_heure(u, to_char((b.data->>'jour')::date, 'IYYY-"W"IW'), 't', b.data->>'id'), 60, 'Tâche · ' || coalesce(b.data->>'t', '…'))
-      from public.biblio_rows b
-     where b.user_id = u and b.key like 'n:%' and not b.deleted and b.data->>'p' = 'taches'
-       and b.data->>'a' is null and coalesce(b.data->>'x', 'false') <> 'true'
-       and (b.data->>'jour') ~ '^\d{4}-\d{2}-\d{2}$' and (b.data->>'jour')::date between d0 and d1
+    -- (25.11, choix de Nicolas : les tâches ne vont plus dans l'agenda Locus ; seulement les projets et les séances)
   ) t), '[]'::jsonb);
 end $$;
 revoke all on function public.locus_agenda(text) from public;
