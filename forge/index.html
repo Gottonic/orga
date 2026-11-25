@@ -3125,10 +3125,11 @@ let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setT
 /* ---------- views: nutrition ---------- */
 /* ---------- protéines du jour (25.11) ----------
    Le besoin suit les entraînements prévus (jour placé, logs.sessions.<id>.day) et faits (logs.sessions.<id>.date) :
-   séance lourde (force, maintien, hypertrophie, puissance, contraste) 2,0 g/kg ; séance moyenne (parkour, vitesse,
-   plyo, VO2max, tests) 1,8 ; légère (endurance, mobilité) 1,6 ; repos 1,5, mais 1,7 le lendemain d'une séance lourde
-   (la récupération continue). Poids : le dernier noté dans le bilan de la semaine, sinon 80 kg. Arrondi à 5 g. */
-const PROT_F = { lourd: 2.0, moyen: 1.8, leger: 1.6, repos: 1.5, recup: 1.7 };
+   séance lourde (force, maintien, hypertrophie, puissance, contraste) 1,8 g/kg ; séance moyenne (parkour, vitesse,
+   plyo, VO2max, tests) 1,6 ; légère (endurance, mobilité) 1,4 ; repos 1,3, mais 1,5 le lendemain d'une séance lourde
+   (la récupération continue). Moyenne de la semaine ≈ 1,5–1,6 g/kg : le gain musculaire plafonne vers 1,6 g/kg/jour
+   (méta-analyse Morton 2018), inutile de viser plus haut (révisé le 25.11 à la demande de Nicolas, avant 1,5 à 2,0). Poids : le dernier noté dans le bilan de la semaine, sinon 80 kg. Arrondi à 5 g. */
+const PROT_F = { lourd: 1.8, moyen: 1.6, leger: 1.4, repos: 1.3, recup: 1.5 };
 function protLevel(wk, s){ const t = lightType(wk, s);
   return ["force", "maintien", "hypertrophie", "puissance", "contraste"].includes(t) ? "lourd" : ["endurance", "mobilite"].includes(t) ? "leger" : "moyen"; }
 function protDays(wk){
@@ -3151,13 +3152,13 @@ function protDaysRaw(wk){ const w = weekById(wk); if (!w) return null; const log
 const PROT_L = { lourd: "Jour lourd", moyen: "Jour d'entraînement", leger: "Jour léger", recup: "Récupération", repos: "Repos" };
 function protPanel(){
   const wk = currentWeekId(); const days = protDays(wk); const t = ds(todayUTC()); const d = days.find(x => x.d === t); if (!d) return "";
-  const avg = Math.round(days.reduce((a, x) => a + x.g, 0) / 7 / 5) * 5; const parts = d.g >= 150 ? 4 : 3;
+  const avg = Math.round(days.reduce((a, x) => a + x.g, 0) / 7 / 5) * 5; const parts = d.g >= 130 ? 4 : 3;
   const anyDay = planOf(wk).sessions.some(x => { const st = ((S.data.logs[wk] || {}).sessions || {})[x.id] || {}; return typeof st.day === "number" || st.done; });
   return `<section class="panel prot"><div class="between"><span class="eyebrow">Protéines aujourd'hui</span><span class="muted" style="font-size:12.5px">${fmtNum(d.bw, 1)} kg</span></div>
     <div class="prot-g"><b>${d.g}</b> g <span>${esc(PROT_L[d.lvl])} · ${fmtNum(d.f, 1)} g/kg</span></div>
     <p class="prot-why">${esc(d.why.charAt(0).toUpperCase() + d.why.slice(1))} · en ${parts} prises d'environ ${Math.round(d.g / parts / 5) * 5} g</p>
     <div class="prot-wk">${days.map((x, i) => `<span class="${x.d === t ? "on" : ""} l-${x.lvl}" title="${esc(x.why)}"><i>${DAYS[i].slice(0, 2)}</i><b>${x.g}</b></span>`).join("")}</div>
-    <p class="muted" style="margin:0;font-size:12.5px">Moyenne de la semaine ≈ ${avg} g par jour. Lourd 2,0 g/kg · entraînement 1,8 · léger 1,6 · lendemain de lourd 1,7 · repos 1,5.${anyDay ? "" : " Les séances ne sont pas encore placées sur des jours : chaque jour compte comme repos tant qu'une séance n'est ni placée ni faite."}</p>
+    <p class="muted" style="margin:0;font-size:12.5px">Moyenne de la semaine ≈ ${avg} g par jour. Lourd 1,8 g/kg · entraînement 1,6 · léger 1,4 · lendemain de lourd 1,5 · repos 1,3. Tout compte, pas seulement les aliments « protéinés » : pain, pâtes, céréales et laitages en apportent aussi.${anyDay ? "" : " Les séances ne sont pas encore placées sur des jours : chaque jour compte comme repos tant qu'une séance n'est ni placée ni faite."}</p>
   </section>`;
 }
 function vNutrition(){

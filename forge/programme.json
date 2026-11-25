@@ -1,5 +1,5 @@
 {
- "version": 9,
+ "version": 10,
  "date": "2026-11-12",
  "note": "séances des blocs 3 à 5 (réinstallation)",
  "set": {
@@ -4701,8 +4701,9 @@
     "sections": [
      {
       "points": [
-       "Viser 1,6 à 2,2 g par kg et par jour, soit environ 130 à 175 g à 80 kg.",
-       "Répartir en 3 à 4 prises de 30 à 40 g, dont une dans les heures qui suivent la séance.",
+       "En moyenne, environ 1,6 g par kg et par jour suffit : au-delà, pas de gain musculaire en plus. Selon le jour, de 1,3 (repos) à 1,8 g/kg (séance lourde) : la carte « Protéines aujourd'hui » fait le calcul.",
+       "Tout compte : pain, pâtes, céréales, légumineuses et laitages en apportent aussi, pas seulement les aliments « protéinés ».",
+       "Répartir en 3 à 4 prises de 25 à 40 g, dont une dans les heures qui suivent la séance.",
        "Sources végétariennes faciles : séré et skyr, tofu, tempeh, seitan, lentilles, pois chiches, œufs, cottage cheese, protéine en poudre si besoin."
       ],
       "title": "Protéines"
@@ -4742,7 +4743,7 @@
      }
     ],
     "title": "Principes",
-    "updated": "2026-10-21"
+    "updated": "2026-11-25"
    },
    "tests": {
     "session": {
