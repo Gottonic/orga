@@ -45,13 +45,13 @@ begin
     'projets', (select coalesce(jsonb_agg(jsonb_build_object('id', data->>'id', 'nom', data->>'name', 'emoji', data->>'emoji', 'domaine', data->>'parent',
                   'nature', data->>'nature', 'taille', data->>'size', 'jours', data->'dur', 'importance', data->'imp', 'echeance', data->>'due',
                   'idee', data->'later', 'prevu', data->>'prevu', 'semaines', data->'weeks', 'dates', data->'days', 'touche', data->>'touche',
-                  -- tâches en arbre (25.11) : seulement les tâches pas faites, sans les étapes (élément suivi d'un plus profond, ou e = étape vide)
+                  -- tâches en arbre (25.11) : seulement les tâches pas faites, sans les étapes (élément suivi d'un élément plus profond)
                   'taches_ouvertes', (select coalesce(jsonb_agg(z.x->>'t' order by z.o), '[]'::jsonb) from (
                                         select a.x, a.o, coalesce((a.x->>'n')::int, 0) as n,
                                                lead(coalesce((a.x->>'n')::int, 0)) over (order by a.o) as n_suiv
                                         from jsonb_array_elements(coalesce(data->'tasks', '[]'::jsonb)) with ordinality as a(x, o)) z
                                       where coalesce((z.x->>'d')::boolean, false) = false and coalesce((z.x->>'s')::boolean, false) = false
-                                        and coalesce((z.x->>'e')::boolean, false) = false and coalesce(z.n_suiv, -1) <= z.n))), '[]'::jsonb)
+                                        and coalesce(z.n_suiv, -1) <= z.n))), '[]'::jsonb)
                 from public.rows where user_id = u and key like 'p:%' and not deleted and data->>'closed' is null),
     'heures', (select coalesce(jsonb_agg(jsonb_build_object('date', h.data->>'date', 'minutes', h.data->'min', 'mandat', m.data->>'nom', 'note', h.data->>'note') order by h.data->>'date'), '[]'::jsonb)
                from public.mine_rows h left join public.mine_rows m on m.user_id = u and m.key = 'm:' || (h.data->>'mandat')

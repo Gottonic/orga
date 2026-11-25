@@ -352,9 +352,6 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .tasks li.cible{background:color-mix(in srgb,var(--ink) 16%,var(--cell));box-shadow:inset 0 0 0 2px var(--ink)}
 .tasks li.dragging.dedans{opacity:.55}
 .tasks li.dragging[data-suit]::after{content:'+ ' attr(data-suit);font-size:.72rem;color:var(--muted);margin:0 6px;flex:none}
-.secadd{align-self:flex-end;font-size:.8rem;padding:2px 2px;margin-bottom:-2px;color:var(--muted)}
-.secpop{display:flex;gap:6px;align-items:center;padding:8px;border:1px solid var(--bd);border-radius:14px;background:var(--cell);box-shadow:0 6px 18px rgba(0,0,0,.12);color:var(--ink);--muted:var(--ink-3)}
-.secpop .input{flex:1;min-width:0;padding:8px 10px}
 .addrow{display:flex;gap:6px;align-items:stretch}
 .addrow .inline{flex:1 1 auto;min-width:0;margin:0;display:flex}
 .addrow .inline .input{flex:1;min-width:0;width:auto}
@@ -1493,7 +1490,7 @@ function dRepriseSave(){
     if(v==='keep'){ m.size='proj'; m.dur=0.5; if(!m.emoji) m.emoji='✨'; if(m.color===MINI_COLOR) m.color=COLORS[Math.floor(Math.random()*COLORS.length)]; m.nature=m.nature||'perso'; return; }
     const h=v.startsWith('p:')?P(v.slice(2)):D(v.slice(2)); if(!h) return;
     const notes=(m.notes||[]).filter(x=>x.t).map(x=>({t:'📝 '+x.t,d:!!x.d}));
-    if(m.tasks.length||notes.length){ h.tasks.push({t:m.name,d:false,e:true}); m.tasks.forEach(x=>h.tasks.push({t:x.t,d:!!x.d,n:1})); notes.forEach(x=>h.tasks.push(Object.assign({n:1},x))); }
+    if(m.tasks.length||notes.length){ h.tasks.push({t:m.name,d:false}); m.tasks.forEach(x=>h.tasks.push({t:x.t,d:!!x.d,n:1})); notes.forEach(x=>h.tasks.push(Object.assign({n:1},x))); }
     else h.tasks.push({t:m.name+(m.due?' (⏱ '+fmt(m.due)+')':''),d:false});
     sinkDone(h); S.projects=S.projects.filter(x=>x!==m); });
   S.domains.sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr'));
@@ -1645,6 +1642,27 @@ const pliK=(p,x)=>p.id+'|'+x.t, estPlie=(p,x)=>!!plis[pliK(p,x)];
 function plier(p,x){ const k=pliK(p,x); if(plis[k]) delete plis[k]; else plis[k]=1; try{ localStorage.setItem(PLIS,JSON.stringify(plis)); }catch(e){} }
 const feuilles=p=>Projets.tachesSeules(p.tasks||[]);
 function cheminDe(L,i){ const out=[]; let n=Projets.niveau(L[i]); for(let j=i-1;j>=0&&n>0;j--){ const m=Projets.niveau(L[j]); if(m<n){ out.unshift(L[j].t); n=m; } } return out; }
+/* Remplace la liste des tâches d'une fiche ouverte sans toucher aux champs de saisie (« Nouvelle tâche », « Dans … ») :
+   ils ne quittent jamais la page, donc le clavier du téléphone reste ouvert entre deux ajouts (25.11) */
+function majTaches(p){ const old=document.querySelector('.field[data-taches="'+p.id+'"]'); if(!old){ refresh(p.id); return; }
+  const tmp=document.createElement('div'); tmp.innerHTML=tasksBlock(p,!!p.closed,old.dataset.mot||'tâche'); const nf=tmp.firstElementChild; if(!nf){ refresh(p.id); return; }
+  const oAdd=old.querySelector(':scope > .addrow'), nAdd=nf.querySelector(':scope > .addrow');
+  if(!oAdd||!nAdd){ old.replaceWith(nf); return; }
+  let oUl=old.querySelector(':scope > ul.tasks'); const nUl=nf.querySelector(':scope > ul.tasks');
+  /* avant le champ du bas : tout est remplacé, sauf la liste elle-même (fusionnée) */
+  [...old.children].forEach(c=>{ if(c===oAdd||c===oUl) return; if(c.compareDocumentPosition(oAdd)&Node.DOCUMENT_POSITION_FOLLOWING) c.remove(); });
+  if(oUl&&!nUl){ oUl.remove(); oUl=null; }
+  let apresUl=false; [...nf.children].forEach(c=>{ if(c===nAdd){ apresUl='fin'; return; } if(apresUl==='fin'){ return; }
+    if(c===nUl){ if(oUl) fusionUl(oUl,nUl); else oAdd.before(nUl); apresUl=true; return; }
+    if(oUl&&!apresUl) oUl.before(c); else oAdd.before(c); });
+  /* après le champ du bas (l'aide) : remplacé tel quel */
+  let n=oAdd.nextElementSibling; while(n){ const x=n.nextElementSibling; n.remove(); n=x; } let m=nAdd.nextElementSibling; while(m){ const x=m.nextElementSibling; old.appendChild(m); m=x; }
+}
+function fusionUl(oUl,nUl){ oUl.className=nUl.className; const oSub=oUl.querySelector(':scope > li.subrow'), nSub=nUl.querySelector(':scope > li.subrow');
+  [...oUl.children].forEach(c=>{ if(c!==oSub||!nSub) c.remove(); });
+  if(oSub&&nSub){ oSub.style.cssText=nSub.getAttribute('style')||''; const of=oSub.querySelector('form'), nfm=nSub.querySelector('form'); if(of&&nfm) of.dataset.i=nfm.dataset.i; let avant=true;
+    [...nUl.children].forEach(c=>{ if(c===nSub){ avant=false; return; } if(avant) oSub.before(c); else oUl.appendChild(c); }); }
+  else [...nUl.children].forEach(c=>oUl.appendChild(c)); }
 function tasksBlock(p,closed,word){
   const L=p.tasks, N=Projets.niveau, et=i=>Projets.estEtape(L,i), all=L.map((x,i)=>({x,i}));
   const isLeaf=o=>!et(o.i), adminN=all.filter(o=>isLeaf(o)&&parseTask(o.x.t).admin).length, only=!!(ui.taskAdmin&&adminN);
@@ -1659,11 +1677,11 @@ function tasksBlock(p,closed,word){
     if(ui.tSup&&ui.tSup.pid===p.id&&ui.tSup.i===i&&!closed){ const k=step?Projets.finBranche(L,i)-i-1:0;
       return `<li class="tsupconf" data-i="${i}" data-n="${lv}" style="--n:${lv}"><button class="tsupok" data-act="tsupOk" data-i="${i}">${k?`Supprimer l'étape et ses ${k} tâche${k>1?'s':''} ?`:'Supprimer ?'}</button><button class="tsupno" data-act="tsupNo">Annuler</button></li>`; }
     if(step){ const fin=Projets.finBranche(L,i), F=L.slice(i+1,fin).filter((y,k)=>!et(i+1+k)), fd=F.filter(y=>y.d).length, pl=estPlie(p,x);
-      return `<li class="etape${x.d?' done':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}">${fin>i+1?`<button class="tplie" data-act="tplie" data-i="${i}" aria-expanded="${!pl}" aria-label="${pl?'Déplier':'Replier'} l'étape">${pl?'▸':'▾'}</button>`:'<span class="tplie" aria-hidden="true"></span>'}<input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider l'étape et tout ce qu'elle contient"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${F.length?`<span class="tcnt">${fd}/${F.length}</span>`:''}${closed?'':`<button class="tsub" data-act="tsub" data-i="${i}" aria-label="Ajouter une tâche dans l'étape">+</button>`}${drag}</li>`; }
+      return `<li class="etape${x.d?' done':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}">${true?`<button class="tplie" data-act="tplie" data-i="${i}" aria-expanded="${!pl}" aria-label="${pl?'Déplier':'Replier'} l'étape">${pl?'▸':'▾'}</button>`:'<span class="tplie" aria-hidden="true"></span>'}<input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider l'étape et tout ce qu'elle contient"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${F.length?`<span class="tcnt">${fd}/${F.length}</span>`:''}${closed?'':`<button class="tsub" data-act="tsub" data-i="${i}" aria-label="Ajouter une tâche dans l'étape">+</button>`}${drag}</li>`; }
     return `<li class="${x.d?'done':''}${i===firstOpen?' next':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}"><input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider la ${word}"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${drag}</li>`; };
-  const subForm=`<li class="subrow" style="--n:${sub>=0?N(L[sub])+1:0}"><form class="inline" data-act="addSub" data-i="${sub}"><input class="input" id="f-sub" autocomplete="off" autocorrect="off" placeholder="Dans « ${esc(sub>=0?L[sub].t:'')} »" aria-label="Nouvelle tâche dans l'étape"><button class="btn" type="submit">+</button><button class="xbtn" type="button" data-act="subNo" aria-label="Annuler">✕</button></form></li>`;
+  const subForm=`<li class="subrow" style="--n:${sub>=0?N(L[sub])+1:0}"><form class="inline" data-act="addSub" data-i="${sub}"><input class="input" id="f-sub" autocomplete="off" autocorrect="off" placeholder="Dans « ${esc(sub>=0?L[sub].t:'')} »" aria-label="Nouvelle tâche dans l'étape"><button class="btn" type="submit">+</button></form></li>`;
   let html=''; vis.forEach((o,k)=>{ html+=row(o); const nx=vis[k+1]; if(sub>=0&&o.i>=sub&&o.i<subEnd&&(!nx||nx.i>=subEnd)) html+=subForm; });
-  return `<div class="field"><span class="lbl">${word==='étape'?'Étapes':'Tâches'} ${n?d+'/'+n:''}${rest?' · reste ≈ '+fmtMins(rest):''}</span>
+  return `<div class="field" data-taches="${p.id}" data-mot="${word}"><span class="lbl">${word==='étape'?'Étapes':'Tâches'} ${n?d+'/'+n:''}${rest?' · reste ≈ '+fmtMins(rest):''}</span>
    ${adminN?`<div class="seg tfilt"><button data-act="tfilt" data-v="0" aria-pressed="${!only}">Toutes</button><button data-act="tfilt" data-v="1" aria-pressed="${only}">Admin (${adminN})</button></div>`:''}
    ${html?`<ul class="list tasks${!only&&L.some((y,k)=>et(k))?' arbre':''}" data-pid="${p.id}">${html}</ul>`:''}
    ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
@@ -2197,6 +2215,7 @@ document.addEventListener('focusout',e=>{ const t=e.target; if(!t||!t.classList|
   else { p.tasks.splice(i,1); sinkDone(p); toast('Tâche supprimée'); }
   save(); setTimeout(()=>refresh(sheetId),0); });
 document.addEventListener('keydown',e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains('tedit')&&e.key==='Enter'){ e.preventDefault(); t.blur(); } });
+document.addEventListener('focusout',e=>{ const t=e.target; if(!t||t.id!=='f-sub') return; setTimeout(()=>{ const c=document.getElementById('f-sub'); if(!c||document.activeElement===c||c.value.trim()) return; ui.subNew=null; const li=c.closest('li.subrow'); if(li) li.remove(); },300); });
 /* Glisser une ligne vers la gauche = « Supprimer ? » (25.11) ; vers la droite ou ailleurs : rien */
 let tsw=null;
 document.addEventListener('pointerdown',()=>{ window.__supTache=false; },true);
@@ -2536,11 +2555,8 @@ document.addEventListener('click',e=>{
   else if(a==='achDone'){ ui.showAch=!ui.showAch; achatsMaj(); }
   else if(a==='tdone'){ ui.showDone=!ui.showDone; refresh(sheetId); }
   else if(a==='tfilt'){ ui.taskAdmin=el.dataset.v==='1'; refresh(sheetId); }
-  else if(a==='addSec'){ ui.secNew=sheetId; refresh(sheetId); setTimeout(()=>{ const i=document.getElementById('f-sec'); if(i) try{ i.focus(); }catch(err){} },60); }
-  else if(a==='secNo'){ ui.secNew=null; refresh(sheetId); }
   else if(a==='tplie'){ const p=H(sheetId), x=p&&p.tasks[Number(el.dataset.i)]; if(x){ plier(p,x); if(ui.subNew&&ui.subNew.pid===p.id) ui.subNew=null; refresh(sheetId); } }
-  else if(a==='tsub'){ const p=H(sheetId), x=p&&p.tasks[Number(el.dataset.i)]; if(!x) return; if(estPlie(p,x)) plier(p,x); ui.subNew={pid:p.id,i:Number(el.dataset.i)}; refresh(sheetId); setTimeout(()=>{ const i=document.getElementById('f-sub'); if(i) try{ i.focus(); }catch(err){} },60); }
-  else if(a==='subNo'){ ui.subNew=null; refresh(sheetId); }
+  else if(a==='tsub'){ const p=H(sheetId), k=Number(el.dataset.i), x=p&&p.tasks[k]; if(!x) return; if(ui.subNew&&ui.subNew.pid===p.id&&ui.subNew.i===k){ ui.subNew=null; majTaches(p); return; } if(estPlie(p,x)) plier(p,x); ui.subNew={pid:p.id,i:k}; majTaches(p); const i=document.getElementById('f-sub'); if(i) try{ i.focus(); }catch(err){} }
   else if(a==='tsupNo'){ ui.tSup=null; refresh(sheetId); }
   else if(a==='tsupOk'){ const p=H(sheetId), i=Number(el.dataset.i); ui.tSup=null; if(!p||!p.tasks[i]){ refresh(sheetId); return; } const j=Projets.finBranche(p.tasks,i), t=p.tasks[i].t; p.tasks.splice(i,j-i); sinkDone(p); save(); refresh(sheetId); toast(j-i>1?'Étape supprimée avec ses tâches':'« '+t+' » supprimée'); }
   else if(a==='tedit'){ const p=H(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp); try{ inp.focus(); const L=inp.value.length; inp.setSelectionRange(L,L); }catch(err){} }
@@ -2674,9 +2690,8 @@ document.addEventListener('submit',e=>{e.preventDefault(); const f=e.target.data
   if(f==='addOff'){let a=document.getElementById('o-s').value, b=document.getElementById('o-e').value||a; if(!a) return; if(b<a){const x=a; a=b; b=x;} S.offs.push({id:'o'+Date.now(),s:a,e:b,l:document.getElementById('o-l').value.trim()||'Congé'}); save(); render(); offsSheet(); toast('Ajouté au planning');}
   if(f==='addAchat'){ const i=document.getElementById('f-achat'), v=i.value.trim(); if(!v||!AB){ if(i) i.focus(); return; } AB.ajouter(P(sheetId),v); i.value=''; achatsMaj(); try{ i.focus(); }catch(err){} return; }
   if(f==='addSub'){ const i=document.getElementById('f-sub'), v=i?i.value.trim():''; const h=H(sheetId), k=Number(e.target.dataset.i), st=h&&h.tasks[k]; if(!st){ ui.subNew=null; refresh(sheetId); return; } if(!v){ if(i) i.focus(); return; }
-    h.tasks.splice(Projets.finBranche(h.tasks,k),0,{t:v,d:false,n:Projets.niveau(st)+1}); sinkDone(h); save(); ui.subNew={pid:h.id,i:h.tasks.indexOf(st)}; refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-sub'); if(n) try{ n.focus(); }catch(err){} },40); return; }
-  if(f==='addSecF'){ const i=document.getElementById('f-sec'), v=i?i.value.replace(/^#+\s*/,'').trim():''; if(!v){ if(i) i.focus(); return; } const h=H(sheetId); if(h){ h.tasks.push({t:v,d:false,e:true}); sinkDone(h); save(); } ui.secNew=null; refresh(sheetId); setTimeout(()=>{ const t=document.getElementById('f-task'); if(t) try{ t.focus(); }catch(err){} },60); return; }
-  if(f==='addTask'){const v=document.getElementById('f-task').value.trim(); if(!v) return; const h=H(sheetId); if(/^#/.test(v)){ const t2=v.replace(/^#+\s*/,''); if(t2) h.tasks.push({t:t2,d:false,e:true}); sinkDone(h); } else { h.tasks.push({t:v,d:false}); sinkDone(h); } save(); refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-task'); if(n) try{n.focus();}catch(err){} },40);}
+    h.tasks.splice(Projets.finBranche(h.tasks,k),0,{t:v,d:false,n:Projets.niveau(st)+1}); sinkDone(h); save(); ui.subNew={pid:h.id,i:h.tasks.indexOf(st)}; i.value=''; majTaches(h); try{ i.focus(); }catch(err){} return; }
+  if(f==='addTask'){const inp=document.getElementById('f-task'), v=inp.value.trim(); if(!v) return; const h=H(sheetId); h.tasks.push({t:v,d:false}); sinkDone(h); save(); inp.value=''; ui.subNew=null; majTaches(h); try{ inp.focus(); }catch(err){} }
   if(f==='addPetite'){const i=document.getElementById('f-petite'), v=i.value.trim(); if(!v) return; const sel=document.getElementById('f-pdom'); const h=(sel&&H(sel.value))||autresD(); ui.ptDom=h.id; h.tasks.push({t:v,d:false}); sinkDone(h); save(); if(enTaches()) render(); else petitesSheet(); setTimeout(()=>{ const n=document.getElementById('f-petite'); if(n) try{n.focus();}catch(err){} },40);}
   if(f==='emojiOther'){const v=document.getElementById('f-emo').value.trim(); emojiDone(v||null);}
   if(f==='newTag'){const v=document.getElementById('f-tag').value.trim(); if(!v) return; let t=S.tags.find(x=>x.name.toLowerCase()===v.toLowerCase()); if(!t){t={id:'t'+Date.now(),name:v}; S.tags.push(t);} save();

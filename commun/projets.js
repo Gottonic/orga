@@ -54,12 +54,12 @@
   /* Les tâches en arbre (étape 12b, 25.11.2026). p.tasks reste une liste plate, dans l'ordre de lecture ;
      chaque élément peut porter n = son niveau (0 en haut, absent = 0).
        étape   un élément suivi d'un élément plus profond (ses tâches sont les suivants plus profonds) ;
-               ranger() lui met e: true, qu'elle garde même vidée ({ t, e: true } = étape encore vide)
+               vidée, elle redevient une tâche (le champ e du premier jour n'est plus utilisé, ranger() l'efface)
        d       enregistré aussi sur les étapes, recalculé : faite quand toutes ses tâches le sont ;
                cocher une étape coche tout ce qu'elle contient (cocher()).
      Les anciens lecteurs voient tous les éléments, dans l'ordre, avec t et d. */
   const niveau = (x) => (x && x.n > 0 ? Math.floor(x.n) : 0);
-  const estEtape = (L, i) => !!L && !!L[i] && (L[i].e === true || niveau(L[i + 1]) > niveau(L[i]));
+  const estEtape = (L, i) => !!L && !!L[i] && niveau(L[i + 1]) > niveau(L[i]);
   /* fin (exclue) de la branche qui commence en i */
   function finBranche(L, i) { const n = niveau(L[i]); let j = i + 1; while (j < L.length && niveau(L[j]) > n) j++; return j; }
   const aSections = (L) => (L || []).some(estSection);
@@ -67,18 +67,18 @@
   function depuisSections(L) {
     let dans = false;
     return (L || []).map((x, i) => {
-      if (estSection(x)) { dans = true; const y = { t: x.t, d: false }; if (!(L[i + 1] && !estSection(L[i + 1]))) y.e = true; return y; }
+      if (estSection(x)) { dans = true; return { t: x.t, d: false }; }
       const y = Object.assign({}, x); delete y.s; if (dans) y.n = niveau(x) + 1; else if (!y.n) delete y.n; return y;
     });
   }
   /* niveaux possibles (pas de saut de plus d'un niveau), puis d des étapes recalculé ; modifie L */
   function ranger(L) {
     let prec = -1;
-    L.forEach((x) => { let n = niveau(x); if (n > prec + 1) n = prec + 1; if (n > 0) x.n = n; else delete x.n; prec = n; });
+    L.forEach((x) => { let n = niveau(x); if (n > prec + 1) n = prec + 1; if (n > 0) x.n = n; else delete x.n; delete x.e; prec = n; });
     for (let i = L.length - 1; i >= 0; i--) {
       const n = niveau(L[i]); if (!(niveau(L[i + 1]) > n)) continue;
       let tout = true; for (let j = i + 1; j < L.length && niveau(L[j]) > n; j++) if (niveau(L[j]) === n + 1 && !L[j].d) { tout = false; break; }
-      L[i].d = tout; L[i].e = true; /* reste une étape, même vidée */
+      L[i].d = tout;
     }
     return L;
   }
@@ -98,7 +98,7 @@
   const tachesSeules = (L) => (L || []).filter((x, i) => !estSection(x) && !estEtape(L, i));
   /* « Étape n°1 » : la prochaine chose à faire d'un projet (ou d'une liste de tâches) = la première tâche pas faite,
      en descendant dans l'arbre et en sautant les branches faites. Renvoie { i, t, x, chemin: [noms des étapes] } ou null.
-     Une étape vide pas faite compte comme une chose à faire. */
+     */
   function etapeUne(p) {
     const L0 = Array.isArray(p) ? p : (p && p.tasks) || [], L = aSections(L0) ? depuisSections(L0) : L0, pile = [];
     for (let i = 0; i < L.length; i++) {
