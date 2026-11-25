@@ -350,7 +350,9 @@ let PROFIL=null;
 function prof(){ if(!window.LocusProfil) return null; return PROFIL||(PROFIL=LocusProfil.lire(UID)); }
 const profilChoisi=()=>!window.LocusProfil||LocusProfil.existe(UID)||!!B['s:routine']||!!(PB&&PB.liste().length); /* Nicolas (données déjà là) ne voit pas l'accueil de bienvenue */
 function appliquerPalette(p){ let st=document.getElementById('palette'); if(!st){ st=document.createElement('style'); st.id='palette'; document.head.appendChild(st); }
-  const c=window.LocusProfil?LocusProfil.css(p,'.apps'):''; if(st.textContent!==c) st.textContent=c; }
+  const c=window.LocusProfil?LocusProfil.css(p,'.apps')+'\n'+LocusProfil.cssFond(p):''; if(st.textContent!==c) st.textContent=c;
+  /* la barre du téléphone suit l'en-tête (Vivaldi : on corrige le contenu de la balise, sans la remplacer) */
+  const m=document.querySelector('meta[name="theme-color"]'), h=document.querySelector('header'); if(m&&h){ const bg=getComputedStyle(h).backgroundColor; if(bg&&bg!=='rgba(0, 0, 0, 0)') m.content=bg; } }
 function render(){ if(!UID) return; if(document.activeElement&&$main.contains(document.activeElement)&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.value) return; vAccueil(); }
 
 /* =============================== La routine du lundi =============================== */

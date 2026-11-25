@@ -20,6 +20,13 @@
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
 main{max-width:640px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
 section{background:var(--cell);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:12px}
+/* boîtes fermées qu'on ouvre d'un toucher (25.11, demande de Nicolas) */
+details.boite{background:var(--cell);border:1px solid var(--line)}
+details.boite>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+details.boite>summary::-webkit-details-marker{display:none}
+details.boite>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg);transition:transform .15s;flex:none;margin-right:4px}
+details.boite[open]>summary::after{transform:rotate(45deg)}
+details.boite>.dedans{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
 h2{margin:0;font-size:1.1rem}
 p{margin:0}
 .note{color:var(--muted);font-size:.88rem}
@@ -69,33 +76,43 @@ p{margin:0}
 <body>
 <header class="oh" style="--oh-bg:#4A4458;--oh-ink:#F3F1E7"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">Réglages</h1><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button></div></header>
 <main>
-  <section aria-labelledby="t-profil" id="profil">
-    <h2 id="t-profil">Mon Locus</h2>
+  <details class="boite" aria-labelledby="t-profil" id="profil">
+    <summary><h2 id="t-profil">Mon Locus</h2></summary>
+    <div class="dedans">
     <p class="note">Ce que ton accueil montre, et comment. Tout s'enregistre tout de suite, pour toi seul·e.</p>
     <div id="mon-locus"><p class="note">Chargement…</p></div>
-  </section>
-  <section aria-labelledby="t-place" data-avance>
-    <h2 id="t-place">Place sur Supabase</h2>
+  </div>
+  </details>
+  <details class="boite" aria-labelledby="t-place" data-avance>
+    <summary><h2 id="t-place">Place sur Supabase</h2></summary>
+    <div class="dedans">
     <div id="place"><p class="note">Chargement…</p></div>
     <p class="note">Plan gratuit : 500 Mo de base de données pour Locus, 1 Go de fichiers et 5 Go de trafic par mois pour tout le compte Supabase (GDT compris s'il est dans la même organisation). Le trafic se voit seulement dans le tableau de bord de Supabase.</p>
     <div class="btns"><button class="btn" type="button" id="actualiser">Actualiser</button><a class="btn" href="https://supabase.com/dashboard/project/rzcpjsffpvuvbdtqymms" target="_blank" rel="noopener">Ouvrir Supabase</a></div>
-  </section>
-  <section aria-labelledby="t-dossier" data-avance>
-    <h2 id="t-dossier">Dossier Locus sur l'ordinateur</h2>
+  </div>
+  </details>
+  <details class="boite" aria-labelledby="t-dossier" data-avance>
+    <summary><h2 id="t-dossier">Dossier Locus sur l'ordinateur</h2></summary>
+    <div class="dedans">
     <p class="note">Le dossier où Locus range les fichiers de tes projets (Projets/&lt;domaine&gt;/&lt;projet&gt;, À trier, Archives). À choisir une fois, sur l'ordinateur, avec Locus ouverte comme app installée, puis « Autoriser à chaque visite ».</p>
     <div id="dossier"><p class="note">…</p></div>
     <div class="btns" id="dossier-btns"></div>
-  </section>
-  <section aria-labelledby="t-compte">
-    <h2 id="t-compte">Compte</h2>
+  </div>
+  </details>
+  <details class="boite" aria-labelledby="t-compte">
+    <summary><h2 id="t-compte">Compte</h2></summary>
+    <div class="dedans">
     <p id="compte" class="note">…</p>
     <div class="btns"><button class="btn" type="button" id="sortir" hidden>Se déconnecter de toutes les apps</button></div>
-  </section>
-  <section aria-labelledby="t-app">
-    <h2 id="t-app">App</h2>
+  </div>
+  </details>
+  <details class="boite" aria-labelledby="t-app">
+    <summary><h2 id="t-app">App</h2></summary>
+    <div class="dedans">
     <p class="note">Version installée : <b id="version">…</b></p>
     <div class="btns"><button class="btn" type="button" id="maj">Chercher une mise à jour</button></div>
-  </section>
+  </div>
+  </details>
 </main>
 <script src="../commun/supabase.js"></script>
 <script src="../commun/profil.js"></script>
@@ -201,6 +218,7 @@ function dessinerProfil(){
   const eta=L.ETAPES.map(([k,t])=>`<label><input type="checkbox" data-etape="${k}" ${P.etapes.includes(k)?'checked':''}>${esc(t)}</label>`).join('');
   $('mon-locus').innerHTML=`<p class="sous">Style</p><div class="choix">${st('village','Village','Chaque app est un lieu (l’Établi, la Banque…)')}${st('neutre','Neutre','Des noms simples, un menu épuré')}</div>
     <p class="note">Changer de style remet ses modules, son menu, sa palette et ses étapes ; tes noms restent. Tu peux ensuite tout régler un par un.</p>
+    <p class="sous">Fond de l’accueil</p><div class="choix"><button type="button" data-fond="sombre" aria-pressed="${P.fond!=='clair'}"><b>Sombre</b><span>Le lilas profond de Locus</span></button><button type="button" data-fond="clair" aria-pressed="${P.fond==='clair'}"><b>Clair</b><span>Un fond crème, lumineux</span></button></div>
     <p class="sous">Menu de l’accueil</p><div class="choix">${me('detail','Détaillé','Les cartes du jour : projets, séance, chrono…')}${me('epure','Épuré','Seulement les noms, rien de plus')}</div>
     <p class="sous">Modules affichés et leurs noms</p><div class="mods">${mods}</div>
     <p class="note">Un module coupé disparaît de l’accueil et de la recherche ; ses données restent. Laisse un nom vide pour garder celui du style.</p>
@@ -215,6 +233,7 @@ function enregistrerProfil(redessiner){ if(redessiner) dessinerProfil(); const e
 $('mon-locus').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!PROF) return;
   if(b.dataset.style){ if(PROF.style!==b.dataset.style){ PROF=LocusProfil.nouveauStyle(PROF,b.dataset.style); enregistrerProfil(true); } return; }
   if(b.dataset.menu){ PROF.menu=b.dataset.menu; enregistrerProfil(true); return; }
+  if(b.dataset.fond){ PROF.fond=b.dataset.fond; enregistrerProfil(true); return; }
   if(b.dataset.palette){ PROF.palette=b.dataset.palette; enregistrerProfil(true); return; } });
 $('mon-locus').addEventListener('change',e=>{ const el=e.target; if(!PROF) return;
   if(el.dataset.mod){ PROF.modules=Object.assign({},PROF.modules,{[el.dataset.mod]:el.checked?1:0}); enregistrerProfil(false); return; }
