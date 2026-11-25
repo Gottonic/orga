@@ -338,6 +338,8 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .tasks.arbre li.dragging{padding-left:calc(36px + var(--dn,var(--n,0)) * 24px)}
 .tasks.arbre li.etape.dragging{padding-left:calc(2px + var(--dn,var(--n,0)) * 24px)}
 .tasks li.suit{display:none}
+.tasks li.cible{background:color-mix(in srgb,var(--ink) 16%,var(--cell));box-shadow:inset 0 0 0 2px var(--ink)}
+.tasks li.dragging.dedans{opacity:.55}
 .tasks li.dragging[data-suit]::after{content:'+ ' attr(data-suit);font-size:.72rem;color:var(--muted);margin:0 6px;flex:none}
 .secadd{align-self:flex-end;font-size:.8rem;padding:2px 2px;margin-bottom:-2px;color:var(--muted)}
 .secpop{display:flex;gap:6px;align-items:center;padding:8px;border:1px solid var(--bd);border-radius:14px;background:var(--cell);box-shadow:0 6px 18px rgba(0,0,0,.12)}
@@ -1640,7 +1642,7 @@ function tasksBlock(p,closed,word){
   const vis=[]; if(only) T0.filter(o=>parseTask(o.x.t).admin&&(ui.showDone||!o.x.d)).forEach(o=>vis.push(o));
   else for(let i=0;i<L.length;i++){ const x=L[i]; if(x.d&&!ui.showDone){ i=Projets.finBranche(L,i)-1; continue; } vis.push({x,i}); if(et(i)&&estPlie(p,x)) i=Projets.finBranche(L,i)-1; }
   const sub=ui.subNew&&ui.subNew.pid===p.id&&L[ui.subNew.i]&&et(ui.subNew.i)?ui.subNew.i:-1, subEnd=sub>=0?Projets.finBranche(L,sub):-1;
-  const drag=closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer (vers la droite : ranger dans l\'étape au-dessus)">≡</span>';
+  const drag=closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer (lâcher au milieu d\'une tâche : la ranger dedans)">≡</span>';
   const row=({x,i})=>{ const lv=only?0:N(x), step=et(i);
     if(step){ const fin=Projets.finBranche(L,i), F=L.slice(i+1,fin).filter((y,k)=>!et(i+1+k)), fd=F.filter(y=>y.d).length, pl=estPlie(p,x);
       return `<li class="etape${x.d?' done':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}">${fin>i+1?`<button class="tplie" data-act="tplie" data-i="${i}" aria-expanded="${!pl}" aria-label="${pl?'Déplier':'Replier'} l'étape">${pl?'▸':'▾'}</button>`:'<span class="tplie" aria-hidden="true"></span>'}<input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider l'étape et tout ce qu'elle contient"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${F.length?`<span class="tcnt">${fd}/${F.length}</span>`:''}${closed?'':`<button class="tsub" data-act="tsub" data-i="${i}" aria-label="Ajouter une tâche dans l'étape">+</button>`}${drag}</li>`; }
@@ -1651,7 +1653,7 @@ function tasksBlock(p,closed,word){
    ${adminN?`<div class="seg tfilt"><button data-act="tfilt" data-v="0" aria-pressed="${!only}">Toutes</button><button data-act="tfilt" data-v="1" aria-pressed="${only}">Admin (${adminN})</button></div>`:''}
    ${html?`<ul class="list tasks${!only&&L.some((y,k)=>et(k))?' arbre':''}" data-pid="${p.id}">${html}</ul>`:''}
    ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
-   ${closed?'':`${ui.secNew===p.id?`<form class="secpop" data-act="addSecF"><input class="input" id="f-sec" autocomplete="off" autocorrect="off" placeholder="Nom de l'étape" aria-label="Nom de la nouvelle étape" enterkeyhint="done"><button class="btn" type="submit">OK</button><button class="xbtn" type="button" data-act="secNo" aria-label="Annuler">✕</button></form>`:`<button class="linkbtn secadd" data-act="addSec">+ Étape</button>`}<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Une étape : « + Étape » au-dessus, ou commence la ligne par #. Pour ranger une tâche dans l'étape au-dessus, glisse-la (≡) vers la droite.</p>`}</div>`;
+   ${closed?'':`${ui.secNew===p.id?`<form class="secpop" data-act="addSecF"><input class="input" id="f-sec" autocomplete="off" autocorrect="off" placeholder="Nom de l'étape" aria-label="Nom de la nouvelle étape" enterkeyhint="done"><button class="btn" type="submit">OK</button><button class="xbtn" type="button" data-act="secNo" aria-label="Annuler">✕</button></form>`:`<button class="linkbtn secadd" data-act="addSec">+ Étape</button>`}<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Une étape : « + Étape » au-dessus, ou commence la ligne par #. Pour ranger une tâche dans une autre, glisse-la (≡) au milieu de celle-ci : elle s'assombrit, lâche.</p>`}</div>`;
 }
 function durPick(mode,dur,act){ const isM=mode===true||mode==='mini', isP=mode==='perm'; return `<div class="durrow"><div class="dfree${isM||isP?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&!isP&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="perm" aria-pressed="${isP}">∞ Perpétuel<small>sans fin ni durée</small></button></div>`; }
 function applyDur(p,v){ if(v==='perm'){ if(isPerm(p)){ p.size='proj'; p.dur=p.dur||5; return; } if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='perm'; p.due=null; return; } if(v!=='mini'&&Number(v)<0.5) v=0.5; if(v==='mini'){ p.size='mini'; p.dur=null; p.emoji=''; p.color=MINI_COLOR; p.weeks=[]; p.days=[]; return; } const n=Number(v); if(!(n>0)) return; if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='proj'; p.dur=n; }
@@ -2190,16 +2192,23 @@ document.addEventListener('pointerdown',e=>{ const h=e.target.closest&&e.target.
   const suit=[]; let n=li.nextElementSibling; while(n&&n.dataset.i&&(+n.dataset.n||0)>n0){ suit.push(n); n=n.nextElementSibling; }
   drag.ul.querySelectorAll('.subrow').forEach(x=>suit.push(x)); suit.forEach(x=>x.classList.add('suit')); drag.suit=suit;
   const k=suit.filter(x=>x.dataset.i).length; if(k) li.setAttribute('data-suit',k+' dedans'); try{ h.setPointerCapture(e.pointerId); }catch(err){} });
-document.addEventListener('pointermove',e=>{ if(!drag) return; e.preventDefault(); const y=e.clientY; let before=null;
-  for(const it of drag.ul.children){ if(it===drag.li||it.classList.contains('suit')) continue; const r=it.getBoundingClientRect(); if(y<r.top+r.height/2){ before=it; break; } }
-  if(before){ if(drag.li.nextSibling!==before) drag.ul.insertBefore(drag.li,before); } else if(drag.ul.lastChild!==drag.li) drag.ul.appendChild(drag.li);
-  const pv=dragVis(drag.li,'previousElementSibling'), nx=dragVis(drag.li,'nextElementSibling'), hi=pv?(+pv.dataset.n||0)+1:0, lo=Math.min(hi,nx?(+nx.dataset.n||0):0);
-  const lv=Math.max(lo,Math.min(hi,drag.n0+Math.round((e.clientX-drag.x0)/28))); if(lv!==drag.lvl){ drag.lvl=lv; drag.li.style.setProperty('--dn',lv); } },{passive:false});
-const endDrag=()=>{ if(!drag) return; const {li,pid,suit,lvl,n0}=drag; drag=null; li.classList.remove('dragging'); li.removeAttribute('data-suit'); li.style.removeProperty('--dn'); (suit||[]).forEach(x=>x.classList.remove('suit')); const p=H(pid); if(!p) return;
-  const L=p.tasks, i0=+li.dataset.i, i1=Projets.finBranche(L,i0), block=L.slice(i0,i1), rest=L.slice(0,i0).concat(L.slice(i1)), nx=dragVis(li,'nextElementSibling');
-  let pos=nx?rest.indexOf(L[+nx.dataset.i]):rest.length; if(pos<0) pos=rest.length; rest.splice(pos,0,...block);
-  const dl=lvl-n0; if(dl) block.forEach(x=>{ const m=Projets.niveau(x)+dl; if(m>0) x.n=m; else delete x.n; });
-  if(dl||rest.some((x,j)=>x!==L[j])){ p.tasks=rest; sinkDone(p); save(); } refresh(pid); };
+/* lâcher au milieu d'une autre tâche (elle s'assombrit) = la ranger dedans ; sur le haut ou le bas d'une tâche = se placer avant / après */
+const dragCible=c=>{ if(drag.cible===c) return; if(drag.cible) drag.cible.classList.remove('cible'); drag.cible=c; if(c) c.classList.add('cible'); drag.li.classList.toggle('dedans',!!c); };
+document.addEventListener('pointermove',e=>{ if(!drag) return; e.preventDefault(); const y=e.clientY, ul=drag.ul, D=drag.li; let over=null, r=null;
+  for(const it of ul.children){ if(it===D||it.classList.contains('suit')||!it.dataset.i) continue; const q=it.getBoundingClientRect(); if(y>=q.top&&y<q.bottom){ over=it; r=q; break; } }
+  drag.fin=false; if(over){ const f=(y-r.top)/r.height; if(f>.25&&f<.75){ dragCible(over); return; } dragCible(null);
+    if(f<=.25){ if(D.nextElementSibling!==over){ ul.insertBefore(D,over); drag.moved=true; } } else { const nx=over.nextElementSibling; if(nx!==D){ ul.insertBefore(D,nx); drag.moved=true; } } }
+  else { const q=D.getBoundingClientRect(); dragCible(null); if(y<q.top||y>=q.bottom){ const items=[...ul.children].filter(it=>it!==D&&!it.classList.contains('suit')&&it.dataset.i); if(items.length){ if(y<items[0].getBoundingClientRect().top&&D.nextElementSibling!==items[0]){ ul.insertBefore(D,items[0]); drag.moved=true; } else if(y>=Math.max(items[items.length-1].getBoundingClientRect().bottom,q.bottom)){ drag.fin=true; drag.moved=true; if(ul.lastElementChild!==D) ul.appendChild(D); } } } }
+  /* entre deux tâches : le niveau de celle d'en dessous (ou d'au-dessus en bas de liste) ; décaler vers la droite / la gauche l'ajuste */
+  const pv=dragVis(D,'previousElementSibling'), nx=dragVis(D,'nextElementSibling'), hi=pv?(+pv.dataset.n||0)+1:0, lo=Math.min(hi,nx?(+nx.dataset.n||0):0), base=drag.fin?0:!drag.moved?drag.n0:nx?lo:(pv?(+pv.dataset.n||0):0);
+  const lv=Math.max(lo,Math.min(hi,base+Math.round((e.clientX-drag.x0)/40))); if(lv!==drag.lvl){ drag.lvl=lv; D.style.setProperty('--dn',lv); } },{passive:false});
+const endDrag=()=>{ if(!drag) return; const {li,pid,suit,lvl,n0,cible}=drag; if(cible) cible.classList.remove('cible'); drag=null; li.classList.remove('dragging','dedans'); li.removeAttribute('data-suit'); li.style.removeProperty('--dn'); (suit||[]).forEach(x=>x.classList.remove('suit')); const p=H(pid); if(!p) return;
+  const L=p.tasks, i0=+li.dataset.i, i1=Projets.finBranche(L,i0), block=L.slice(i0,i1), rest=L.slice(0,i0).concat(L.slice(i1));
+  let pos, dl;
+  if(cible){ const t=L[+cible.dataset.i]; if(!t||block.includes(t)){ refresh(pid); return; } const ti=rest.indexOf(t); pos=Projets.finBranche(rest,ti); dl=Projets.niveau(t)+1-n0; if(estPlie(p,t)) plier(p,t); }
+  else { const nx=dragVis(li,'nextElementSibling'); pos=nx?rest.indexOf(L[+nx.dataset.i]):rest.length; if(pos<0) pos=rest.length; dl=lvl-n0; }
+  rest.splice(pos,0,...block); if(dl) block.forEach(x=>{ const m=Projets.niveau(x)+dl; if(m>0) x.n=m; else delete x.n; });
+  if(dl||rest.some((x,j)=>x!==L[j])){ p.tasks=rest; sinkDone(p); save(); if(cible) toast('Rangée dans « '+L[+cible.dataset.i].t+' »'); } refresh(pid); };
 document.addEventListener('pointerup',endDrag); document.addEventListener('pointercancel',endDrag);
 /* Planning : déplacer une barre (souris : glisser ; doigt : appui long puis glisser) */
 let bdrag=null;
