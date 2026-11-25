@@ -774,6 +774,9 @@ details.more .field{margin-top:10px}
 .calh{display:flex;align-items:center;gap:8px}
 .calh i{display:none}
 .calh .input{flex:1;padding:8px 10px}
+.evnote{font-size:.95rem;line-height:1.45;overflow-wrap:anywhere;background:var(--cell);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.evnote a{color:inherit}
+.aev .evn{font-style:normal;opacity:.6;margin-left:2px}
 .evd{display:flex;flex-direction:column;gap:2px}
 .evd b{font-size:1rem}
 .gbx{justify-self:end;align-self:start;z-index:6;width:26px;height:26px;margin:-8px -8px 0 0;border:2px solid var(--paper,#fff);border-radius:50%;background:#C2452D;color:#fff;font-weight:800;font-size:.85rem;line-height:1;padding:0;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
@@ -1254,6 +1257,7 @@ function evSheet(i){ const e=EVW[i]; if(!e) return; const c=coulCal(e.cal), cal=
   openSheet(`<div class="shead" style="--pc:${c};--pt:${ink(c)}"><h2>${esc(e.titre||'(sans titre)')}<small>${esc(cal?cal.nom:'Calendrier')}</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody">
   <div class="evd"><span class="lbl">Quand</span><b>${esc(evQuand(e))}</b></div>
   ${e.lieu?`<div class="evd"><span class="lbl">Où</span><b>${esc(e.lieu)}</b></div>`:''}
+  ${e.note?`<div class="evd"><span class="lbl">Remarques</span><div class="evnote">${esc(e.note).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g,'<br>')}</div></div>`:''}
   ${gdt?`<a class="btn" style="text-align:center;text-decoration:none" href="https://gottonic.github.io/gamins-de-talus/#/calendrier" target="_blank" rel="noopener">Ouvrir le calendrier de GDT</a>`:''}
   ${gdt?'':`<a class="btn" style="text-align:center;text-decoration:none" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar</a>`}
   <p class="note" style="margin:0">${gdt?'Ce rendez-vous vient de l\'app GDT : il se modifie là-bas.':'Ce rendez-vous vient de Proton : il se modifie là-bas.'} Il apparaît ici au prochain rafraîchissement. Tu peux quand même placer un projet par-dessus.</p></div>`,'ev'); }
@@ -1296,7 +1300,7 @@ function vPlanning(){
   const pw=new Date(m0), nw=new Date(m0); pw.setDate(pw.getDate()-7); nw.setDate(nw.getDate()+7); const fin=new Date(m0); fin.setDate(fin.getDate()+6);
   evLocal(); hCharger(k); evCharger(k);
   const c=inWeek(k), isCur=k===CUR; EVW=evTri(EVS[k]||[]);
-  const evBtn=(e,d)=>{ const i=EVW.indexOf(e), h=e.journee?'':(String(e.debut).slice(0,10)===d?String(e.debut).slice(11,16):''); return `<button class="aev" style="--ec:${coulCal(e.cal)}" data-act="ev" data-i="${i}">${h?`<i>${h}</i>`:''}<span>${esc(e.titre||'(sans titre)')}</span></button>`; };
+  const evBtn=(e,d)=>{ const i=EVW.indexOf(e), h=e.journee?'':(String(e.debut).slice(0,10)===d?String(e.debut).slice(11,16):''); return `<button class="aev" style="--ec:${coulCal(e.cal)}" data-act="ev" data-i="${i}">${h?`<i>${h}</i>`:''}<span>${esc(e.titre||'(sans titre)')}</span>${e.note?'<em class="evn" aria-label="avec remarques">✎</em>':''}</button>`; };
   const rows=[0,1,2,3,4,5,6].map(j=>{ const d=new Date(m0); d.setDate(m0.getDate()+j); const ds=iso(d), inf=demiInfo(ds);
     return `<div class="aday${inf.we?' we':''}${offOn(ds)?' off':''}"><div class="adl${ds===todayS?' tod':''}">${JR[j]}<b>${d.getDate()}</b></div>${[0,1].map(h=>{ const es=inf.es[h], ps=inf.ps[h], i=j*2+h;
       return `<div class="ahalf${es.length?' busy':''}${ds===todayS?' tod':''}"${es.length?` style="--hc:${coulCal(es[0].cal)}"`:''} data-act="cell" data-d="${ds}" data-i="${i}">${es.map(e=>evBtn(e,ds)).join('')}${ps.map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}" data-i="${i}">${ui.chipX&&ui.chipX.id===p.id&&ui.chipX.i===i?`<span class="aplx" data-act="halfDel" data-id="${p.id}" data-i="${i}" role="button" aria-label="Enlever">✕</span>`:''}<span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!es.length&&!ps.length?`<span class="alibre">libre · +</span>`:''}</div>`; }).join('')}</div>`; }).join('');

@@ -16,7 +16,7 @@ const CORS: Record<string, string> = {
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
 type Prop = { name: string; params: Record<string, string>; value: string };
-export type Ev = { titre: string; lieu?: string; debut: string; fin: string; journee: boolean };
+export type Ev = { titre: string; lieu?: string; note?: string; debut: string; fin: string; journee: boolean };
 
 /* ---------- lecture du format .ics ---------- */
 function prop(l: string): Prop | null {
@@ -32,6 +32,8 @@ function prop(l: string): Prop | null {
   return { name: morceaux[0].toUpperCase(), params, value };
 }
 const sansEchap = (s: string) => s.replace(/\\n/gi, ' ').replace(/\\([,;\\])/g, '$1').trim();
+/* la description (« remarques » d'un évènement, 25.11) garde ses retours à la ligne ; 2000 caractères au plus */
+const texteLong = (s: string) => s.replace(/\\n/gi, '\n').replace(/\\([,;\\])/g, '$1').trim().slice(0, 2000);
 function blocs(t: string): Prop[][] {
   const L = t.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '').split(/\r?\n/), out: Prop[][] = [];
   let ev: Prop[] | null = null, profond = 0;
@@ -122,14 +124,14 @@ export function evenements(texte: string, de: string, a: string): Ev[] {
     const ds = g('DTSTART'); if (!ds) continue; const s = lire(ds.value, ds.params); if (!s) continue;
     const de_ = g('DTEND'), du = g('DURATION'); let e = de_ ? lire(de_.value, de_.params) : null;
     let long = e ? e.t - s.t : du ? duree(du.value) : (s.jour ? JOUR : 0); if (long < 0) long = 0;
-    const titre = sansEchap(g('SUMMARY')?.value || '(sans titre)'), lieu = sansEchap(g('LOCATION')?.value || ''), uid = g('UID')?.value || '';
+    const titre = sansEchap(g('SUMMARY')?.value || '(sans titre)'), lieu = sansEchap(g('LOCATION')?.value || ''), note = texteLong(g('DESCRIPTION')?.value || ''), uid = g('UID')?.value || '';
     const exd = new Set<number>(); for (const p of b.filter((p) => p.name === 'EXDATE')) for (const v of p.value.split(',')) { const x = lire(v, p.params); if (x) exd.add(x.t); }
     const rr = g('RRULE'), rid = g('RECURRENCE-ID');
     const debuts = rr && !rid ? repetitions(s.t, rr.value, s.jour, d1) : [s.t];
     for (const t of debuts) {
       if (rr && !rid && (exd.has(t) || remplaces.has(uid + '|' + t))) continue;
       const f = t + long; if (!(t < d1 && (f > d0 || (long === 0 && t >= d0)))) continue;
-      out.push({ titre, ...(lieu ? { lieu } : {}), debut: iso(t, s.jour), fin: iso(s.jour ? Math.max(f, t + JOUR) : f, s.jour), journee: s.jour });
+      out.push({ titre, ...(lieu ? { lieu } : {}), ...(note ? { note } : {}), debut: iso(t, s.jour), fin: iso(s.jour ? Math.max(f, t + JOUR) : f, s.jour), journee: s.jour });
     }
     void e; e = null;
   }
