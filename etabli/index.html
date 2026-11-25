@@ -341,11 +341,11 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .tasks.arbre li.etape.dragging{padding-left:calc(2px + var(--dn,var(--n,0)) * 24px)}
 .tasks li.suit{display:none}
 .tasks li[data-i]{touch-action:pan-y}
-.tasks li.glisse{transition:none;background:linear-gradient(to left,#C8432B 0,#C8432B var(--gx,0px),var(--cell) var(--gx,0px))}
+.tasks li.glisse{transition:none;background:linear-gradient(to left,var(--neg,#C8432B) 0,var(--neg,#C8432B) var(--gx,0px),var(--cell) var(--gx,0px))}
 .tasks li.glisse>*{transform:translateX(calc(-1 * var(--gx,0px)))}
 .tasks li.glisse{position:relative;overflow:hidden}
 .tasks li.glisse::after{content:'Supprimer';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#fff;font-weight:800;font-size:.85rem;pointer-events:none}
-.tasks li.tsupconf{padding:0;gap:0;background:#C8432B}
+.tasks li.tsupconf{padding:0;gap:0;background:var(--neg,#C8432B)}
 .tasks li.tsupconf button{all:unset;box-sizing:border-box;min-height:46px;display:grid;place-items:center;cursor:pointer;font-weight:800;color:#fff}
 .tasks li.tsupconf .tsupok{flex:1;padding:0 14px;justify-content:start}
 .tasks li.tsupconf .tsupno{flex:none;padding:0 16px;font-weight:600;border-left:1px solid rgba(255,255,255,.35)}
