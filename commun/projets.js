@@ -4,7 +4,8 @@
               Lignes `d:<id>` de la table `rows`. Le domaine « autres » (Autres projets) est automatique.
      projet   il prend du temps, de 4 h à ∞ : perso ou pro (sur le projet lui-même, sans héritage),
               état, priorité, taille, planning. Lignes `p:<id>` ; `parent` = id de son domaine.
-   Les tâches (projets et domaines) peuvent avoir des titres de section : { t, s: true }.
+   Les tâches (projets et domaines) sont en arbre depuis le 25.11 (voir plus bas : n, étapes) ;
+   avant, elles pouvaient avoir des titres de section : { t, s: true }.
    Avant l'étape 1b, un projet pouvait en contenir d'autres ; `nature` héritait alors du parent.
    Ce module donne les règles communes, et `Projets.base` permet aux autres apps (la Mine) de lire et
    d'écrire projets et domaines.
@@ -48,15 +49,66 @@
   }
   const estInfini = (p) => !!p && p.size === 'perm';
   const estDomaine = (x) => !!x && x.kind === 'domaine';
-  const estSection = (t) => !!t && t.s === true;
-  /* les tâches faites descendent à la fin de leur section ; les titres de section restent en place */
-  function trierTaches(L) {
-    const out = []; let seg = [];
-    const vider = () => { seg.forEach((x) => { if (!x.d) out.push(x); }); seg.forEach((x) => { if (x.d) out.push(x); }); seg = []; };
-    (L || []).forEach((x) => { if (estSection(x)) { vider(); out.push(x); } else seg.push(x); });
-    vider(); return out;
+  const estSection = (t) => !!t && t.s === true; /* ancien titre de section (avant l'arbre, 25.11) */
+
+  /* Les tâches en arbre (étape 12b, 25.11.2026). p.tasks reste une liste plate, dans l'ordre de lecture ;
+     chaque élément peut porter n = son niveau (0 en haut, absent = 0).
+       étape   un élément suivi d'un élément plus profond (ses tâches sont les suivants plus profonds) ;
+               ranger() lui met e: true, qu'elle garde même vidée ({ t, e: true } = étape encore vide)
+       d       enregistré aussi sur les étapes, recalculé : faite quand toutes ses tâches le sont ;
+               cocher une étape coche tout ce qu'elle contient (cocher()).
+     Les anciens lecteurs voient tous les éléments, dans l'ordre, avec t et d. */
+  const niveau = (x) => (x && x.n > 0 ? Math.floor(x.n) : 0);
+  const estEtape = (L, i) => !!L && !!L[i] && (L[i].e === true || niveau(L[i + 1]) > niveau(L[i]));
+  /* fin (exclue) de la branche qui commence en i */
+  function finBranche(L, i) { const n = niveau(L[i]); let j = i + 1; while (j < L.length && niveau(L[j]) > n) j++; return j; }
+  const aSections = (L) => (L || []).some(estSection);
+  /* anciens titres de section → étapes de niveau 0, leurs tâches au niveau 1 (même ordre, mêmes positions) */
+  function depuisSections(L) {
+    let dans = false;
+    return (L || []).map((x, i) => {
+      if (estSection(x)) { dans = true; const y = { t: x.t, d: false }; if (!(L[i + 1] && !estSection(L[i + 1]))) y.e = true; return y; }
+      const y = Object.assign({}, x); delete y.s; if (dans) y.n = niveau(x) + 1; else if (!y.n) delete y.n; return y;
+    });
   }
-  const tachesSeules = (L) => (L || []).filter((x) => !estSection(x));
+  /* niveaux possibles (pas de saut de plus d'un niveau), puis d des étapes recalculé ; modifie L */
+  function ranger(L) {
+    let prec = -1;
+    L.forEach((x) => { let n = niveau(x); if (n > prec + 1) n = prec + 1; if (n > 0) x.n = n; else delete x.n; prec = n; });
+    for (let i = L.length - 1; i >= 0; i--) {
+      const n = niveau(L[i]); if (!(niveau(L[i + 1]) > n)) continue;
+      let tout = true; for (let j = i + 1; j < L.length && niveau(L[j]) > n; j++) if (niveau(L[j]) === n + 1 && !L[j].d) { tout = false; break; }
+      L[i].d = tout; L[i].e = true; /* reste une étape, même vidée */
+    }
+    return L;
+  }
+  /* les branches faites descendent à la fin de leur groupe de sœurs ; renvoie une nouvelle liste */
+  function trierTaches(L0) {
+    const L = ranger(aSections(L0) ? depuisSections(L0) : (L0 || []).slice()), out = [];
+    (function groupe(a, b) {
+      const br = []; let i = a; while (i < b) { const j = finBranche(L, i); br.push([i, j]); i = j; }
+      const mettre = ([i, j]) => { out.push(L[i]); groupe(i + 1, j); };
+      br.filter(([i]) => !L[i].d).forEach(mettre); br.filter(([i]) => L[i].d).forEach(mettre);
+    })(0, L.length);
+    return out;
+  }
+  /* cocher ou décocher un élément et tout ce qu'il contient, puis recalculer les étapes ; modifie L */
+  function cocher(L, i, v) { if (!L || !L[i]) return L; const j = finBranche(L, i); for (let k = i; k < j; k++) L[k].d = !!v; return ranger(L); }
+  /* les tâches seules (sans les étapes ni les anciens titres de section) */
+  const tachesSeules = (L) => (L || []).filter((x, i) => !estSection(x) && !estEtape(L, i));
+  /* « Étape n°1 » : la prochaine chose à faire d'un projet (ou d'une liste de tâches) = la première tâche pas faite,
+     en descendant dans l'arbre et en sautant les branches faites. Renvoie { i, t, x, chemin: [noms des étapes] } ou null.
+     Une étape vide pas faite compte comme une chose à faire. */
+  function etapeUne(p) {
+    const L0 = Array.isArray(p) ? p : (p && p.tasks) || [], L = aSections(L0) ? depuisSections(L0) : L0, pile = [];
+    for (let i = 0; i < L.length; i++) {
+      const x = L[i], n = niveau(x); pile.length = Math.min(pile.length, n);
+      if (x.d) { i = finBranche(L, i) - 1; continue; }
+      if (niveau(L[i + 1]) > n) { pile[n] = x.t; continue; }
+      return { i, t: x.t, x: L0[i], chemin: pile.slice(0, n) };
+    }
+    return null;
+  }
   const estMini = (p) => !!p && p.size === 'mini';
 
   /* état commun : idee | prevu | encours | archive */
@@ -174,5 +226,5 @@
     return { liste, get, domaines, domaine, tirer, pousser, ecrire, surChangement: (f) => ecoute.push(f), erreur: () => erreur, enAttente: () => st.dirty.length, pret: () => !!st.last || Object.keys(st.prev).length > 0 };
   }
 
-  window.Projets = { ETATS, FINS, DORT_JOURS, AUTRES, etat, nature, parentDe, enfants, racinePro, parentPossible, estInfini, estMini, estDomaine, estSection, trierTaches, tachesSeules, places, derniereActivite, dort, depuis, lundi, nouveau, nouveauDomaine, autres, base };
+  window.Projets = { ETATS, FINS, DORT_JOURS, AUTRES, etat, nature, parentDe, enfants, racinePro, parentPossible, estInfini, estMini, estDomaine, estSection, trierTaches, tachesSeules, niveau, estEtape, finBranche, aSections, depuisSections, ranger, cocher, etapeUne, places, derniereActivite, dort, depuis, lundi, nouveau, nouveauDomaine, autres, base };
 })();

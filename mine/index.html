@@ -585,7 +585,7 @@ function ecrireProjet(p){ p.touche=today(); PB.ecrire(p); }
 function etatVersProjet(p,e){ if(!p) return;
   if(e==='fini'){ if(!p.closed){ p.closed=today(); p.fin=p.fin||{type:'termine'}; delete p.prevu; } }
   else { delete p.closed; delete p.fin; if(e==='piste') p.later=true; else delete p.later; } }
-function tachesDe(m){ const p=projDe(m); return p?(p.tasks||[]).map((x,i)=>({id:'i'+i,t:x.t,fait:!!x.d&&!x.s,sec:!!x.s})):(m.taches||[]); }
+function tachesDe(m){ const p=projDe(m); if(!p) return m.taches||[]; const L=p.tasks||[]; return L.map((x,i)=>({id:'i'+i,t:x.t,fait:!!x.d&&!x.s,sec:!!x.s||Projets.estEtape(L,i),n:Projets.niveau(x)})); } /* tâches en arbre (25.11) : les étapes s'affichent comme titres, en retrait */
 function majTaches(m,f){ const p=projDe(m);
   if(p){ p.tasks=p.tasks||[]; f(p.tasks,true); p.tasks=Projets.trierTaches(p.tasks); ecrireProjet(p); }
   else { m.taches=m.taches||[]; f(m.taches,false); save(); } }
@@ -951,8 +951,8 @@ function vBilan(){
 
 /* ---------- Page d'un mandat ---------- */
 /* tâches ouvertes, avec les titres de section qui en ont encore */
-function ouvertes(T0){ const out=[]; let sec=null; T0.forEach(t=>{ if(t.sec){ sec=t; return; } if(!t.fait){ if(sec){ out.push(sec); sec=null; } out.push(t); } }); return out; }
-function rowTache(t){ if(t.sec) return `<div class="tache-sec">${esc(t.t)}</div>`; return `<div class="tache${t.fait?' fait':''}"><button class="ck" data-act="tache" data-tid="${t.id}" role="checkbox" aria-checked="${!!t.fait}" aria-label="${esc(t.t)}">${CHECK}</button><span class="tt">${esc(t.t)}</span><button class="tx-x" data-act="t-sup" data-tid="${t.id}" aria-label="Supprimer la tâche">✕</button></div>`; }
+function ouvertes(T0){ const out=[], pile=[]; T0.forEach(t=>{ const n=t.n||0; pile.length=Math.min(pile.length,n); if(t.sec){ pile[n]={t,mis:false}; return; } if(!t.fait){ pile.forEach(o=>{ if(o&&!o.mis){ out.push(o.t); o.mis=true; } }); out.push(t); } }); return out; }
+function rowTache(t){ const ind=t.n?` style="margin-left:${t.n*18}px"`:''; if(t.sec) return `<div class="tache-sec"${ind}>${esc(t.t)}</div>`; return `<div class="tache${t.fait?' fait':''}"${ind}><button class="ck" data-act="tache" data-tid="${t.id}" role="checkbox" aria-checked="${!!t.fait}" aria-label="${esc(t.t)}">${CHECK}</button><span class="tt">${esc(t.t)}</span><button class="tx-x" data-act="t-sup" data-tid="${t.id}" aria-label="Supprimer la tâche">✕</button></div>`; }
 function rowTx(t,mid){ const v=proMontant(t);
   return `<div class="txrow"><span class="hb"><b>${esc(t.tiers||t.note||'Opération')}</b><span>${fJour(t.date)} · ${esc(catNom(bLignes(t).find(l=>estPro(l.cat)).cat))}</span></span><b class="mono ${v<0?'neg':'pos'}">${fmt(v,true)}</b>${t.docs&&t.docs.length?`<button class="tx-x" data-act="justif" data-tx="${t.id}" aria-label="Voir le justificatif">📎${t.docs.length>1?t.docs.length:''}</button>`:''}${mid?`<button class="tx-x" data-act="delier" data-tx="${t.id}" aria-label="Détacher cette opération du mandat">✕</button>`:''}</div>`; }
 function pileLabel(){ const p=ui.pile[ui.pile.length-2]; if(p) return p.k==='mandat'?(S.mands[p.id]||{}).nom||'Retour':(S.docs[p.id]||{}).num||'Retour'; return {mandats:'Mandats',heures:'Heures',factures:'Factures',contacts:'Contacts',bilan:'Bilan'}[ui.tab]; }

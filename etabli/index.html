@@ -324,14 +324,24 @@ textarea.ni{resize:none;overflow:hidden;line-height:1.35;font-family:inherit;dis
 .dmini{padding:12px 8px!important;font-size:1rem}
 .tasks li.next{background:#F8EBC0;box-shadow:inset 4px 0 0 var(--star)}
 .tasks li.next .tt{font-weight:700}
-.tasks li.sec{padding-top:14px;border-top:2px solid var(--bd)}
+.tasks.arbre li{padding-left:calc(36px + var(--n,0) * 24px)}
+.tasks.arbre li.etape{padding-left:calc(2px + var(--n,0) * 24px)}
+.tasks li.etape .tt{font-weight:800}
+.tasks li.etape.done .tt{font-weight:700}
+.tasks .tplie,.tasks .tsub{all:unset;box-sizing:border-box;flex:none;width:26px;align-self:stretch;display:grid;place-items:center;color:var(--muted);cursor:pointer;font-size:.9rem}
+.tasks .tsub{width:34px;font-size:1.15rem;font-weight:700}
+.tasks .tcnt{flex:none;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.tasks.arbre li.subrow{padding-left:calc(36px + var(--n,0) * 24px)}
+.tasks li.subrow form{flex:1;margin:0}
+.tasks li.subrow .input{padding:7px 10px}
+.tasks li.dragging{padding-left:calc(12px + var(--dn,var(--n,0)) * 24px)}
+.tasks.arbre li.dragging{padding-left:calc(36px + var(--dn,var(--n,0)) * 24px)}
+.tasks.arbre li.etape.dragging{padding-left:calc(2px + var(--dn,var(--n,0)) * 24px)}
 .tasks li.suit{display:none}
-.tasks li.sec.dragging::after{content:attr(data-n) ' tâche(s)';font-size:.72rem;color:var(--muted);margin-left:6px}
+.tasks li.dragging[data-suit]::after{content:'+ ' attr(data-suit);font-size:.72rem;color:var(--muted);margin:0 6px;flex:none}
 .secadd{align-self:flex-end;font-size:.8rem;padding:2px 2px;margin-bottom:-2px;color:var(--muted)}
 .secpop{display:flex;gap:6px;align-items:center;padding:8px;border:1px solid var(--bd);border-radius:14px;background:var(--cell);box-shadow:0 6px 18px rgba(0,0,0,.12)}
 .secpop .input{flex:1;min-width:0;padding:8px 10px}
-.tasks li.sec:first-child{border-top:0;padding-top:6px}
-.tasks li.sec .tt{font-weight:800;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
 .addrow{display:flex;gap:6px;align-items:stretch}
 .addrow .inline{flex:1 1 auto;min-width:0;margin:0;display:flex}
 .addrow .inline .input{flex:1;min-width:0;width:auto}
@@ -1019,7 +1029,7 @@ const domOf=p=>p&&p.parent?S.domains.find(d=>d.id===p.parent)||null:null;
 const domName=d=>d?(d.emoji?d.emoji+' ':'')+d.name:'';
 const domsOpen=()=>S.domains.filter(d=>!d.auto&&!d.closed).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 const domProjects=id=>S.projects.filter(p=>!isMini(p)&&(id===AUTRES?!(p.parent&&(D(p.parent)||P(p.parent))):p.parent===id));
-const openTasks=h=>(h.tasks||[]).filter(x=>!x.s&&!x.d);
+const openTasks=h=>Projets.tachesSeules(h.tasks).filter(x=>!x.d);
 const needDomaines=()=>!S.domaines&&!needReprise()&&(S.projects.some(p=>!isMini(p)&&kidsOf(p.id).length)||S.projects.some(p=>isMini(p)&&!p.closed)||S.projects.some(p=>!p.closed&&!p.parent&&isPerm(p)));
 function domSelect(id,cur){
   const L=domsOpen(), c=cur&&D(cur)?cur:'';
@@ -1087,7 +1097,7 @@ function render(){ recolor();
 /* Onglet Domaines : chaque domaine avec ses projets ouverts et ses petites tâches */
 function vDomaines(){
   const ds=S.domains.filter(d=>!d.auto&&!d.closed).sort((a,b)=>a.name.localeCompare(b.name,'fr')), arch=S.domains.filter(d=>!d.auto&&d.closed);
-  const card=d=>{ const ps=domProjects(d.id).filter(p=>!p.closed).sort((x,y)=>(Projets.etat(x,todayS)==='idee')-(Projets.etat(y,todayS)==='idee')||prioSort(x,y)), nt=(d.tasks||[]).filter(t=>!t.d&&!t.s).length;
+  const card=d=>{ const ps=domProjects(d.id).filter(p=>!p.closed).sort((x,y)=>(Projets.etat(x,todayS)==='idee')-(Projets.etat(y,todayS)==='idee')||prioSort(x,y)), nt=openTasks(d).length;
     return `<div class="dcard" style="${pv(d)}"><button class="dhead" data-act="dom" data-id="${d.id}"><span class="emo">${d.emoji||'📁'}</span><b>${esc(d.name)}</b><span class="dn">${ps.length} projet${ps.length>1?'s':''}${nt?' · '+nt+' tâche'+(nt>1?'s':''):''}</span><span class="vgo">›</span></button>
     ${ps.length?`<div class="dps">${ps.map(p=>`<button class="dp${p.later?' idee':''}" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${isPerm(p)?' ∞':''}</button>`).join('')}</div>`:''}</div>`; };
   $view.innerHTML=`${S.inbox.length?`<div class="alert" style="margin-top:14px"><div><b>Ancien vrac · ${S.inbox.length}</b> : la Bibliothèque les reprend (Vide-tête › Reprendre).</div><a class="btn" style="text-decoration:none" href="../bibliotheque/#vide">Ouvrir</a></div>`:''}<div class="dcards">${ds.map(card).join('')}${card(autresD())}</div>
@@ -1097,7 +1107,7 @@ function vDomaines(){
 /* Onglet Tâches (24.11) : ce qui prend une demi-journée au plus et n'appartient à aucun projet, rangé par domaine */
 function vTaches(){
   const L=petitesList(), groups=new Map(); L.forEach(o=>{ if(!groups.has(o.h.id)) groups.set(o.h.id,[]); groups.get(o.h.id).push(o); });
-  const faites=[]; [...domsOpen(),autresD()].forEach(h=>(h.tasks||[]).forEach((x,i)=>{ if(!x.s&&x.d) faites.push({h,x,i}); }));
+  const faites=[]; [...domsOpen(),autresD()].forEach(h=>(h.tasks||[]).forEach((x,i)=>{ if(!x.s&&x.d&&!Projets.estEtape(h.tasks,i)) faites.push({h,x,i,sec:cheminDe(h.tasks,i).join(' › ')}); }));
   const cur=ui.ptDom&&D(ui.ptDom)&&!D(ui.ptDom).closed?ui.ptDom:AUTRES;
   const li=(o,done)=>`<li${done?' class="done"':''}><input type="checkbox" class="vchk" data-act="ptask" data-d="${o.h.id}" data-i="${o.i}" ${done?'checked':''} aria-label="Fait : ${esc(o.x.t)}"><button class="mt" data-act="dom" data-id="${o.h.id}"><b>${taskText(o.x.t)}</b>${o.sec?`<span class="ptsec">${esc(o.sec)}</span>`:''}</button></li>`;
   $view.innerHTML=`<div class="tform"><form class="inline vadd" style="margin:0" data-act="addPetite"><input class="input" id="f-petite" placeholder="Nouvelle tâche…" autocomplete="off" aria-label="Nouvelle tâche"><button class="btn" type="submit">+</button></form>
@@ -1108,7 +1118,7 @@ function vTaches(){
 }
 const enTaches=()=>ui.view==='taches'&&$scrim.hidden;
 /* Petites tâches : les tâches des domaines (moins de 4 h, hors projet) */
-function petitesList(){ const out=[]; [...domsOpen(),autresD()].forEach(h=>{ let sec=''; (h.tasks||[]).forEach((x,i)=>{ if(x.s){ sec=x.t; return; } if(!x.d) out.push({h,x,i,sec}); }); }); return out; }
+function petitesList(){ const out=[]; [...domsOpen(),autresD()].forEach(h=>{ const L=h.tasks||[]; L.forEach((x,i)=>{ if(x.s||x.d||Projets.estEtape(L,i)) return; out.push({h,x,i,sec:cheminDe(L,i).join(' › ')}); }); }); return out; }
 const nPetites=()=>petitesList().length;
 function petitesSheet(){
   sheetId=null; ctx=null;
@@ -1130,7 +1140,7 @@ function minisSheet(showDone){
   <button class="linkbtn" style="align-self:center" data-act="${showDone?'minis':'minisDone'}">${showDone?'‹ Mini projets en cours':'Voir les mini projets terminés'}</button></div>`,'minis'+(showDone?'d':''));
 }
 function detailMini(p,msg){
-  const closed=!!p.closed, n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, hasNotes=p.notes&&p.notes.some(x=>x.t);
+  const closed=!!p.closed, n=feuilles(p).length, d=feuilles(p).filter(x=>x.d).length, hasNotes=p.notes&&p.notes.some(x=>x.t);
   openSheet(`<div class="shead" style="--pc:${MINI_COLOR};--pt:#1E1E1E"><h2>${esc(p.name)}<small>Mini projet${closed?' · terminé le '+fmt(p.closed):''}</small></h2>${closed?'':'<button class="xbtn okbtn" data-act="miniSave">OK</button>'}<button class="xbtn" data-act="minis">‹ Liste</button></div><div class="sbody">
   ${tasksBlock(p,closed,'étape')}
   ${closed?'':`<div class="field"><label for="f-mname">Nom</label><input class="input" id="f-mname" autocomplete="off" autocorrect="off" data-field="name" value="${esc(p.name)}"></div>`}
@@ -1167,7 +1177,7 @@ function vMini(){
 
 /* Vue semaine */
 function slotCard(p,k){
-  const n=p.tasks.length, d=p.tasks.filter(x=>x.d).length, h=hoursOf(p.id,k);
+  const n=feuilles(p).length, d=feuilles(p).filter(x=>x.d).length, h=hoursOf(p.id,k);
   const m=[starsHtml(p.imp)];
   if(isDay(p)){const [a,b]=wkDates(k); const ds=p.days.filter(x=>x>=a&&x<=b).sort(); m.push(`<span>${ds.map(dayLbl).join(' · ')}</span>`);}
   else {const ws=pWeeks(p); m.push(`<span>sem. ${ws.indexOf(k)+1}/${ws.length}</span>`);}
@@ -1439,7 +1449,7 @@ function dRepriseSheet(){
   const topRows=Object.keys(R.tops).map(P).filter(Boolean).sort((a,b)=>(isPerm(b)-isPerm(a))||a.name.localeCompare(b.name,'fr')).map(p=>`<div class="reprow" style="border-left:6px solid ${p.color}"><span class="nm">${p.emoji} ${esc(p.name)}<small>${isPerm(p)?'∞ · ':''}${stName(p)} · ${natureOf(p)}</small></span><select data-drep-top="${p.id}" aria-label="Que devient ${esc(p.name)}"><option value="p"${R.tops[p.id].dom?'':' selected'}>reste un projet (Autres projets)</option><option value="d"${R.tops[p.id].dom?' selected':''}>devient un domaine</option></select></div>`).join('');
   const projs=S.projects.filter(p=>!isMini(p)&&!p.closed&&!R.par[p.id]&&!(R.tops[p.id]&&R.tops[p.id].dom)).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
   const dest=cur=>`<option value="d:${AUTRES}"${cur==='d:'+AUTRES?' selected':''}>tâche · 📦 Autres projets</option>${[...domsOpen(),...futurs].map(x=>`<option value="d:${x.id}"${cur==='d:'+x.id?' selected':''}>tâche · ${esc(domName(x))}</option>`).join('')}${projs.map(x=>`<option value="p:${x.id}"${cur==='p:'+x.id?' selected':''}>tâche du projet ${esc((x.emoji?x.emoji+' ':'')+x.name)}</option>`).join('')}<option value="keep"${cur==='keep'?' selected':''}>garder comme projet (½ jour)</option>`;
-  const miniRows=Object.keys(R.minis).map(P).filter(Boolean).map(p=>`<div class="reprow"><span class="nm">${esc(p.name)}<small>mini projet${p.tasks.length?' · '+p.tasks.length+' étape'+(p.tasks.length>1?'s':'')+' (elles deviennent une section)':''}${p.notes&&p.notes.some(x=>x.t)?' · a des notes':''}</small></span><select data-drep-mini="${p.id}" aria-label="Où va ${esc(p.name)}">${dest(R.minis[p.id])}</select></div>`).join('');
+  const miniRows=Object.keys(R.minis).map(P).filter(Boolean).map(p=>`<div class="reprow"><span class="nm">${esc(p.name)}<small>mini projet${p.tasks.length?' · '+p.tasks.length+' étape'+(p.tasks.length>1?'s':'')+' (elles deviennent une étape)':''}${p.notes&&p.notes.some(x=>x.t)?' · a des notes':''}</small></span><select data-drep-mini="${p.id}" aria-label="Où va ${esc(p.name)}">${dest(R.minis[p.id])}</select></div>`).join('');
   openSheet(`<div class="shead"><h2>Passer aux domaines<small>étape 1b de Locus</small></h2><button class="xbtn" data-act="close">Plus tard</button></div><div class="sbody">
    <p class="note" style="margin:0"><b>Domaine</b> : il range (nom, émoji, petites tâches, notes), sans perso/pro, état ni temps. <b>Projet</b> : il prend du temps, de 4 h à ∞, et il est perso ou pro. Rien ne change tant que tu n'as pas enregistré, et une sauvegarde est téléchargée juste avant.</p>
    <div class="sechead" style="margin-top:6px">1 · Tes projets parents deviennent des domaines</div>${parRows||'<p class="note">Aucun projet parent.</p>'}
@@ -1469,7 +1479,7 @@ function dRepriseSave(){
     if(v==='keep'){ m.size='proj'; m.dur=0.5; if(!m.emoji) m.emoji='✨'; if(m.color===MINI_COLOR) m.color=COLORS[Math.floor(Math.random()*COLORS.length)]; m.nature=m.nature||'perso'; return; }
     const h=v.startsWith('p:')?P(v.slice(2)):D(v.slice(2)); if(!h) return;
     const notes=(m.notes||[]).filter(x=>x.t).map(x=>({t:'📝 '+x.t,d:!!x.d}));
-    if(m.tasks.length||notes.length){ h.tasks.push({t:m.name,s:true}); m.tasks.forEach(x=>h.tasks.push({t:x.t,d:!!x.d})); notes.forEach(x=>h.tasks.push(x)); }
+    if(m.tasks.length||notes.length){ h.tasks.push({t:m.name,d:false,e:true}); m.tasks.forEach(x=>h.tasks.push({t:x.t,d:!!x.d,n:1})); notes.forEach(x=>h.tasks.push(Object.assign({n:1},x))); }
     else h.tasks.push({t:m.name+(m.due?' (⏱ '+fmt(m.due)+')':''),d:false});
     sinkDone(h); S.projects=S.projects.filter(x=>x!==m); });
   S.domains.sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr'));
@@ -1483,6 +1493,13 @@ function laterPickSheet(){ sheetId=null; ctx=null; const L=open().filter(p=>!isM
   openSheet(`<div class="shead"><h2>Remettre en idée<small>le projet quitte le planning et les projets en cours</small></h2><button class="xbtn" data-act="close">Fermer</button></div><div class="sbody"><div class="picklist">${L.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="laterSet" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta">${starsHtml(p.imp)}<span>${durLbl(p)}</span><span>${stName(p)}</span></span></span></button>`).join('')||'<p class="empty">Aucun projet ouvert.</p>'}</div></div>`,'laterpick');
 }
 function setLater(p,on){ if(on){ const [a]=wkDates(CUR); p.weeks=p.weeks.filter(w=>w<CUR); p.days=p.days.filter(d=>d<a); p.later=true; } else delete p.later; save(); }
+/* Tâches en arbre (25.11) : les titres de section deviennent des étapes, leurs tâches passent dessous.
+   Avant la première reprise : copie des tâches d'origine dans la ligne m:avant-arbre (Supabase) et fichier de sauvegarde téléchargé.
+   Repasse sans rien faire s'il n'y a plus de section (une ancienne version encore ouverte ailleurs peut en recréer). */
+function migrateArbre(){ const hs=[...S.projects,...S.domains].filter(h=>Projets.aSections(h.tasks)); if(!hs.length) return false;
+  if(!S.avantArbre){ const taches={}; hs.forEach(h=>{ taches[(h.kind==='domaine'?'d:':'p:')+h.id]=JSON.parse(JSON.stringify(h.tasks)); }); S.avantArbre={le:todayS,taches};
+    let fait=false; try{ fait=!!localStorage.getItem('etabli-arbre-sauve'); }catch(e){} if(!fait){ backupDownload('avant-arbre'); try{ localStorage.setItem('etabli-arbre-sauve',todayS); }catch(e){} } }
+  hs.forEach(h=>{ h.tasks=Projets.trierTaches(h.tasks); }); quiet=true; save(); quiet=false; markSeen(); return true; }
 function migrateLater(){ const L=(S.lists&&S.lists.autre)||[]; if(!L.length) return false; L.forEach(v=>{ const id='pl'+v.id; if(!P(id)){ let em='✨'; for(const [re,e2] of SUGG){ if(re.test(v.t)){em=e2; break;} } S.projects.push({id,emoji:em,color:COLORS[[...String(v.id)].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length],name:v.t,size:'proj',dur:5,imp:2,due:null,tags:[],weeks:[],days:[],why:'',next:'',folder:null,tasks:[],later:true}); } }); S.lists.autre=[]; save(); return true; }
 function vVrac(){
   const box=key=>{const L=LISTS[key], items=S.lists[key], done=items.filter(v=>v.d).length;
@@ -1506,7 +1523,7 @@ function itemSheet(src,vid,mode){
     const order={cours:0,proch:1,plan:2,attente:3,perm:3};
     const ps=open().slice().sort((x,y)=>order[state(x)]-order[state(y)]||prioSort(x,y));
     body=`<p style="margin:0"><b>${esc(v.t)}</b></p><span class="lbl">Étape de quel projet ?</span>
-    <div class="picklist">${ps.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="toStep" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta"><span>${stName(p)}</span><span>${p.tasks.length} étape${p.tasks.length>1?'s':''}</span></span></span></button>`).join('')}</div>`;
+    <div class="picklist">${ps.map(p=>`<button class="pickbtn" style="${pv(p)}" data-act="toStep" data-id="${p.id}"><span class="sw">${p.emoji}</span><span class="tx"><b>${esc(p.name)}</b><span class="meta"><span>${stName(p)}</span><span>${feuilles(p).length} tâche${feuilles(p).length>1?'s':''}</span></span></span></button>`).join('')}</div>`;
   } else {
     body=`<div class="field"><label for="f-item">Texte</label><input class="input" id="f-item" autocomplete="off" autocorrect="off" value="${esc(v.t)}"></div>
     <span class="lbl">Ranger dans…</span>
@@ -1606,17 +1623,35 @@ const TASK_DUR=/\((\d+(?:[.,]\d+)?)\s*(min|h|j)\)/i;
 function parseTask(t){ const m=String(t).match(TASK_DUR); let mins=null; if(m){ const v=parseFloat(m[1].replace(',','.')), u=m[2].toLowerCase(); mins=u==='min'?v:u==='h'?v*60:v*480; } return {mins, admin:/(^|\s)@admin\b/i.test(t)}; }
 function fmtMins(m){ if(!m) return ''; if(m>=480&&m%480===0) return (m/480)+' j'; const h=Math.floor(m/60), r=Math.round(m%60); return h?(h+' h'+(r?' '+String(r).padStart(2,'0'):'')):r+' min'; }
 function taskText(t){ return esc(t).replace(/\((\d+(?:[.,]\d+)?)\s*(min|h|j)\)/ig,'<span class="tdur">$1 $2</span>').replace(/(^|\s)@admin\b/ig,'$1<span class="tadm">admin</span>'); }
-const nextOf=p=>{ const t=(p.tasks||[]).find(x=>!x.d&&!x.s); return t?t.t.replace(TASK_DUR,'').replace(/(^|\s)@admin\b/ig,' ').replace(/\s+/g,' ').trim():(p.next||''); };
-function sinkDone(p){ const nt=Projets.trierTaches(p.tasks); if(nt.some((x,i)=>x!==p.tasks[i])) p.tasks=nt; }
+const nextOf=p=>{ const u=Projets.etapeUne(p); return u?u.t.replace(TASK_DUR,'').replace(/(^|\s)@admin\b/ig,' ').replace(/\s+/g,' ').trim():(p.next||''); };
+function sinkDone(p){ const nt=Projets.trierTaches(p.tasks); if(nt.length!==p.tasks.length||nt.some((x,i)=>x!==p.tasks[i])) p.tasks=nt; }
+/* Tâches en arbre (25.11) : étapes pliées, gardées sur cet appareil */
+const PLIS='etabli-plis'; let plis={}; try{ plis=JSON.parse(localStorage.getItem(PLIS)||'{}')||{}; }catch(e){}
+const pliK=(p,x)=>p.id+'|'+x.t, estPlie=(p,x)=>!!plis[pliK(p,x)];
+function plier(p,x){ const k=pliK(p,x); if(plis[k]) delete plis[k]; else plis[k]=1; try{ localStorage.setItem(PLIS,JSON.stringify(plis)); }catch(e){} }
+const feuilles=p=>Projets.tachesSeules(p.tasks||[]);
+function cheminDe(L,i){ const out=[]; let n=Projets.niveau(L[i]); for(let j=i-1;j>=0&&n>0;j--){ const m=Projets.niveau(L[j]); if(m<n){ out.unshift(L[j].t); n=m; } } return out; }
 function tasksBlock(p,closed,word){
-  const all=p.tasks.map((x,i)=>({x,i})), adminN=all.filter(o=>!o.x.s&&parseTask(o.x.t).admin).length, only=!!(ui.taskAdmin&&adminN);
-  const T0=p.tasks.filter(x=>!x.s), list=(only?all.filter(o=>!o.x.s&&parseTask(o.x.t).admin):all).filter(o=>ui.showDone||!o.x.d), n=T0.length, d=T0.filter(x=>x.d).length;
-  const rest=all.filter(o=>!o.x.s&&!o.x.d).reduce((a,o)=>a+(parseTask(o.x.t).mins||0),0), firstOpen=p.tasks.findIndex(x=>!x.d&&!x.s);
+  const L=p.tasks, N=Projets.niveau, et=i=>Projets.estEtape(L,i), all=L.map((x,i)=>({x,i}));
+  const isLeaf=o=>!et(o.i), adminN=all.filter(o=>isLeaf(o)&&parseTask(o.x.t).admin).length, only=!!(ui.taskAdmin&&adminN);
+  const T0=all.filter(isLeaf), n=T0.length, d=T0.filter(o=>o.x.d).length;
+  const rest=T0.filter(o=>!o.x.d).reduce((a,o)=>a+(parseTask(o.x.t).mins||0),0), u=closed?null:Projets.etapeUne(L), firstOpen=u?u.i:-1;
+  /* lignes visibles : sans les branches pliées, sans les faites si masquées */
+  const vis=[]; if(only) T0.filter(o=>parseTask(o.x.t).admin&&(ui.showDone||!o.x.d)).forEach(o=>vis.push(o));
+  else for(let i=0;i<L.length;i++){ const x=L[i]; if(x.d&&!ui.showDone){ i=Projets.finBranche(L,i)-1; continue; } vis.push({x,i}); if(et(i)&&estPlie(p,x)) i=Projets.finBranche(L,i)-1; }
+  const sub=ui.subNew&&ui.subNew.pid===p.id&&L[ui.subNew.i]&&et(ui.subNew.i)?ui.subNew.i:-1, subEnd=sub>=0?Projets.finBranche(L,sub):-1;
+  const drag=closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer (vers la droite : ranger dans l\'étape au-dessus)">≡</span>';
+  const row=({x,i})=>{ const lv=only?0:N(x), step=et(i);
+    if(step){ const fin=Projets.finBranche(L,i), F=L.slice(i+1,fin).filter((y,k)=>!et(i+1+k)), fd=F.filter(y=>y.d).length, pl=estPlie(p,x);
+      return `<li class="etape${x.d?' done':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}">${fin>i+1?`<button class="tplie" data-act="tplie" data-i="${i}" aria-expanded="${!pl}" aria-label="${pl?'Déplier':'Replier'} l'étape">${pl?'▸':'▾'}</button>`:'<span class="tplie" aria-hidden="true"></span>'}<input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider l'étape et tout ce qu'elle contient"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${F.length?`<span class="tcnt">${fd}/${F.length}</span>`:''}${closed?'':`<button class="tsub" data-act="tsub" data-i="${i}" aria-label="Ajouter une tâche dans l'étape">+</button>`}${drag}</li>`; }
+    return `<li class="${x.d?'done':''}${i===firstOpen?' next':''}" data-i="${i}" data-n="${lv}" style="--n:${lv}"><input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider la ${word}"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${drag}</li>`; };
+  const subForm=`<li class="subrow" style="--n:${sub>=0?N(L[sub])+1:0}"><form class="inline" data-act="addSub" data-i="${sub}"><input class="input" id="f-sub" autocomplete="off" autocorrect="off" placeholder="Dans « ${esc(sub>=0?L[sub].t:'')} »" aria-label="Nouvelle tâche dans l'étape"><button class="btn" type="submit">+</button><button class="xbtn" type="button" data-act="subNo" aria-label="Annuler">✕</button></form></li>`;
+  let html=''; vis.forEach((o,k)=>{ html+=row(o); const nx=vis[k+1]; if(sub>=0&&o.i>=sub&&o.i<subEnd&&(!nx||nx.i>=subEnd)) html+=subForm; });
   return `<div class="field"><span class="lbl">${word==='étape'?'Étapes':'Tâches'} ${n?d+'/'+n:''}${rest?' · reste ≈ '+fmtMins(rest):''}</span>
    ${adminN?`<div class="seg tfilt"><button data-act="tfilt" data-v="0" aria-pressed="${!only}">Toutes</button><button data-act="tfilt" data-v="1" aria-pressed="${only}">Admin (${adminN})</button></div>`:''}
-   ${list.length?`<ul class="list tasks" data-pid="${p.id}">${list.map(({x,i})=>x.s?`<li class="sec" data-i="${i}"><span class="t tt" data-act="tedit" data-i="${i}">${esc(x.t)}</span>${closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer">≡</span>'}</li>`:`<li class="${x.d?'done':''}${i===firstOpen&&!closed?' next':''}" data-i="${i}"><input type="checkbox" data-act="task" data-i="${i}" ${x.d?'checked':''} ${closed?'disabled':''} aria-label="Valider la ${word}"><span class="t tt" data-act="tedit" data-i="${i}">${taskText(x.t)}</span>${closed||only?'':'<span class="drag" aria-label="Glisser pour déplacer">≡</span>'}</li>`).join('')}</ul>`:''}
+   ${html?`<ul class="list tasks${!only&&L.some((y,k)=>et(k))?' arbre':''}" data-pid="${p.id}">${html}</ul>`:''}
    ${d?`<button class="linkbtn" style="align-self:flex-start" data-act="tdone">${ui.showDone?'Masquer les tâches terminées':'Afficher les tâches terminées ('+d+')'}</button>`:''}
-   ${closed?'':`${ui.secNew===p.id?`<form class="secpop" data-act="addSecF"><input class="input" id="f-sec" autocomplete="off" autocorrect="off" placeholder="Nom de la section" aria-label="Nom de la nouvelle section" enterkeyhint="done"><button class="btn" type="submit">OK</button><button class="xbtn" type="button" data-act="secNo" aria-label="Annuler">✕</button></form>`:`<button class="linkbtn secadd" data-act="addSec">+ Section</button>`}<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Une section : « + Section » au-dessus, ou commence la ligne par #.</p>`}</div>`;
+   ${closed?'':`${ui.secNew===p.id?`<form class="secpop" data-act="addSecF"><input class="input" id="f-sec" autocomplete="off" autocorrect="off" placeholder="Nom de l'étape" aria-label="Nom de la nouvelle étape" enterkeyhint="done"><button class="btn" type="submit">OK</button><button class="xbtn" type="button" data-act="secNo" aria-label="Annuler">✕</button></form>`:`<button class="linkbtn secadd" data-act="addSec">+ Étape</button>`}<div class="addrow"><form class="inline" data-act="addTask"><input class="input" id="f-task" autocomplete="off" autocorrect="off" placeholder="Nouvelle ${word}" aria-label="Nouvelle ${word}"><button class="btn" type="submit">+</button></form></div><p class="note thint" style="margin:0">Durée entre parenthèses : (30min), (2h), (1j) — 1j compte 8 h. Ajoute @admin pour une tâche administrative. Une étape : « + Étape » au-dessus, ou commence la ligne par #. Pour ranger une tâche dans l'étape au-dessus, glisse-la (≡) vers la droite.</p>`}</div>`;
 }
 function durPick(mode,dur,act){ const isM=mode===true||mode==='mini', isP=mode==='perm'; return `<div class="durrow"><div class="dfree${isM||isP?'':' on'}"><button class="dstep" data-act="durStep" data-d="-1" data-for="${act}" aria-label="Un jour de moins">−</button><input class="input" type="number" min="0.5" step="any" inputmode="decimal" data-durother="${act}" value="${!isM&&!isP&&dur!=null?dur:''}" placeholder="—" aria-label="Durée en jours"><span>j</span><button class="dstep" data-act="durStep" data-d="1" data-for="${act}" aria-label="Un jour de plus">+</button></div><button class="dmini" data-act="${act}" data-v="perm" aria-pressed="${isP}">∞ Perpétuel<small>sans fin ni durée</small></button></div>`; }
 function applyDur(p,v){ if(v==='perm'){ if(isPerm(p)){ p.size='proj'; p.dur=p.dur||5; return; } if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='perm'; p.due=null; return; } if(v!=='mini'&&Number(v)<0.5) v=0.5; if(v==='mini'){ p.size='mini'; p.dur=null; p.emoji=''; p.color=MINI_COLOR; p.weeks=[]; p.days=[]; return; } const n=Number(v); if(!(n>0)) return; if(isMini(p)){ if(!p.emoji) p.emoji='✨'; if(p.color===MINI_COLOR) p.color=COLORS[Math.floor(Math.random()*COLORS.length)]; } p.size='proj'; p.dur=n; }
@@ -2140,17 +2175,31 @@ function tagsSheet(confirmId){
    <p class="note" style="margin:0">Supprimer un tag le retire des projets, sans toucher aux projets eux-mêmes.</p></div>`,'tags');
 }
 function copy(text,el){const fb=()=>{try{const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast('Texte sélectionné, copie-le');}catch(e){}}; try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>toast('Copié'),fb); else fb(); }catch(e){fb();}}
-document.addEventListener('focusout',e=>{ const t=e.target; if(!t||!t.classList||!t.classList.contains('tedit')) return; const p=H(sheetId); if(!p) return; const i=Number(t.dataset.ti), v=t.value.trim(); if(!p.tasks[i]) return; if(v) p.tasks[i].t=v; else { const sec=p.tasks[i].s; p.tasks.splice(i,1); toast(sec?'Titre de section supprimé':'Tâche supprimée'); } save(); setTimeout(()=>refresh(sheetId),0); });
+document.addEventListener('focusout',e=>{ const t=e.target; if(!t||!t.classList||!t.classList.contains('tedit')) return; const p=H(sheetId); if(!p) return; const i=Number(t.dataset.ti), v=t.value.trim(); if(!p.tasks[i]) return;
+  if(v) p.tasks[i].t=v;
+  else if(Projets.estEtape(p.tasks,i)){ const j=Projets.finBranche(p.tasks,i); for(let k=i+1;k<j;k++){ const m=Projets.niveau(p.tasks[k])-1; if(m>0) p.tasks[k].n=m; else delete p.tasks[k].n; } p.tasks.splice(i,1); sinkDone(p); toast(j>i+1?'Étape supprimée, ses tâches remontent d\'un cran':'Étape supprimée'); }
+  else { p.tasks.splice(i,1); sinkDone(p); toast('Tâche supprimée'); }
+  save(); setTimeout(()=>refresh(sheetId),0); });
 document.addEventListener('keydown',e=>{ const t=e.target; if(t&&t.classList&&t.classList.contains('tedit')&&e.key==='Enter'){ e.preventDefault(); t.blur(); } });
+/* Glisser une tâche (≡) : en haut / en bas pour la déplacer, vers la droite pour la ranger dans l'étape au-dessus,
+   vers la gauche pour l'en sortir ; une étape bouge avec tout ce qu'elle contient (25.11) */
 let drag=null;
-document.addEventListener('pointerdown',e=>{ const h=e.target.closest&&e.target.closest('.tasks .drag'); if(!h) return; e.preventDefault(); const li=h.closest('li'); drag={li,ul:li.parentNode,pid:li.parentNode.dataset.pid,sec:li.classList.contains('sec')}; li.classList.add('dragging');
-  if(drag.sec){ let n=li.nextElementSibling; const suit=[]; while(n&&!n.classList.contains('sec')){ suit.push(n); n=n.nextElementSibling; } suit.forEach(x=>x.classList.add('suit')); drag.suit=suit; if(suit.length) li.setAttribute('data-n','+ '+suit.length); } try{ h.setPointerCapture(e.pointerId); }catch(err){} });
-document.addEventListener('pointermove',e=>{ if(!drag) return; e.preventDefault(); const y=e.clientY; let before=null; for(const it of drag.ul.children){ if(it===drag.li) continue; const r=it.getBoundingClientRect(); if(y<r.top+r.height/2){ before=it; break; } } if(before){ if(drag.li.nextSibling!==before) drag.ul.insertBefore(drag.li,before); } else if(drag.ul.lastChild!==drag.li) drag.ul.appendChild(drag.li); },{passive:false});
-const endDrag=()=>{ if(!drag) return; const {ul,li,pid,sec,suit}=drag; drag=null; li.classList.remove('dragging'); li.removeAttribute('data-n'); (suit||[]).forEach(x=>x.classList.remove('suit')); const p=H(pid); if(!p) return;
-  if(sec){ const i0=+li.dataset.i; let i1=i0+1; while(i1<p.tasks.length&&!p.tasks[i1].s) i1++; const block=p.tasks.slice(i0,i1), rest=p.tasks.slice(0,i0).concat(p.tasks.slice(i1));
-    let n=li.nextElementSibling; while(n&&(!n.classList.contains('sec')||(suit||[]).includes(n))) n=n.nextElementSibling;
-    let pos=n?rest.indexOf(p.tasks[+n.dataset.i]):rest.length; if(pos<0) pos=rest.length; rest.splice(pos,0,...block);
-    if(rest.some((x,j)=>x!==p.tasks[j])){ p.tasks=rest; sinkDone(p); save(); } refresh(sheetId); return; } const order=[...ul.children].map(x=>Number(x.dataset.i)); if(order.some((v,i)=>v!==[...order].sort((x,y)=>x-y)[i])){ const slots=[...order].sort((x,y)=>x-y), old=p.tasks.slice(); slots.forEach((pos,j)=>{ p.tasks[pos]=old[order[j]]; }); sinkDone(p); save(); } refresh(pid); };
+const dragVis=(el,dir)=>{ let n=el&&el[dir]; while(n&&(n.classList.contains('suit')||!n.dataset.i)) n=n[dir]; return n; };
+document.addEventListener('pointerdown',e=>{ const h=e.target.closest&&e.target.closest('.tasks .drag'); if(!h) return; e.preventDefault(); const li=h.closest('li'), n0=+li.dataset.n||0;
+  drag={li,ul:li.parentNode,pid:li.parentNode.dataset.pid,x0:e.clientX,n0,lvl:n0}; li.classList.add('dragging');
+  const suit=[]; let n=li.nextElementSibling; while(n&&n.dataset.i&&(+n.dataset.n||0)>n0){ suit.push(n); n=n.nextElementSibling; }
+  drag.ul.querySelectorAll('.subrow').forEach(x=>suit.push(x)); suit.forEach(x=>x.classList.add('suit')); drag.suit=suit;
+  const k=suit.filter(x=>x.dataset.i).length; if(k) li.setAttribute('data-suit',k+' dedans'); try{ h.setPointerCapture(e.pointerId); }catch(err){} });
+document.addEventListener('pointermove',e=>{ if(!drag) return; e.preventDefault(); const y=e.clientY; let before=null;
+  for(const it of drag.ul.children){ if(it===drag.li||it.classList.contains('suit')) continue; const r=it.getBoundingClientRect(); if(y<r.top+r.height/2){ before=it; break; } }
+  if(before){ if(drag.li.nextSibling!==before) drag.ul.insertBefore(drag.li,before); } else if(drag.ul.lastChild!==drag.li) drag.ul.appendChild(drag.li);
+  const pv=dragVis(drag.li,'previousElementSibling'), nx=dragVis(drag.li,'nextElementSibling'), hi=pv?(+pv.dataset.n||0)+1:0, lo=Math.min(hi,nx?(+nx.dataset.n||0):0);
+  const lv=Math.max(lo,Math.min(hi,drag.n0+Math.round((e.clientX-drag.x0)/28))); if(lv!==drag.lvl){ drag.lvl=lv; drag.li.style.setProperty('--dn',lv); } },{passive:false});
+const endDrag=()=>{ if(!drag) return; const {li,pid,suit,lvl,n0}=drag; drag=null; li.classList.remove('dragging'); li.removeAttribute('data-suit'); li.style.removeProperty('--dn'); (suit||[]).forEach(x=>x.classList.remove('suit')); const p=H(pid); if(!p) return;
+  const L=p.tasks, i0=+li.dataset.i, i1=Projets.finBranche(L,i0), block=L.slice(i0,i1), rest=L.slice(0,i0).concat(L.slice(i1)), nx=dragVis(li,'nextElementSibling');
+  let pos=nx?rest.indexOf(L[+nx.dataset.i]):rest.length; if(pos<0) pos=rest.length; rest.splice(pos,0,...block);
+  const dl=lvl-n0; if(dl) block.forEach(x=>{ const m=Projets.niveau(x)+dl; if(m>0) x.n=m; else delete x.n; });
+  if(dl||rest.some((x,j)=>x!==L[j])){ p.tasks=rest; sinkDone(p); save(); } refresh(pid); };
 document.addEventListener('pointerup',endDrag); document.addEventListener('pointercancel',endDrag);
 /* Planning : déplacer une barre (souris : glisser ; doigt : appui long puis glisser) */
 let bdrag=null;
@@ -2453,6 +2502,9 @@ document.addEventListener('click',e=>{
   else if(a==='tfilt'){ ui.taskAdmin=el.dataset.v==='1'; refresh(sheetId); }
   else if(a==='addSec'){ ui.secNew=sheetId; refresh(sheetId); setTimeout(()=>{ const i=document.getElementById('f-sec'); if(i) try{ i.focus(); }catch(err){} },60); }
   else if(a==='secNo'){ ui.secNew=null; refresh(sheetId); }
+  else if(a==='tplie'){ const p=H(sheetId), x=p&&p.tasks[Number(el.dataset.i)]; if(x){ plier(p,x); if(ui.subNew&&ui.subNew.pid===p.id) ui.subNew=null; refresh(sheetId); } }
+  else if(a==='tsub'){ const p=H(sheetId), x=p&&p.tasks[Number(el.dataset.i)]; if(!x) return; if(estPlie(p,x)) plier(p,x); ui.subNew={pid:p.id,i:Number(el.dataset.i)}; refresh(sheetId); setTimeout(()=>{ const i=document.getElementById('f-sub'); if(i) try{ i.focus(); }catch(err){} },60); }
+  else if(a==='subNo'){ ui.subNew=null; refresh(sheetId); }
   else if(a==='tedit'){ const p=H(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp); try{ inp.focus(); const L=inp.value.length; inp.setSelectionRange(L,L); }catch(err){} }
   else if(a==='minis'){ if(MINI) petitesSheet(); else goView('taches'); }
   else if(a==='tFaites'){ ui.tFaites=!ui.tFaites; render(); }
@@ -2542,8 +2594,8 @@ document.addEventListener('change',e=>{
   if(t.dataset.freecol==='color'){ const p=P(sheetId); if(p){ p.color=t.value.toUpperCase(); save(); detail(sheetId); } return; }
   if(t.dataset.freecol==='ncolor'){ if(draft){ syncDraft(); draft.color=t.value.toUpperCase(); newSheet(true); } return; }
   if(t.dataset.freecol){ const c=t.value.toUpperCase(); if(t.dataset.freecol==='domColor'){ const d=D(sheetId); if(d){ d.color=c; save(); domainSheet(sheetId); } } else if(ui.ndom){ const i=document.getElementById('f-ndom'); if(i) ui.ndom.name=i.value; ui.ndom.color=c; newDomSheet(); } return; }
-  if(t.dataset.act==='task'){const p=H(sheetId), x=p.tasks[Number(t.dataset.i)]; x.d=t.checked; sinkDone(p); save(); setTimeout(()=>refresh(sheetId),180); return;}
-  if(t.dataset.act==='ptask'){const h=H(t.dataset.d), x=h&&h.tasks[Number(t.dataset.i)]; if(x){ x.d=t.checked; sinkDone(h); save(); setTimeout(()=>{ if(enTaches()) render(); else petitesSheet(); },250); } return;}
+  if(t.dataset.act==='task'){const p=H(sheetId); Projets.cocher(p.tasks,Number(t.dataset.i),t.checked); sinkDone(p); save(); setTimeout(()=>refresh(sheetId),180); return;}
+  if(t.dataset.act==='ptask'){const h=H(t.dataset.d), x=h&&h.tasks[Number(t.dataset.i)]; if(x){ Projets.cocher(h.tasks,Number(t.dataset.i),t.checked); sinkDone(h); save(); setTimeout(()=>{ if(enTaches()) render(); else petitesSheet(); },250); } return;}
   if(t.dataset.durother){ const v=parseFloat(String(t.value).replace(',','.')); if(!(v>0)) return; if(t.dataset.durother==='ndur'){ const was=draft.size; syncDraft(); nPreview(); if(draft.size!==was) setTimeout(()=>{ if(draft&&sheetKey==='new') newSheet(true); },180); } else { const p=P(sheetId); applyDur(p,v); save(); detail(sheetId); } return; }
   if(t.dataset.act==='miniChk'){ const p=P(t.dataset.id); if(p){ p.closed=todayS; save(); setTimeout(()=>{ minisSheet(); toast('✓ '+p.name); },250); } return; }
   if(t.dataset.act==='petiteDone'){const v=S.lists.petites.find(x=>x.id===t.dataset.v); if(v){v.d=t.checked; save(); render();} return;}
@@ -2583,8 +2635,10 @@ document.addEventListener('submit',e=>{e.preventDefault(); const f=e.target.data
   if(f==='addVracQ'){const i=document.getElementById('q-vrac'), v=i.value.trim(); if(!v) return; versVide(v); render(); toast('Noté dans le vide-tête'); closeSheet();}
   if(f==='addOff'){let a=document.getElementById('o-s').value, b=document.getElementById('o-e').value||a; if(!a) return; if(b<a){const x=a; a=b; b=x;} S.offs.push({id:'o'+Date.now(),s:a,e:b,l:document.getElementById('o-l').value.trim()||'Congé'}); save(); render(); offsSheet(); toast('Ajouté au planning');}
   if(f==='addAchat'){ const i=document.getElementById('f-achat'), v=i.value.trim(); if(!v||!AB){ if(i) i.focus(); return; } AB.ajouter(P(sheetId),v); i.value=''; achatsMaj(); try{ i.focus(); }catch(err){} return; }
-  if(f==='addSecF'){ const i=document.getElementById('f-sec'), v=i?i.value.replace(/^#+\s*/,'').trim():''; if(!v){ if(i) i.focus(); return; } const h=H(sheetId); if(h){ h.tasks.push({t:v,s:true}); save(); } ui.secNew=null; refresh(sheetId); setTimeout(()=>{ const t=document.getElementById('f-task'); if(t) try{ t.focus(); }catch(err){} },60); return; }
-  if(f==='addTask'){const v=document.getElementById('f-task').value.trim(); if(!v) return; const h=H(sheetId); if(/^#/.test(v)){ const t2=v.replace(/^#+\s*/,''); if(t2) h.tasks.push({t:t2,s:true}); } else { h.tasks.push({t:v,d:false}); sinkDone(h); } save(); refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-task'); if(n) try{n.focus();}catch(err){} },40);}
+  if(f==='addSub'){ const i=document.getElementById('f-sub'), v=i?i.value.trim():''; const h=H(sheetId), k=Number(e.target.dataset.i), st=h&&h.tasks[k]; if(!st){ ui.subNew=null; refresh(sheetId); return; } if(!v){ if(i) i.focus(); return; }
+    h.tasks.splice(Projets.finBranche(h.tasks,k),0,{t:v,d:false,n:Projets.niveau(st)+1}); sinkDone(h); save(); ui.subNew={pid:h.id,i:h.tasks.indexOf(st)}; refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-sub'); if(n) try{ n.focus(); }catch(err){} },40); return; }
+  if(f==='addSecF'){ const i=document.getElementById('f-sec'), v=i?i.value.replace(/^#+\s*/,'').trim():''; if(!v){ if(i) i.focus(); return; } const h=H(sheetId); if(h){ h.tasks.push({t:v,d:false,e:true}); sinkDone(h); save(); } ui.secNew=null; refresh(sheetId); setTimeout(()=>{ const t=document.getElementById('f-task'); if(t) try{ t.focus(); }catch(err){} },60); return; }
+  if(f==='addTask'){const v=document.getElementById('f-task').value.trim(); if(!v) return; const h=H(sheetId); if(/^#/.test(v)){ const t2=v.replace(/^#+\s*/,''); if(t2) h.tasks.push({t:t2,d:false,e:true}); sinkDone(h); } else { h.tasks.push({t:v,d:false}); sinkDone(h); } save(); refresh(sheetId); setTimeout(()=>{ const n=document.getElementById('f-task'); if(n) try{n.focus();}catch(err){} },40);}
   if(f==='addPetite'){const i=document.getElementById('f-petite'), v=i.value.trim(); if(!v) return; const sel=document.getElementById('f-pdom'); const h=(sel&&H(sel.value))||autresD(); ui.ptDom=h.id; h.tasks.push({t:v,d:false}); sinkDone(h); save(); if(enTaches()) render(); else petitesSheet(); setTimeout(()=>{ const n=document.getElementById('f-petite'); if(n) try{n.focus();}catch(err){} },40);}
   if(f==='emojiOther'){const v=document.getElementById('f-emo').value.trim(); emojiDone(v||null);}
   if(f==='newTag'){const v=document.getElementById('f-tag').value.trim(); if(!v) return; let t=S.tags.find(x=>x.name.toLowerCase()===v.toLowerCase()); if(!t){t={id:'t'+Date.now(),name:v}; S.tags.push(t);} save();
@@ -2659,12 +2713,13 @@ function rowsOf(st){ const r={};
   if(st.order&&Object.keys(st.order).length) r['m:order']=st.order;
   if(st.reprise) r['m:reprise']=st.reprise;
   if(st.domaines) r['m:domaines']=st.domaines;
+  if(st.avantArbre) r['m:avant-arbre']=st.avantArbre;
   return r; }
 function fromRows(map){ const st=emptyS(), num=id=>Number(String(id).replace(/\D/g,''))||0;
   Object.keys(map).forEach(k=>{ let d; try{ d=JSON.parse(map[k]); }catch(e){ return; } if(!d) return; const t=k[0];
     if(t==='p'){ ['weeks','days','tags','tasks'].forEach(f=>{ if(!Array.isArray(d[f])) d[f]=[]; }); const OLD={h4:1,j2:2,w1:5,m1:20}; if(OLD[d.size]!=null){ if(d.dur==null) d.dur=OLD[d.size]; d.size='proj'; } if(!d.size) d.size='proj'; st.projects.push(d); }
     else if(t==='d'){ if(!Array.isArray(d.tasks)) d.tasks=[]; d.kind='domaine'; st.domains.push(d); }
-    else if(t==='t') st.tags.push(d); else if(t==='o') st.offs.push(d); else if(k==='m:order') st.order=d; else if(k==='m:reprise') st.reprise=d; else if(k==='m:domaines') st.domaines=d;
+    else if(t==='t') st.tags.push(d); else if(t==='o') st.offs.push(d); else if(k==='m:order') st.order=d; else if(k==='m:reprise') st.reprise=d; else if(k==='m:domaines') st.domaines=d; else if(k==='m:avant-arbre') st.avantArbre=d;
     else if(t==='v'){ const L=d.list||'inbox', it=Object.assign({},d); delete it.list; (L==='inbox'?st.inbox:(st.lists[L]||(st.lists[L]=[]))).push(it); } });
   st.projects.sort((a,b)=>num(a.id)-num(b.id)); st.domains.sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr')); st.tags.sort((a,b)=>(a.o||0)-(b.o||0)); st.inbox.sort((a,b)=>num(a.id)-num(b.id));
   ['petites','autre'].forEach(k=>st.lists[k].sort((a,b)=>num(a.id)-num(b.id))); st.offs.sort((a,b)=>String(a.s).localeCompare(String(b.s)));
@@ -2708,7 +2763,7 @@ async function pull(full){
       if(data.length<1000) break; from+=1000;
     }
     lastPull=maxTs; persist();
-    if(changed){ S=fromRows(prev); markSeen(); migratePetites(); migrateLater(); render(); }
+    if(changed){ S=fromRows(prev); markSeen(); migratePetites(); migrateLater(); migrateArbre(); render(); }
     lastOk=Date.now(); syncErr=''; setSync(); return true;
   }catch(e){ syncErr=(e&&e.message)||String(e); setSync(); return false; }
 }
@@ -2737,7 +2792,7 @@ async function enter(user){
   render(); setSync(); ouvrirHash();
   const ok=await pull(!c); ouvrirHash();
   if(FB) FB.tirer().then(()=>syncFichiers()).then(fichiersChanges);
-  if(migratePetites()|migrateLater()) render();
+  if(migratePetites()|migrateLater()|migrateArbre()) render();
   if(recolor()){ quiet=true; save(); quiet=false; render(); }
   if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; S.domaines={le:todayS}; save(); render(); } /* nouveau compte : domaines et projets dès le départ */
   push(); envoyerVide();

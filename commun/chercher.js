@@ -54,8 +54,8 @@
     if (dans('etabli') && PB) {
       PB.liste().filter((p) => plain(p.name).includes(q)).slice(0, 8).forEach((p) => R.push({ app: 'etabli', type: 'projet', id: p.id, e: p.emoji, t: p.name, s: (window.Projets && Projets.ETATS[Projets.etat(p)]) || '' }));
       PB.domaines().filter((d) => plain(d.name).includes(q)).slice(0, 4).forEach((d) => R.push({ app: 'etabli', type: 'domaine', id: d.id, e: d.emoji, t: d.name, s: 'Domaine' }));
-      const T = []; [...PB.liste(), ...PB.domaines()].forEach((p) => { if (p.closed) return; Projets.tachesSeules(p.tasks).forEach((x) => { if (plain(x.t).includes(q)) T.push({ p, x }); }); });
-      T.slice(0, 10).forEach(({ p, x }) => R.push({ app: 'etabli', type: Projets.estDomaine(p) ? 'domaine' : 'projet', id: p.id, t: x.t, s: (x.d ? 'Tâche faite · ' : 'Tâche · ') + (p.emoji ? p.emoji + ' ' : '') + p.name }));
+      const T = []; [...PB.liste(), ...PB.domaines()].forEach((p) => { if (p.closed) return; (p.tasks || []).forEach((x, i) => { if (!Projets.estSection(x) && plain(x.t).includes(q)) T.push({ p, x, et: Projets.estEtape(p.tasks, i) }); }); });
+      T.slice(0, 10).forEach(({ p, x, et }) => R.push({ app: 'etabli', type: Projets.estDomaine(p) ? 'domaine' : 'projet', id: p.id, t: x.t, s: ((et ? 'Étape' : 'Tâche') + (x.d ? ' faite' : '') + ' · ') + (p.emoji ? p.emoji + ' ' : '') + p.name }));
     }
     const fs = dans('forge') ? forgeSemaines() : null;
     if (fs) { const vu = new Set(); Object.entries(fs).forEach(([wk, L]) => (L || []).forEach((x) => { if (!vu.has(x.t) && plain(x.t).includes(q)) { vu.add(x.t); R.push({ app: 'forge', type: 'seance', id: x.id, wk, t: x.t, s: 'Séance · S' + wkNum(wk) + (typeof x.day === 'number' ? ' · ' + JOURS[x.day] : '') }); } })); }

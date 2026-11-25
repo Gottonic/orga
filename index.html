@@ -296,7 +296,7 @@ const $main=document.getElementById('main');
 function objectifs(k){ const L=lignes('j:'+k).map(n=>String(n.t||'')); const g=re=>{ const l=L.find(x=>re.test(x)); return l?l.replace(re,'').trim():''; };
   return { principal:g(/^objectif principal\s*:\s*/i), secondaire:g(/^objectif secondaire\s*:\s*/i), conseil:g(/^conseil(?: perso)?\s*:\s*/i) }; }
 function projetsDuJour(){ if(!PB) return []; const a=AUJ(); return PB.liste().filter(p=>!p.closed&&!p.later&&Projets.places(p).includes(a)).sort((x,y)=>(y.imp||0)-(x.imp||0)); }
-function prochaine(p){ const t=Projets.tachesSeules(p.tasks).find(x=>!x.d); return t?t.t:''; }
+function prochaine(p){ const u=Projets.etapeUne(p); return u?u.t:''; } /* « étape n°1 » : première tâche pas faite de l'arbre (25.11) */
 /* tâches placées sur aujourd'hui (ou avant, pas faites), et celles cochées aujourd'hui */
 function tachesDuJour(){ const a=AUJ(); return lignes('taches').filter(n=>n.jour&&(n.x?n.xLe===a&&n.jour<=a:n.jour<=a)).sort((x,y)=>(x.jour<y.jour?-1:x.jour>y.jour?1:0)); }
 /* l'entraînement reste sur l'accueil tant qu'il n'est pas terminé (ampoule du 24.11) : commencé (quel que soit son jour),
