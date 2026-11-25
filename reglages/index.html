@@ -41,21 +41,46 @@ p{margin:0}
 .btn.prim:active{background:var(--ink)}
 .ok{border-left:4px solid #2E6B4E;padding:8px 10px;background:#E6F1EA;font-size:.92rem}
 .contenu{font-family:var(--mono);font-size:.82rem;color:var(--muted);margin:0;padding-left:18px}
+.choix{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choix button{border:2px solid var(--line);background:var(--cell);color:var(--ink);text-align:left;padding:10px 12px;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.choix button b{font-size:1rem}
+.choix button span{font-size:.82rem;color:var(--muted)}
+.choix button[aria-pressed="true"]{border-color:var(--band);box-shadow:inset 0 0 0 2px var(--band)}
+.sous{font:700 .78rem/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.mods{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.mod{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.mod input[type=checkbox]{width:22px;height:22px;accent-color:var(--band);grid-row:span 2}
+.mod input[type=text]{border:1px solid var(--line);background:var(--paper);font:inherit;padding:6px 8px;min-width:0}
+.mod small{color:var(--muted);font-size:.8rem}
+.palettes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.palettes button{border:2px solid var(--line);background:var(--cell);padding:8px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit;text-align:left}
+.palettes button[aria-pressed="true"]{border-color:var(--band);box-shadow:inset 0 0 0 2px var(--band)}
+.palettes .nuancier{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.palettes .nuancier i{display:block;height:22px;border-radius:4px}
+.etapes{display:flex;flex-direction:column;gap:4px}
+.etapes label{display:flex;gap:10px;align-items:center;font-size:.95rem}
+.etapes input{width:20px;height:20px;accent-color:var(--band)}
 .alerte{border-left:4px solid var(--warn);padding:8px 10px;background:#FBEDE8;font-size:.92rem}
 :focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+[hidden]{display:none!important}
 </style>
 <link rel="stylesheet" href="../commun/cadre.css">
 </head>
 <body>
 <header class="oh" style="--oh-bg:#4A4458;--oh-ink:#F3F1E7"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="8.00" cy="4.10" r=".8" fill="currentColor"/><circle cx="11.71" cy="6.79" r=".8" fill="currentColor"/><circle cx="10.29" cy="11.16" r=".8" fill="currentColor"/><circle cx="5.71" cy="11.16" r=".8" fill="currentColor"/><circle cx="4.29" cy="6.79" r=".8" fill="currentColor"/></svg></a><h1 class="oh-nom">Réglages</h1><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule>💡</button></div></header>
 <main>
-  <section aria-labelledby="t-place">
+  <section aria-labelledby="t-profil" id="profil">
+    <h2 id="t-profil">Mon Locus</h2>
+    <p class="note">Ce que ton accueil montre, et comment. Tout s'enregistre tout de suite, pour toi seul·e.</p>
+    <div id="mon-locus"><p class="note">Chargement…</p></div>
+  </section>
+  <section aria-labelledby="t-place" data-avance>
     <h2 id="t-place">Place sur Supabase</h2>
     <div id="place"><p class="note">Chargement…</p></div>
     <p class="note">Plan gratuit : 500 Mo de base de données pour Locus, 1 Go de fichiers et 5 Go de trafic par mois pour tout le compte Supabase (GDT compris s'il est dans la même organisation). Le trafic se voit seulement dans le tableau de bord de Supabase.</p>
     <div class="btns"><button class="btn" type="button" id="actualiser">Actualiser</button><a class="btn" href="https://supabase.com/dashboard/project/rzcpjsffpvuvbdtqymms" target="_blank" rel="noopener">Ouvrir Supabase</a></div>
   </section>
-  <section aria-labelledby="t-dossier">
+  <section aria-labelledby="t-dossier" data-avance>
     <h2 id="t-dossier">Dossier Locus sur l'ordinateur</h2>
     <p class="note">Le dossier où Locus range les fichiers de tes projets (Projets/&lt;domaine&gt;/&lt;projet&gt;, À trier, Archives). À choisir une fois, sur l'ordinateur, avec Locus ouverte comme app installée, puis « Autoriser à chaque visite ».</p>
     <div id="dossier"><p class="note">…</p></div>
@@ -73,6 +98,7 @@ p{margin:0}
   </section>
 </main>
 <script src="../commun/supabase.js"></script>
+<script src="../commun/profil.js"></script>
 <script>
 (function(){
 'use strict';
@@ -151,10 +177,49 @@ if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('../sw.j
 if(window.supabase&&window.supabase.createClient){
   try{ if(!localStorage.getItem('orga-auth')&&localStorage.getItem('etabli-auth')) localStorage.setItem('orga-auth',localStorage.getItem('etabli-auth')); }catch(e){}
   sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'orga-auth'}});
-  charger(); compte();
+  charger(); compte(); monLocus();
 } else $('place').innerHTML='<p class="note">Impossible de charger la connexion. Recharge la page.</p>';
 version();
 addEventListener('online',charger);
+
+/* ---------- Mon Locus (25.11) : style Village / Neutre, menu, modules et leurs noms, palette, étapes de la semaine ---------- */
+const LIEUX_C={etabli:'#CDB893',bibliotheque:'#6E2733',banque:'#15302A',marche:'#D7E6C3',forge:'#1A1714',mine:'#DCE1E6'};
+let UIDP='', PROF=null, envoiT=null;
+async function monLocus(){
+  if(!window.LocusProfil){ $('mon-locus').innerHTML='<p class="alerte">Impossible de charger les réglages du profil.</p>'; return; }
+  try{ const {data:{session}}=await sb.auth.getSession(); UIDP=session?session.user.id:''; }catch(e){ UIDP=''; }
+  if(!UIDP){ $('mon-locus').innerHTML='<p class="note">Connecte-toi d’abord (sur l’accueil), puis reviens ici.</p>'; return; }
+  PROF=LocusProfil.lire(UIDP); dessinerProfil(); PROF=await LocusProfil.tirer(sb,UIDP); dessinerProfil();
+}
+function avance(){ document.querySelectorAll('[data-avance]').forEach(s=>{ s.hidden=PROF&&PROF.style==='neutre'; }); }
+function dessinerProfil(){
+  const P=PROF, L=LocusProfil, act=document.activeElement&&document.activeElement.id;
+  const st=(v,t,d)=>`<button type="button" data-style="${v}" aria-pressed="${P.style===v}"><b>${t}</b><span>${d}</span></button>`;
+  const me=(v,t,d)=>`<button type="button" data-menu="${v}" aria-pressed="${P.menu===v}"><b>${t}</b><span>${d}</span></button>`;
+  const mods=L.MODULES.map(([id,,,quoi])=>`<div class="mod"><input type="checkbox" id="m-${id}" data-mod="${id}" ${L.actif(P,id)?'checked':''} aria-label="Afficher ${esc(L.nom(P,id))}"><input type="text" id="n-${id}" data-nom="${id}" value="${esc((P.noms||{})[id]||'')}" placeholder="${esc(L.nomDefaut(P,id))}" aria-label="Nom de ${esc(L.nomDefaut(P,id))}"><small>${esc(quoi)}</small></div>`).join('');
+  const pal=Object.entries(L.PALETTES).map(([k,pa])=>`<button type="button" data-palette="${k}" aria-pressed="${P.palette===k}"><b>${esc(pa.nom)}</b><span class="nuancier">${L.MODULES.filter(m=>m[0]!=='semaine').map(([id])=>`<i style="background:${pa.c?pa.c[id][0]:LIEUX_C[id]}"></i>`).join('')}</span></button>`).join('');
+  const eta=L.ETAPES.map(([k,t])=>`<label><input type="checkbox" data-etape="${k}" ${P.etapes.includes(k)?'checked':''}>${esc(t)}</label>`).join('');
+  $('mon-locus').innerHTML=`<p class="sous">Style</p><div class="choix">${st('village','Village','Chaque app est un lieu (l’Établi, la Banque…)')}${st('neutre','Neutre','Des noms simples, un menu épuré')}</div>
+    <p class="note">Changer de style remet ses modules, son menu, sa palette et ses étapes ; tes noms restent. Tu peux ensuite tout régler un par un.</p>
+    <p class="sous">Menu de l’accueil</p><div class="choix">${me('detail','Détaillé','Les cartes du jour : projets, séance, chrono…')}${me('epure','Épuré','Seulement les noms, rien de plus')}</div>
+    <p class="sous">Modules affichés et leurs noms</p><div class="mods">${mods}</div>
+    <p class="note">Un module coupé disparaît de l’accueil et de la recherche ; ses données restent. Laisse un nom vide pour garder celui du style.</p>
+    <p class="sous">Couleurs des tuiles</p><div class="palettes">${pal}</div>
+    <p class="sous">Étapes de « ${esc(L.nom(P,'semaine'))} »</p><div class="etapes">${eta}</div>
+    <p class="note" id="profil-etat">${P.le?'Enregistré.':''}</p>`;
+  if(act&&$(act)){ const el=$(act); el.focus(); if(el.setSelectionRange&&el.value!=null) el.setSelectionRange(el.value.length,el.value.length); }
+  avance();
+}
+function enregistrerProfil(redessiner){ if(redessiner) dessinerProfil(); const e=$('profil-etat'); if(e) e.textContent='Enregistrement…';
+  clearTimeout(envoiT); envoiT=setTimeout(async()=>{ const ok=await LocusProfil.enregistrer(sb,UIDP,PROF); const e=$('profil-etat'); if(e) e.textContent=ok?'Enregistré.':'Enregistré sur cet appareil ; envoi au retour du réseau.'; },400); }
+$('mon-locus').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!PROF) return;
+  if(b.dataset.style){ if(PROF.style!==b.dataset.style){ PROF=LocusProfil.nouveauStyle(PROF,b.dataset.style); enregistrerProfil(true); } return; }
+  if(b.dataset.menu){ PROF.menu=b.dataset.menu; enregistrerProfil(true); return; }
+  if(b.dataset.palette){ PROF.palette=b.dataset.palette; enregistrerProfil(true); return; } });
+$('mon-locus').addEventListener('change',e=>{ const el=e.target; if(!PROF) return;
+  if(el.dataset.mod){ PROF.modules=Object.assign({},PROF.modules,{[el.dataset.mod]:el.checked?1:0}); enregistrerProfil(false); return; }
+  if(el.dataset.etape){ const L=new Set(PROF.etapes); if(el.checked) L.add(el.dataset.etape); else L.delete(el.dataset.etape); PROF.etapes=LocusProfil.ETAPES.map(x=>x[0]).filter(k=>L.has(k)); enregistrerProfil(false); return; } });
+$('mon-locus').addEventListener('input',e=>{ const el=e.target; if(!PROF||!el.dataset.nom) return; PROF.noms=Object.assign({},PROF.noms,{[el.dataset.nom]:el.value}); if(!el.value.trim()) delete PROF.noms[el.dataset.nom]; enregistrerProfil(false); });
 
 /* ---------- Dossier sur l'ordinateur (test) ----------
    Le navigateur donne accès à un dossier choisi une fois (File System Access, Chromium sur ordinateur).

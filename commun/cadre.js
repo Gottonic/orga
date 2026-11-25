@@ -76,6 +76,23 @@
     });
     avant.before(b);
   }
-  function tout() { appliquer(); annuler(); chercher(); }
+  /* « Mon Locus » (25.11, commun/profil.js) : une app coupée dans le profil renvoie à l'accueil ; le nom choisi
+     (ou le nom du style Neutre) remplace celui du lieu dans l'en-tête, l'écran de connexion et le titre de l'onglet. */
+  const VILLAGE = { etabli: 'L’Établi', bibliotheque: 'La Bibliothèque', banque: 'La Banque', marche: 'Le Marché', forge: 'La Forge', mine: 'La Mine' };
+  const NEUTRE = { etabli: 'Projets', bibliotheque: 'Notes', banque: 'Banque', marche: 'Courses', forge: 'Sport', mine: 'Factures et heures' };
+  function profil() {
+    try { const a = JSON.parse(localStorage.getItem('orga-auth') || 'null'), uid = a && a.user && a.user.id; if (!uid) return null;
+      return JSON.parse(localStorage.getItem('locus-profil-' + uid) || 'null'); } catch (e) { return null; }
+  }
+  function monLocus() {
+    const app = Object.keys(VILLAGE).find((a) => document.documentElement.dataset.lieu === a) || Object.keys(VILLAGE).find((a) => location.pathname.includes('/' + a + '/'));
+    const p = profil(); if (!app || !p) return;
+    if (p.modules && (p.modules[app] === 0 || p.modules[app] === false) && !/[?&]dans=/.test(location.search)) { location.replace(ICI ? new URL('../', ICI).href : '../'); return; }
+    const nom = (p.noms && p.noms[app] && String(p.noms[app]).trim()) || (p.style === 'neutre' ? NEUTRE[app] : '');
+    if (!nom || nom === VILLAGE[app]) return;
+    document.querySelectorAll('h1').forEach((h) => { if (h.textContent.trim() === VILLAGE[app]) h.textContent = nom; });
+    if (document.title.indexOf(VILLAGE[app]) >= 0) document.title = document.title.replace(VILLAGE[app], nom);
+  }
+  function tout() { monLocus(); appliquer(); annuler(); chercher(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tout); else tout();
 })();

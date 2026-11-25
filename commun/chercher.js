@@ -47,7 +47,9 @@
 
   /* le moteur : la liste des éléments trouvés, dans l'ordre d'affichage */
   async function trouver(brut, app) {
-    const q = plain(brut).trim(), R = [], dans = (a) => !app || app === a;
+    /* « Mon Locus » (25.11) : sur l'accueil, pas de résultats d'une app coupée dans le profil */
+    const prf = window.LocusProfil ? LocusProfil.lire() : null;
+    const q = plain(brut).trim(), R = [], dans = (a) => (!app || app === a) && (app || !prf || LocusProfil.actif(prf, a));
     if (q.length < 2) return R;
     if (dans('etabli') && PB) {
       PB.liste().filter((p) => plain(p.name).includes(q)).slice(0, 8).forEach((p) => R.push({ app: 'etabli', type: 'projet', id: p.id, e: p.emoji, t: p.name, s: (window.Projets && Projets.ETATS[Projets.etat(p)]) || '' }));

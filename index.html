@@ -35,6 +35,11 @@ main{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-rig
 .obj b{font-weight:600}
 .obj span{font-size:13.5px}
 .obj .conseil{font-style:italic}
+.bienvenue{background:var(--surface);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.bienvenue>span{font-size:14px;color:var(--ink-2,var(--ink))}
+.bienvenue .choix2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bienvenue button{border:0;border-radius:14px;background:var(--surface-2);color:var(--ink);padding:12px;text-align:left;display:flex;flex-direction:column;gap:4px;font:600 15px var(--f-body);cursor:pointer}
+.bienvenue button small{font:400 12.5px/1.3 var(--f-body);color:var(--ink-3)}
 .obj-vide{border:1.5px dashed color-mix(in srgb,var(--accent) 70%,transparent);background:none;color:var(--ink-2,var(--ink));border-radius:16px;padding:12px 16px;font:600 14px var(--f-body);text-align:left;cursor:pointer}
 /* une app au premier plan sur l'accueil (cadre transparent, commun/cadre.js) */
 .dans-fond{position:fixed;inset:0;z-index:69;background:rgba(20,16,28,.45);display:grid;place-items:center}
@@ -195,6 +200,7 @@ pre.claude{margin:0;white-space:pre-wrap;background:var(--surface);border-radius
 <script src="commun/projets.js"></script>
 <script src="commun/chercher.js"></script>
 <script src="commun/achats.js"></script>
+<script src="commun/profil.js"></script>
 <script>
 'use strict';
 /* =====================================================================================================
@@ -307,33 +313,44 @@ function carre(app,nom,href,bouton){ return `<article class="carre" data-lieu="$
 function vAccueil(){
   const N=semaineRoutine(), fait=((B['s:routine']||{}).fait||[]).includes(N);
   const o=objectifs(CUR()), P_=projetsDuJour(), S_=seancesDuJour(), pj=protJour();
+  /* « Mon Locus » (25.11) : modules affichés, noms, menu épuré ou détaillé, palette (commun/profil.js) */
+  const PRF=prof(), epure=PRF&&PRF.menu==='epure', act=id=>!window.LocusProfil||LocusProfil.actif(PRF,id), nm=id=>window.LocusProfil?LocusProfil.nom(PRF,id):id;
+  appliquerPalette(PRF);
   let h='';
-  if(jourRoutine()&&!fait) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>Démarrer la semaine</b><small>Humeur, journal, boîtes, Banque, vide-tête, tâches, semaine, puis Claude</small></span>${P('suivant')}</button>`;
+  if(!profilChoisi()) h+=`<section class="bienvenue"><b>Bienvenue dans Locus</b><span>Comment veux-tu ton accueil ? Tu pourras tout changer dans les Réglages, « Mon Locus ».</span><div class="choix2"><button type="button" data-style-init="village"><b>Village</b><small>Chaque app est un lieu, l’accueil montre ta journée</small></button><button type="button" data-style-init="neutre"><b>Neutre</b><small>Des noms simples, un accueil épuré</small></button></div></section>`;
+  if(act('semaine')&&(epure||jourRoutine()&&!fait)) h+=`<button class="tuile-sem" type="button" id="b-routine"><span class="pl">${P('lecture')}</span><span class="tx"><b>${esc(nm('semaine'))}</b><small>${epure?(fait?'Faite cette semaine':'À faire cette semaine'):PRF&&PRF.style==='neutre'?'Vide-tête, tâches, semaine':'Humeur, journal, boîtes, Banque, vide-tête, tâches, semaine, puis Claude'}</small></span>${P('suivant')}</button>`;
   h+=`<form class="ligne" id="f-vide" autocomplete="off"><button type="button" class="sem-n" id="b-semaine" title="Voir la semaine ${wkNum(CUR())}" aria-label="Voir le planning de la semaine ${wkNum(CUR())}">${wkNum(CUR())}</button><input id="i-vide" placeholder="Vide-tête : une idée, un truc à ne pas oublier…" aria-label="Noter dans le vide-tête" enterkeyhint="send"><button class="rondb" type="submit" aria-label="Noter">${P('plus')}</button></form>`;
   /* les objectifs se notent / se corrigent ici (25.11 : avant, il fallait les écrire dans le journal de la Bibliothèque) */
-  if(o.principal||o.secondaire||o.conseil) h+=`<section class="obj" id="b-obj" role="button" tabindex="0" style="cursor:pointer" aria-label="Objectifs de la semaine, toucher pour modifier"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
-  else h+=`<button type="button" class="obj-vide" id="b-obj">+ Noter les objectifs de la semaine ${wkNum(CUR())}</button>`;
+  if(!epure&&(o.principal||o.secondaire||o.conseil)) h+=`<section class="obj" id="b-obj" role="button" tabindex="0" style="cursor:pointer" aria-label="Objectifs de la semaine, toucher pour modifier"><span class="eyebrow">Objectif de la semaine</span>${o.principal?`<b>${esc(o.principal)}</b>`:''}${o.secondaire?`<span>${esc(o.secondaire)}</span>`:''}${o.conseil?`<span class="conseil">${esc(o.conseil)}</span>`:''}</section>`;
+  else if(!epure&&(!PRF||PRF.style!=='neutre')) h+=`<button type="button" class="obj-vide" id="b-obj">+ Noter les objectifs de la semaine ${wkNum(CUR())}</button>`;
   const grandes=[], carres=[];
-  if(P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>L’Établi</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
-  else carres.push(carre('etabli','L’Établi','etabli/'));
-  if(S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>La Forge</h2><span class="eyebrow">${S_.some(s=>s.run)?'En cours':S_.length>1?'Entraînements':'Entraînement'}</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${[s.min?'≈ '+fmtMin(s.min):'',s.run?'commencée':s.retard?'prévue '+JOURS[s.day]+', pas encore faite':''].filter(Boolean).join(' · ')}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}${pj?`<a class="prot-j" href="forge/#nutrition"><span class="eyebrow">Protéines du jour</span><b>${pj.g} g</b><small>${esc(pj.l)}</small></a>`:''}</article>`);
-  else carres.push(carre('forge','La Forge','forge/',pj?`<a class="prot-c" href="forge/#nutrition" title="Protéines du jour : ${esc(pj.l)}"><b>${pj.g} g</b><small>protéines</small></a>`:''));
-  const marche=(`<article class="carte" data-lieu="marche" style="grid-column:span MARCHE"><a class="c-tete" href="marche/">${PL('marche')}<h2>Le Marché</h2></a><form class="ligne" id="f-marche" autocomplete="off"><input id="i-marche" placeholder="Un achat à faire…" aria-label="Ajouter un achat au Marché" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form></article>`);
+  if(act('etabli')&&!epure&&P_.length) grandes.push(`<article class="carte" data-lieu="etabli"><a class="c-tete" href="etabli/">${PL('etabli')}<h2>${esc(nm('etabli'))}</h2><span class="eyebrow">Aujourd’hui</span></a>${P_.map(p=>{ const t=prochaine(p); return `<a class="proj" href="etabli/#p:${esc(p.id)}" data-dans="etabli" data-hash="p:${esc(p.id)}"><span class="em">${esc(p.emoji||'')}</span><span class="tx"><b>${esc(p.name)}</b><small>${Projets.nature(p)==='pro'?'Pro':'Perso'}${t?' · '+esc(t):''}</small></span><span class="pt" style="background:${esc(p.color||'#888')}"></span></a>`; }).join('')}</article>`);
+  else if(act('etabli')) carres.push(carre('etabli',nm('etabli'),'etabli/'));
+  if(act('forge')&&!epure&&S_.length) grandes.push(`<article class="carte" data-lieu="forge"><a class="c-tete" href="forge/">${PL('forge')}<h2>${esc(nm('forge'))}</h2><span class="eyebrow">${S_.some(s=>s.run)?'En cours':S_.length>1?'Entraînements':'Entraînement'}</span></a>${S_.map(s=>`<div class="seance"><span class="tx"><b>${esc(s.t)}</b><small>${[s.min?'≈ '+fmtMin(s.min):'',s.run?'commencée':s.retard?'prévue '+JOURS[s.day]+', pas encore faite':''].filter(Boolean).join(' · ')}</small></span><button class="btn-acc" type="button" data-forge="${esc(s.id)}">${P('lecture')}${s.run?'Reprendre':'Démarrer'}</button></div>`).join('')}${pj?`<a class="prot-j" href="forge/#nutrition"><span class="eyebrow">Protéines du jour</span><b>${pj.g} g</b><small>${esc(pj.l)}</small></a>`:''}</article>`);
+  else if(act('forge')) carres.push(carre('forge',nm('forge'),'forge/',epure?'':pj?`<a class="prot-c" href="forge/#nutrition" title="Protéines du jour : ${esc(pj.l)}"><b>${pj.g} g</b><small>protéines</small></a>`:''));
+  const marche=(`<article class="carte" data-lieu="marche" style="grid-column:span MARCHE"><a class="c-tete" href="marche/">${PL('marche')}<h2>${esc(nm('marche'))}</h2></a><form class="ligne" id="f-marche" autocomplete="off"><input id="i-marche" placeholder="Un achat à faire…" aria-label="Ajouter un achat au Marché" enterkeyhint="send" autocapitalize="sentences"><button class="rondb" type="submit" aria-label="Ajouter">${P('plus')}</button></form></article>`);
   const ch=chronoTxt();
-  carres.push(carre('mine','La Mine','mine/',`<button class="rond" type="button" id="b-chrono" aria-label="${ch?'Chrono en cours : '+ch:'Démarrer le chrono'}">${ch?esc(ch):P('lecture')}</button>`));
-  carres.push(carre('banque','La Banque','banque/',`<button class="rond" type="button" id="b-saisie" aria-label="Nouvelle opération">${P('plus')}</button>`));
+  if(act('mine')) carres.push(carre('mine',nm('mine'),'mine/',epure?'':`<button class="rond" type="button" id="b-chrono" aria-label="${ch?'Chrono en cours : '+ch:'Démarrer le chrono'}">${ch?esc(ch):P('lecture')}</button>`));
+  if(act('banque')) carres.push(carre('banque',nm('banque'),'banque/',epure?'':`<button class="rond" type="button" id="b-saisie" aria-label="Nouvelle opération">${P('plus')}</button>`));
   /* plus de carte « Tâches du jour » : les tâches sont sur la feuille du lundi (ampoule du 24.11) */
-  carres.push(carre('bibliotheque','La Bibliothèque','bibliotheque/'));
+  if(act('bibliotheque')) carres.push(carre('bibliotheque',nm('bibliotheque'),'bibliotheque/'));
+  const avecMarche=act('marche')&&!epure; if(act('marche')&&epure) carres.push(carre('marche',nm('marche'),'marche/'));
   /* le Marché prend 2/3 ou toute la largeur, pour que les carrés remplissent leurs lignes (demande de Nicolas, 18.11) :
      grille de 6 ; un carré = 2. S'il reste 2 carrés seuls sur la dernière ligne, ils prennent la moitié chacun. */
-  const n=carres.length, mL=n%3===1?4:6;
+  const n=carres.length, mL=avecMarche?(n%3===1?4:6):0;
   let reste=mL===4?n-1:n; const fin=reste%3===2;
   const cs=carres.map((c,i)=>fin&&i>=n-2?c.replace('<article class="carre"','<article class="carre" style="grid-column:span 3"'):c);
-  h+=`<div class="apps">${grandes.join('')}${marche.replace('span MARCHE','span '+mL)}${cs.join('')}</div>`;
-  if(!(jourRoutine()&&!fait)) h+=`<button type="button" id="b-routine" class="lien-r">Ouvrir la routine du lundi</button>`;
+  h+=`<div class="apps">${grandes.join('')}${avecMarche?marche.replace('span MARCHE','span '+mL):''}${cs.join('')}</div>`;
+  if(act('semaine')&&!epure&&!(jourRoutine()&&!fait)) h+=`<button type="button" id="b-routine" class="lien-r">Ouvrir ${PRF&&PRF.style==='neutre'?'« '+esc(nm('semaine'))+' »':'la routine du lundi'}</button>`;
   if(sync&&!navigator.onLine) h+=`<p class="note">Hors ligne : ce que tu notes partira au retour du réseau.</p>`;
   $main.innerHTML=h;
 }
+/* le profil de la personne connectée (copie locale, puis Supabase à l'entrée) */
+let PROFIL=null;
+function prof(){ if(!window.LocusProfil) return null; return PROFIL||(PROFIL=LocusProfil.lire(UID)); }
+const profilChoisi=()=>!window.LocusProfil||LocusProfil.existe(UID)||!!B['s:routine']||!!(PB&&PB.liste().length); /* Nicolas (données déjà là) ne voit pas l'accueil de bienvenue */
+function appliquerPalette(p){ let st=document.getElementById('palette'); if(!st){ st=document.createElement('style'); st.id='palette'; document.head.appendChild(st); }
+  const c=window.LocusProfil?LocusProfil.css(p,'.apps'):''; if(st.textContent!==c) st.textContent=c; }
 function render(){ if(!UID) return; if(document.activeElement&&$main.contains(document.activeElement)&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.value) return; vAccueil(); }
 
 /* =============================== La routine du lundi =============================== */
@@ -342,6 +359,10 @@ const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
 /* ordre voulu par Nicolas (19.11, 20.11, 23.11) : humeur, journal, boîtes à vider, Banque, tâches pas faites, vide-tête, tâches de 2 minutes, agenda, projets, entraînements, tâches, Claude */
 const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Les tâches pas faites','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
 const CLES=['humeur','journal','boites','banque','report','vide','deuxmin','agenda','projets','forge','taches','claude'];
+/* les étapes de la personne (« Mon Locus », 25.11) : celles cochées, sans celles d'un module coupé */
+function etapesActives(){ const p=prof(); let L=CLES.slice(); if(p&&window.LocusProfil){ const a=id=>LocusProfil.actif(p,id);
+  L=L.filter(k=>(p.etapes||CLES).includes(k)&&!(k==='banque'&&!a('banque'))&&!(k==='projets'&&!a('etabli'))&&!(k==='forge'&&!a('forge'))); } return L.length?L:['vide']; }
+const etapeIci=()=>etapesActives()[R.etape-1];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
 /* =============================== La semaine en cours (toucher le numéro de semaine, demande de Nicolas, 23.11) ===============================
    Tout le planning : projets sur la semaine entière, puis jour par jour en heures (Proton, projets, séances, tâches). Un projet s'ouvre au premier plan. */
@@ -382,10 +403,11 @@ function fermerPlein(){ VUE_SEM=false; VUE_MODIF=false; VUE_OBJ=false; $plein.hi
 function cadrePlein(titre,droite,corps,pied){ return `<header><button class="x" type="button" data-r="fermer" aria-label="Fermer">${P('supprimer')}</button><h2>${titre}</h2>${droite?`<span class="eyebrow">${droite}</span>`:''}</header><div class="corps" id="corps">${corps}</div>${pied?`<nav class="pied">${pied}</nav>`:''}`; }
 function vRoutine(){
   const N=semaineRoutine(), Pr=semainePrec(N), e=R.etape;
-  const pts=`<div class="points">${ETAPES.map((_,i)=>`<span class="${i+1<=e?'on':''}${i+1===e?' ici':''}"></span>`).join('')}</div>`;
+  const EA=etapesActives(); if(e>EA.length){ R.etape=EA.length; return vRoutine(); }
+  const pts=`<div class="points">${EA.map((_,i)=>`<span class="${i+1<=e?'on':''}${i+1===e?' ici':''}"></span>`).join('')}</div>`;
   const tete=(t,s)=>`${pts}<div class="titre"><span class="eyebrow">Étape ${e}</span><h3>${t}</h3><p>${s}</p></div>`;
   let c='';
-  const k=CLES[e-1];
+  const k=EA[e-1];
   if(k==='humeur'){ const w=B['w:'+Pr]||{}; /* Stress (19.11, demande de Nicolas ; de 1 à 10 comme les autres depuis le 23.11) : 1 = pas du tout stressé, 10 = hyper stressé ; gardé dans « stress », et « calme » = 10 − stress pour la Bibliothèque et le pont du lundi */
     const st=w.stress!=null?w.stress:(w.calme!=null?11-w.calme:null);
     const ech=(k,l,de)=>{ const N=de===0?[0,1,2,3,4,5,6,7,8,9,10]:[1,2,3,4,5,6,7,8,9,10]; const v=k==='stress'?st:w[k]; return `<div class="echelle"><span class="eyebrow">${l}</span><div class="cases" style="grid-template-columns:repeat(${N.length},minmax(0,1fr))">${N.map(n=>`<button type="button" data-r="axe" data-k="${k}" data-n="${n}" aria-pressed="${v===n}">${n}</button>`).join('')}</div></div>`; };
@@ -432,9 +454,9 @@ function vRoutine(){
   if(k==='banque'){ const b=((B['s:routine']||{}).banque)||{}, ok=b.sem===N;
     c=tete('La Banque','Le point de la semaine : importer le relevé Yuh, classer les opérations, vérifier les saisies.')+(ok?`<div class="boite"><b>Point fait</b><span class="note">${esc(chf(b.depenses))} dépensés la semaine passée (privé).</span><button type="button" class="chip" data-r="banque" style="align-self:flex-start">Rouvrir la Banque</button></div>`:`<button type="button" class="btn-acc" data-r="banque" style="height:50px;justify-content:center;background:#D6B15E;color:#15302A">${P('banque')}Ouvrir le point de la Banque</button><p class="note">« Point terminé » dans la Banque te ramène ici. Tu peux aussi passer cette étape.</p>`); }
   if(k==='claude') c=tete('Pour Claude','Tout est prêt : copie le texte et colle-le dans la séance du lundi.')+`<pre class="claude" id="t-claude">${esc(texteClaude(N,Pr))}</pre><button class="btn-acc" type="button" data-r="copier" style="height:50px;justify-content:center">${P('copier')}Copier pour Claude</button>`;
-  const pied=`${e>1?'<button class="sec" type="button" data-r="prec">Retour</button>':''}<button class="pri" type="button" data-r="suiv">${e<ETAPES.length?'Suivant':'Terminer'}</button>`;
+  const pied=`${e>1?'<button class="sec" type="button" data-r="prec">Retour</button>':''}<button class="pri" type="button" data-r="suiv">${e<EA.length?'Suivant':'Terminer'}</button>`;
   const y=document.getElementById('corps')?document.getElementById('corps').scrollTop:0, meme=$plein.dataset.e===String(e);
-  $plein.innerHTML=cadrePlein('Démarrer la semaine',e+'/'+ETAPES.length,c,pied); $plein.dataset.e=e;
+  $plein.innerHTML=cadrePlein(esc(window.LocusProfil?LocusProfil.nom(prof(),'semaine'):'Démarrer la semaine'),e+'/'+EA.length,c,pied); $plein.dataset.e=e;
   if(meme) document.getElementById('corps').scrollTop=y;
 }
 /* étape 4 : projets (p.days, p.weeks) et séances de la Forge (jour 0…6) */
@@ -554,7 +576,7 @@ function triHtml(n){
   const projets=f=>PB?PB.liste().filter(p=>!p.closed&&f(p)).sort((a,b)=>plain(a.name)<plain(b.name)?-1:1).map(p=>['x:p:'+p.id,nomPD(p)]):[];
   const dv=groupe||ch.length?null:devine(n);
   let h='';
-  if(!ch.length) h=(dv?`<span class="eyebrow">Proposé</span><div class="act">${devBouton(n,dv)}</div>`:'')+`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).filter(([a])=>!(groupe&&a==='banque')).map(([a,l])=>chip('a:'+a,l,'',a)).join('')}</div>`;
+  if(!ch.length) h=(dv?`<span class="eyebrow">Proposé</span><div class="act">${devBouton(n,dv)}</div>`:'')+`<span class="eyebrow">Une tâche</span><div class="act">${chip('t2','⏱ 2 minutes')}${chip('tl','Liste de tâches')}</div><span class="eyebrow">Une app</span><div class="act">${Object.entries(NOMS_APP).filter(([a])=>!(groupe&&a==='banque')&&(!window.LocusProfil||LocusProfil.actif(prof(),a))).map(([a,l])=>chip('a:'+a,window.LocusProfil?esc(LocusProfil.nom(prof(),a)):l,'',a)).join('')}</div>`;
   else if(der==='a:etabli') h=`<span class="eyebrow">L’Établi</span>${choix([...projets(()=>true),...(PB?PB.domaines().filter(d=>!d.auto).map(d=>['x:d:'+d.id,'Domaine · '+nomPD(d)]):[])],'Dans un projet ou un domaine…')}<div class="act">${chip('np',groupe?'+ Un nouveau projet par idée':'+ Nouveau projet')}${chip('nd',groupe?'+ Un nouveau domaine par idée':'+ Nouveau domaine')}</div>`;
   else if(der==='a:mine') h=`<span class="eyebrow">La Mine</span>${choix(projets(pro),'Dans quel mandat ?')}`;
   else if(der.startsWith('x:p:')){ const p=PB&&PB.get(der.slice(4)); h=`<span class="eyebrow">${esc(p?nomPD(p):'Projet')}</span><div class="act">${chip('pn','Note')}${chip('pt','Tâche')}${chip('pa','Achat')}</div>`; }
@@ -766,9 +788,9 @@ $plein.addEventListener('click',e=>{
   if(e.target.closest('[data-r="semModif"]')){ VUE_MODIF=true; vSemaineVue(); document.getElementById('corps').scrollTop=0; return; }
   if(e.target.closest('[data-r="semFini"]')){ VUE_MODIF=false; vSemaineVue(); return; }
   const el=e.target.closest('[data-r]'); if(!el||el.tagName==='SELECT') return; const a=el.dataset.r, N=semaineRoutine(), Pr=semainePrec(N);
-  if(a==='fermer'){ if(!VUE_SEM&&CLES[R.etape-1]==='journal') garderNote(); fermerPlein(); return; }
-  if(a==='prec'){ if(CLES[R.etape-1]==='journal') garderNote(); R.etape=Math.max(1,R.etape-1); R.sel=null; $plein.dataset.e=''; vRoutine(); return; }
-  if(a==='suiv'){ if(CLES[R.etape-1]==='journal') garderNote(); if(CLES[R.etape-1]==='report'){ const k=reporter(N); if(k) toast(k+' tâche'+(k>1?'s':'')+' à retrier'); } if(R.etape<ETAPES.length){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
+  if(a==='fermer'){ if(!VUE_SEM&&etapeIci()==='journal') garderNote(); fermerPlein(); return; }
+  if(a==='prec'){ if(etapeIci()==='journal') garderNote(); R.etape=Math.max(1,R.etape-1); R.sel=null; $plein.dataset.e=''; vRoutine(); return; }
+  if(a==='suiv'){ if(etapeIci()==='journal') garderNote(); if(etapeIci()==='report'){ const k=reporter(N); if(k) toast(k+' tâche'+(k>1?'s':'')+' à retrier'); } if(R.etape<etapesActives().length){ R.etape++; R.sel=null; $plein.dataset.e=''; vRoutine(); document.getElementById('corps').scrollTop=0; return; }
     lignes('taches').filter(n=>!n.x&&!n.remis).forEach(n=>ecrireB('n:'+n.id,Object.assign({},n,{remis:N}))); /* les tâches partent sur papier et chez Claude (24.11) */
     const r=Object.assign({},B['s:routine']||{}); r.fait=[...new Set([...(r.fait||[]),N])].slice(-12); r.le=AUJ(); ecrireB('s:routine',r); fermerPlein(); toast('Bonne semaine !'); return; }
   if(a==='axe'){ const w=Object.assign({},B['w:'+Pr]||{}), k=el.dataset.k, n=+el.dataset.n;
@@ -926,6 +948,7 @@ $main.addEventListener('change',e=>{ const el=e.target; if(!el.dataset||!el.data
 $main.addEventListener('click',e=>{ if(e.target.closest('section#b-obj')){ ouvrirObjectifs(); return; } const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
   if(b.id==='b-semaine'){ ouvrirSemaine(); return; }
+  if(b.dataset.styleInit&&window.LocusProfil){ PROFIL=LocusProfil.nouveauStyle(null,b.dataset.styleInit); LocusProfil.enregistrer(sb,UID,PROFIL); render(); toast(b.dataset.styleInit==='neutre'?'Style Neutre : tout se règle dans Réglages › Mon Locus':'Style Village'); return; }
   if(b.id==='b-obj'){ ouvrirObjectifs(); return; }
   if(b.id==='b-chrono'){ ouvrirDans('mine','act=chrono'); return; }
   if(b.id==='b-saisie'){ ouvrirDans('banque','act=saisie'); return; }
@@ -942,7 +965,7 @@ let $dans=null, $fond=null, $x=null, dansT=null, derToast={t:'',le:0};
 const scheme=app=>['forge','banque'].includes(app)?'dark':'light';
 function cadre(app,url){ const f=document.createElement('iframe'); f.className='dans'; f.title=app; f.tabIndex=-1; f.style.colorScheme=scheme(app); f.src=url; document.body.appendChild(f); return f; }
 function chauffer(app){ if(!CH[app]) CH[app]={f:cadre(app,app+'/?dans=accueil&attente=1'),charge:false,ordre:null}; return CH[app]; }
-function prechauffer(){ CHAUDES.forEach((a,i)=>setTimeout(()=>chauffer(a),1200+i*1500)); }
+function prechauffer(){ const p=prof(); CHAUDES.filter(a=>!window.LocusProfil||LocusProfil.actif(p,a)&&!(p&&p.menu==='epure'&&a!=='etabli')).forEach((a,i)=>setTimeout(()=>chauffer(a),1200+i*1500)); }
 function ouvrirDans(app,params,hash){
   if($dans) return;
   $fond=document.createElement('div'); $fond.className='dans-fond'; $fond.innerHTML='<span class="att" aria-label="Ouverture…"></span>'; document.body.appendChild($fond);
@@ -974,7 +997,7 @@ function vLogin(msg){ $main.innerHTML=`<form class="login" id="f-login"><h2>Bien
     catch(err){ vLogin(/invalid/i.test((err&&err.message)||'')?'E-mail ou mot de passe incorrect.':'Connexion impossible : '+((err&&err.message)||err)); } }); }
 async function entrer(user){
   UID=user.id; reprendre(); PB=Projets.base(sb,UID); try{ AB=window.Achats?Achats.base(sb,UID):null; }catch(e){ AB=null; } PB.surChangement(()=>{ if($plein.hidden) render(); else if($plein.dataset.e) vRoutine(); });
-  render(); await Promise.all([tirer(),PB.tirer()]); render(); vider(); prechauffer(); }
+  PROFIL=null; render(); await Promise.all([tirer(),PB.tirer(),window.LocusProfil?LocusProfil.tirer(sb,UID).then(p=>{ PROFIL=p; }):null]); render(); vider(); prechauffer(); }
 (async function(){
   const d=new Date(); document.getElementById('date').textContent=JOURS[(d.getDay()+6)%7]+' '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+' · S'+wkNum(wkKey(d));
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
@@ -983,7 +1006,7 @@ async function entrer(user){
   let s=null; try{ s=(await sb.auth.getSession()).data.session; }catch(e){}
   if(s&&s.user) await entrer(s.user); else vLogin();
   addEventListener('online',()=>{ vider(); tirer().then(render); });
-  document.addEventListener('visibilitychange',()=>{ if(UID&&document.visibilityState==='visible'){ Promise.all([tirer(),PB.tirer()]).then(()=>{ if($plein.hidden) render(); }); } });
+  document.addEventListener('visibilitychange',()=>{ if(UID&&document.visibilityState==='visible'){ Promise.all([tirer(),PB.tirer()]).then(()=>{ PROFIL=null; if($plein.hidden) render(); }); } });
   setInterval(()=>{ if(UID&&CHRONO&&$plein.hidden&&document.visibilityState==='visible') render(); },30000);
 })();
 </script>
