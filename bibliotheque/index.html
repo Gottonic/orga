@@ -66,6 +66,39 @@ a.chip{color:inherit;text-decoration:none}
 .plinks li:last-child a{border-bottom:0}
 .plinks .nm{flex:1;font-weight:600}.plinks .et{font:400 .75rem var(--mono);color:var(--muted)}.plinks .go{color:var(--bord);font-weight:700}
 .plinks .arch .nm{color:var(--muted);font-weight:400}
+/* trois vues des Notes (26.11) */
+.vues{display:inline-flex;margin-left:auto;border:1px solid var(--line2);border-radius:var(--pill);overflow:hidden;background:var(--card);font:600 .8rem var(--body);letter-spacing:0}
+.vues button{border:0;background:none;padding:6px 10px;display:flex;gap:5px;align-items:center;color:var(--ink)}
+.vues button[aria-pressed="true"]{background:var(--bord);color:#FFF6EC}
+.vues .ic{width:15px;height:15px;vertical-align:0}
+@media (max-width:520px){.vues button span{display:none}}
+h2.titre{align-items:center}
+.pt{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pc,var(--muted));margin-right:6px;vertical-align:0;flex:none}
+.filtres{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.filtres .chip{white-space:nowrap;display:flex;align-items:center}
+.murs{columns:2 150px;column-gap:10px}
+@media (min-width:700px){.murs{columns:3 190px}}
+.pi{display:block;width:100%;break-inside:avoid;margin:0 0 10px;border:0;border-radius:4px 4px 16px 4px;background:color-mix(in srgb,var(--pc) 42%,#FFFDF7);color:#2B2320;text-align:left;padding:12px 12px 9px;box-shadow:0 1px 0 rgba(0,0,0,.05),0 5px 12px rgba(40,10,16,.12)}
+.pi b{display:block;font:700 1rem/1.2 var(--serif);letter-spacing:-.015em;margin-bottom:5px;overflow-wrap:anywhere}
+.pi span{display:block;font-size:.86rem;line-height:1.35;white-space:pre-line;max-height:8em;overflow:hidden;overflow-wrap:anywhere}
+.pi small{display:block;margin-top:8px;font:400 .68rem var(--mono);opacity:.7}
+.nliste{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.nliste button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:10px 14px;color:var(--ink)}
+.nliste li:last-child button{border-bottom:0}
+.nliste b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nliste small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.nliste .qd{color:var(--ink-2);font-weight:600;margin-right:6px}
+.nliste.dos button{display:flex;align-items:center;gap:8px}
+.nliste.dos .nm{flex:1;font-weight:600}.nliste.dos small{margin:0;font-family:var(--mono)}.nliste.dos .go{color:var(--muted)}
+.ntete{border-left:6px solid var(--pc);padding-left:12px;display:flex;flex-direction:column;gap:8px}
+.titreN{width:100%;border:0;background:transparent;font:700 1.5rem/1.2 var(--serif);letter-spacing:-.02em;resize:none;overflow:hidden;padding:2px 0;color:var(--ink)}
+.titreN:focus{outline:0}
+.ntete .chips{align-items:center}
+.page .ol{border:0;background:transparent;padding:0}
+.page .ln .bul{opacity:.4}
+.ln.dos>textarea{font-weight:700}
+.sansdos .dos-b{display:none}
+.ln.dos>.bul{color:var(--bord)}
 /* mode « seul » : la Bibliothèque montrée dans l'Établi, juste les notes d'un projet */
 html.seul .oh{display:none}
 html.seul,html.seul body{background:var(--surface);color:var(--text);--muted:var(--ink-3)}
@@ -152,7 +185,7 @@ html.dans .login{position:static;background:transparent;padding:0}
 <header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
 <nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="projets">Notes</button><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="journal">Journal</button></nav></header>
 <main id="view" aria-live="polite"></main>
-<div class="outils" id="outils" hidden><button class="emo-b" data-tool="emoji" aria-label="Émoji en début de ligne" title="Émoji en début de ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M6.8 12a3.6 3.6 0 0 0 6.4 0M7.5 8h.01M12.5 8h.01"/></svg></button><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
+<div class="outils" id="outils" hidden><button class="dos-b" data-tool="dos" aria-label="Dossier (ligne de premier niveau)" title="Faire de cette ligne un dossier"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5.5h5l1.5 2h8.5v8.5h-15z"/></svg></button><button class="emo-b" data-tool="emoji" aria-label="Émoji en début de ligne" title="Émoji en début de ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M6.8 12a3.6 3.6 0 0 0 6.4 0M7.5 8h.01M12.5 8h.01"/></svg></button><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
@@ -219,7 +252,11 @@ function annuler(redo){ couper(); const src=redo?HIST.refaire:HIST.pile, tx=src.
   HIST.rejeu=false; (redo?HIST.pile:HIST.refaire).push(inv); HIST.tx=null; annulable();
   const ici=vu&&document.querySelector(`textarea[data-id="${vu}"]`); refaire(ici?vu:null); if(!ici) toast(redo?'Refait':'Annulé'); }
 function ecrire(key,data){ const v=data==null?null:canon(data); if(v==null){ if(!(key in prev)) return; noter(key,prev[key]); delete prev[key]; } else { if(prev[key]===v) return; noter(key,key in prev?prev[key]:null); prev[key]=v; } dirty.add(key); persist(); setSync(); clearTimeout(pushTimer); pushTimer=setTimeout(push,900); }
-const ecrireN=n=>ecrire('n:'+n.id,n);
+/* 26.11 : chaque ligne garde la date de sa dernière modification (m, en ms) ; les vues Post-its et Liste trient les notes par là.
+   Rien n'est écrit si seul m changerait ; les reprises silencieuses (HIST.rejeu) ne touchent pas m. */
+const ecrireN=n=>{ const k='n:'+n.id, old=prev[k];
+  if(old){ let o=null; try{ o=JSON.parse(old); }catch(e){} if(o&&canon(Object.assign({},n,{m:o.m}))===old) return; }
+  if(!HIST.rejeu) n.m=Date.now(); ecrire(k,n); };
 function effacerN(id){ delete N[id]; ecrire('n:'+id,null); }
 async function push(){
   if(!sb||!UID||pushing||!dirty.size||!navigator.onLine){ setSync(); return; }
@@ -259,7 +296,7 @@ function nbLignes(root){ return Object.values(N).filter(n=>!n.a&&racineDe(n)===r
 function visibles(root){ const out=[]; const go=(p,lv)=>enfants(p).forEach(n=>{ out.push({n,lv}); if(!n.c) go(n.id,lv+1); }); go(root,0); return out; }
 
 /* =============================== Pages =============================== */
-function nomRacine(r){ if(r==='vide') return 'Vide-tête'; if(r==='arbre') return 'Notes'; if(r.startsWith('j:')) return 'Journal · '+wkLabel(r.slice(2));
+function nomRacine(r){ if(N[r]) return N[r].t||'Sans titre'; if(r==='vide') return 'Vide-tête'; if(r==='arbre') return 'Notes'; if(r.startsWith('j:')) return 'Journal · '+wkLabel(r.slice(2));
   if(r.startsWith('p:')){ const p=PB&&PB.get(r.slice(2)); return p?(p.emoji?p.emoji+' ':'')+p.name:'Projet'; }
   if(r.startsWith('d:')){ const d=r==='d:autres'?Projets.autres():PB&&PB.domaine(r.slice(2)); return d?(d.emoji?d.emoji+' ':'')+d.name:'Domaine'; } return r; }
 const LIEN=/(https?:\/\/[^\s<>"]+)/g;
@@ -270,15 +307,15 @@ function editeur(root){
   if(zoom){ const C=chemin(zoom); h+=`<div class="fil"><button data-act="zoom" data-id="">${esc(nomRacine(root))}</button>${C.map(x=>` › <button data-act="zoom" data-id="${x.id}">${esc(x.t||'…')}</button>`).join('')}</div>
     <h2 class="titre" style="font-size:1.35rem">${esc(zoom.t||'…')}</h2>${zoom.d?`<p class="note">${esc(zoom.d)}</p>`:''}`; }
   h+=`<div class="ol" data-root="${esc(base)}">`+(L.map(({n,lv})=>{ const kids=enfants(n.id).length, lk=liens(n.t);
-    return `<div class="ln${n.x?' fait':''}${n.a?' archi':''}" data-id="${n.id}" style="--lv:${lv}"><button class="bul${kids?' has':''}" data-act="bul" data-id="${n.id}" aria-label="${kids?(n.c?'Déplier':'Replier')+' ; double-clic : zoomer':'Zoomer'}" title="${kids?'Clic : plier · double-clic : zoomer':'Zoomer sur cette ligne'}">${kids?(n.c?'▸':'▾'):'•'}</button><textarea class="ti" data-id="${n.id}" rows="1" aria-label="Ligne">${esc(n.t)}</textarea><span class="lk">${lk}${root==='vide'&&!ui.zoom&&lv===0?`<button class="go" data-act="classer" data-id="${n.id}" title="Ranger cette idée">→</button>`:''}</span>${n.d!=null?`<textarea class="ti nd" data-nid="${n.id}" rows="1" placeholder="Note…" aria-label="Note sous la ligne">${esc(n.d)}</textarea>`:''}</div>`; }).join('')
+    return `<div class="ln${n.x?' fait':''}${n.a?' archi':''}${n.dos?' dos':''}" data-id="${n.id}" style="--lv:${lv}"><button class="bul${kids?' has':''}" data-act="bul" data-id="${n.id}" aria-label="${kids?(n.c?'Déplier':'Replier')+' ; double-clic : zoomer':'Zoomer'}" title="${kids?'Clic : plier · double-clic : zoomer':'Zoomer sur cette ligne'}">${kids?(n.c?'▸':'▾'):'•'}</button><textarea class="ti" data-id="${n.id}" rows="1" aria-label="Ligne">${esc(n.t)}</textarea><span class="lk">${lk}${root==='vide'&&!ui.zoom&&lv===0?`<button class="go" data-act="classer" data-id="${n.id}" title="Ranger cette idée">→</button>`:''}</span>${n.d!=null?`<textarea class="ti nd" data-nid="${n.id}" rows="1" placeholder="Note…" aria-label="Note sous la ligne">${esc(n.d)}</textarea>`:''}</div>`; }).join('')
     ||`<p class="vide">Vide. Touche ici pour écrire.</p>`)+`</div>`;
   return h; }
 function apresRendu(){
-  $view.querySelectorAll('textarea.ti').forEach(autoH);
+  $view.querySelectorAll('textarea.ti,textarea.titreN').forEach(autoH);
   if(ui.focus){ const t=ui.focus.note?$view.querySelector(`textarea[data-nid="${ui.focus.id}"]`):$view.querySelector(`textarea[data-id="${ui.focus.id}"]`);
     if(t){ try{ t.focus({preventScroll:false}); const c=ui.focus.caret==null?t.value.length:Math.min(ui.focus.caret,t.value.length); t.setSelectionRange(c,c); }catch(e){} } ui.focus=null; } }
 function autoH(t){ t.style.height='auto'; t.style.height=t.scrollHeight+'px'; }
-const editing=()=>{ const a=document.activeElement; return !!(a&&a.classList&&a.classList.contains('ti')); };
+const editing=()=>{ const a=document.activeElement; return !!(a&&a.classList&&(a.classList.contains('ti')||a.classList.contains('titreN'))); };
 
 function vVide(){
   const n=enfants('vide').length;
@@ -298,16 +335,80 @@ function projetsDe(did){ if(!PB) return []; const ids=new Set(PB.domaines().filt
   return PB.liste().filter(p=>p.size!=='mini'&&(ui.archP||!p.closed)&&(did==='autres'?(!p.parent||!ids.has(p.parent)):p.parent===did)).sort((a,b)=>(!!a.closed-!!b.closed)||a.name.localeCompare(b.name,'fr')); }
 function vProjets(){
   if(ui.page) return vPage();
+  if(ui.note&&N[ui.note]) return vNote();
+  const vue=vueNotes(); if(vue==='postits') return vPostits(); if(vue==='liste') return vListe();
   if(ui.zoom&&N[ui.zoom]) return editeur('arbre');
   let plie=false; try{ plie=localStorage.getItem(DPLIE)==='1'; }catch(e){}
   const D=domainesListe();
-  let h=`<h2 class="titre">Notes</h2><div class="chips"><button class="chip" data-act="archP" aria-pressed="${ui.archP}">Archives</button><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button></div>`;
+  let h=`<h2 class="titre">Notes ${vuesHtml()}</h2><div class="chips"><button class="chip" data-act="archP" aria-pressed="${ui.archP}">Archives</button><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button></div>`;
   h+=`<div><div class="olx"><div class="ln"><button class="bul has" data-act="domPlie" aria-label="${plie?'Déplier':'Replier'}">${plie?'▸':'▾'}</button><button class="lnk" data-act="domPlie">Domaines <small>${D.length?D.length:''}</small></button></div>`;
   if(!plie){ if(!PB||!PB.pret()) h+='<p class="note" style="padding:4px 28px">Les domaines de l’Établi se chargent…</p>';
     h+=D.map(d=>{ const n=nbLignes('d:'+d.id), k=projetsDe(d.id).length;
       return `<div class="ln" style="--lv:1"><button class="bul${n?' has':''}" data-act="page" data-r="d:${d.id}" aria-label="Ouvrir">•</button><button class="lnk${d.closed?' arch':''}" data-act="page" data-r="d:${d.id}">${esc((d.emoji?d.emoji+' ':'')+d.name)}${d.closed?' (archivé)':''} <small>${[n?n+' ligne'+(n>1?'s':''):'',k?k+' projet'+(k>1?'s':''):''].filter(Boolean).join(' · ')}</small></button></div>`; }).join(''); }
   h+=`</div>${editeur('arbre')}</div>`;
   return h; }
+/* =============================== Trois vues des Notes (26.11) ===============================
+   Mêmes données (biblio_rows, n:) :
+   - un dossier = une ligne de premier niveau de la page Notes marquée « dos » (outil 📁 de la vue Arbre, ou « + Dossier »),
+     ou un domaine de l'Établi (racine d:<id>, avec sa couleur) ;
+   - une note = une ligne rangée dans un dossier (son texte = le titre, ce qu'elle contient = le corps),
+     ou une ligne de premier niveau de la page Notes qui n'est pas un dossier (dossier automatique « Notes ») ;
+   - Post-its : toutes les notes mélangées, filtres par dossier en haut ; Liste : dossiers puis notes, comme Notes sur iPhone ;
+     les deux triées par dernière modification (date la plus récente de la note et de son contenu) ;
+   - Arbre : la vue Workflowy, ordre à la main. La vue choisie est gardée sur l'appareil. */
+const VUES=[['postits','Post-its','<rect x="3" y="3" width="6" height="6"/><rect x="11" y="3" width="6" height="6"/><rect x="3" y="11" width="6" height="6"/><rect x="11" y="11" width="6" height="6"/>'],
+  ['liste','Liste','<path d="M3 5h14M3 10h14M3 15h14"/>'],['arbre','Arbre','<path d="M4 4h.01M8 4h9M7 10h.01M11 10h6M7 15h.01M11 15h6"/>']];
+function vueNotes(){ try{ const v=localStorage.getItem('biblio-vue'); if(v) return v; }catch(e){} return matchMedia('(pointer:coarse)').matches?'postits':'arbre'; }
+const vuesHtml=()=>{ const v=vueNotes(); return `<span class="vues" role="group" aria-label="Vue">${VUES.map(([k,n,ic])=>`<button type="button" data-act="vue" data-v="${k}" aria-pressed="${v===k}" title="${n}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true">${ic}</svg><span>${n}</span></button>`).join('')}</span>`; };
+const PASTELS=['#F2C94C','#F4A261','#E5989B','#8ECAE6','#90BE6D','#B392AC','#F28482','#84A59D','#E9C46A','#A0C4FF'];
+const pastel=id=>{ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))|0; return PASTELS[Math.abs(h)%PASTELS.length]; };
+const DOS_NOTES={k:'notes',nom:'Notes',col:'#F2C94C',racine:'arbre'};
+function dossiers(){ const L=Object.values(N).filter(n=>n.p==='arbre'&&n.dos&&!n.a).sort((a,b)=>a.o-b.o).map(n=>({k:'l:'+n.id,nom:n.t||'Dossier',col:n.col||pastel(n.id),racine:n.id}));
+  const D=PB?PB.domaines().filter(d=>!d.auto&&!d.closed).sort((a,b)=>a.name.localeCompare(b.name,'fr')):[];
+  D.forEach(d=>L.push({k:'d:'+d.id,nom:(d.emoji?d.emoji+' ':'')+d.name,col:d.color||pastel(d.id),racine:'d:'+d.id}));
+  return [DOS_NOTES].concat(L); }
+function dossierDe(n,DS){ return DS.find(d=>d.k==='notes'?(n.p==='arbre'&&!n.dos):n.p===d.racine)||null; }
+function indexer(){ const K={}; Object.values(N).forEach(n=>{ (K[n.p]=K[n.p]||[]).push(n); }); Object.values(K).forEach(l=>l.sort((a,b)=>a.o-b.o)); return K; }
+const tps=n=>n.m||(n.cree?Date.parse(n.cree+'T00:00'):0); /* sans m : seulement le jour (minuit) */
+function infoNote(n,K){ let m=tps(n); const L=n.d?[n.d]:[];
+  const go=id=>(K[id]||[]).forEach(x=>{ if(x.a) return; m=Math.max(m,tps(x)); if(L.length<8&&(x.t||x.d)) L.push((x.x?'✓ ':'')+(x.t||x.d)); go(x.id); }); go(n.id); return {m,L}; }
+function toutesNotes(K,DS,filtre){ const out=[]; DS.forEach(d=>{ if(filtre&&filtre!=='tout'&&filtre!==d.k) return;
+    (K[d.racine]||[]).forEach(n=>{ if(n.a||(d.k==='notes'&&n.dos)) return; const i=infoNote(n,K); out.push({n,d,m:i.m,L:i.L}); }); });
+  return out.sort((a,b)=>b.m-a.m); }
+function quand(ms){ if(!ms) return ''; const d=new Date(ms), a=new Date(); const j=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(); const ec=Math.round((j(a)-j(d))/864e5);
+  if(ec===0) return d.getHours()||d.getMinutes()||d.getSeconds()?pad(d.getHours())+':'+pad(d.getMinutes()):'aujourd’hui'; if(ec===1) return 'hier'; if(ec<7) return ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'][d.getDay()];
+  return d.getDate()+' '+MOIS[d.getMonth()]+(d.getFullYear()!==a.getFullYear()?' '+d.getFullYear():''); }
+const titreDe=x=>x.n.t||(x.L[0]?x.L[0]:'Nouvelle note');
+const corpsDe=x=>x.n.t?x.L:x.L.slice(1);
+const nbNotes=(d,K)=>(K[d.racine]||[]).filter(n=>!n.a&&!(d.k==='notes'&&n.dos)).length;
+function filtresHtml(DS,K,f){
+  return `<div class="chips filtres"><button class="chip" data-act="filtre" data-f="tout" aria-pressed="${!f||f==='tout'}">Tout</button>${DS.filter(d=>nbNotes(d,K)||d.k!=='notes').map(d=>`<button class="chip" data-act="filtre" data-f="${d.k}" aria-pressed="${f===d.k}" style="--pc:${d.col}"><i class="pt"></i>${esc(d.nom)}</button>`).join('')}</div>`; }
+function vPostits(){ const K=indexer(), DS=dossiers(), f=ui.filtre||'tout', L=toutesNotes(K,DS,f);
+  return `<h2 class="titre">Notes ${vuesHtml()}</h2>${DS.length>1?filtresHtml(DS,K,f):''}
+  <div class="row"><button class="btn" data-act="noteNew">+ Note</button><button class="btn2" data-act="dosNew">+ Dossier</button></div>
+  ${L.length?`<div class="murs">${L.map(x=>`<button class="pi" data-act="noteOuvrir" data-id="${x.n.id}" style="--pc:${x.d.col}"><b>${esc(titreDe(x))}</b>${corpsDe(x).length?`<span>${esc(corpsDe(x).slice(0,6).join('\n'))}</span>`:''}<small>${esc(quand(x.m))}${f==='tout'&&DS.length>1?' · '+esc(x.d.nom):''}</small></button>`).join('')}</div>`:'<p class="note">Pas encore de note ici. « + Note » pour en écrire une.</p>'}`; }
+function vListe(){ const K=indexer(), DS=dossiers(), f=ui.filtre;
+  if(!f){ const tout=DS.reduce((s,d)=>s+nbNotes(d,K),0);
+    return `<h2 class="titre">Dossiers ${vuesHtml()}</h2><ul class="nliste dos">
+      <li><button data-act="filtre" data-f="tout"><span class="nm">Toutes les notes</span><small>${tout}</small><span class="go">›</span></button></li>
+      ${DS.filter(d=>nbNotes(d,K)||d.k!=='notes').map(d=>`<li><button data-act="filtre" data-f="${d.k}" style="--pc:${d.col}"><i class="pt"></i><span class="nm">${esc(d.nom)}</span><small>${nbNotes(d,K)}</small><span class="go">›</span></button></li>`).join('')}</ul>
+      <div class="row"><button class="btn" data-act="noteNew">+ Note</button><button class="btn2" data-act="dosNew">+ Dossier</button></div>`; }
+  const L=toutesNotes(K,DS,f), d=DS.find(x=>x.k===f);
+  return `<div class="fil"><button data-act="filtre" data-f="">‹ Dossiers</button></div><h2 class="titre">${esc(d?d.nom:'Toutes les notes')} <small>${L.length} note${L.length>1?'s':''}</small></h2>
+  <div class="row"><button class="btn" data-act="noteNew">+ Note</button></div>
+  ${L.length?`<ul class="nliste">${L.map(x=>`<li><button data-act="noteOuvrir" data-id="${x.n.id}"><b>${esc(titreDe(x))}</b><small><span class="qd">${esc(quand(x.m))}</span> ${esc(corpsDe(x)[0]||'Pas d’autre texte')}</small></button></li>`).join('')}</ul>`:'<p class="note">Pas encore de note ici.</p>'}`; }
+/* une note ouverte : le titre en grand, puis son contenu (l'éditeur, puces discrètes) */
+function vNote(){ const n=N[ui.note], DS=dossiers(), d=dossierDe(n,DS)||DOS_NOTES, vide=!enfants(n.id).length;
+  return `<div class="fil"><button data-act="noteFermer">‹ Notes</button></div>
+  <div class="ntete" style="--pc:${d.col}"><textarea class="titreN" data-id="${n.id}" rows="1" placeholder="Titre" aria-label="Titre de la note">${esc(n.t)}</textarea>
+  <div class="chips"><button class="chip" data-act="noteDossier" style="--pc:${d.col}"><i class="pt"></i>${esc(d.nom)}</button><span class="note">${esc(quand(infoNote(n,indexer()).m))}</span><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button><button class="chip" data-act="noteArch">Archiver la note</button></div></div>
+  <div class="page">${editeur(n.id)}</div>${vide?'<p class="note">Touche la page pour écrire le texte de la note.</p>':''}`; }
+function noteNouvelle(){ const DS=dossiers(), f=ui.filtre&&ui.filtre!=='tout'?ui.filtre:'notes', d=DS.find(x=>x.k===f)||DOS_NOTES;
+  couper(); const n=nouvelle(d.racine,ordreDebut(d.racine),''); ui.note=n.id; ui.zoom=null; window.scrollTo(0,0); render();
+  const t=document.querySelector('textarea.titreN'); if(t) try{ t.focus(); }catch(e){} }
+function noteFermer(){ const n=N[ui.note]; if(n&&!n.t&&!enfants(n.id,true).length&&n.d==null) supprimer(n); ui.note=null; ui.zoom=null; window.scrollTo(0,0); render(); }
+function noteDossierSheet(id){ const n=N[id]; if(!n) return; const DS=dossiers(), cur=dossierDe(n,DS);
+  $sheet.innerHTML=`<div class="sh"><h3>Ranger la note</h3><button class="btn2" data-act="fermer">Fermer</button></div><ul class="pick">${DS.map(d=>`<li><button data-act="noteVers" data-id="${id}" data-k="${d.k}">${cur&&cur.k===d.k?'✓ ':''}${esc(d.nom)}</button></li>`).join('')}</ul>`; $scrim.hidden=false; }
 function lienProjet(p){ return `<li class="${p.closed?'arch':''}"><a href="../etabli/#p:${p.id}"><span>${p.emoji||'·'}</span><span class="nm">${esc(p.name)}</span><span class="et">${esc(etatP(p))}</span><span class="go">↗</span></a></li>`; }
 function vPage(){
   const r=ui.page;
@@ -405,15 +506,16 @@ function vChercher(){
 function journalActif(){ if(!window.LocusProfil) return true; const p=REG.profil?LocusProfil.complet(REG.profil):LocusProfil.lire(UID);
   return LocusProfil.actif(p,'semaine')&&(p.etapes||[]).some(e=>e==='humeur'||e==='journal'); }
 function render(){
+  $outils.classList.toggle('sansdos',!!(SEUL||ui.tab!=='projets'||ui.note||ui.page||vueNotes()!=='arbre'));
   const jOk=journalActif(), jt=document.querySelector('.ot-t[data-tab="journal"]'); if(jt) jt.hidden=!jOk;
   if((ui.tab==='journal'&&!jOk)||ui.tab==='chercher') ui.tab='projets';
   document.querySelectorAll('.ot-t').forEach(t=>{ if(t.dataset.tab===ui.tab) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); });
   $view.innerHTML=SEUL?vSeul():ui.tab==='vide'?vVide():ui.tab==='projets'?vProjets():ui.tab==='journal'?vJournal():vChercher();
   apresRendu(); if(ui.tab==='chercher'&&!ui.focus){ const i=document.getElementById('i-q'); if(i&&document.activeElement!==i&&!ui.q) try{ i.focus(); }catch(e){} } }
-function rootActuel(){ if(SEUL) return SEUL; return ui.tab==='vide'?'vide':ui.tab==='journal'?'j:'+(ui.wk||wkKey(new Date())):ui.tab==='projets'?(ui.page||'arbre'):null; }
+function rootActuel(){ if(SEUL) return SEUL; if(ui.tab==='projets'&&ui.note&&N[ui.note]) return ui.note; return ui.tab==='vide'?'vide':ui.tab==='journal'?'j:'+(ui.wk||wkKey(new Date())):ui.tab==='projets'?(ui.page||'arbre'):null; }
 /* L'adresse ne change pas en changeant d'onglet ou de page : Vivaldi sur Android relit alors la couleur de la barre d'état,
    ignore la balise theme-color et prend une couleur au hasard dans la page. Le #… de l'adresse n'est lu qu'à l'ouverture. */
-function aller(tab,page,zoom){ ui.tab=tab; ui.page=page||null; ui.zoom=zoom||null; window.scrollTo(0,0); render(); }
+function aller(tab,page,zoom){ ui.tab=tab; ui.page=page||null; ui.zoom=zoom||null; ui.note=null; window.scrollTo(0,0); render(); }
 
 /* =============================== Édition =============================== */
 function refaire(focusId,caret,note){ ui.focus=focusId?{id:focusId,caret,note}:null; render(); }
@@ -424,6 +526,7 @@ function desindenter(n){ const base=ui.zoom||rootActuel(), par=N[n.p]; if(!par||
 function bouger(n,dir){ const S=enfants(n.p), i=S.findIndex(x=>x.id===n.id), j=i+dir; if(j<0||j>=S.length) return false; const o=S[j].o; S[j].o=n.o; n.o=o; ecrireN(S[j]); ecrireN(n); return true; }
 function supprimer(n){ sousArbre(n.id).forEach(effacerN); }
 function outil(a,id){ const n=N[id]; if(!n) return; const t=document.querySelector(`textarea[data-id="${id}"]`), c=t?t.selectionStart:null;
+  if(a==='dos'){ if(n.p!=='arbre'){ toast('Seule une ligne de premier niveau de Notes peut être un dossier'); return; } if(n.dos) delete n.dos; else n.dos=1; ecrireN(n); toast(n.dos?'C’est un dossier':'Ce n’est plus un dossier'); refaire(id,c); return; }
   if(a==='in'){ if(indenter(n)) refaire(id,c); } else if(a==='out'){ if(desindenter(n)) refaire(id,c); }
   else if(a==='up'||a==='down'){ if(bouger(n,a==='up'?-1:1)) refaire(id,c); }
   else if(a==='done'){ n.x=!n.x; if(!n.x) delete n.x; ecrireN(n); refaire(id,c); }
@@ -471,6 +574,10 @@ document.addEventListener('keydown',e=>{ const t=e.target, ti=!!(t.classList&&t.
     e.preventDefault(); annuler(e.key==='y'||e.key==='Y'||e.shiftKey); return; }
   if(e.key==='Enter'||e.key==='Tab'||e.altKey||((e.ctrlKey||e.metaKey)&&e.key.length>1)) couper(); },true);
 document.addEventListener('pointerdown',couper,true);
+document.addEventListener('input',e=>{ const t=e.target; if(!t.classList||!t.classList.contains('titreN')) return;
+  if(t.value.includes('\n')) t.value=t.value.replace(/\n+/g,' '); autoH(t); const n=N[t.dataset.id]; if(n){ if(HIST.cle!=='T'+n.id){ couper(); HIST.cle='T'+n.id; } n.t=t.value; ecrireN(n); } });
+document.addEventListener('keydown',e=>{ const t=e.target; if(!t.classList||!t.classList.contains('titreN')) return;
+  if(e.key==='Enter'||(e.key==='ArrowDown'&&t.selectionStart===t.value.length)){ e.preventDefault(); const n=N[t.dataset.id]; if(!n) return; const k=enfants(n.id); const c=k[0]||nouvelle(n.id,1,''); refaire(c.id,0); } });
 document.addEventListener('keydown',e=>{ const t=e.target; if(!t.classList||!t.classList.contains('ti')) return;
   if(t.dataset.nid){ if(e.key==='Escape'||(e.key==='Enter'&&!e.shiftKey)){ e.preventDefault(); const n=N[t.dataset.nid]; if(n&&!n.d){ delete n.d; ecrireN(n); } refaire(t.dataset.nid); } return; }
   const n=N[t.dataset.id]; if(!n) return; const pos=t.selectionStart, fin=t.selectionEnd===t.value.length&&pos===t.value.length;
@@ -528,8 +635,17 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return; const a=el.dataset.act, id=el.dataset.id;
   if(a==='bul'){ const n=N[id]; if(!n) return; if(enfants(id).length&&e.detail<2){ clearTimeout(window.__bul); window.__bul=setTimeout(()=>{ n.c=!n.c; if(!n.c) delete n.c; ecrireN(n); refaire(null); },230); } else { clearTimeout(window.__bul); ui.zoom=id; refaire(null); window.scrollTo(0,0); } return; }
   if(a==='zoom'){ ui.zoom=id||null; render(); return; }
-  if(a==='page'){ ui.page=el.dataset.r||null; ui.zoom=null; window.scrollTo(0,0); render(); return; }
+  if(a==='page'){ ui.page=el.dataset.r||null; ui.zoom=null; ui.note=null; window.scrollTo(0,0); render(); return; }
   if(a==='archP'){ ui.archP=!ui.archP; render(); return; }
+  if(a==='vue'){ try{ localStorage.setItem('biblio-vue',el.dataset.v); }catch(err){} ui.zoom=null; if(el.dataset.v==='liste') ui.filtre=null; render(); return; }
+  if(a==='filtre'){ ui.filtre=el.dataset.f||null; window.scrollTo(0,0); render(); return; }
+  if(a==='noteNew'){ noteNouvelle(); return; }
+  if(a==='noteOuvrir'){ ui.note=id; ui.zoom=null; window.scrollTo(0,0); render(); return; }
+  if(a==='noteFermer'){ noteFermer(); return; }
+  if(a==='noteDossier'){ noteDossierSheet(ui.note); return; }
+  if(a==='noteVers'){ const n=N[id], d=dossiers().find(x=>x.k===el.dataset.k); if(n&&d){ couper(); n.p=d.racine; n.o=ordreDebut(d.racine); delete n.dos; ecrireN(n); } fermer(); render(); toast('Rangée dans '+(d?d.nom:'')); return; }
+  if(a==='noteArch'){ const n=N[ui.note]; if(!n) return; couper(); sousArbre(n.id).forEach(k=>{ const x=N[k]; x.a=today(); ecrireN(x); }); ui.note=null; render(); toast('Note archivée (↶ pour annuler)'); return; }
+  if(a==='dosNew'){ const nom=(prompt('Nom du dossier')||'').trim(); if(!nom) return; couper(); const n=nouvelle('arbre',ordreFin('arbre'),nom); n.dos=1; ecrireN(n); ui.filtre='l:'+n.id; render(); return; }
   if(a==='domPlie'){ try{ localStorage.setItem(DPLIE,localStorage.getItem(DPLIE)==='1'?'0':'1'); }catch(err){} render(); return; }
   if(a==='arch'){ ui.arch=!ui.arch; render(); return; }
   if(a==='modele'){ const r=rootActuel(); ['Plan','À faire','Ressources','Journal'].forEach((t,i)=>nouvelle(r,ordreFin(r),t)); render(); return; }

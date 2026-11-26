@@ -183,6 +183,11 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   `s:push-<appareil>` = abonnement aux notifications d'un appareil, avec ses clés VAPID.
 - **Vide-tête** : une seule boîte d'entrée. On y écrit depuis la Bibliothèque, le champ de l'accueil de Locus (`bibliotheque/?note=…`) et le vrac de l'Établi
   (file d'attente `etabli-vide-<utilisateur>`, envoyée dans `biblio_rows`). « → » range une idée dans un projet, un domaine ou le journal de la semaine.
+- **Trois vues des Notes** (26.11) : Post-its (toutes les notes mélangées, filtres par dossier, la dernière modifiée en haut), Liste
+  (dossiers puis notes, comme Notes sur iPhone) et Arbre (Workflowy), sur les mêmes lignes. Dossier = ligne de premier niveau marquée `dos`
+  ou domaine de l'Établi (sa couleur) ; note = ligne d'un dossier (texte = titre, contenu = corps) ; dossier automatique « Notes » pour les
+  lignes de premier niveau qui ne sont pas des dossiers. Date de modification `m` sur chaque ligne. Vue gardée sur l'appareil (`biblio-vue`).
+- Onglets (26.11) : Notes, Vide-tête, Journal (le Journal seulement si « Ma semaine » a une étape de bilan) ; plus d'onglet Chercher.
 - **Notes** (15.11, ex-onglet Projets) : une page libre façon Workflowy (racine `arbre`), avec en tête la ligne « Domaines » (repliable) : chaque domaine
   de l'Établi y a sa page, avec ses notes à lui et la liste de ses projets. **Les notes d'un projet** (racine `p:<id>`, toujours dans `biblio_rows`) **ne
   s'affichent que dans l'Établi** : modifiables directement dans la fiche, qui contient `bibliotheque/?seul=p:<id>&dans=fiche` (mode « seul » :
