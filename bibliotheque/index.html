@@ -266,6 +266,7 @@ function effacerN(id){ delete N[id]; ecrire('n:'+id,null); }
 async function push(){
   if(!sb||!UID||pushing||!dirty.size||!navigator.onLine){ setSync(); return; }
   /* chiffrement (26.11) : une ligne des notes ne part jamais en clair quand le chiffrement est activé ; sans la clé sur cet appareil, elle attend */
+  if(chOn()&&!CH.cle&&!chV1()){ try{ await cleCompte(); }catch(e){} }
   const bloque=k=>chOn()&&!CH.cle&&k.startsWith('n:')&&(k in prev)&&(()=>{ const d=JSON.parse(prev[k]); return d&&!d.z&&racineData(d); })();
   const keys=[...dirty].filter(k=>!bloque(k)).slice(0,300), sent={}, zz={}; if(!keys.length){ setSync(); return; }
   pushing=true; setSync();
@@ -285,7 +286,7 @@ async function pull(full){
         let d=r.data; if(r.key.startsWith('n:')){ if(d.z){ CHZ.add(r.key); if(CH.cle){ try{ d=await dechiffrer(d); }catch(e){} } } else CHZ.delete(r.key); }
         const v=canon(d); if(prev[r.key]!==v){ prev[r.key]=v; ch=true; } }
       if(!data||data.length<1000) break; de+=1000; }
-    lastPull=max; syncErr=''; persist(); if(ch){ charger(); aRechiffrer(); if(!editing()) render(); } setSync(); return true;
+    lastPull=max; syncErr=''; persist(); if(ch){ charger(); if(chOn()&&!CH.cle&&REG.chiffre&&REG.chiffre.k){ try{ CH.cle=await importer(REG.chiffre.k); await toutDechiffrer(); }catch(e){} } aRechiffrer(); if(!editing()) render(); } setSync(); return true;
   }catch(e){ syncErr=(e&&e.message)||String(e); setSync(); return false; } }
 function setSync(){ const el=document.getElementById('sync'); if(!el) return; let t='✓', tip='Tout est enregistré';
   if(!navigator.onLine){ t='hors ligne'+(dirty.size?' · '+dirty.size:''); tip='Hors ligne : les changements partiront au retour du réseau'; }
@@ -293,40 +294,42 @@ function setSync(){ const el=document.getElementById('sync'); if(!el) return; le
   else if(pushing||dirty.size){ t='↻'+(dirty.size?' '+dirty.size:''); tip='Envoi en cours'; }
   el.textContent=t; el.title=tip; }
 
-/* =============================== Chiffrement des notes (26.11) ===============================
-   Souhait de Nicolas pour les notes de Chloé (et les siennes s'il veut) : le texte (t, d) des lignes des Notes est chiffré sur l'appareil
-   avant de partir ; Supabase ne garde que du charabia (champ z). Activé par personne dans la Bibliothèque › Notes › « Chiffrer mes notes ».
-   - Ce qui est chiffré : les lignes dont la racine est la page Notes (arbre), un domaine (d:) ou un projet (p:). Restent en clair :
-     le vide-tête, les tâches (racine taches) et le journal, que l'accueil et « Ma semaine » lisent directement dans Supabase.
-     Une idée rangée du vide-tête vers les Notes est chiffrée à son prochain envoi.
-   - Les clés : une clé de données AES-GCM 256 tirée au hasard (DEK), enveloppée deux fois dans s:chiffre { v, iter, wp, wr, le } :
-     par la phrase secrète (wp) et par la clé de secours (wr), chacune passée par PBKDF2-SHA256. Sur l'appareil, la DEK est gardée
-     dans IndexedDB (biblio-cle, « cle-<uid> ») comme clé non exportable : on peut s'en servir, pas la lire.
-   - Phrase et clé de secours perdues = notes perdues. La copie locale (biblio-cache-<uid>) reste en clair sur l'appareil.
-   - CHZ : lignes connues chiffrées sur le serveur (gardé dans la copie locale) ; une ligne des notes en clair qui n'y est pas
-     (écrite avant l'activation, ou ailleurs) repart chiffrée (aRechiffrer). */
-const CH={cle:null,verrou:0}; let CHZ=new Set(); const ITER=310000;
-const chOn=()=>!!(REG.chiffre&&REG.chiffre.wp);
+/* =============================== Notes chiffrées : le « rideau » (26.11, option A choisie par Nicolas) ===============================
+   But : que le texte des notes ne soit pas lisible en ouvrant la base (Supabase, administrateur), sans rien à retenir pour la personne :
+   connectée = notes ouvertes, quel que soit le mot de passe (le changer ou le réinitialiser ne change rien).
+   - Une clé AES-GCM 256 par compte, créée toute seule et rangée dans s:chiffre { v:2, k (clé brute en base64), le } de biblio_rows.
+     Elle est donc lisible par qui gère la base et le code : c'est un rideau, pas un coffre (dit tel quel dans l'app).
+   - Activé par défaut pour tout le monde ; s:chiffre { off:1 } = plus de chiffrement (Notes › en bas).
+   - Ce qui est chiffré : le texte (t, d) des lignes dont la racine est la page Notes (arbre), un domaine (d:) ou un projet (p:).
+     Restent en clair : le vide-tête, les tâches (racine taches) et le journal, que l'accueil et « Ma semaine » lisent dans Supabase.
+   - Champ z = iv + texte chiffré de {t, d} ; structure, ordre, dates et dos restent lisibles. La copie locale (biblio-cache-<uid>) est en clair.
+   - Sans la clé (première ouverture hors ligne), les lignes chiffrées restent cachées et les nouvelles attendent : jamais de texte des notes en clair vers Supabase.
+   - La clé est créée en ligne seulement, par un « insérer si absent » puis relue : deux appareils ne peuvent pas en créer deux différentes.
+   - CHZ : lignes connues chiffrées sur le serveur (gardé dans la copie locale) ; une ligne des notes en clair qui n'y est pas repart chiffrée.
+   - Version 1 du même soir (phrase secrète, s:chiffre { wp, wr }) : la phrase est demandée une dernière fois pour passer au rideau. */
+const CH={cle:null,verrou:0,cree:false}; let CHZ=new Set();
+const chOn=()=>!(REG.chiffre&&REG.chiffre.off);
+const chV1=()=>!!(REG.chiffre&&REG.chiffre.wp&&!REG.chiffre.k);
 function racineData(d){ let p=d.p, k=0; while(N[p]&&k++<80) p=N[p].p; p=String(p||'');
   if(p==='vide'||p==='taches'||p.startsWith('j:')) return false; return true; /* arbre, d:, p:, ou un parent encore chiffré */ }
 const TE=new TextEncoder(), TD=new TextDecoder();
 const b64e=u=>{ const a=new Uint8Array(u); let s=''; for(let i=0;i<a.length;i+=0x8000) s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000)); return btoa(s); };
 const b64d=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
-async function kek(secret,sel,iter){ const base=await crypto.subtle.importKey('raw',TE.encode(secret),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',salt:sel,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey']); }
-async function envelopper(dek,secret){ const sel=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12)), k=await kek(secret,sel,ITER);
-  return {sel:b64e(sel),iv:b64e(iv),w:b64e(await crypto.subtle.wrapKey('raw',dek,k,{name:'AES-GCM',iv}))}; }
-async function deballer(env,secret,iter,exportable){ const k=await kek(secret,b64d(env.sel),iter);
-  return crypto.subtle.unwrapKey('raw',b64d(env.w),k,{name:'AES-GCM',iv:b64d(env.iv)},{name:'AES-GCM',length:256},!!exportable,['encrypt','decrypt']); }
-const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-function codeSecours(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r=crypto.getRandomValues(new Uint8Array(24)); let x=''; r.forEach(v=>{ x+=A[v%32]; }); return x.match(/.{4}/g).join('-'); }
-function idb(){ return new Promise((ok,ko)=>{ const r=indexedDB.open('biblio-cle',1); r.onupgradeneeded=()=>r.result.createObjectStore('k'); r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error); }); }
-async function idbGet(k){ const db=await idb(); return new Promise(ok=>{ const q=db.transaction('k').objectStore('k').get(k); q.onsuccess=()=>ok(q.result||null); q.onerror=()=>ok(null); }); }
-async function idbSet(k,v){ const db=await idb(); return new Promise(ok=>{ const t=db.transaction('k','readwrite'); if(v==null) t.objectStore('k').delete(k); else t.objectStore('k').put(v,k); t.oncomplete=()=>ok(true); t.onerror=()=>ok(false); }); }
 async function chiffrer(d){ const iv=crypto.getRandomValues(new Uint8Array(12)), ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},CH.cle,TE.encode(JSON.stringify({t:d.t||'',d:d.d})));
   const o=Object.assign({},d); delete o.t; delete o.d; const u=new Uint8Array(12+ct.byteLength); u.set(iv); u.set(new Uint8Array(ct),12); o.z=b64e(u); return o; }
 async function dechiffrer(d){ const u=b64d(d.z), x=JSON.parse(TD.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},CH.cle,u.slice(12))));
   const o=Object.assign({},d); delete o.z; o.t=x.t||''; if(x.d!=null) o.d=x.d; return o; }
+const importer=k=>crypto.subtle.importKey('raw',b64d(k),{name:'AES-GCM'},false,['encrypt','decrypt']);
+/* la clé du compte : celle de s:chiffre, sinon on la crée (en ligne seulement) */
+async function cleCompte(){ if(CH.cle||chV1()) return CH.cle;
+  if(REG.chiffre&&REG.chiffre.k){ CH.cle=await importer(REG.chiffre.k); return CH.cle; }
+  if(!chOn()||!sb||!UID||!navigator.onLine||CH.cree) return null; CH.cree=true;
+  try{ const k=b64e(await crypto.subtle.exportKey('raw',await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt'])));
+    await sb.from(TABLE).upsert({user_id:UID,key:'s:chiffre',data:{v:2,k,le:today()},deleted:false},{onConflict:'user_id,key',ignoreDuplicates:true});
+    const {data,error}=await sb.from(TABLE).select('data,deleted').eq('key','s:chiffre').maybeSingle(); if(error) throw error;
+    if(data&&!data.deleted&&data.data){ prev['s:chiffre']=canon(data.data); REG.chiffre=data.data; persist(); if(data.data.k) CH.cle=await importer(data.data.k); }
+  }catch(e){ CH.cree=false; }
+  return CH.cle; }
 async function toutDechiffrer(){ if(!CH.cle) return 0; let n=0;
   for(const k of Object.keys(prev)){ if(!k.startsWith('n:')) continue; let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(!d||!d.z) continue;
     try{ prev[k]=canon(await dechiffrer(d)); CHZ.add(k); n++; }catch(e){} }
@@ -334,60 +337,40 @@ async function toutDechiffrer(){ if(!CH.cle) return 0; let n=0;
 function aRechiffrer(){ if(!chOn()||!CH.cle) return 0; let n=0;
   for(const k of Object.keys(prev)){ if(!k.startsWith('n:')||CHZ.has(k)||dirty.has(k)) continue; let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(d&&!d.z&&racineData(d)){ dirty.add(k); n++; } }
   if(n){ persist(); clearTimeout(pushTimer); pushTimer=setTimeout(push,400); } return n; }
-/* le bandeau des Notes quand la clé n'est pas sur cet appareil */
-function verrouHtml(){ if(!chOn()||CH.cle) return '';
-  return `<form class="alerte" id="f-deverrou" autocomplete="off"><b>Tes notes sont chiffrées</b><span class="note">Entre ta phrase secrète pour les lire sur cet appareil${CH.verrou?` (${CH.verrou} ligne${CH.verrou>1?'s':''})`:''}. Les nouvelles notes attendent ici, sans partir en clair.</span>
-    <input class="in" type="password" id="i-phrase" placeholder="Phrase secrète" autocomplete="current-password"><div class="row"><button class="btn" type="submit">Ouvrir</button><button class="lien" type="button" data-act="chSecours">J’ai perdu ma phrase : clé de secours</button></div></form>`; }
-const chLien=()=>`<p class="note chpied"><button class="lien" data-act="chSheet">${chOn()?'🔒 Notes chiffrées sur tes appareils':'Chiffrer mes notes'}</button></p>`;
-async function deverrouiller(secret,parCode){ const c=REG.chiffre; const cle=await deballer(parCode?c.wr:c.wp,parCode?normCode(secret):secret,c.iter||ITER,false);
-  CH.cle=cle; await idbSet('cle-'+UID,cle); await toutDechiffrer(); charger(); aRechiffrer(); render(); push(); }
-function chSheet(etape,code){ const on=chOn();
-  if(etape==='activer'){ $sheet.innerHTML=`<div class="sh"><h3>Chiffrer mes notes</h3><button class="btn2" data-act="fermer">Fermer</button></div>
-    <p class="note">Le texte de tes notes sera chiffré sur ton appareil avant de partir : personne d’autre (ni Supabase, ni Nicolas) ne pourra le lire. Le vide-tête, les tâches et le journal restent lisibles par l’accueil et « Ma semaine ».</p>
-    <p class="note"><b>Choisis une phrase secrète</b> d’au moins 4 mots, que tu retiens facilement. Sans elle ni la clé de secours, tes notes sont perdues.</p>
-    <input class="in" type="password" id="i-p1" placeholder="Phrase secrète" autocomplete="new-password"><input class="in" type="password" id="i-p2" placeholder="La même, encore une fois" autocomplete="new-password">
-    <button class="btn" data-act="chSuite">Suivant</button>`; $scrim.hidden=false; return; }
-  if(etape==='code'){ $sheet.innerHTML=`<div class="sh"><h3>Ta clé de secours</h3></div>
-    <p class="note">Note-la sur papier (ou imprime-la) et range-la en lieu sûr. Elle remplace la phrase secrète si tu l’oublies. Elle ne s’affichera plus.</p>
-    <p class="code">${esc(code)}</p><div class="row"><button class="btn2" data-act="chImprimer">Imprimer</button><button class="btn2" data-act="chCopier">Copier</button></div>
-    <label class="row"><input type="checkbox" id="i-noté"> J’ai noté ma clé de secours</label><button class="btn" data-act="chActiver">Chiffrer mes notes</button>`; $sheet.dataset.code=code; return; }
-  if(etape==='changer'){ $sheet.innerHTML=`<div class="sh"><h3>Changer de phrase secrète</h3><button class="btn2" data-act="fermer">Fermer</button></div>
-    <input class="in" type="password" id="i-p0" placeholder="Phrase actuelle (ou clé de secours)" autocomplete="current-password">
-    <input class="in" type="password" id="i-p1" placeholder="Nouvelle phrase" autocomplete="new-password"><input class="in" type="password" id="i-p2" placeholder="La même, encore une fois" autocomplete="new-password">
-    <button class="btn" data-act="chChanger">Changer</button>`; return; }
-  if(etape==='arreter'){ $sheet.innerHTML=`<div class="sh"><h3>Ne plus chiffrer</h3><button class="btn2" data-act="fermer">Fermer</button></div>
-    <p class="note">Tes notes repartiront en clair dans Supabase. Entre ta phrase secrète pour confirmer.</p>
-    <input class="in" type="password" id="i-p0" placeholder="Phrase secrète" autocomplete="current-password"><button class="btn" data-act="chArreter">Ne plus chiffrer</button>`; return; }
-  $sheet.innerHTML=`<div class="sh"><h3>Chiffrement des notes</h3><button class="btn2" data-act="fermer">Fermer</button></div>`+(on
-    ?`<p class="note">🔒 Tes notes sont chiffrées${CH.cle?' et ouvertes sur cet appareil':' ; cet appareil n’a pas encore la clé'}. Le vide-tête, les tâches et le journal restent en clair.</p>
-      <div class="row"><button class="btn2" data-act="chEtape" data-e="changer">Changer de phrase</button><button class="lien" data-act="chEtape" data-e="arreter">Ne plus chiffrer</button></div>`
-    :`<p class="note">Tes notes partent aujourd’hui en clair dans Supabase (privées, mais lisibles par qui gère la base). Le chiffrement les rend illisibles pour tout le monde sauf toi.</p><button class="btn" data-act="chEtape" data-e="activer">Chiffrer mes notes</button>`);
+/* tout remettre en place après un changement de clé ou de réglage */
+async function chPreparer(){ if(chOn()) await cleCompte(); if(CH.cle){ await toutDechiffrer(); aRechiffrer(); } }
+/* les bandeaux : passage de la version 1 (phrase), ou notes pas encore ouvertes (hors ligne) */
+function verrouHtml(){
+  if(chV1()) return `<form class="alerte" id="f-v1" autocomplete="off"><b>Une dernière fois : ta phrase secrète</b><span class="note">Tes notes s’ouvriront ensuite toutes seules dès que tu es connecté, sans rien à retenir.</span>
+    <input class="in" type="password" id="i-phrase" placeholder="Phrase secrète (ou clé de secours)" autocomplete="current-password"><button class="btn" type="submit">Ouvrir</button></form>`;
+  if(chOn()&&!CH.cle&&CH.verrou) return `<div class="alerte"><b>Ouverture des notes…</b><span class="note">Il faut une connexion la première fois sur cet appareil (${CH.verrou} ligne${CH.verrou>1?'s':''}).</span></div>`;
+  return ''; }
+const chLien=()=>`<p class="note chpied"><button class="lien" data-act="chSheet">${chOn()?'🔒 Notes masquées dans la base':'Notes en clair dans la base'}</button></p>`;
+function chSheet(){ const on=chOn();
+  $sheet.innerHTML=`<div class="sh"><h3>Notes masquées</h3><button class="btn2" data-act="fermer">Fermer</button></div>`+(on
+    ?`<p class="note">🔒 Le texte de tes notes est chiffré avant de partir : en ouvrant la base de données (Supabase), on ne voit que du charabia. Pour toi, rien ne change : connecté, tes notes sont ouvertes, sur tous tes appareils.</p>
+      <p class="note">C’est un rideau, pas un coffre : la clé est rangée avec ton compte, donc qui gère Locus pourrait la retrouver en le voulant vraiment. Le vide-tête, les tâches et le journal restent lisibles par l’accueil et « Ma semaine ».</p>
+      <button class="lien" data-act="chArreter">Ne plus masquer mes notes</button>`
+    :`<p class="note">Tes notes partent en clair dans la base de données (privées, mais lisibles en ouvrant la base).</p><button class="btn" data-act="chActiver">Masquer mes notes</button>`);
   $scrim.hidden=false; }
-async function chAction(a,el){ const v=id=>{ const x=document.getElementById(id); return x?x.value:''; };
+async function chAction(a,el){
   if(a==='chSheet'){ chSheet(); return; }
-  if(a==='chEtape'){ chSheet(el.dataset.e); return; }
-  if(a==='chSuite'){ const p1=v('i-p1'), p2=v('i-p2'); if(p1.trim().split(/\s+/).length<4&&p1.length<16){ toast('Au moins 4 mots (ou 16 caractères)'); return; } if(p1!==p2){ toast('Les deux phrases ne sont pas pareilles'); return; }
-    CH.phrase=p1; chSheet('code',codeSecours()); return; }
-  if(a==='chCopier'){ try{ await navigator.clipboard.writeText($sheet.dataset.code); toast('Copiée'); }catch(e){ toast('Copie impossible : note-la à la main'); } return; }
-  if(a==='chImprimer'){ const w=window.open('','_blank'); if(!w){ toast('Fenêtre bloquée : note-la à la main'); return; } w.document.write(`<title>Clé de secours</title><body style="font:16px system-ui;padding:40px"><h1>Locus · clé de secours des notes</h1><p>Elle ouvre tes notes chiffrées si tu oublies ta phrase secrète. À garder en lieu sûr.</p><p style="font:700 22px monospace;letter-spacing:2px">${esc($sheet.dataset.code)}</p><p>Créée le ${today()}</p></body>`); w.document.close(); w.print(); return; }
-  if(a==='chActiver'){ const ok=document.getElementById('i-noté'); if(!ok||!ok.checked){ toast('Coche « J’ai noté ma clé de secours »'); return; }
-    el.disabled=true; el.textContent='Chiffrement…';
-    try{ const dek=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
-      const c={v:1,iter:ITER,wp:await envelopper(dek,CH.phrase),wr:await envelopper(dek,normCode($sheet.dataset.code)),le:today()};
-      const cle=await deballer(c.wp,CH.phrase,ITER,false); delete CH.phrase; CH.cle=cle; await idbSet('cle-'+UID,cle);
-      REG.chiffre=c; ecrire('s:chiffre',c); const n=aRechiffrer(); fermer(); render(); toast('Notes chiffrées ('+n+' ligne'+(n>1?'s':'')+')'); }
-    catch(e){ el.disabled=false; el.textContent='Chiffrer mes notes'; toast('Impossible : '+((e&&e.message)||e)); } return; }
-  if(a==='chChanger'){ const p0=v('i-p0'), p1=v('i-p1'), p2=v('i-p2'), c=REG.chiffre; if(p1!==p2){ toast('Les deux phrases ne sont pas pareilles'); return; } if(p1.trim().split(/\s+/).length<4&&p1.length<16){ toast('Au moins 4 mots (ou 16 caractères)'); return; }
-    let dek=null; try{ dek=await deballer(c.wp,p0,c.iter||ITER,true); }catch(e){ try{ dek=await deballer(c.wr,normCode(p0),c.iter||ITER,true); }catch(e2){} }
-    if(!dek){ toast('Phrase actuelle incorrecte'); return; }
-    const n=Object.assign({},c,{wp:await envelopper(dek,p1),iter:ITER,le:today()}); if((c.iter||ITER)!==ITER) n.wr=c.wr; REG.chiffre=n; ecrire('s:chiffre',n); fermer(); toast('Phrase changée'); return; }
-  if(a==='chArreter'){ const c=REG.chiffre; try{ const cle=await deballer(c.wp,v('i-p0'),c.iter||ITER,false); CH.cle=cle; await toutDechiffrer(); }catch(e){ toast('Phrase incorrecte'); return; }
-    if(CH.verrou){ toast('Des lignes n’ont pas pu être déchiffrées : rien n’a changé'); return; }
-    Object.keys(prev).forEach(k=>{ if(CHZ.has(k)) dirty.add(k); }); REG.chiffre=null; ecrire('s:chiffre',null); CH.cle=null; await idbSet('cle-'+UID,null); persist(); fermer(); render(); push(); toast('Tes notes repartent en clair'); return; }
-  if(a==='chSecours'){ const code=prompt('Clé de secours (les tirets ne comptent pas)'); if(!code) return; try{ await deverrouiller(code,true); toast('Notes ouvertes avec la clé de secours'); }catch(e){ toast('Clé de secours incorrecte'); } return; }
+  if(a==='chActiver'){ const c=Object.assign({},REG.chiffre||{}); delete c.off; c.v=2; c.le=today(); REG.chiffre=c; ecrire('s:chiffre',c); CH.cree=false; await chPreparer(); fermer(); render(); push();
+    toast(CH.cle?'Notes masquées':'Elles seront masquées à la prochaine connexion'); return; }
+  if(a==='chArreter'){ if(!CH.cle){ toast('Il faut d’abord que tes notes soient ouvertes ici'); return; } await toutDechiffrer(); if(CH.verrou){ toast('Des lignes n’ont pas pu être ouvertes : rien n’a changé'); return; }
+    Object.keys(prev).forEach(k=>{ if(CHZ.has(k)) dirty.add(k); }); const c=Object.assign({},REG.chiffre||{},{off:1,le:today()}); REG.chiffre=c; ecrire('s:chiffre',c);
+    persist(); fermer(); render(); push(); toast('Tes notes repartent en clair'); return; }
 }
-document.addEventListener('submit',async e=>{ if(e.target.id!=='f-deverrou') return; e.preventDefault(); const i=document.getElementById('i-phrase');
-  try{ await deverrouiller(i.value,false); toast('Notes ouvertes sur cet appareil'); }catch(err){ toast('Phrase incorrecte'); i.select(); } });
+/* version 1 (phrase secrète, ce soir-là) → rideau : on ouvre la clé avec la phrase ou la clé de secours, puis on la range dans s:chiffre */
+async function kekV1(secret,sel,iter){ const base=await crypto.subtle.importKey('raw',TE.encode(secret),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:sel,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey']); }
+async function deballerV1(env,secret,iter){ const k=await kekV1(secret,b64d(env.sel),iter);
+  return crypto.subtle.unwrapKey('raw',b64d(env.w),k,{name:'AES-GCM',iv:b64d(env.iv)},{name:'AES-GCM',length:256},true,['encrypt','decrypt']); }
+document.addEventListener('submit',async e=>{ if(e.target.id!=='f-v1') return; e.preventDefault(); const i=document.getElementById('i-phrase'), c=REG.chiffre;
+  let dek=null; try{ dek=await deballerV1(c.wp,i.value,c.iter||310000); }catch(err){ try{ dek=await deballerV1(c.wr,String(i.value||'').toUpperCase().replace(/[^A-Z0-9]/g,''),c.iter||310000); }catch(e2){} }
+  if(!dek){ toast('Phrase incorrecte'); i.select(); return; }
+  const k=b64e(await crypto.subtle.exportKey('raw',dek)), n={v:2,k,le:today()}; REG.chiffre=n; ecrire('s:chiffre',n); CH.cle=await importer(k);
+  await toutDechiffrer(); charger(); aRechiffrer(); render(); push(); toast('Tes notes s’ouvriront maintenant toutes seules'); });
 
 /* =============================== L'arbre =============================== */
 const vivant=n=>n&&(ui.arch||!n.a);
@@ -752,7 +735,7 @@ document.addEventListener('click',e=>{
   if(a==='bul'){ const n=N[id]; if(!n) return; if(enfants(id).length&&e.detail<2){ clearTimeout(window.__bul); window.__bul=setTimeout(()=>{ n.c=!n.c; if(!n.c) delete n.c; ecrireN(n); refaire(null); },230); } else { clearTimeout(window.__bul); ui.zoom=id; refaire(null); window.scrollTo(0,0); } return; }
   if(a==='zoom'){ ui.zoom=id||null; render(); return; }
   if(a==='page'){ ui.page=el.dataset.r||null; ui.zoom=null; ui.note=null; window.scrollTo(0,0); render(); return; }
-  if(a.startsWith('ch')&&['chSheet','chEtape','chSuite','chCopier','chImprimer','chActiver','chChanger','chArreter','chSecours'].includes(a)){ chAction(a,el); return; }
+  if(['chSheet','chActiver','chArreter'].includes(a)){ chAction(a,el); return; }
   if(a==='archP'){ ui.archP=!ui.archP; render(); return; }
   if(a==='vue'){ try{ localStorage.setItem('biblio-vue',el.dataset.v); }catch(err){} ui.zoom=null; if(el.dataset.v==='liste') ui.filtre=null; render(); return; }
   if(a==='filtre'){ ui.filtre=el.dataset.f||null; window.scrollTo(0,0); render(); return; }
@@ -811,13 +794,13 @@ async function enter(user){
   UID=user.id; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
   if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; CHZ=new Set(c.chz||[]); }
-  charger(); try{ if(chOn()) CH.cle=await idbGet('cle-'+UID); }catch(e){} if(CH.cle){ await toutDechiffrer(); aRechiffrer(); } lireHash(); booted=true;
+  charger(); try{ if(REG.chiffre&&REG.chiffre.k&&chOn()){ CH.cle=await importer(REG.chiffre.k); await toutDechiffrer(); } }catch(e){} lireHash(); booted=true;
   try{ const q=new URLSearchParams(location.search), v=(q.get('note')||'').trim(); if(v){ nouvelle('vide',ordreDebut('vide'),v); ui.tab='vide'; ui.page=null; history.replaceState(null,'',location.pathname+'#vide'); setTimeout(()=>toast('Noté dans le vide-tête'),300); }
     if(q.get('bilan')){ ui.tab='journal'; ui.page=null; ui.wk=wkKey(new Date()); setTimeout(bilanSheet,60); } }catch(e){}
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(booted&&!editing()) render(); });
   render(); setSync();
   await Promise.all([pull(!c),PB.tirer()]); sansEmojisJournal();
-  if(chOn()&&!CH.cle){ try{ CH.cle=await idbGet('cle-'+UID); }catch(e){} if(CH.cle) await toutDechiffrer(); } aRechiffrer(); if(!editing()) render(); push();
+  try{ await chPreparer(); }catch(e){} if(!editing()) render(); push();
   { const v=versLocus('bibliotheque'); if(v&&v.id&&N[v.id]){ const b=document.createElement('button'); b.hidden=true; b.dataset.act='aller'; b.dataset.id=v.id; document.body.appendChild(b); b.click(); b.remove(); } }
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{ e.preventDefault();

@@ -183,10 +183,11 @@ Dans chaque app, le petit carré en haut à gauche ramène à l'accueil ORGA.
   `s:push-<appareil>` = abonnement aux notifications d'un appareil, avec ses clés VAPID.
 - **Vide-tête** : une seule boîte d'entrée. On y écrit depuis la Bibliothèque, le champ de l'accueil de Locus (`bibliotheque/?note=…`) et le vrac de l'Établi
   (file d'attente `etabli-vide-<utilisateur>`, envoyée dans `biblio_rows`). « → » range une idée dans un projet, un domaine ou le journal de la semaine.
-- **Notes chiffrées** (26.11, Notes › « Chiffrer mes notes ») : le texte des lignes des Notes (racines `arbre`, `d:`, `p:`) est chiffré sur
-  l'appareil (AES-GCM, champ `z`) ; vide-tête, tâches et journal restent en clair. Clé de données enveloppée dans `s:chiffre` par la phrase
-  secrète et par la clé de secours (PBKDF2) ; gardée non exportable dans IndexedDB `biblio-cle`. La recherche de l'en-tête et le rangement de
-  l'accueil lisent la copie locale (`biblio-cache-<uid>`). Sans la clé, les notes chiffrées restent cachées et les nouvelles attendent.
+- **Notes masquées dans la base** (26.11, « rideau », choix de Nicolas) : le texte des lignes des Notes (racines `arbre`, `d:`, `p:`) est
+  chiffré (AES-GCM, champ `z`) avant de partir ; vide-tête, tâches et journal restent en clair. Une clé par compte, créée toute seule et rangée
+  dans `s:chiffre` `{v:2, k}` : connecté = notes ouvertes, rien à retenir, le mot de passe n'y joue aucun rôle. Ce n'est pas un coffre (la clé
+  est dans la base). Par défaut pour tout le monde ; `s:chiffre.off` = plus de chiffrement. La recherche de l'en-tête et « Ranger » de l'accueil
+  lisent la copie locale (`biblio-cache-<uid>`).
 - **Dossiers** : « Modifier le dossier » (nom, couleur) depuis Post-its et Liste ; un domaine se modifie dans l'Établi.
 - **Trois vues des Notes** (26.11) : Post-its (toutes les notes mélangées, filtres par dossier, la dernière modifiée en haut), Liste
   (dossiers puis notes, comme Notes sur iPhone) et Arbre (Workflowy), sur les mêmes lignes. Dossier = ligne de premier niveau marquée `dos`
