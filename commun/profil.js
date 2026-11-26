@@ -19,12 +19,14 @@
   ];
   /* étapes de « Ma semaine » / de la routine du lundi, dans l'ordre (index.html : CLES) */
   const ETAPES = [
-    ['humeur', 'Bilan : ta semaine passée'], ['journal', 'Bilan : le journal et les objectifs'], ['boites', 'Admin : vider les boîtes'],
+    ['humeur', 'Bilan : ta semaine passée'], ['journal', 'Bilan : le journal et les objectifs'], ['sport', 'Bilan : la Forge'], ['boites', 'Admin : vider les boîtes'],
     ['banque', 'Admin : le point de la Banque'], ['report', 'Les tâches pas faites'], ['vide', 'Vider la tête'],
     ['deuxmin', 'Les tâches de 2 minutes'], ['agenda', 'L’agenda (Proton)'], ['projets', 'Placer les projets'],
     ['forge', 'Placer les entraînements'], ['taches', 'Placer les tâches'], ['claude', 'Le texte pour Claude'],
   ];
   const TOUTES = ETAPES.map((e) => e[0]);
+  /* [étape, placée après, ajoutée le] */
+  const NOUVELLES = [['sport', 'journal', '2026-11-26T19:30:00Z']];
   /* palette et fond par défaut de chaque style : commun/couleurs.js (chargé avant, dans le <head>) */
   const DC = (window.LocusCouleurs && LocusCouleurs.DEFAUT) || { village: { palette: 'lieux', fond: 'sombre' }, neutre: { palette: 'doux', fond: 'clair' } };
   const STYLES = {
@@ -39,7 +41,10 @@
   function complet(p) {
     const base = copie(STYLES[(p && p.style) === 'neutre' ? 'neutre' : 'village']);
     if (!p) return base;
-    return Object.assign(base, p, { modules: Object.assign(base.modules, p.modules || {}), noms: Object.assign({}, p.noms || {}), etapes: Array.isArray(p.etapes) ? p.etapes.slice() : base.etapes });
+    const et = Array.isArray(p.etapes) ? p.etapes.slice() : base.etapes;
+    /* une étape ajoutée après l'enregistrement du profil apparaît en Village (date de l'ajout) ; décochée ensuite, elle le reste */
+    NOUVELLES.forEach(([k, apres, le]) => { if (base.style === 'village' && Array.isArray(p.etapes) && !et.includes(k) && String(p.le || '') < le) { const i = et.indexOf(apres); et.splice(i < 0 ? et.length : i + 1, 0, k); } });
+    return Object.assign(base, p, { modules: Object.assign(base.modules, p.modules || {}), noms: Object.assign({}, p.noms || {}), etapes: et });
   }
   function brut(uid) { try { return JSON.parse(localStorage.getItem(cle(uid)) || 'null'); } catch (e) { return null; } }
   function uidLocal() { try { const s = JSON.parse(localStorage.getItem('orga-auth') || 'null'); return (s && (s.user || (s.currentSession && s.currentSession.user)) || {}).id || ''; } catch (e) { return ''; } }
@@ -59,12 +64,13 @@
       const loc = brut(uid);
       /* le plus récent gagne : un réglage fait hors ligne sur cet appareil n'est pas écrasé, il repart vers Supabase */
       if (data && !data.deleted && data.data && !(loc && loc.le && String(loc.le) > String(data.data.le || ''))) garder(uid, data.data);
-      else if (loc && loc.le && (!data || !data.data || String(loc.le) > String(data.data.le || ''))) enregistrer(sb, uid, loc);
+      else if (loc && loc.le && (!data || !data.data || String(loc.le) > String(data.data.le || ''))) enregistrer(sb, uid, loc, true);
     } catch (e) {}
     return lire(uid);
   }
-  async function enregistrer(sb, uid, p) {
-    const q = Object.assign({}, p, { le: new Date().toISOString() }); garder(uid, q);
+  /* garderLe : renvoyer tel quel un profil déjà daté (rattrapage hors ligne), sans le rajeunir */
+  async function enregistrer(sb, uid, p, garderLe) {
+    const q = Object.assign({}, p, garderLe && p.le ? {} : { le: new Date().toISOString() }); garder(uid, q);
     if (!sb || !uid) return false;
     try { const { error } = await sb.from('biblio_rows').upsert({ user_id: uid, key: 's:profil', data: q, deleted: false }, { onConflict: 'user_id,key' }); if (error) throw error; return true; }
     catch (e) { return false; }

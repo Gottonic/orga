@@ -1,5 +1,5 @@
 -- Locus : l'agenda de Locus dans Proton Calendar (19.11.2026, choix de Nicolas : « proposition A »).
--- Ce que tu places dans Locus (projets sur des jours ou des semaines, séances de la Forge, tâches ; avec leur heure depuis le 23.11) devient un calendrier que Proton
+-- Ce que tu places dans Locus (les projets, sur des jours ou des semaines, avec leur heure depuis le 23.11 ; plus les tâches ni les séances de la Forge depuis le 25–26.11) devient un calendrier que Proton
 -- peut suivre (« Ajouter un calendrier depuis une URL »). Lecture seule côté Proton ; Proton le relit toutes les 8 à 16 heures.
 -- À coller une fois dans Supabase > SQL Editor > New query, puis « Run ». (Après schema.sql et carnet.sql.)
 -- Le lien contient une clé secrète créée depuis Locus (routine du lundi › L'agenda) ; Supabase n'en garde que l'empreinte.
@@ -55,7 +55,7 @@ language sql immutable as $$
 $$;
 
 -- Les évènements, de 2 semaines en arrière à 10 semaines en avant : { id, debut, fin (exclue), titre }.
--- Journées entières, ou avec l'heure placée : un projet dure 4 h, une séance le temps prévu dans la Forge. Plus de tâches depuis le 25.11.
+-- Journées entières, ou avec l'heure placée : un projet dure 4 h. Plus de tâches depuis le 25.11, plus de séances de la Forge depuis le 26.11.
 create or replace function public.locus_agenda(cle text) returns jsonb
 language plpgsql stable security definer set search_path = public, extensions as $$
 declare
@@ -86,14 +86,7 @@ begin
       from public.rows r, jsonb_array_elements_text(coalesce(r.data->'weeks', '[]'::jsonb)) w
      where r.user_id = u and r.key like 'p:%' and not r.deleted and r.data->>'closed' is null
        and w ~ '^\d{4}-W\d{2}$' and public.locus_lundi_de(w) between d0 - 7 and d1
-    union all
-    -- séances de la Forge placées sur un jour (publiées par la Forge dans « locus/semaines »)
-    select public.locus_ev('f-' || s.wk || '-' || (x->>'id'), public.locus_lundi_de(s.wk) + (x->>'day')::int,
-             public.locus_heure(u, s.wk, 'f', x->>'id'), coalesce(nullif(x->>'min', '')::int, 60), 'Forge · ' || coalesce(x->>'t', 'Séance'))
-      from public.carnet c, jsonb_each(coalesce(c.data->'semaines', '{}'::jsonb)) as s(wk, arr), jsonb_array_elements(s.arr) x
-     where c.user_id = u and c.key = 'locus/semaines' and not c.deleted and s.wk ~ '^\d{4}-W\d{2}$'
-       and jsonb_typeof(x->'day') = 'number' and (x->>'day')::int between 0 and 6
-    -- (25.11, choix de Nicolas : les tâches ne vont plus dans l'agenda Locus ; seulement les projets et les séances)
+    -- (25.11, choix de Nicolas : plus de tâches ; 26.11 : plus de séances de la Forge non plus. Seulement les projets.)
   ) t), '[]'::jsonb);
 end $$;
 revoke all on function public.locus_agenda(text) from public;

@@ -3477,6 +3477,12 @@ async function enter(user){
   push(); render();
   /* depuis l'accueil de Locus : démarrer la séance du jour */
   const v = versLocus("forge");
+  /* depuis la routine du lundi (26.11) : le bilan de la semaine passée, puis « Bilan terminé » rend la main */
+  if (v && v.bilan && /^\d{4}-W\d{2}$/.test(v.bilan)) { setView("semaine", v.bilan); setTimeout(() => { const j = document.getElementById("journal"); if (j) j.scrollIntoView({ block: "start" }); }, 120);
+    if (DANS_ACC) { const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.textContent = "Bilan terminé";
+      b.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:90;height:50px;padding:0 26px;box-shadow:0 4px 18px rgba(0,0,0,.35)";
+      b.addEventListener("click", async () => { b.disabled = true; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); await new Promise(r => setTimeout(r, 150)); try { await push(); } catch(e) {} try { parent.postMessage({ locus:1, etat:"fermer" }, location.origin); } catch(e) {} }); document.body.appendChild(b);
+      try { parent.postMessage({ locus:1, etat:"pret" }, location.origin); } catch(e) {} } }
   if (v && v.seance) { setView("semaine", v.wk || currentWeekId()); setTimeout(() => { runStart(v.seance); if (DANS_ACC) { DANS_RUN = !!S.run; try { parent.postMessage({ locus:1, etat: DANS_RUN ? "pret" : "fermer" }, location.origin); } catch(e) {} if (!DANS_RUN) toast("Séance introuvable"); } }, 50); }
 }
 /* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
@@ -3489,8 +3495,9 @@ function publierLocus(){
   clearTimeout(locusT);
   locusT = setTimeout(() => { try {
     if (!UID || isEmpty()) return;
-    const w0 = currentWeekId(), w1 = isoWeekId(addDays(todayUTC(), 7)), semaines = {};
-    [w0, w1].forEach(wk => { const log = S.data.logs[wk] || {};
+    /* la semaine passée aussi (26.11) : le bilan de la Forge dans la routine du lundi en lit les titres */
+    const wp = isoWeekId(addDays(todayUTC(), -7)), w0 = currentWeekId(), w1 = isoWeekId(addDays(todayUTC(), 7)), semaines = {};
+    [wp, w0, w1].forEach(wk => { const log = S.data.logs[wk] || {};
       semaines[wk] = planOf(wk).sessions.map(s => { const st = (log.sessions && log.sessions[s.id]) || {};
         return { id:s.id, t:s.title || "", day:st.day == null ? null : st.day, done:!!st.done, run:!!(st.run && !st.done), min:s.min || null, opt:!!s.optional }; }); });
     const prot = {}; [w0, w1].forEach(wk => protDays(wk).forEach(x => { prot[x.d] = { g: x.g, l: PROT_L[x.lvl], why: x.why }; }));

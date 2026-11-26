@@ -281,7 +281,8 @@ async function tirer(){
       sb.from('biblio_rows').select('key,data,deleted').in('key',['w:'+Pr,'w:'+C,'s:routine','h:'+N,'h:'+C]),
       sb.from('carnet').select('data,deleted').eq('key','locus/semaines').maybeSingle(),
       sb.from('mine_rows').select('data,deleted').eq('key','s:chrono').maybeSingle(),
-      sb.from('marche_rows').select('data').like('key','c:%').eq('deleted',false)]).then(r=>{ const c=r[4]; if(c&&!c.error){ MARCHE_C=(c.data||[]).map(x=>x.data).filter(Boolean); MARCHE_MOTS=null; } return r; });
+      sb.from('carnet').select('data,deleted').eq('key','logs/'+Pr).maybeSingle().then(r=>{ if(!r.error) FLOG={wk:Pr,l:r.data&&!r.data.deleted&&r.data.data?r.data.data:{}}; return r; }),
+      sb.from('marche_rows').select('data').like('key','c:%').eq('deleted',false)]).then(r=>{ const c=r[5]; if(c&&!c.error){ MARCHE_C=(c.data||[]).map(x=>x.data).filter(Boolean); MARCHE_MOTS=null; } return r; });
     if(a.error) throw a.error;
     const nB={}; (a.data||[]).forEach(r=>{ if(r.data) nB[r.key]=r.data; }); (b.data||[]).forEach(r=>{ if(r.data&&!r.deleted) nB[r.key]=r.data; });
     attente().filter(x=>x.table==='biblio_rows').forEach(x=>{ if(x.data==null) delete nB[x.key]; else nB[x.key]=x.data; });
@@ -291,6 +292,16 @@ async function tirer(){
     sync=''; garder();
   }catch(e){ sync=(e&&e.message)||String(e); }
 }
+/* le carnet de la Forge de la semaine passée (logs/<semaine>) : séances faites, ressenti, bilan (26.11) */
+let FLOG=null;
+const RESS=[['qual','qualité des mouvements','/5'],['energie','énergie','/5'],['diff','difficulté','/5'],['douleur','douleur max','']];
+function forgeBilan(Pr){ const f=forge(), lg=FLOG&&FLOG.wk===Pr?FLOG.l:{}, ss=lg.sessions||{};
+  let S=((f&&f.semaines&&f.semaines[Pr])||[]).map(s=>Object.assign({},s,{st:ss[s.id]||{}}));
+  if(!S.length) S=Object.entries(ss).map(([id,st])=>({id,t:'Séance',st}));
+  S=S.filter(s=>!s.opt||s.st.done);
+  const faites=S.filter(s=>s.st.done), moy=k=>{ const v=faites.map(s=>s.st.feel&&s.st.feel[k]).filter(x=>typeof x==='number'); return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length*10)/10:null; };
+  const ci=lg.checkin||{};
+  return {S,faites,moy,poids:lg.bodyweight,taille:lg.waist,forme:ci.energie,confiance:ci.confiance,douleur:ci.douleur,notes:(lg.notes||'').trim(),charge:!!(FLOG&&FLOG.wk===Pr)}; }
 function forge(){ let loc=null; try{ loc=JSON.parse(localStorage.getItem('locus-forge')||'null'); }catch(e){} if(loc&&(!FORGE||String(loc.le)>String(FORGE.le))) return loc; return FORGE; }
 
 /* =============================== L'accueil =============================== */
@@ -359,11 +370,11 @@ function render(){ if(!UID) return; if(document.activeElement&&$main.contains(do
 const $plein=document.getElementById('plein');
 const R={etape:1, sel:null, note:null, tri:null, coche:new Set()};
 /* ordre voulu par Nicolas (19.11, 20.11, 23.11) : humeur, journal, boîtes à vider, Banque, tâches pas faites, vide-tête, tâches de 2 minutes, agenda, projets, entraînements, tâches, Claude */
-const ETAPES=['Ta semaine passée','Le journal','Vider les boîtes','La Banque','Les tâches pas faites','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
-const CLES=['humeur','journal','boites','banque','report','vide','deuxmin','agenda','projets','forge','taches','claude'];
+const ETAPES=['Ta semaine passée','Le journal','La Forge','Vider les boîtes','La Banque','Les tâches pas faites','Vider la tête','Les tâches de 2 minutes','L’agenda','Placer les projets','Placer les entraînements','Placer les tâches','Pour Claude'];
+const CLES=['humeur','journal','sport','boites','banque','report','vide','deuxmin','agenda','projets','forge','taches','claude'];
 /* les étapes de la personne (« Mon Locus », 25.11) : celles cochées, sans celles d'un module coupé */
 function etapesActives(){ const p=prof(); let L=CLES.slice(); if(p&&window.LocusProfil){ const a=id=>LocusProfil.actif(p,id);
-  L=L.filter(k=>(p.etapes||CLES).includes(k)&&!(k==='banque'&&!a('banque'))&&!(k==='projets'&&!a('etabli'))&&!(k==='forge'&&!a('forge'))); } return L.length?L:['vide']; }
+  L=L.filter(k=>(p.etapes||CLES).includes(k)&&!(k==='banque'&&!a('banque'))&&!(k==='projets'&&!a('etabli'))&&!((k==='forge'||k==='sport')&&!a('forge'))); } return L.length?L:['vide']; }
 const etapeIci=()=>etapesActives()[R.etape-1];
 const BOITES=[['mails','Mails'],['messageries','Messageries'],['sms','SMS'],['appels','Appels'],['courrier','Courrier (tiroir)']];
 /* =============================== La semaine en cours (toucher le numéro de semaine, demande de Nicolas, 23.11) ===============================
@@ -419,6 +430,14 @@ function vRoutine(){
     const rang=([k,l])=>`<div class="eval"><span class="q">${o[k]?esc(o[k]):'<i>pas noté</i>'}<small>${l}</small></span><span class="choix">${[['oui','oui'],['moitie','à moitié'],['non','non']].map(([v,t])=>`<button type="button" data-r="obj" data-k="${k}" data-v="${v}" aria-pressed="${ev[k]===v}">${t}</button>`).join('')}</span></div>`;
     if(R.note==null){ const id=(B['w:'+Pr]||{}).retenu; R.note=id&&B['n:'+id]?B['n:'+id].t:''; }
     c=tete('Le journal','Ce que tu retiens de la '+esc(wkLabel(Pr))+'. Et tes objectifs : atteints ?')+`<div class="boite"><span class="eyebrow">Objectifs et conseil S${wkNum(Pr)}</span>${L.map(rang).join('')}</div><textarea class="libre" id="i-retenu" placeholder="Ce que je retiens de la semaine…" aria-label="Ce que je retiens de la semaine">${esc(R.note)}</textarea>`; }
+  if(k==='sport'){ const F=forgeBilan(Pr), r=s=>{ const f=s.st.feel||{}; const t=RESS.filter(([k])=>typeof f[k]==='number').map(([k,l,u])=>l+' '+f[k]+u).join(' · ');
+      return `<div class="eval"><span class="q" style="font-size:15px">${s.st.done?'✓':'✗'} ${esc(s.t||'Séance')}<small>${s.st.done?(t||'ressenti pas noté'):'pas faite'}</small></span></div>`; };
+    const m=RESS.slice(0,2).map(([k,l,u])=>{ const v=F.moy(k); return v==null?'':l+' '+v+u; }).filter(Boolean).join(' · ');
+    const b=[[F.poids,'Poids',' kg'],[F.taille,'Tour de taille',' cm'],[F.forme,'Forme','/5'],[F.confiance,'Confiance sur les sauts','/5'],[F.douleur,'Douleur max','/10']].filter(([v])=>v!=null&&v!=='');
+    c=tete('La Forge','Ta semaine d’entraînement : les séances, ton ressenti, et le bilan de la semaine (poids, forme, remarques) à remplir dans la Forge.')
+      +`<div class="boite"><span class="eyebrow">Séances S${wkNum(Pr)} · ${F.faites.length}/${F.S.length} faites</span>${F.S.length?F.S.map(r).join(''):'<span class="note" style="color:var(--ink-3)">Aucune séance trouvée pour cette semaine.</span>'}${m?`<span class="note" style="color:var(--ink-3)">Moyennes : ${esc(m)}</span>`:''}</div>`
+      +`<div class="boite"><span class="eyebrow">Bilan de la semaine</span>${b.length||F.notes?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${b.map(([v,l,u])=>`<div class="eval"><span class="q" style="font-size:15px">${esc(String(v))}${u}<small>${l}</small></span></div>`).join('')}</div>`+(F.notes?`<p style="margin:0;white-space:pre-wrap">${esc(F.notes)}</p>`:''):'<span class="note" style="color:var(--ink-3)">Pas encore rempli.</span>'}
+      <button type="button" class="btn-acc" data-r="forgeBilan" style="height:46px;justify-content:center">${b.length||F.notes?'Compléter le bilan dans la Forge':'Remplir le bilan dans la Forge'}</button></div>`; }
   if(k==='boites'){ const fb=(((B['s:routine']||{}).boites)||{})[N]||[];
     c=tete('Vider les boîtes','Tout ce qui attend une réponse. Coche ce qui est fait.')+`<div class="boite">${BOITES.map(([id,l])=>`<label class="eval" style="cursor:pointer"><input type="checkbox" data-boite="${id}" ${fb.includes(id)?'checked':''} style="width:22px;height:22px;accent-color:#C3B6DF"><span class="q" style="font-size:15px">${l}</span></label>`).join('')}</div>`; }
   if(k==='agenda'){ const lien=lienAgenda();
@@ -760,6 +779,9 @@ function texteClaude(N,Pr){
   const ob=[['principal','principal'],['secondaire','secondaire'],['conseil','conseil']].filter(([k])=>o[k]||ev[k]).map(([k,l])=>'- '+l+(o[k]?' (« '+o[k]+' »)':'')+' : '+(EV[ev[k]]||'?'));
   if(ob.length) L.push('OBJECTIFS S'+wkNum(Pr)+' :',...ob);
   const ret=w.retenu&&B['n:'+w.retenu]?B['n:'+w.retenu].t:''; if(ret) L.push('JOURNAL S'+wkNum(Pr)+' : '+ret);
+  if(etapesActives().includes('sport')){ const F=forgeBilan(Pr), mo=RESS.slice(0,3).map(([k,l,u])=>{ const v=F.moy(k); return v==null?'':l+' '+v+u; }).filter(Boolean);
+    const bl=[[F.poids,'poids ',' kg'],[F.taille,'tour de taille ',' cm'],[F.forme,'forme ','/5'],[F.confiance,'confiance sauts ','/5'],[F.douleur,'douleur max ','/10']].filter(([v])=>v!=null&&v!=='').map(([v,l,u])=>l+v+u);
+    L.push('FORGE S'+wkNum(Pr)+' : '+F.faites.length+'/'+F.S.length+' séances faites'+(F.S.length?' ('+F.S.map(s=>(s.st.done?'✓ ':'✗ ')+(s.t||'Séance')).join(' ; ')+')':'')+(mo.length?' · moyennes : '+mo.join(', '):'')+(bl.length?' · '+bl.join(', '):'')+(F.notes?' · remarques : '+F.notes.replace(/\s*\n\s*/g,' / '):'')); }
   const m=Projets.lundi(N), f=forge(), FS=(f&&f.semaines&&f.semaines[N])||[], P_=PB?PB.liste().filter(p=>!p.closed):[];
   L.push('PLANNING S'+wkNum(N)+' :'); const ts=P_.filter(p=>(p.weeks||[]).includes(N)); if(ts.length) L.push('- toute la semaine : '+ts.map(p=>p.name).join(' ; '));
   const TT=lignes('taches').filter(n=>!n.m2&&!n.x);
@@ -831,6 +853,7 @@ $plein.addEventListener('click',e=>{
   if(a==='jour'){ if(!R.sel) return; poser(el.dataset.j,heureTouchee(e,el)); return; }
   if(a==='copier'){ copier(texteClaude(N,Pr)); return; }
   if(a==='banque'){ ouvrirDans('banque','act=point&plein=1'); return; }
+  if(a==='forgeBilan'){ ouvrirDans('forge','bilan='+Pr+'&plein=1'); return; }
   if(a==='agendaCopier'){ copier(lienAgenda(),'Copié : colle-le dans Proton'); return; }
   if(a==='agendaNouveau'){ if(lienAgenda()&&!el.dataset.sur){ el.dataset.sur='1'; el.textContent='Toucher encore : l’ancien lien ne marchera plus'; return; }
     sb.rpc('locus_agenda_cle_nouvelle').then(({data,error})=>{ if(error||!data){ toast(/locus_agenda_cle_nouvelle|schema cache|not find/i.test((error&&error.message)||'')?'Lance d’abord supabase/agenda.sql dans Supabase':'Lien non créé : '+((error&&error.message)||'?')); return; }
@@ -967,7 +990,7 @@ document.addEventListener('click',e=>{ const a=e.target.closest('a[data-dans]');
    s'affiche tout de suite. La Forge (plein écran) se charge à la demande. */
 const CHAUDES=['marche','mine','banque','etabli'], CH={};
 let $dans=null, $fond=null, $x=null, dansT=null, derToast={t:'',le:0};
-const scheme=app=>['forge','banque'].includes(app)?'dark':'light';
+const scheme=app=>{ const C=window.LocusCouleurs, t=C&&C.de(app,C.choix(prof())); return t?t['color-scheme']:(['forge','banque'].includes(app)?'dark':'light'); };
 function cadre(app,url){ const f=document.createElement('iframe'); f.className='dans'; f.title=app; f.tabIndex=-1; f.style.colorScheme=scheme(app); f.src=url; document.body.appendChild(f); return f; }
 function chauffer(app){ if(!CH[app]) CH[app]={f:cadre(app,app+'/?dans=accueil&attente=1'),charge:false,ordre:null}; return CH[app]; }
 function prechauffer(){ const p=prof(); CHAUDES.filter(a=>!window.LocusProfil||LocusProfil.actif(p,a)&&!(p&&p.menu==='epure'&&a!=='etabli')).forEach((a,i)=>setTimeout(()=>chauffer(a),1200+i*1500)); }
