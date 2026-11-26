@@ -70,6 +70,10 @@
     }
     const D = {};
     try { const rs = await Promise.all(req.map((x) => x[1])); rs.forEach((r, i) => { D[req[i][0]] = ((r && r.data) || []).filter((x) => x && x.data).map((x) => Object.assign({ _k: x.key }, x.data)); }); } catch (e) {}
+    /* notes chiffrées (26.11) : Supabase ne peut pas chercher dedans ; on cherche aussi dans la copie locale de la Bibliothèque (en clair sur cet appareil) */
+    if (dans('bibliotheque') && uid) { try { const c = JSON.parse(localStorage.getItem('biblio-cache-' + uid) || 'null'), vus = new Set((D.notes || []).map((n) => n.id)), L = [];
+      Object.entries((c && c.prev) || {}).forEach(([k, v]) => { if (!k.startsWith('n:')) return; let d = null; try { d = JSON.parse(v); } catch (e) {} if (!d || d.z || vus.has(d.id)) return; if (plain(d.t).includes(q) || plain(d.d).includes(q)) L.push(d); });
+      D.notes = (D.notes || []).filter((n) => !n.z).concat(L.slice(0, 25)); } catch (e) {} }
     const ou = (n) => { const p = String(n.p || ''); if (p === 'vide') return 'Vide-tête'; if (p === 'taches') return n.m2 ? 'Tâches · 2 min' : 'Tâches'; if (p.startsWith('j:')) return 'Journal S' + wkNum(p.slice(2));
       if (p.startsWith('p:')) { const x = PB && PB.get(p.slice(2)); return x ? 'Notes · ' + x.name : 'Notes'; } if (p.startsWith('d:')) { const x = PB && PB.domaine(p.slice(2)); return x ? 'Notes · ' + x.name : 'Notes'; } return 'Notes'; };
     (D.notes || []).forEach((n) => { const ent = plain(n.t).includes(q); R.push({ app: 'bibliotheque', type: 'ligne', id: n.id, t: n.t || '…', sm: ent ? '' : n.d, s: ou(n) + (n.a ? ' · archivée' : '') }); });

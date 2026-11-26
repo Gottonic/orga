@@ -656,7 +656,8 @@ function notesLocales(){ const m={}; let c=null; try{ c=JSON.parse(localStorage.
   Object.entries((c&&c.prev)||{}).forEach(([k,v])=>{ if(!k.startsWith('n:')) return; let d=null; try{ d=JSON.parse(v); }catch(e){} if(d&&d.id&&!d.a) m[d.id]=d; }); return m; }
 async function chargerNotes(){ if(NOTES_EN||(NOTES&&Date.now()-NOTES_T<60000)) return; NOTES_EN=true; if(!NOTES) NOTES=notesLocales();
   try{ const {data,error}=await sb.from('biblio_rows').select('key,data').like('key','n:%').eq('deleted',false); if(error) throw error;
-    const m={}; (data||[]).forEach(r=>{ if(r.data&&r.data.id&&!r.data.a) m[r.data.id]=r.data; });
+    /* notes chiffrées (Bibliothèque, 26.11) : Supabase n'a que du charabia (z) ; on garde le texte de la copie locale de cet appareil */
+    const loc=notesLocales(), m={}; (data||[]).forEach(r=>{ if(r.data&&r.data.id&&!r.data.a) m[r.data.id]=r.data.z?(loc[r.data.id]&&!loc[r.data.id].z?loc[r.data.id]:Object.assign({},r.data,{t:'🔒'})):r.data; });
     attente().filter(x=>x.table==='biblio_rows'&&String(x.key).startsWith('n:')).forEach(x=>{ const id=x.key.slice(2); if(x.data&&!x.data.a) m[id]=x.data; else delete m[id]; });
     NOTES=m; }catch(e){} NOTES_T=Date.now(); NOTES_EN=false; if(R.tri&&R.tri.ch.includes('bn')) vRoutine(); }
 const enfantsN=p=>Object.values(NOTES||{}).filter(x=>x.p===p).sort((a,b)=>(a.o||0)-(b.o||0));

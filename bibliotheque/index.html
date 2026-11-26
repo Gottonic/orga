@@ -97,6 +97,11 @@ h2.titre{align-items:center}
 .page .ol{border:0;background:transparent;padding:0}
 .page .ln .bul{opacity:.4}
 .ln.dos>textarea{font-weight:700}
+.teintes{display:flex;flex-wrap:wrap;gap:8px}
+.teintes button{width:36px;height:36px;border-radius:50%;border:2px solid transparent;background:color-mix(in srgb,var(--pc) 70%,#fff);font:700 .8rem var(--mono);color:#2B2320}
+.teintes button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--card) inset}
+.code{font:700 1.15rem/1.4 var(--mono);letter-spacing:.08em;background:var(--card);border:1px dashed var(--line2);border-radius:12px;padding:12px;text-align:center;word-break:break-all}
+.chpied{margin-top:8px;text-align:center}
 .sansdos .dos-b{display:none}
 .ln.dos>.bul{color:var(--bord)}
 /* mode « seul » : la Bibliothèque montrée dans l'Établi, juste les notes d'un projet */
@@ -232,8 +237,8 @@ function toast(m,ms){ $toast.textContent=m; $toast.hidden=false; clearTimeout(to
 
 /* =============================== Données et synchro =============================== */
 function canon(v){ if(Array.isArray(v)) return '['+v.map(x=>canon(x===undefined?null:x)).join(',')+']'; if(v&&typeof v==='object') return '{'+Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}'; return JSON.stringify(v===undefined?null:v); }
-function charger(){ N={}; W={}; REG={}; for(const k in prev){ let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(!d) continue; if(k.startsWith('n:')) N[d.id]=d; else if(k.startsWith('w:')) W[k.slice(2)]=d; else if(k.startsWith('s:')) REG[k.slice(2)]=d; } }
-function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull})); }catch(e){} }
+function charger(){ N={}; W={}; REG={}; CH.verrou=0; for(const k in prev){ let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(!d) continue; if(k.startsWith('n:')){ if(d.z){ CH.verrou++; continue; } N[d.id]=d; } else if(k.startsWith('w:')) W[k.slice(2)]=d; else if(k.startsWith('s:')) REG[k.slice(2)]=d; } }
+function persist(){ if(!UID) return; try{ localStorage.setItem(CK(),JSON.stringify({prev,dirty:[...dirty],lastPull,chz:[...CHZ]})); }catch(e){} }
 /* Annuler / refaire (16.11) : chaque changement d'une ligne (n:) ou d'un bilan (w:) garde l'état d'avant. Les changements rapprochés
    (moins d'une seconde, sur la même ligne) forment un seul pas ; une touche spéciale, un clic ou une autre ligne en commencent un nouveau.
    Ctrl+Z (ou ↶ dans l'en-tête) annule un pas, Ctrl+Maj+Z ou Ctrl+Y le refait. */
@@ -260,26 +265,129 @@ const ecrireN=n=>{ const k='n:'+n.id, old=prev[k];
 function effacerN(id){ delete N[id]; ecrire('n:'+id,null); }
 async function push(){
   if(!sb||!UID||pushing||!dirty.size||!navigator.onLine){ setSync(); return; }
-  pushing=true; setSync(); const keys=[...dirty].slice(0,300), sent={};
-  const rows=keys.map(k=>{ sent[k]=prev[k]; return (k in prev)?{user_id:UID,key:k,data:JSON.parse(prev[k]),deleted:false}:{user_id:UID,key:k,data:null,deleted:true}; });
+  /* chiffrement (26.11) : une ligne des notes ne part jamais en clair quand le chiffrement est activé ; sans la clé sur cet appareil, elle attend */
+  const bloque=k=>chOn()&&!CH.cle&&k.startsWith('n:')&&(k in prev)&&(()=>{ const d=JSON.parse(prev[k]); return d&&!d.z&&racineData(d); })();
+  const keys=[...dirty].filter(k=>!bloque(k)).slice(0,300), sent={}, zz={}; if(!keys.length){ setSync(); return; }
+  pushing=true; setSync();
+  let rows; try{ rows=await Promise.all(keys.map(async k=>{ sent[k]=prev[k]; if(!(k in prev)) return {user_id:UID,key:k,data:null,deleted:true};
+    let d=JSON.parse(prev[k]); if(k.startsWith('n:')&&chOn()&&CH.cle&&!d.z&&racineData(d)){ d=await chiffrer(d); zz[k]=1; } else if(k.startsWith('n:')) zz[k]=d.z?1:0;
+    return {user_id:UID,key:k,data:d,deleted:false}; })); }catch(e){ pushing=false; syncErr='chiffrement : '+((e&&e.message)||e); setSync(); return; }
   try{ const {error}=await sb.from(TABLE).upsert(rows,{onConflict:'user_id,key'}); if(error) throw error;
-    keys.forEach(k=>{ if(prev[k]===sent[k]) dirty.delete(k); }); syncErr=''; persist(); pushing=false; setSync(); if(dirty.size){ clearTimeout(pushTimer); pushTimer=setTimeout(push,300); }
+    keys.forEach(k=>{ if(k in zz){ if(zz[k]) CHZ.add(k); else CHZ.delete(k); } if(prev[k]===sent[k]) dirty.delete(k); }); syncErr=''; persist(); pushing=false; setSync(); if(dirty.size){ clearTimeout(pushTimer); pushTimer=setTimeout(push,300); }
   }catch(e){ pushing=false; syncErr=(e&&e.message)||String(e); setSync(); clearTimeout(pushTimer); pushTimer=setTimeout(push,15000); } }
 async function pull(full){
   if(!sb||!UID||!navigator.onLine){ setSync(); return false; }
   try{ const since=full?null:lastPull; let ch=false, max=lastPull, de=0;
     for(;;){ let q=sb.from(TABLE).select('key,data,deleted,updated_at').order('updated_at',{ascending:true}).range(de,de+999); if(since) q=q.gte('updated_at',since);
       const {data,error}=await q; if(error) throw error;
-      (data||[]).forEach(r=>{ if(!max||r.updated_at>max) max=r.updated_at; if(dirty.has(r.key)) return;
-        if(r.deleted||r.data==null){ if(r.key in prev){ delete prev[r.key]; ch=true; } } else { const v=canon(r.data); if(prev[r.key]!==v){ prev[r.key]=v; ch=true; } } });
+      for(const r of (data||[])){ if(!max||r.updated_at>max) max=r.updated_at; if(dirty.has(r.key)) continue;
+        if(r.deleted||r.data==null){ CHZ.delete(r.key); if(r.key in prev){ delete prev[r.key]; ch=true; } continue; }
+        let d=r.data; if(r.key.startsWith('n:')){ if(d.z){ CHZ.add(r.key); if(CH.cle){ try{ d=await dechiffrer(d); }catch(e){} } } else CHZ.delete(r.key); }
+        const v=canon(d); if(prev[r.key]!==v){ prev[r.key]=v; ch=true; } }
       if(!data||data.length<1000) break; de+=1000; }
-    lastPull=max; syncErr=''; persist(); if(ch){ charger(); if(!editing()) render(); } setSync(); return true;
+    lastPull=max; syncErr=''; persist(); if(ch){ charger(); aRechiffrer(); if(!editing()) render(); } setSync(); return true;
   }catch(e){ syncErr=(e&&e.message)||String(e); setSync(); return false; } }
 function setSync(){ const el=document.getElementById('sync'); if(!el) return; let t='✓', tip='Tout est enregistré';
   if(!navigator.onLine){ t='hors ligne'+(dirty.size?' · '+dirty.size:''); tip='Hors ligne : les changements partiront au retour du réseau'; }
   else if(syncErr){ t='⚠'+(dirty.size?' '+dirty.size:''); tip='Problème de synchro : '+syncErr+(/biblio_rows/.test(syncErr)?' (lance supabase/biblio.sql)':''); }
   else if(pushing||dirty.size){ t='↻'+(dirty.size?' '+dirty.size:''); tip='Envoi en cours'; }
   el.textContent=t; el.title=tip; }
+
+/* =============================== Chiffrement des notes (26.11) ===============================
+   Souhait de Nicolas pour les notes de Chloé (et les siennes s'il veut) : le texte (t, d) des lignes des Notes est chiffré sur l'appareil
+   avant de partir ; Supabase ne garde que du charabia (champ z). Activé par personne dans la Bibliothèque › Notes › « Chiffrer mes notes ».
+   - Ce qui est chiffré : les lignes dont la racine est la page Notes (arbre), un domaine (d:) ou un projet (p:). Restent en clair :
+     le vide-tête, les tâches (racine taches) et le journal, que l'accueil et « Ma semaine » lisent directement dans Supabase.
+     Une idée rangée du vide-tête vers les Notes est chiffrée à son prochain envoi.
+   - Les clés : une clé de données AES-GCM 256 tirée au hasard (DEK), enveloppée deux fois dans s:chiffre { v, iter, wp, wr, le } :
+     par la phrase secrète (wp) et par la clé de secours (wr), chacune passée par PBKDF2-SHA256. Sur l'appareil, la DEK est gardée
+     dans IndexedDB (biblio-cle, « cle-<uid> ») comme clé non exportable : on peut s'en servir, pas la lire.
+   - Phrase et clé de secours perdues = notes perdues. La copie locale (biblio-cache-<uid>) reste en clair sur l'appareil.
+   - CHZ : lignes connues chiffrées sur le serveur (gardé dans la copie locale) ; une ligne des notes en clair qui n'y est pas
+     (écrite avant l'activation, ou ailleurs) repart chiffrée (aRechiffrer). */
+const CH={cle:null,verrou:0}; let CHZ=new Set(); const ITER=310000;
+const chOn=()=>!!(REG.chiffre&&REG.chiffre.wp);
+function racineData(d){ let p=d.p, k=0; while(N[p]&&k++<80) p=N[p].p; p=String(p||'');
+  if(p==='vide'||p==='taches'||p.startsWith('j:')) return false; return true; /* arbre, d:, p:, ou un parent encore chiffré */ }
+const TE=new TextEncoder(), TD=new TextDecoder();
+const b64e=u=>{ const a=new Uint8Array(u); let s=''; for(let i=0;i<a.length;i+=0x8000) s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000)); return btoa(s); };
+const b64d=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+async function kek(secret,sel,iter){ const base=await crypto.subtle.importKey('raw',TE.encode(secret),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:sel,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey']); }
+async function envelopper(dek,secret){ const sel=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12)), k=await kek(secret,sel,ITER);
+  return {sel:b64e(sel),iv:b64e(iv),w:b64e(await crypto.subtle.wrapKey('raw',dek,k,{name:'AES-GCM',iv}))}; }
+async function deballer(env,secret,iter,exportable){ const k=await kek(secret,b64d(env.sel),iter);
+  return crypto.subtle.unwrapKey('raw',b64d(env.w),k,{name:'AES-GCM',iv:b64d(env.iv)},{name:'AES-GCM',length:256},!!exportable,['encrypt','decrypt']); }
+const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function codeSecours(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r=crypto.getRandomValues(new Uint8Array(24)); let x=''; r.forEach(v=>{ x+=A[v%32]; }); return x.match(/.{4}/g).join('-'); }
+function idb(){ return new Promise((ok,ko)=>{ const r=indexedDB.open('biblio-cle',1); r.onupgradeneeded=()=>r.result.createObjectStore('k'); r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error); }); }
+async function idbGet(k){ const db=await idb(); return new Promise(ok=>{ const q=db.transaction('k').objectStore('k').get(k); q.onsuccess=()=>ok(q.result||null); q.onerror=()=>ok(null); }); }
+async function idbSet(k,v){ const db=await idb(); return new Promise(ok=>{ const t=db.transaction('k','readwrite'); if(v==null) t.objectStore('k').delete(k); else t.objectStore('k').put(v,k); t.oncomplete=()=>ok(true); t.onerror=()=>ok(false); }); }
+async function chiffrer(d){ const iv=crypto.getRandomValues(new Uint8Array(12)), ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},CH.cle,TE.encode(JSON.stringify({t:d.t||'',d:d.d})));
+  const o=Object.assign({},d); delete o.t; delete o.d; const u=new Uint8Array(12+ct.byteLength); u.set(iv); u.set(new Uint8Array(ct),12); o.z=b64e(u); return o; }
+async function dechiffrer(d){ const u=b64d(d.z), x=JSON.parse(TD.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},CH.cle,u.slice(12))));
+  const o=Object.assign({},d); delete o.z; o.t=x.t||''; if(x.d!=null) o.d=x.d; return o; }
+async function toutDechiffrer(){ if(!CH.cle) return 0; let n=0;
+  for(const k of Object.keys(prev)){ if(!k.startsWith('n:')) continue; let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(!d||!d.z) continue;
+    try{ prev[k]=canon(await dechiffrer(d)); CHZ.add(k); n++; }catch(e){} }
+  if(n){ persist(); charger(); } return n; }
+function aRechiffrer(){ if(!chOn()||!CH.cle) return 0; let n=0;
+  for(const k of Object.keys(prev)){ if(!k.startsWith('n:')||CHZ.has(k)||dirty.has(k)) continue; let d; try{ d=JSON.parse(prev[k]); }catch(e){ continue; } if(d&&!d.z&&racineData(d)){ dirty.add(k); n++; } }
+  if(n){ persist(); clearTimeout(pushTimer); pushTimer=setTimeout(push,400); } return n; }
+/* le bandeau des Notes quand la clé n'est pas sur cet appareil */
+function verrouHtml(){ if(!chOn()||CH.cle) return '';
+  return `<form class="alerte" id="f-deverrou" autocomplete="off"><b>Tes notes sont chiffrées</b><span class="note">Entre ta phrase secrète pour les lire sur cet appareil${CH.verrou?` (${CH.verrou} ligne${CH.verrou>1?'s':''})`:''}. Les nouvelles notes attendent ici, sans partir en clair.</span>
+    <input class="in" type="password" id="i-phrase" placeholder="Phrase secrète" autocomplete="current-password"><div class="row"><button class="btn" type="submit">Ouvrir</button><button class="lien" type="button" data-act="chSecours">J’ai perdu ma phrase : clé de secours</button></div></form>`; }
+const chLien=()=>`<p class="note chpied"><button class="lien" data-act="chSheet">${chOn()?'🔒 Notes chiffrées sur tes appareils':'Chiffrer mes notes'}</button></p>`;
+async function deverrouiller(secret,parCode){ const c=REG.chiffre; const cle=await deballer(parCode?c.wr:c.wp,parCode?normCode(secret):secret,c.iter||ITER,false);
+  CH.cle=cle; await idbSet('cle-'+UID,cle); await toutDechiffrer(); charger(); aRechiffrer(); render(); push(); }
+function chSheet(etape,code){ const on=chOn();
+  if(etape==='activer'){ $sheet.innerHTML=`<div class="sh"><h3>Chiffrer mes notes</h3><button class="btn2" data-act="fermer">Fermer</button></div>
+    <p class="note">Le texte de tes notes sera chiffré sur ton appareil avant de partir : personne d’autre (ni Supabase, ni Nicolas) ne pourra le lire. Le vide-tête, les tâches et le journal restent lisibles par l’accueil et « Ma semaine ».</p>
+    <p class="note"><b>Choisis une phrase secrète</b> d’au moins 4 mots, que tu retiens facilement. Sans elle ni la clé de secours, tes notes sont perdues.</p>
+    <input class="in" type="password" id="i-p1" placeholder="Phrase secrète" autocomplete="new-password"><input class="in" type="password" id="i-p2" placeholder="La même, encore une fois" autocomplete="new-password">
+    <button class="btn" data-act="chSuite">Suivant</button>`; $scrim.hidden=false; return; }
+  if(etape==='code'){ $sheet.innerHTML=`<div class="sh"><h3>Ta clé de secours</h3></div>
+    <p class="note">Note-la sur papier (ou imprime-la) et range-la en lieu sûr. Elle remplace la phrase secrète si tu l’oublies. Elle ne s’affichera plus.</p>
+    <p class="code">${esc(code)}</p><div class="row"><button class="btn2" data-act="chImprimer">Imprimer</button><button class="btn2" data-act="chCopier">Copier</button></div>
+    <label class="row"><input type="checkbox" id="i-noté"> J’ai noté ma clé de secours</label><button class="btn" data-act="chActiver">Chiffrer mes notes</button>`; $sheet.dataset.code=code; return; }
+  if(etape==='changer'){ $sheet.innerHTML=`<div class="sh"><h3>Changer de phrase secrète</h3><button class="btn2" data-act="fermer">Fermer</button></div>
+    <input class="in" type="password" id="i-p0" placeholder="Phrase actuelle (ou clé de secours)" autocomplete="current-password">
+    <input class="in" type="password" id="i-p1" placeholder="Nouvelle phrase" autocomplete="new-password"><input class="in" type="password" id="i-p2" placeholder="La même, encore une fois" autocomplete="new-password">
+    <button class="btn" data-act="chChanger">Changer</button>`; return; }
+  if(etape==='arreter'){ $sheet.innerHTML=`<div class="sh"><h3>Ne plus chiffrer</h3><button class="btn2" data-act="fermer">Fermer</button></div>
+    <p class="note">Tes notes repartiront en clair dans Supabase. Entre ta phrase secrète pour confirmer.</p>
+    <input class="in" type="password" id="i-p0" placeholder="Phrase secrète" autocomplete="current-password"><button class="btn" data-act="chArreter">Ne plus chiffrer</button>`; return; }
+  $sheet.innerHTML=`<div class="sh"><h3>Chiffrement des notes</h3><button class="btn2" data-act="fermer">Fermer</button></div>`+(on
+    ?`<p class="note">🔒 Tes notes sont chiffrées${CH.cle?' et ouvertes sur cet appareil':' ; cet appareil n’a pas encore la clé'}. Le vide-tête, les tâches et le journal restent en clair.</p>
+      <div class="row"><button class="btn2" data-act="chEtape" data-e="changer">Changer de phrase</button><button class="lien" data-act="chEtape" data-e="arreter">Ne plus chiffrer</button></div>`
+    :`<p class="note">Tes notes partent aujourd’hui en clair dans Supabase (privées, mais lisibles par qui gère la base). Le chiffrement les rend illisibles pour tout le monde sauf toi.</p><button class="btn" data-act="chEtape" data-e="activer">Chiffrer mes notes</button>`);
+  $scrim.hidden=false; }
+async function chAction(a,el){ const v=id=>{ const x=document.getElementById(id); return x?x.value:''; };
+  if(a==='chSheet'){ chSheet(); return; }
+  if(a==='chEtape'){ chSheet(el.dataset.e); return; }
+  if(a==='chSuite'){ const p1=v('i-p1'), p2=v('i-p2'); if(p1.trim().split(/\s+/).length<4&&p1.length<16){ toast('Au moins 4 mots (ou 16 caractères)'); return; } if(p1!==p2){ toast('Les deux phrases ne sont pas pareilles'); return; }
+    CH.phrase=p1; chSheet('code',codeSecours()); return; }
+  if(a==='chCopier'){ try{ await navigator.clipboard.writeText($sheet.dataset.code); toast('Copiée'); }catch(e){ toast('Copie impossible : note-la à la main'); } return; }
+  if(a==='chImprimer'){ const w=window.open('','_blank'); if(!w){ toast('Fenêtre bloquée : note-la à la main'); return; } w.document.write(`<title>Clé de secours</title><body style="font:16px system-ui;padding:40px"><h1>Locus · clé de secours des notes</h1><p>Elle ouvre tes notes chiffrées si tu oublies ta phrase secrète. À garder en lieu sûr.</p><p style="font:700 22px monospace;letter-spacing:2px">${esc($sheet.dataset.code)}</p><p>Créée le ${today()}</p></body>`); w.document.close(); w.print(); return; }
+  if(a==='chActiver'){ const ok=document.getElementById('i-noté'); if(!ok||!ok.checked){ toast('Coche « J’ai noté ma clé de secours »'); return; }
+    el.disabled=true; el.textContent='Chiffrement…';
+    try{ const dek=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+      const c={v:1,iter:ITER,wp:await envelopper(dek,CH.phrase),wr:await envelopper(dek,normCode($sheet.dataset.code)),le:today()};
+      const cle=await deballer(c.wp,CH.phrase,ITER,false); delete CH.phrase; CH.cle=cle; await idbSet('cle-'+UID,cle);
+      REG.chiffre=c; ecrire('s:chiffre',c); const n=aRechiffrer(); fermer(); render(); toast('Notes chiffrées ('+n+' ligne'+(n>1?'s':'')+')'); }
+    catch(e){ el.disabled=false; el.textContent='Chiffrer mes notes'; toast('Impossible : '+((e&&e.message)||e)); } return; }
+  if(a==='chChanger'){ const p0=v('i-p0'), p1=v('i-p1'), p2=v('i-p2'), c=REG.chiffre; if(p1!==p2){ toast('Les deux phrases ne sont pas pareilles'); return; } if(p1.trim().split(/\s+/).length<4&&p1.length<16){ toast('Au moins 4 mots (ou 16 caractères)'); return; }
+    let dek=null; try{ dek=await deballer(c.wp,p0,c.iter||ITER,true); }catch(e){ try{ dek=await deballer(c.wr,normCode(p0),c.iter||ITER,true); }catch(e2){} }
+    if(!dek){ toast('Phrase actuelle incorrecte'); return; }
+    const n=Object.assign({},c,{wp:await envelopper(dek,p1),iter:ITER,le:today()}); if((c.iter||ITER)!==ITER) n.wr=c.wr; REG.chiffre=n; ecrire('s:chiffre',n); fermer(); toast('Phrase changée'); return; }
+  if(a==='chArreter'){ const c=REG.chiffre; try{ const cle=await deballer(c.wp,v('i-p0'),c.iter||ITER,false); CH.cle=cle; await toutDechiffrer(); }catch(e){ toast('Phrase incorrecte'); return; }
+    if(CH.verrou){ toast('Des lignes n’ont pas pu être déchiffrées : rien n’a changé'); return; }
+    Object.keys(prev).forEach(k=>{ if(CHZ.has(k)) dirty.add(k); }); REG.chiffre=null; ecrire('s:chiffre',null); CH.cle=null; await idbSet('cle-'+UID,null); persist(); fermer(); render(); push(); toast('Tes notes repartent en clair'); return; }
+  if(a==='chSecours'){ const code=prompt('Clé de secours (les tirets ne comptent pas)'); if(!code) return; try{ await deverrouiller(code,true); toast('Notes ouvertes avec la clé de secours'); }catch(e){ toast('Clé de secours incorrecte'); } return; }
+}
+document.addEventListener('submit',async e=>{ if(e.target.id!=='f-deverrou') return; e.preventDefault(); const i=document.getElementById('i-phrase');
+  try{ await deverrouiller(i.value,false); toast('Notes ouvertes sur cet appareil'); }catch(err){ toast('Phrase incorrecte'); i.select(); } });
 
 /* =============================== L'arbre =============================== */
 const vivant=n=>n&&(ui.arch||!n.a);
@@ -340,12 +448,12 @@ function vProjets(){
   if(ui.zoom&&N[ui.zoom]) return editeur('arbre');
   let plie=false; try{ plie=localStorage.getItem(DPLIE)==='1'; }catch(e){}
   const D=domainesListe();
-  let h=`<h2 class="titre">Notes ${vuesHtml()}</h2><div class="chips"><button class="chip" data-act="archP" aria-pressed="${ui.archP}">Archives</button><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button></div>`;
+  let h=`<h2 class="titre">Notes ${vuesHtml()}</h2>${verrouHtml()}<div class="chips"><button class="chip" data-act="archP" aria-pressed="${ui.archP}">Archives</button><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button></div>`;
   h+=`<div><div class="olx"><div class="ln"><button class="bul has" data-act="domPlie" aria-label="${plie?'Déplier':'Replier'}">${plie?'▸':'▾'}</button><button class="lnk" data-act="domPlie">Domaines <small>${D.length?D.length:''}</small></button></div>`;
   if(!plie){ if(!PB||!PB.pret()) h+='<p class="note" style="padding:4px 28px">Les domaines de l’Établi se chargent…</p>';
     h+=D.map(d=>{ const n=nbLignes('d:'+d.id), k=projetsDe(d.id).length;
       return `<div class="ln" style="--lv:1"><button class="bul${n?' has':''}" data-act="page" data-r="d:${d.id}" aria-label="Ouvrir">•</button><button class="lnk${d.closed?' arch':''}" data-act="page" data-r="d:${d.id}">${esc((d.emoji?d.emoji+' ':'')+d.name)}${d.closed?' (archivé)':''} <small>${[n?n+' ligne'+(n>1?'s':''):'',k?k+' projet'+(k>1?'s':''):''].filter(Boolean).join(' · ')}</small></button></div>`; }).join(''); }
-  h+=`</div>${editeur('arbre')}</div>`;
+  h+=`</div>${editeur('arbre')}</div>${chLien()}`;
   return h; }
 /* =============================== Trois vues des Notes (26.11) ===============================
    Mêmes données (biblio_rows, n:) :
@@ -384,18 +492,18 @@ const nbNotes=(d,K)=>(K[d.racine]||[]).filter(n=>!n.a&&!(d.k==='notes'&&n.dos)).
 function filtresHtml(DS,K,f){
   return `<div class="chips filtres"><button class="chip" data-act="filtre" data-f="tout" aria-pressed="${!f||f==='tout'}">Tout</button>${DS.filter(d=>nbNotes(d,K)||d.k!=='notes').map(d=>`<button class="chip" data-act="filtre" data-f="${d.k}" aria-pressed="${f===d.k}" style="--pc:${d.col}"><i class="pt"></i>${esc(d.nom)}</button>`).join('')}</div>`; }
 function vPostits(){ const K=indexer(), DS=dossiers(), f=ui.filtre||'tout', L=toutesNotes(K,DS,f);
-  return `<h2 class="titre">Notes ${vuesHtml()}</h2>${DS.length>1?filtresHtml(DS,K,f):''}
-  <div class="row"><button class="btn" data-act="noteNew">+ Note</button><button class="btn2" data-act="dosNew">+ Dossier</button></div>
-  ${L.length?`<div class="murs">${L.map(x=>`<button class="pi" data-act="noteOuvrir" data-id="${x.n.id}" style="--pc:${x.d.col}"><b>${esc(titreDe(x))}</b>${corpsDe(x).length?`<span>${esc(corpsDe(x).slice(0,6).join('\n'))}</span>`:''}<small>${esc(quand(x.m))}${f==='tout'&&DS.length>1?' · '+esc(x.d.nom):''}</small></button>`).join('')}</div>`:'<p class="note">Pas encore de note ici. « + Note » pour en écrire une.</p>'}`; }
+  return `<h2 class="titre">Notes ${vuesHtml()}</h2>${verrouHtml()}${DS.length>1?filtresHtml(DS,K,f):''}
+  <div class="row"><button class="btn" data-act="noteNew">+ Note</button><button class="btn2" data-act="dosNew">+ Dossier</button>${dosModifier(f)}</div>
+  ${L.length?`<div class="murs">${L.map(x=>`<button class="pi" data-act="noteOuvrir" data-id="${x.n.id}" style="--pc:${x.d.col}"><b>${esc(titreDe(x))}</b>${corpsDe(x).length?`<span>${esc(corpsDe(x).slice(0,6).join('\n'))}</span>`:''}<small>${esc(quand(x.m))}${f==='tout'&&DS.length>1?' · '+esc(x.d.nom):''}</small></button>`).join('')}</div>`:'<p class="note">Pas encore de note ici. « + Note » pour en écrire une.</p>'}${chLien()}`; }
 function vListe(){ const K=indexer(), DS=dossiers(), f=ui.filtre;
   if(!f){ const tout=DS.reduce((s,d)=>s+nbNotes(d,K),0);
-    return `<h2 class="titre">Dossiers ${vuesHtml()}</h2><ul class="nliste dos">
+    return `<h2 class="titre">Dossiers ${vuesHtml()}</h2>${verrouHtml()}<ul class="nliste dos">
       <li><button data-act="filtre" data-f="tout"><span class="nm">Toutes les notes</span><small>${tout}</small><span class="go">›</span></button></li>
       ${DS.filter(d=>nbNotes(d,K)||d.k!=='notes').map(d=>`<li><button data-act="filtre" data-f="${d.k}" style="--pc:${d.col}"><i class="pt"></i><span class="nm">${esc(d.nom)}</span><small>${nbNotes(d,K)}</small><span class="go">›</span></button></li>`).join('')}</ul>
-      <div class="row"><button class="btn" data-act="noteNew">+ Note</button><button class="btn2" data-act="dosNew">+ Dossier</button></div>`; }
+      <div class="row"><button class="btn" data-act="noteNew">+ Note</button><button class="btn2" data-act="dosNew">+ Dossier</button></div>${chLien()}`; }
   const L=toutesNotes(K,DS,f), d=DS.find(x=>x.k===f);
   return `<div class="fil"><button data-act="filtre" data-f="">‹ Dossiers</button></div><h2 class="titre">${esc(d?d.nom:'Toutes les notes')} <small>${L.length} note${L.length>1?'s':''}</small></h2>
-  <div class="row"><button class="btn" data-act="noteNew">+ Note</button></div>
+  <div class="row"><button class="btn" data-act="noteNew">+ Note</button>${dosModifier(f)}</div>
   ${L.length?`<ul class="nliste">${L.map(x=>`<li><button data-act="noteOuvrir" data-id="${x.n.id}"><b>${esc(titreDe(x))}</b><small><span class="qd">${esc(quand(x.m))}</span> ${esc(corpsDe(x)[0]||'Pas d’autre texte')}</small></button></li>`).join('')}</ul>`:'<p class="note">Pas encore de note ici.</p>'}`; }
 /* une note ouverte : le titre en grand, puis son contenu (l'éditeur, puces discrètes) */
 function vNote(){ const n=N[ui.note], DS=dossiers(), d=dossierDe(n,DS)||DOS_NOTES, vide=!enfants(n.id).length;
@@ -403,6 +511,14 @@ function vNote(){ const n=N[ui.note], DS=dossiers(), d=dossierDe(n,DS)||DOS_NOTE
   <div class="ntete" style="--pc:${d.col}"><textarea class="titreN" data-id="${n.id}" rows="1" placeholder="Titre" aria-label="Titre de la note">${esc(n.t)}</textarea>
   <div class="chips"><button class="chip" data-act="noteDossier" style="--pc:${d.col}"><i class="pt"></i>${esc(d.nom)}</button><span class="note">${esc(quand(infoNote(n,indexer()).m))}</span><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button><button class="chip" data-act="noteArch">Archiver la note</button></div></div>
   <div class="page">${editeur(n.id)}</div>${vide?'<p class="note">Touche la page pour écrire le texte de la note.</p>':''}`; }
+/* modifier un dossier depuis Post-its ou Liste (26.11) : nom, couleur ; un domaine se change dans l'Établi */
+const dosModifier=f=>f&&f.startsWith('l:')&&N[f.slice(2)]?`<button class="btn2" data-act="dosEdit" data-id="${f.slice(2)}">Modifier le dossier</button>`:f&&f.startsWith('d:')?`<a class="btn2" href="../etabli/#projets" style="text-decoration:none">Domaine : dans l’Établi</a>`:'';
+function dosSheet(id){ const n=N[id]; if(!n) return; const cur=n.col||'';
+  $sheet.innerHTML=`<div class="sh"><h3>Dossier</h3><button class="btn2" data-act="fermer">Fermer</button></div>
+  <label class="note" for="i-dnom">Nom</label><input class="in" id="i-dnom" value="${esc(n.t)}" autocomplete="off">
+  <p class="note" style="margin-top:4px">Couleur</p><div class="teintes"><button type="button" data-act="dosCol" data-c="" aria-pressed="${!cur}" style="--pc:${pastel(id)}" title="Automatique">A</button>${PASTELS.map(c=>`<button type="button" data-act="dosCol" data-c="${c}" aria-pressed="${cur===c}" style="--pc:${c}" aria-label="${c}"></button>`).join('')}</div>
+  <div class="row" style="justify-content:space-between"><button class="lien" data-act="dosDefaire" data-id="${id}">Ce n’est plus un dossier</button><button class="btn" data-act="dosOk" data-id="${id}">Enregistrer</button></div>`;
+  $sheet.dataset.col=cur; $scrim.hidden=false; }
 function noteNouvelle(){ const DS=dossiers(), f=ui.filtre&&ui.filtre!=='tout'?ui.filtre:'notes', d=DS.find(x=>x.k===f)||DOS_NOTES;
   couper(); const n=nouvelle(d.racine,ordreDebut(d.racine),''); ui.note=n.id; ui.zoom=null; window.scrollTo(0,0); render();
   const t=document.querySelector('textarea.titreN'); if(t) try{ t.focus(); }catch(e){} }
@@ -421,7 +537,7 @@ function vPage(){
   ${editeur(r)}`; }
 /* mode « seul » : les notes d'un projet, montrées dans l'Établi */
 function vSeul(){ const vide=!enfants(SEUL).length;
-  return `<div class="chips"${DANS&&!vide?' hidden':''}>${DANS?'':`<button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button>`}${vide?'<button class="chip" data-act="modele">+ Plan / À faire / Ressources / Journal</button>':''}</div>${editeur(SEUL)}`; }
+  return `${verrouHtml()}<div class="chips"${DANS&&!vide?' hidden':''}>${DANS?'':`<button class="chip" data-act="arch" aria-pressed="${ui.arch}">Lignes archivées</button>`}${vide?'<button class="chip" data-act="modele">+ Plan / À faire / Ressources / Journal</button>':''}</div>${editeur(SEUL)}`; }
 function vJournal(){
   const k=ui.wk||(ui.wk=wkKey(new Date())), w=W[k]||{};
   return `<h2 class="titre">Journal</h2>
@@ -636,10 +752,15 @@ document.addEventListener('click',e=>{
   if(a==='bul'){ const n=N[id]; if(!n) return; if(enfants(id).length&&e.detail<2){ clearTimeout(window.__bul); window.__bul=setTimeout(()=>{ n.c=!n.c; if(!n.c) delete n.c; ecrireN(n); refaire(null); },230); } else { clearTimeout(window.__bul); ui.zoom=id; refaire(null); window.scrollTo(0,0); } return; }
   if(a==='zoom'){ ui.zoom=id||null; render(); return; }
   if(a==='page'){ ui.page=el.dataset.r||null; ui.zoom=null; ui.note=null; window.scrollTo(0,0); render(); return; }
+  if(a.startsWith('ch')&&['chSheet','chEtape','chSuite','chCopier','chImprimer','chActiver','chChanger','chArreter','chSecours'].includes(a)){ chAction(a,el); return; }
   if(a==='archP'){ ui.archP=!ui.archP; render(); return; }
   if(a==='vue'){ try{ localStorage.setItem('biblio-vue',el.dataset.v); }catch(err){} ui.zoom=null; if(el.dataset.v==='liste') ui.filtre=null; render(); return; }
   if(a==='filtre'){ ui.filtre=el.dataset.f||null; window.scrollTo(0,0); render(); return; }
   if(a==='noteNew'){ noteNouvelle(); return; }
+  if(a==='dosEdit'){ dosSheet(id); return; }
+  if(a==='dosCol'){ $sheet.dataset.col=el.dataset.c; $sheet.querySelectorAll('[data-act=dosCol]').forEach(b=>b.setAttribute('aria-pressed',String(b===el))); return; }
+  if(a==='dosOk'){ const n=N[id], i=document.getElementById('i-dnom'); if(!n) return; couper(); const nom=(i&&i.value.trim())||n.t; n.t=nom; if($sheet.dataset.col) n.col=$sheet.dataset.col; else delete n.col; ecrireN(n); fermer(); render(); return; }
+  if(a==='dosDefaire'){ const n=N[id]; if(!n) return; couper(); delete n.dos; delete n.col; ecrireN(n); ui.filtre=null; fermer(); render(); toast('« '+(n.t||'…')+' » est redevenue une note (↶ pour annuler)'); return; }
   if(a==='noteOuvrir'){ ui.note=id; ui.zoom=null; window.scrollTo(0,0); render(); return; }
   if(a==='noteFermer'){ noteFermer(); return; }
   if(a==='noteDossier'){ noteDossierSheet(ui.note); return; }
@@ -689,13 +810,14 @@ const versLocus=app=>{ try{ if(DANS_ACC) return Object.fromEntries(new URLSearch
 async function enter(user){
   UID=user.id; document.getElementById('login').hidden=true;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK())||'null'); }catch(e){}
-  if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; }
-  charger(); lireHash(); booted=true;
+  if(c){ prev=c.prev||{}; dirty=new Set(c.dirty||[]); lastPull=c.lastPull||null; CHZ=new Set(c.chz||[]); }
+  charger(); try{ if(chOn()) CH.cle=await idbGet('cle-'+UID); }catch(e){} if(CH.cle){ await toutDechiffrer(); aRechiffrer(); } lireHash(); booted=true;
   try{ const q=new URLSearchParams(location.search), v=(q.get('note')||'').trim(); if(v){ nouvelle('vide',ordreDebut('vide'),v); ui.tab='vide'; ui.page=null; history.replaceState(null,'',location.pathname+'#vide'); setTimeout(()=>toast('Noté dans le vide-tête'),300); }
     if(q.get('bilan')){ ui.tab='journal'; ui.page=null; ui.wk=wkKey(new Date()); setTimeout(bilanSheet,60); } }catch(e){}
   PB=Projets.base(sb,UID); PB.surChangement(()=>{ if(booted&&!editing()) render(); });
   render(); setSync();
-  await Promise.all([pull(!c),PB.tirer()]); sansEmojisJournal(); if(!editing()) render(); push();
+  await Promise.all([pull(!c),PB.tirer()]); sansEmojisJournal();
+  if(chOn()&&!CH.cle){ try{ CH.cle=await idbGet('cle-'+UID); }catch(e){} if(CH.cle) await toutDechiffrer(); } aRechiffrer(); if(!editing()) render(); push();
   { const v=versLocus('bibliotheque'); if(v&&v.id&&N[v.id]){ const b=document.createElement('button'); b.hidden=true; b.dataset.act='aller'; b.dataset.id=v.id; document.body.appendChild(b); b.click(); b.remove(); } }
 }
 document.getElementById('loginForm').addEventListener('submit',async e=>{ e.preventDefault();
