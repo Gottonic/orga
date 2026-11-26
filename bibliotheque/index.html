@@ -150,13 +150,14 @@ html.dans .login{position:static;background:transparent;padding:0}
 <body>
 <div id="login" class="login" hidden><form class="lbox" id="loginForm"><img class="logo" src="icons/icon-192.png" alt=""><h1>La Bibliothèque</h1><p>Connecte-toi avec ton compte Locus.</p><label for="l-mail">Adresse e-mail</label><input class="in" type="email" id="l-mail" autocomplete="username" required><label for="l-pass">Mot de passe</label><input class="in" type="password" id="l-pass" autocomplete="current-password" required><button class="btn" type="submit">Se connecter</button><p class="err" id="l-err" hidden></p></form></div>
 <header class="oh"><div class="oh-bar"><a class="oh-orga" href="../" aria-label="Retour à l'accueil de Locus"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M8.5 8.5h3v3h-3zM10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg></a><h1 class="oh-nom">La Bibliothèque</h1><button class="sync" id="sync" data-sync data-act="reglages" aria-label="État de la synchronisation">…</button><span class="oh-sp"></span><button class="oh-b" type="button" data-ampoule><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15h6M8 18h4M10 2a5 5 0 0 0-3.2 8.8V13h6.4v-2.2A5 5 0 0 0 10 2z"/></svg></button><button class="oh-b" type="button" data-act="reglages" aria-label="Réglages"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3M4 4l2.1 2.1M13.9 13.9 16 16M16 4l-2.1 2.1M6.1 13.9 4 16"/></svg></button></div>
-<nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="projets">Notes</button><button class="ot-t" data-tab="journal">Journal</button><button class="ot-t" data-tab="chercher">Chercher</button></nav></header>
+<nav class="ot" aria-label="Sections"><button class="ot-t" data-tab="projets">Notes</button><button class="ot-t" data-tab="vide">Vide-tête</button><button class="ot-t" data-tab="journal">Journal</button></nav></header>
 <main id="view" aria-live="polite"></main>
 <div class="outils" id="outils" hidden><button class="emo-b" data-tool="emoji" aria-label="Émoji en début de ligne" title="Émoji en début de ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M6.8 12a3.6 3.6 0 0 0 6.4 0M7.5 8h.01M12.5 8h.01"/></svg></button><button data-tool="out" aria-label="Désindenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3v14M17 10H7M11 6l-4 4 4 4"/></svg></button><button data-tool="in" aria-label="Indenter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M17 3v14M3 10h10M9 6l4 4-4 4"/></svg></button><button data-tool="up" aria-label="Monter"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17V4M5 9l5-5 5 5"/></svg></button><button data-tool="down" aria-label="Descendre"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v13M5 11l5 5 5-5"/></svg></button><button data-tool="done" aria-label="Fait"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5"/></svg></button><button data-tool="note" aria-label="Note sous la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg></button><button data-tool="arch" aria-label="Archiver la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v4H2zM3.5 8v9h13V8M8 11h4"/></svg></button><button data-tool="del" aria-label="Supprimer la ligne"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4 4 16"/></svg></button></div>
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
 <script src="../commun/projets.js"></script>
+<script src="../commun/profil.js"></script>
 <script>
 'use strict';
 /* =====================================================================================================
@@ -182,7 +183,7 @@ if(SEUL) document.documentElement.classList.add('seul');
 /* DANS : montrée dans la fiche du projet de l'Établi (&dans=fiche) : fond transparent, hauteur au contenu, envoyée à l'Établi */
 const DANS=!!SEUL&&window.parent!==window&&/[?&]dans=/.test(location.search);
 if(DANS) document.documentElement.classList.add('dans');
-const ui={tab:'vide', page:null, zoom:null, arch:false, wk:null, q:'', focus:null, caret:null, archP:false};
+const ui={tab:'projets', page:null, zoom:null, arch:false, wk:null, q:'', focus:null, caret:null, archP:false};
 const $view=document.getElementById('view'), $scrim=document.getElementById('scrim'), $sheet=document.getElementById('sheet'), $toast=document.getElementById('toast'), $outils=document.getElementById('outils');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -399,7 +400,13 @@ function vChercher(){
   <div class="chips"><button class="chip" data-act="arch" aria-pressed="${ui.arch}">Avec les archivées</button></div>
   ${P.length?`<p class="cap">Projets</p><ul class="res">${P.map(p=>`<li><button data-act="aller" data-r="p:${p.id}">${p.emoji||''} ${mk(p.name)}<small>${esc(etatP(p))}</small></button></li>`).join('')}</ul>`:''}
   ${q.length>=2?`<p class="cap">Lignes · ${R.length}</p><ul class="res">${R.map(n=>`<li><button data-act="aller" data-id="${n.id}">${mk(n.t||'…')}${n.d?`<small>${mk(n.d)}</small>`:''}<small>${esc(nomRacine(racineDe(n)))}${chemin(n).map(x=>' › '+(x.t||'…')).join('')}${n.a?' · archivée':''}</small></button></li>`).join('')||'<li class="note" style="padding:8px">Rien trouvé.</li>'}</ul>`:'<p class="note">Au moins deux lettres.</p>'}`; }
+/* 26.11 : onglets Notes, Vide-tête, Journal (Chercher est dans l'en-tête commun). Le Journal ne s'affiche que si « Ma semaine »
+   est activée avec une étape de bilan (humeur ou journal) dans le profil (commun/profil.js, « Mon Locus »). */
+function journalActif(){ if(!window.LocusProfil) return true; const p=REG.profil?LocusProfil.complet(REG.profil):LocusProfil.lire(UID);
+  return LocusProfil.actif(p,'semaine')&&(p.etapes||[]).some(e=>e==='humeur'||e==='journal'); }
 function render(){
+  const jOk=journalActif(), jt=document.querySelector('.ot-t[data-tab="journal"]'); if(jt) jt.hidden=!jOk;
+  if((ui.tab==='journal'&&!jOk)||ui.tab==='chercher') ui.tab='projets';
   document.querySelectorAll('.ot-t').forEach(t=>{ if(t.dataset.tab===ui.tab) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); });
   $view.innerHTML=SEUL?vSeul():ui.tab==='vide'?vVide():ui.tab==='projets'?vProjets():ui.tab==='journal'?vJournal():vChercher();
   apresRendu(); if(ui.tab==='chercher'&&!ui.focus){ const i=document.getElementById('i-q'); if(i&&document.activeElement!==i&&!ui.q) try{ i.focus(); }catch(e){} } }
@@ -557,7 +564,7 @@ $scrim.addEventListener('click',e=>{ if(e.target===$scrim) fermer(); });
 /* =============================== Démarrage =============================== */
 function lireHash(){ if(SEUL){ ui.tab='projets'; ui.page=null; return; } const h=decodeURIComponent((location.hash||'').slice(1)); if(!h) return;
   if(h.startsWith('p:')){ location.replace('../etabli/#'+h); return; }
-  if(h.startsWith('p:')||h.startsWith('d:')){ ui.tab='projets'; ui.page=h; } else if(['vide','projets','journal','chercher'].includes(h)){ ui.tab=h; ui.page=null; } }
+  if(h.startsWith('p:')||h.startsWith('d:')){ ui.tab='projets'; ui.page=h; } else if(['vide','projets','journal'].includes(h)){ ui.tab=h; ui.page=null; } }
 addEventListener('hashchange',()=>{ lireHash(); ui.zoom=null; render(); });
 function showLogin(msg){ booted=false; document.getElementById('login').hidden=false; const er=document.getElementById('l-err'); er.hidden=!msg; er.textContent=msg||''; }
 /* passage depuis l'accueil de Locus (18.11) : lu une seule fois */
