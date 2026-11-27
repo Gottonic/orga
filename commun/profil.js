@@ -16,6 +16,7 @@
     ['forge', 'La Forge', 'Sport', 'Programme et séances d’entraînement'],
     ['mine', 'La Mine', 'Factures et heures', 'Travail indépendant : mandats, heures, factures'],
     ['semaine', 'Démarrer la semaine', 'Ma semaine', 'Organiser la semaine (routine)'],
+    ['priorites', 'Priorités', 'Priorités', 'L’étape n°1 de chaque projet en cours, ou les échéances'],
   ];
   /* étapes de « Ma semaine » / de la routine du lundi, dans l'ordre (index.html : CLES) */
   const ETAPES = [
@@ -31,9 +32,9 @@
   const DC = (window.LocusCouleurs && LocusCouleurs.DEFAUT) || { village: { palette: 'lieux', fond: 'sombre' }, neutre: { palette: 'doux', fond: 'clair' } };
   const STYLES = {
     village: { style: 'village', menu: 'detail', palette: DC.village.palette, fond: DC.village.fond, semaine: 'heures',
-      modules: { etabli: 1, bibliotheque: 1, banque: 1, marche: 1, forge: 1, mine: 1, semaine: 1 }, etapes: TOUTES.slice() },
+      modules: { etabli: 1, bibliotheque: 1, banque: 1, marche: 1, forge: 1, mine: 1, semaine: 1, priorites: 0 }, etapes: TOUTES.slice() },
     neutre: { style: 'neutre', menu: 'epure', palette: DC.neutre.palette, fond: DC.neutre.fond, semaine: 'heures',
-      modules: { etabli: 0, bibliotheque: 1, banque: 1, marche: 0, forge: 0, mine: 0, semaine: 1 }, etapes: ['report', 'vide', 'deuxmin', 'projets', 'taches'] },
+      modules: { etabli: 0, bibliotheque: 1, banque: 1, marche: 0, forge: 0, mine: 0, semaine: 1, priorites: 1 }, etapes: ['report', 'vide', 'deuxmin', 'projets', 'taches'] },
   };
   const cle = (uid) => 'locus-profil-' + (uid || '');
   const copie = (o) => JSON.parse(JSON.stringify(o));
@@ -52,8 +53,9 @@
   const existe = (uid) => !!brut(uid || uidLocal());
   /* gardé sur l'appareil ; les couleurs suivent tout de suite (commun/couleurs.js ; les autres pages par l'évènement « storage ») */
   function garder(uid, p) { try { localStorage.setItem(cle(uid), JSON.stringify(p)); localStorage.removeItem('locus-theme-' + uid); } catch (e) {} if (window.LocusCouleurs) LocusCouleurs.poser(p); }
-  /* un nouveau style remet les modules, le menu, la palette et les étapes de ce style ; les noms personnels restent */
-  function nouveauStyle(p, style) { const s = copie(STYLES[style] || STYLES.village); return Object.assign(s, { noms: (p && p.noms) || {} }); }
+  /* un nouveau style remet les modules, le menu, la palette et les étapes de ce style ; les noms personnels restent,
+     et domaines0 (Pro et Perso déjà créés une fois pour le style Neutre, 27.11) aussi */
+  function nouveauStyle(p, style) { const s = copie(STYLES[style] || STYLES.village); return Object.assign(s, { noms: (p && p.noms) || {} }, p && p.domaines0 ? { domaines0: true } : {}); }
   const actif = (p, id) => !p || !p.modules || p.modules[id] !== 0 && p.modules[id] !== false;
   const nomDefaut = (p, id) => { const m = MODULES.find((x) => x[0] === id); return m ? ((p && p.style) === 'neutre' ? m[2] : m[1]) : id; };
   const nom = (p, id) => (p && p.noms && p.noms[id] && String(p.noms[id]).trim()) || nomDefaut(p, id);

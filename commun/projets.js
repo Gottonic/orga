@@ -110,6 +110,13 @@
     return null;
   }
   const estMini = (p) => !!p && p.size === 'mini';
+  /* Échéance d'une tâche (27.11) : champ `due` = 'AAAA-MM-JJ' en option, sur les tâches des projets et des domaines.
+     « J-x » : jours qui restent jusqu'à une date (0 = aujourd'hui, négatif = dépassée). */
+  function jx(date, aujourdhui) {
+    if (!date) return null;
+    const n = jours(aujourdhui || iso(new Date()), String(date).slice(0, 10));
+    return { n, txt: n === 0 ? 'Aujourd’hui' : n > 0 ? 'J-' + n : 'J+' + -n, passe: n < 0 };
+  }
 
   /* état commun : idee | prevu | encours | archive */
   function etat(p, aujourdhui) {
@@ -118,6 +125,26 @@
     if (p.later) return 'idee';
     if (p.prevu && p.prevu > aujourdhui && !places(p).some((d) => d <= aujourdhui)) return 'prevu';
     return 'encours';
+  }
+
+  /* Priorités (27.11, cahier des charges « Locus pour Chloé ») : la même logique pour l'accueil et l'Établi.
+     etapes     l'étape n°1 de chaque projet en cours (etapeUne), les projets à échéance d'abord, puis par importance ;
+     echeances  les projets ouverts (pas Idée) avec une échéance et les tâches datées pas faites des projets et
+                des domaines ouverts, triés par date.
+     Chaque élément : { p (projet ou domaine), u (etapeUne) | { type: 'projet' | 'tache', date, t, i, chemin } }. */
+  function priorites(liste, domaines, aujourdhui) {
+    const auj = aujourdhui || iso(new Date());
+    const ouverts = (liste || []).filter((p) => p && !p.closed && !estMini(p));
+    const etapes = ouverts.filter((p) => etat(p, auj) === 'encours').map((p) => ({ p, u: etapeUne(p) })).filter((o) => o.u)
+      .sort((a, b) => (a.p.due || '9').localeCompare(b.p.due || '9') || (b.p.imp || 0) - (a.p.imp || 0) || String(a.p.name).localeCompare(String(b.p.name), 'fr'));
+    const echeances = [];
+    const taches = (h) => { const L = h.tasks || []; L.forEach((x, i) => { if (!x || !x.due || x.d || estSection(x) || estEtape(L, i)) return;
+      const ch = []; let n = niveau(x); for (let j = i - 1; j >= 0 && n > 0; j--) { const m = niveau(L[j]); if (m < n) { ch.unshift(L[j].t); n = m; } }
+      echeances.push({ type: 'tache', p: h, date: x.due, t: x.t, i, chemin: ch }); }); };
+    ouverts.forEach((p) => { if (p.due && !p.later) echeances.push({ type: 'projet', p, date: p.due, t: p.name }); if (!p.later) taches(p); });
+    (domaines || []).filter((d) => d && !d.closed).forEach(taches);
+    echeances.sort((a, b) => a.date.localeCompare(b.date) || (a.type === 'projet' ? -1 : 1));
+    return { etapes, echeances };
   }
 
   /* get : fonction id → projet (les domaines n'y sont pas : un domaine n'est ni perso ni pro) */
@@ -226,5 +253,5 @@
     return { liste, get, domaines, domaine, tirer, pousser, ecrire, surChangement: (f) => ecoute.push(f), erreur: () => erreur, enAttente: () => st.dirty.length, pret: () => !!st.last || Object.keys(st.prev).length > 0 };
   }
 
-  window.Projets = { ETATS, FINS, DORT_JOURS, AUTRES, etat, nature, parentDe, enfants, racinePro, parentPossible, estInfini, estMini, estDomaine, estSection, trierTaches, tachesSeules, niveau, estEtape, finBranche, aSections, depuisSections, ranger, cocher, etapeUne, places, derniereActivite, dort, depuis, lundi, nouveau, nouveauDomaine, autres, base };
+  window.Projets = { ETATS, FINS, DORT_JOURS, AUTRES, etat, nature, parentDe, enfants, racinePro, parentPossible, estInfini, estMini, estDomaine, estSection, trierTaches, tachesSeules, niveau, estEtape, finBranche, aSections, depuisSections, ranger, cocher, etapeUne, jx, priorites, places, derniereActivite, dort, depuis, lundi, nouveau, nouveauDomaine, autres, base };
 })();

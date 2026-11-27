@@ -36,6 +36,8 @@
     sync: '<path d="M16 11a6 6 0 1 1-2-5.2M15 2v4h-4"/>',
     etape: '<path d="M3 3h6v6H3zM11 11h6v6h-6zM6 9v5h5"/>',
     projet: '<path d="M10 2v16M2 10h16M4.5 4.5l11 11M15.5 4.5l-11 11"/>',
+    priorites: '<path d="M4 18.5V2M4 3h12l-3 4 3 4H4"/>',
+    epingle: '<path d="M7 2h6M8 2v6l-3 4h10l-3-4V2M10 12v6.5"/>',
     echeance: '<circle cx="10" cy="11" r="7"/><path d="M10 7.5V11l2.5 2M7.5 2h5"/>',
     conge: '<path d="M2 17.5h16M10 17.5V8M3 8c1.5-5 12.5-5 14 0z"/>',
     alerte: '<path d="M10 2 18.5 17h-17zM10 8v4M10 14v1"/>',
