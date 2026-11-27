@@ -362,11 +362,147 @@
     return {
       charger, chargerProton: (d0, d1) => chargerProton(d0, d1, true), elements, aPlacer, elProjet, poser, oter, regler, enregistrerEv, supprimerEv, nouvelleTache, cocherTache, vider,
       surChangement: (f) => ecoute.push(f), prevenir, ev: (id) => S.EV[id] || null, tache: (id) => S.T[id] || null, coulCal,
+      h: (N) => S.H[N] || {}, taches: () => S.T, projets: () => (PB ? PB.liste().filter((p) => !p.closed) : []), opts: o,
       etat: () => ({ erreur, evAbsent, proton: S.PX, protonEnCours: pxEn, attente: attente().length, forge: !!forge() }),
     };
   }
+  /* ================================ les fiches (communes à la page, à la routine et à l'Établi) ================================
+     C.fiche(x, {semaine}) : un élément touché ; C.nouveau({jour, moment | debut}) : « + ». Options de creer :
+     base ('../' depuis un dossier d'app, '' depuis l'accueil), ouvrirProjet(id) (sinon l'Établi), lienCible ('_top' au premier plan). */
+  function fiches(C, o) {
+    const base = o.base == null ? '../' : o.base, toast = o.toast || (() => {});
+    let $s = null, $f = null, X = null, R = null, pose = null;
+    const dateL = (d) => { const x = parse(d); return JOURS[jIdx(d)] + ' ' + x.getDate() + ' ' + MOIS[x.getMonth()]; };
+    function monterDom() {
+      if ($s) return; styles();
+      $s = document.createElement('div'); $s.className = 'cal-scrim'; $s.hidden = true;
+      $f = document.createElement('div'); $f.className = 'cal-sheet'; $f.setAttribute('role', 'dialog'); $f.setAttribute('aria-modal', 'true');
+      $s.appendChild($f); document.body.appendChild($s);
+      $s.addEventListener('pointerdown', (e) => { pose = e.target; });
+      $s.addEventListener('click', (e) => { if (e.target === $s && pose === $s) fermer(); });
+      $f.addEventListener('click', clic); $f.addEventListener('change', change);
+      $f.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'e-titre') { e.preventDefault(); evOk(); } });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $s && !$s.hidden) fermer(); });
+    }
+    const $ = (id) => $f.querySelector('#' + id);
+    function ouvrirF(h) { monterDom(); $f.innerHTML = h; $s.hidden = false; }
+    function fermer() { if (!$s) return; $s.hidden = true; $f.innerHTML = ''; }
+    const tete = (t, s) => `<div class="shead"><h2>${t}${s ? `<small>${s}</small>` : ''}</h2><button class="xb" type="button" data-r="fermer">Fermer</button></div>`;
+    const lien = (href, t, cl) => `<a class="btn${cl ? ' ' + cl : ''}" href="${href}"${o.lienCible ? ` target="${o.lienCible}"` : ''}>${t}</a>`;
+    function quandL(x) {
+      const j = x.jour ? dateL(x.jour) : 'toute la semaine ' + (x.sem ? 'S' + wkNum(x.sem) : '');
+      if (x.debut) return j + ' · ' + hCourt(x.debut) + (x.min ? '–' + hCourt(hhmm(Math.min(1440, enMin(x.debut) + x.min))) : '');
+      return j + (x.moment ? ' · ' + MOMENT_L[x.moment] : x.jour ? ' · journée' : '');
+    }
+    const MOMS = [['jour', 'Journée'], ['matin', 'Matin'], ['aprem', 'Après-midi'], ['heure', 'À une heure']];
+    function vQuand(x) {
+      const m = x.debut ? 'heure' : x.moment || 'jour';
+      return `<div class="champ"><span class="lbl">Quand</span><div class="rang"><input class="in" type="date" id="q-jour" value="${esc(x.jour)}" aria-label="Jour" style="flex:0 1 170px"></div>
+        <div class="choix" id="q-mom">${MOMS.map(([k, l]) => `<button type="button" data-q="${k}" aria-pressed="${m === k}">${l}</button>`).join('')}</div>
+        <div class="rang" id="q-h"${m === 'heure' ? '' : ' hidden'}><input class="in" type="time" id="q-heure" value="${esc(x.debut || '09:00')}" step="900" aria-label="Heure" style="flex:0 1 140px"></div></div>`;
+    }
+    function lireQuand() {
+      const k = ($f.querySelector('#q-mom [aria-pressed="true"]') || {}).dataset || {}, q = { jour: $('q-jour').value };
+      if (k.q === 'heure') q.debut = $('q-heure').value || '09:00'; else if (k.q === 'matin' || k.q === 'aprem') q.moment = k.q; else q.moment = null; return q;
+    }
+    function fiche(x, ctx) {
+      ctx = ctx || {}; X = x;
+      if (x.src === 'e') { nouveau(null, C.ev(x.id)); return; }
+      if (x.src === 'x') {
+        const e = x.ev || {}, cal = ((C.etat().proton || {}).cals || []).find((c) => c.id === e.cal);
+        ouvrirF(tete(esc(x.titre), esc(cal ? cal.nom : 'Proton')) + `<div class="info"><b>${esc(quandL(x))}</b>${e.lieu ? `<span class="note">${esc(e.lieu)}</span>` : ''}</div>${e.note ? `<p class="note" style="white-space:pre-wrap">${esc(e.note)}</p>` : ''}<p class="note">Ce rendez-vous vient de Proton : il se change là-bas, puis « Actualiser ».</p><div class="pied"><a class="btn pri" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar</a></div>`);
+        return;
+      }
+      if (x.src === 'd') {
+        ouvrirF(tete(esc(x.titre), x.ech === 'projet' ? 'Échéance du projet' : 'Échéance · ' + esc(x.de || '')) + `<div class="info"><b>${esc(dateL(x.jour))}</b></div><p class="note">Une échéance se change dans l’Établi (la date de la tâche ou du projet).</p><div class="pied">${o.ouvrirProjet && !x.dom ? '<button class="btn pri" type="button" data-r="projet">Ouvrir le projet</button>' : lien(base + 'etabli/#' + (x.dom ? 'd' : 'p') + ':' + encodeURIComponent(x.id), 'Ouvrir dans l’Établi', 'pri')}</div>`);
+        return;
+      }
+      const nom = { p: 'Projet', f: 'Séance de la Forge', t: 'Tâche' }[x.src];
+      let h = tete(esc(x.titre), nom + (x.tray ? ' · pas encore placé' : ' · ' + esc(quandL(x))));
+      if (x.src === 't') { const n = C.tache(x.id) || {}; h += `<label class="coche"><input type="checkbox" id="t-fait" ${n.x ? 'checked' : ''}> Faite</label>`; }
+      if (x.sem) h += '<p class="note">Placé sur toute la semaine. Glisse-le sur un jour pour le mettre sur une demi-journée ou une heure.</p>';
+      else h += vQuand(x.tray ? Object.assign({}, x, { jour: x.semaine ? lundi(x.semaine) : lundi(ctx.semaine || wkKey(new Date())) }) : x);
+      if (x.src === 'f') h += `<p class="note">Une séance reste dans sa semaine (S${wkNum(x.semaine)}).</p>`;
+      const l = x.src === 'p' ? (o.ouvrirProjet ? '<button class="btn" type="button" data-r="projet">Ouvrir la fiche</button>' : lien(base + 'etabli/#p:' + encodeURIComponent(x.id), 'Ouvrir la fiche')) : x.src === 'f' ? lien(base + 'forge/', 'Ouvrir la Forge') : '';
+      h += `<div class="pied">${x.tray ? '' : `<button class="btn dang gauche" type="button" data-r="oter">${x.sem ? 'Enlever de la semaine' : 'Enlever de ce jour'}</button>`}${l}${x.sem ? '' : `<button class="btn pri" type="button" data-r="qOk">${x.tray ? 'Placer' : 'Enregistrer'}</button>`}</div>`;
+      ouvrirF(h);
+    }
+    /* un événement : nouveau (ctx = {jour, moment | debut}) ou à modifier (r) */
+    function nouveau(ctx, r) {
+      ctx = ctx || {}; X = null;
+      const jour = ctx.jour || auj();
+      R = r ? Object.assign({}, r) : { type: 'rdv', titre: '', jour, moment: ctx.moment || null, debut: ctx.debut || null, duree_min: 60, options: {} };
+      const op = R.options || {}, m = R.debut ? 'heure' : R.moment || (r ? 'jour' : ctx.debut ? 'heure' : ctx.moment ? ctx.moment : ctx.jour ? 'jour' : 'heure');
+      const projets = C.projets().filter((p) => p.size !== 'perm').sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr'));
+      const durees = [15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 480];
+      const absent = C.etat().evAbsent;
+      ouvrirF(tete(r ? 'Modifier' : 'Nouveau', r ? esc(TYPE_N[r.type] || '') : 'dans le calendrier')
+        + `<div class="choix" id="e-type" role="group" aria-label="Type">${TYPES.filter(([k]) => (r ? !['projet', 'tache'].includes(k) || k === R.type : true)).map(([k, l, c]) => `<button type="button" data-type="${k}" aria-pressed="${R.type === k}" style="--c:${c}"><i class="pt"></i>${l}</button>`).join('')}</div>`
+        + (absent ? '<p class="note" id="e-absent">Pour les activités, jobs et rendez-vous : lance d’abord supabase/calendrier.sql dans Supabase. Projet et tâche marchent déjà.</p>' : '')
+        + `<div class="champ" id="e-projet-c" hidden><span class="lbl">Projet</span><select class="in" id="e-projet"><option value="">— un bloc libre (titre ci-dessous)</option>${projets.map((p) => `<option value="${esc(p.id)}">${esc(((p.emoji || '') + ' ' + p.name).trim())}</option>`).join('')}</select><span class="note">Un projet de l’Établi se place comme dans la routine (son jour, sa demi-journée ou son heure).</span></div>`
+        + `<div class="champ" id="e-titre-c"><span class="lbl">Titre</span><input class="in" id="e-titre" value="${esc(R.titre || '')}" placeholder="Dentiste, cours de parkour…" autocomplete="off" enterkeyhint="done"></div>`
+        + `<div class="champ"><span class="lbl">Jour</span><div class="rang"><input class="in" type="date" id="e-jour" value="${esc(R.jour)}" style="flex:0 1 170px"><label class="coche" id="e-plus-c" style="font-size:13.5px"><input type="checkbox" id="e-plus" ${R.jusqu_au ? 'checked' : ''}> plusieurs jours</label></div>
+          <div class="rang" id="e-jusqu-c"${R.jusqu_au ? '' : ' hidden'}><span class="note">jusqu’au</span><input class="in" type="date" id="e-jusqu" value="${esc(R.jusqu_au || R.jour)}" style="flex:0 1 170px"></div></div>`
+        + `<div class="champ"><span class="lbl">Quand</span><div class="choix" id="q-mom">${MOMS.map(([k, l]) => `<button type="button" data-q="${k}" aria-pressed="${m === k}">${l}</button>`).join('')}</div>
+          <div class="rang" id="q-h"${m === 'heure' ? '' : ' hidden'}><input class="in" type="time" id="q-heure" value="${esc(R.debut || ctx.debut || '09:00')}" step="900" aria-label="Heure" style="flex:0 1 130px"><select class="in" id="e-duree" aria-label="Durée" style="flex:0 1 130px">${durees.map((d) => `<option value="${d}"${(R.duree_min || 60) === d ? ' selected' : ''}>${fmtMin(d)}</option>`).join('')}</select></div></div>`
+        + `<div class="champ" id="e-lieu-c"><span class="lbl">Lieu</span><input class="in" id="e-lieu" value="${esc(R.lieu || '')}" autocomplete="off"></div>`
+        + `<details id="e-opt"${op.declare || op.trajet_min || op.prepa_min ? ' open' : ''}><summary class="lbl" style="cursor:pointer">Options</summary><div class="champ" style="margin-top:8px">
+            <label class="coche" id="e-decl-c"><input type="checkbox" id="e-decl" ${op.declare ? 'checked' : ''}> Déclaré (gain intermédiaire)</label>
+            <div class="rang"><span class="note" style="width:92px">Trajet</span><input class="in" type="number" min="0" step="5" id="e-trajet" value="${op.trajet_min || ''}" placeholder="0" style="flex:0 1 90px"><span class="note">min (avant et après)</span></div>
+            <div class="rang"><span class="note" style="width:92px">Préparation</span><input class="in" type="number" min="0" step="5" id="e-prepa" value="${op.prepa_min || ''}" placeholder="0" style="flex:0 1 90px"><span class="note">min (avant)</span></div></div></details>`
+        + `<div class="champ" id="e-note-c"><span class="lbl">Note</span><textarea class="in" id="e-note" rows="2">${esc(R.note || '')}</textarea></div>`
+        + `<div class="pied">${r ? '<button class="btn dang gauche" type="button" data-r="evSuppr">Supprimer</button>' : ''}<button class="btn" type="button" data-r="fermer">Annuler</button><button class="btn pri" type="button" data-r="evOk">Enregistrer</button></div>`);
+      majForm(); if (!r) setTimeout(() => { const t = $('e-titre'); if (t) t.focus(); }, 60);
+    }
+    function majForm() {
+      const ty = R.type, pj = ty === 'projet' && $('e-projet').value, ta = ty === 'tache' && !R.id;
+      $('e-projet-c').hidden = ty !== 'projet' || !!R.id; $('e-titre-c').hidden = !!pj; $('e-decl-c').hidden = ty !== 'job';
+      $('e-lieu-c').hidden = !!pj || ta; $('e-opt').hidden = !!pj || ta; $('e-note-c').hidden = !!pj || ta; $('e-plus-c').hidden = !!pj || ta;
+      if (pj || ta) { $('e-plus').checked = false; $('e-jusqu-c').hidden = true; }
+      $('e-duree').hidden = !!pj || ta;
+    }
+    async function evOk() {
+      const t = $('e-titre').value.trim(), jour = $('e-jour').value, k = ($f.querySelector('#q-mom [aria-pressed="true"]') || {}).dataset || {};
+      if (!jour) { toast('Choisis un jour'); return; }
+      const q = { moment: k.q === 'matin' || k.q === 'aprem' ? k.q : null, debut: k.q === 'heure' ? $('q-heure').value || '09:00' : null };
+      const pj = R.type === 'projet' && !R.id && $('e-projet').value;
+      if (pj) { const x = C.elProjet(pj); fermer(); if (x) await C.poser(x, Object.assign({ jour }, q)); return; }
+      if (!t) { toast('Il faut un titre'); $('e-titre').focus(); return; }
+      if (R.type === 'tache' && !R.id) { fermer(); await C.nouvelleTache(t, jour, q); toast('Tâche ajoutée'); return; }
+      const plus = $('e-plus').checked ? $('e-jusqu').value : null;
+      const n = (v) => { const x = Math.max(0, Math.round(+v || 0)); return x || undefined; };
+      const opt = Object.assign({}, R.options || {}, { declare: R.type === 'job' && $('e-decl').checked ? true : undefined, trajet_min: n($('e-trajet').value), prepa_min: n($('e-prepa').value) });
+      Object.keys(opt).forEach((x) => { if (opt[x] === undefined) delete opt[x]; });
+      const r = Object.assign({}, R, { titre: t, jour, jusqu_au: plus && plus > jour ? plus : null, moment: q.moment, debut: q.debut, duree_min: q.debut ? +$('e-duree').value : R.duree_min || null,
+        lieu: $('e-lieu').value.trim() || null, note: $('e-note').value.trim() || null, options: opt });
+      fermer(); const id = await C.enregistrerEv(r); if (id) toast(R.id ? 'Modifié' : 'Ajouté');
+    }
+    async function clic(e) {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.type) { R.type = b.dataset.type; b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); majForm(); return; }
+      if (b.dataset.q) { b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); $('q-h').hidden = b.dataset.q !== 'heure'; return; }
+      const r = b.dataset.r; if (!r) return;
+      if (r === 'fermer') { fermer(); return; }
+      if (r === 'evOk') { evOk(); return; }
+      if (r === 'projet') { const x = X; fermer(); if (x && o.ouvrirProjet) o.ouvrirProjet(x.id); return; }
+      if (r === 'evSuppr') {
+        if (!b.dataset.sur) { b.dataset.sur = '1'; b.textContent = 'Supprimer ?'; setTimeout(() => { if (b.isConnected) { delete b.dataset.sur; b.textContent = 'Supprimer'; } }, 4000); return; }
+        fermer(); if (await C.supprimerEv(R.id)) toast('Supprimé'); return;
+      }
+      if (r === 'oter') { const x = X; fermer(); if (await C.oter(x)) toast('Enlevé'); return; }
+      if (r === 'qOk') { const x = X, q = lireQuand(); if (!q.jour) { toast('Choisis un jour'); return; } fermer(); await C.poser(x, q); }
+    }
+    function change(e) {
+      const el = e.target;
+      if (el.id === 't-fait' && X) { C.cocherTache(X.id, el.checked); return; }
+      if (el.id === 'e-plus') { $('e-jusqu-c').hidden = !el.checked; if (el.checked && $('e-jusqu').value < $('e-jour').value) $('e-jusqu').value = $('e-jour').value; return; }
+      if (el.id === 'e-projet') majForm();
+    }
+    return { fiche, nouveau: (ctx) => nouveau(ctx, null), fermer };
+  }
+
   /* l'objet de données, plus monter(root, opts) qui affiche le calendrier dans un élément de la page */
-  function creerAvecApi(o) { const c = creer(o); c.monter = (root, opts) => monter(c, root, opts); return c; }
+  function creerAvecApi(o) { const c = creer(o); c.monter = (root, opts) => monter(c, root, opts); const F = fiches(c, o); c.fiche = F.fiche; c.nouveau = F.nouveau; c.fermerFiche = F.fermer; return c; }
 
   /* ================================ l'affichage ================================ */
   let STYLE = false;
@@ -445,6 +581,41 @@
 .cal-m-j .plus{font-size:10.5px;color:var(--ink-3);padding:0 3px}
 #cal-fantome{position:fixed;left:0;top:0;z-index:90;pointer-events:none;min-height:22px;border-radius:6px;font:600 11.5px/22px var(--f-body);padding:0 8px;white-space:nowrap;background:var(--surface);color:var(--ink);box-shadow:0 4px 14px color-mix(in srgb,var(--ink) 35%,transparent),inset 3px 0 0 var(--c,var(--accent));opacity:.95}
 #cal-fantome small{position:absolute;left:0;top:-18px;font:600 10.5px/15px var(--f-mono);background:var(--ink);color:var(--on-ink);padding:0 5px;border-radius:4px}
+/* fiches (préfixées : elles s'affichent aussi dans l'Établi et sur l'accueil, qui ont leurs propres .btn, .note…) */
+.cal-scrim{position:fixed;inset:0;z-index:75;background:color-mix(in srgb,var(--creux) 72%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.cal-scrim[hidden]{display:none!important}
+.cal-sheet{background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;font:15px/1.45 var(--f-body);text-align:left}
+@media (min-width:700px){.cal-scrim{align-items:center}.cal-sheet{border-radius:22px}}
+.cal-sheet [hidden]{display:none!important}
+.cal-sheet .shead{display:flex;align-items:flex-start;gap:10px}
+.cal-sheet .shead h2{flex:1;margin:0;font:700 17px/1.25 var(--f-display);letter-spacing:-.02em;color:var(--ink)}
+.cal-sheet .shead h2 small{display:block;font:500 12.5px/1.3 var(--f-body);color:var(--ink-3);letter-spacing:0;margin-top:3px}
+.cal-sheet .xb{border:0;background:var(--surface-2);color:var(--ink);border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
+.cal-sheet .champ{display:flex;flex-direction:column;gap:5px}
+.cal-sheet .lbl{font:600 10.5px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.cal-sheet .in{height:42px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);padding:0 12px;font:15px var(--f-body);width:100%;min-width:0;margin:0;box-shadow:none}
+.cal-sheet textarea.in{height:auto;min-height:64px;padding:10px 12px;resize:vertical}
+.cal-sheet .rang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cal-sheet .rang .in{flex:1}
+.cal-sheet .choix{display:flex;flex-wrap:wrap;gap:6px}
+.cal-sheet .choix button{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:99px;padding:6px 12px;font:13.5px var(--f-body);cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0}
+.cal-sheet .choix button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.cal-sheet .choix .pt{width:10px;height:10px;border-radius:4px;background:var(--c)}
+.cal-sheet .coche{display:flex;gap:10px;align-items:center;font-size:15px;cursor:pointer;color:var(--ink)}
+.cal-sheet .coche input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.cal-sheet .pied{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.cal-sheet .btn{border:0;border-radius:99px;padding:10px 18px;font:600 14.5px var(--f-body);cursor:pointer;background:var(--surface-2);color:var(--ink);text-decoration:none;text-align:center;margin:0;width:auto;height:auto}
+.cal-sheet .btn.pri{background:var(--accent);color:var(--on-acc)}
+.cal-sheet .btn.dang{background:var(--bad-soft);color:var(--bad)}
+.cal-sheet .btn.gauche{margin-right:auto}
+.cal-sheet .note{font-size:12.5px;color:var(--ink-3);margin:0}
+.cal-sheet .info{display:flex;flex-direction:column;gap:2px}
+.cal-sheet .info b{font-size:15px}
+.cal-sheet summary{color:var(--ink-3)}
+.cal-seg{display:inline-flex;background:var(--creux);border-radius:99px;padding:3px;gap:2px;align-self:flex-start}
+.cal-seg button{border:0;background:none;color:var(--on-page);border-radius:99px;padding:6px 12px;font:600 13.5px var(--f-body);cursor:pointer}
+.cal-seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-acc)}
+.cal-m-j.off,.cal-s-j.off .cal-s-c{background-image:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ink) 9%,transparent) 0 4px,transparent 4px 9px)}
 @media (max-width:420px){.cal-s-tete,.cal-s-j{grid-template-columns:34px minmax(0,1fr) minmax(0,1fr)}.cal-el{font-size:12px}.cal-m{grid-template-columns:22px repeat(7,minmax(0,1fr))}.cal-m-j{min-height:62px}}`;
     document.head.appendChild(s);
   }
@@ -474,12 +645,17 @@
     function dessiner() {
       if (GL && GL.on) return; /* pas pendant un glisser */
       V.map.clear(); const o = V.o; let h = '';
-      if (o.vue === 'mois') h = vMois();
-      else { if (o.placer) h += vTray(); h += vSem(); h += o.vue === 'heures' ? vHeures() : vSimple(); }
+      if (o.choixVue) h += `<div class="cal-seg" role="group" aria-label="Vue">${o.choixVue.map((v) => `<button type="button" data-cal-vue="${v}" aria-pressed="${o.vue === v}">${({ simple: 'Simple', heures: 'Heures', mois: 'Mois' })[v]}</button>`).join('')}</div>`;
+      if (o.vue === 'mois') h += vMois();
+      else { if (o.placer) h += vTray(); if (!o.sansSemaine) h += vSem(); h += o.vue === 'heures' ? vHeures() : vSimple(); }
       const y = V.o.defile ? V.o.defile.scrollTop : null;
       root.innerHTML = h;
       if (y != null) V.o.defile.scrollTop = y;
     }
+    /* opts.filtre(x) : ne montrer que certains éléments (étape « agenda » de la routine : Proton et événements) ;
+       opts.jourClasse(d) : une classe de plus sur un jour ('off' = congé, hachuré) */
+    const els = (a, b) => { const L = C.elements(a, b); return V.o.filtre ? L.filter(V.o.filtre) : L; };
+    const jc = (d) => (V.o.jourClasse ? ' ' + (V.o.jourClasse(d) || '') : '');
     const pa = (x) => !V.o.placer || V.o.placer === 'tout' || V.o.placer === x.src || x.src === 'x' || x.src === 'e' || x.src === 'd';
     /* ce que la routine ne place pas à cette étape reste visible, un peu pâle, mais immobile */
     const vu = (x) => { if (!pa(x)) { x.mobile = false; x.pale = true; } return x; };
@@ -495,17 +671,17 @@
       return V.o.trayReplie ? `<details class="cal-boite" data-cal-det="tray"${V.ouvert.tray ? ' open' : ''}><summary class="cal-ey">À placer${n ? ' · ' + n : ''}</summary>${h}</details>` : `<div class="cal-boite"><span class="cal-ey">À placer</span>${h}</div>`;
     }
     function vSem() {
-      const N = semaine(), m = lundi(N), L = C.elements(m, plusJ(m, 6)).filter((x) => x.sem === N).map(vu);
+      const N = semaine(), m = lundi(N), L = els(m, plusJ(m, 6)).filter((x) => x.sem === N).map(vu);
       return `<div class="cal-sem" data-cal-depot data-sem="${N}"><span class="lab">Semaine</span><div class="cal-chips">${L.map((x) => puce(V, x, 'c')).join('') || '<span class="vide">glisse ici un projet pour toute la semaine</span>'}</div></div>`;
     }
     function vSimple() {
-      const N = semaine(), m = lundi(N), E = C.elements(m, plusJ(m, 6)).filter((x) => !x.sem).map(vu), A = auj();
+      const N = semaine(), m = lundi(N), E = els(m, plusJ(m, 6)).filter((x) => !x.sem).map(vu), A = auj();
       let h = '<div class="cal-s"><div class="cal-s-tete"><span></span><span>matin</span><span>après-midi</span></div>';
       for (let i = 0; i < 7; i++) {
         const d = plusJ(m, i), L = E.filter((x) => x.jour === d).sort(parOrdre);
         const jour = L.filter((x) => !x.debut && !x.moment), mat = L.filter((x) => (x.debut ? momentDe(x.debut) : x.moment) === 'matin'), apm = L.filter((x) => (x.debut ? momentDe(x.debut) : x.moment) === 'aprem');
         /* le jour lui-même (à gauche) reçoit ce qui va sur toute la journée : rien ne bouge dans la page pendant un glisser */
-        h += `<div class="cal-s-j${d === A ? ' auj' : ''}${i > 4 ? ' we' : ''}"><div class="cal-s-l" data-cal-depot data-jour="${d}" data-moment="" title="Toute la journée">${JOURS[i]}<b>${parse(d).getDate()}</b></div>`
+        h += `<div class="cal-s-j${d === A ? ' auj' : ''}${i > 4 ? ' we' : ''}${jc(d)}"><div class="cal-s-l" data-cal-depot data-jour="${d}" data-moment="" title="Toute la journée">${JOURS[i]}<b>${parse(d).getDate()}</b></div>`
           + `<div class="cal-s-jour${jour.length ? '' : ' vide'}" data-cal-depot data-jour="${d}" data-moment="">${jour.map((x) => puce(V, x, 's')).join('')}</div>`
           + `<div class="cal-s-c" data-cal-depot data-jour="${d}" data-moment="matin">${mat.map((x) => puce(V, x, 's')).join('')}</div>`
           + `<div class="cal-s-c" data-cal-depot data-jour="${d}" data-moment="aprem">${apm.map((x) => puce(V, x, 's')).join('')}</div></div>`;
@@ -514,7 +690,7 @@
     }
     const pc = (x) => ((Math.min(Math.max(x / 60, H0), H1) - H0) / PLAGE * 100).toFixed(2);
     function vHeures() {
-      const N = semaine(), m = lundi(N), E = C.elements(m, plusJ(m, 6)).filter((x) => !x.sem).map(vu), A = auj();
+      const N = semaine(), m = lundi(N), E = els(m, plusJ(m, 6)).filter((x) => !x.sem).map(vu), A = auj();
       let h = '<div class="cal-h"><div class="cal-h-t"><span class="cal-h-l"></span><div class="cal-p">';
       for (let t = H0; t <= H1; t += 2) h += `<span style="left:${pc(t * 60)}%">${t}</span>`;
       h += '</div></div>';
@@ -540,18 +716,18 @@
           p += puce(V, x, 'h', { pos: `left:${g}%;width:${w}%;top:${top}px`, etroit, ab: [b.a, b.b], bords });
         });
         p += '</div>';
-        h += `<div class="cal-h-r${d === A ? ' auj' : ''}"><div class="cal-h-l">${JOURS[i]}<b>${parse(d).getDate()}</b></div>${p}</div>`;
+        h += `<div class="cal-h-r${d === A ? ' auj' : ''}${jc(d)}"><div class="cal-h-l">${JOURS[i]}<b>${parse(d).getDate()}</b></div>${p}</div>`;
       }
       return h + '</div>';
     }
     function vMois() {
       const mo = V.o.mois || auj().slice(0, 7), [y, mm] = mo.split('-').map(Number), d1 = iso(new Date(y, mm - 1, 1)), dn = iso(new Date(y, mm, 0));
-      const g0 = lundi(wkDe(d1)), g1 = plusJ(lundi(wkDe(dn)), 6), E = C.elements(g0, g1).filter((x) => !x.sem), A = auj();
+      const g0 = lundi(wkDe(d1)), g1 = plusJ(lundi(wkDe(dn)), 6), E = els(g0, g1).filter((x) => !x.sem), A = auj();
       let h = '<div class="cal-m"><span></span>' + JOURS.map((j) => `<span class="cal-m-t">${j}</span>`).join('');
       for (let d = g0; d <= g1; d = plusJ(d, 1)) {
         const i = jIdx(d); if (i === 0) h += `<button type="button" class="cal-m-s" data-cal-semaine="${wkDe(d)}" title="Ouvrir la semaine">S${wkNum(wkDe(d))}</button>`;
         const L = E.filter((x) => x.jour === d).sort(parOrdre), max = 4;
-        h += `<div class="cal-m-j${d.slice(0, 7) !== mo ? ' hors' : ''}${d === A ? ' auj' : ''}${i > 4 ? ' we' : ''}" data-cal-depot data-mois data-jour="${d}"><span class="n">${parse(d).getDate()}</span>${L.slice(0, L.length > max ? max - 1 : max).map((x) => puce(V, x, 'm')).join('')}${L.length > max ? `<span class="plus">+${L.length - max + 1}</span>` : ''}</div>`;
+        h += `<div class="cal-m-j${d.slice(0, 7) !== mo ? ' hors' : ''}${d === A ? ' auj' : ''}${i > 4 ? ' we' : ''}${jc(d)}" data-cal-depot data-mois data-jour="${d}"><span class="n">${parse(d).getDate()}</span>${L.slice(0, L.length > max ? max - 1 : max).map((x) => puce(V, x, 'm')).join('')}${L.length > max ? `<span class="plus">+${L.length - max + 1}</span>` : ''}</div>`;
       }
       return h + '</div>';
     }
@@ -629,6 +805,7 @@
     function clic(e) {
       if (AVALE) { e.stopPropagation(); e.preventDefault(); return; }
       const t = e.target.closest('[data-cal-k]'); if (t && root.contains(t)) { const x = V.map.get(t.dataset.calK); if (x && V.o.ouvrir) V.o.ouvrir(x); return; }
+      const cv = e.target.closest('[data-cal-vue]'); if (cv && root.contains(cv)) { if (cv.dataset.calVue !== V.o.vue) { regler({ vue: cv.dataset.calVue }); if (V.o.surVue) V.o.surVue(cv.dataset.calVue); } return; }
       const s = e.target.closest('[data-cal-semaine]'); if (s && V.o.semaineChoisie) { V.o.semaineChoisie(s.dataset.calSemaine); return; }
       const r = e.target.closest('[data-cal-depot]'); if (!r || !root.contains(r) || !V.o.vide || r.dataset.sem) return;
       if (e.target.closest('summary,details')) return;

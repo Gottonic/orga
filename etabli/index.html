@@ -923,6 +923,7 @@ body{background:var(--page);letter-spacing:.005em;-webkit-font-smoothing:antiali
 <script src="../commun/dossier.js"></script>
 <script src="../commun/pictos.js"></script>
 <script src="../commun/annuler.js"></script>
+<script src="../commun/calendrier.js"></script>
 <script>
 (function(){
 const MAXN=3, MAXS=2, MAXW=3, MAXT=5, URG=21, KEY='etabli-maquette-v4';
@@ -1134,7 +1135,7 @@ const ui={view:'planning',wk:CUR,filter:'ouverts',sort:'prio',tag:null,tagSel:[]
 try{const h=(location.hash||'').slice(1); if(VIEWS.includes(h)) ui.view=h;}catch(e){}
 
 const $view=document.getElementById('view');
-function render(){ recolor();
+function render(){ recolor(); if(ui.view!=='planning'&&PLV){ PLV.detruire(); PLV=null; if(CALE) CALE.fermerFiche(); }
   const c=inWeek(CUR);
   document.getElementById('sub').textContent='S'+wkNum(CUR);
   document.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.view===ui.view) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); });
@@ -1338,7 +1339,7 @@ async function calsSheet(){ sheetId=null; ctx=null;
   </div>`,'cals');
   calMsg='';
 }
-async function calsRelire(){ try{ const {data,error}=await sb.from('locus_calendriers').select('id,nom,couleur').order('cree'); if(error) throw error; CALS=data||[]; }catch(e){ calMsg='Agendas illisibles : '+String(e&&e.message||e); }
+async function calsRelire(){ if(CALE&&ui.wkShown){ const m=iso(wkMon(ui.wkShown)); CALE.chargerProton(m,iso(new Date(parse(m).getTime()+6*864e5))); } try{ const {data,error}=await sb.from('locus_calendriers').select('id,nom,couleur').order('cree'); if(error) throw error; CALS=data||[]; }catch(e){ calMsg='Agendas illisibles : '+String(e&&e.message||e); }
   EV_LE={}; if(ui.wkShown) evCharger(ui.wkShown,true); }
 async function calMaj(id,champs){ try{ const {error}=await sb.from('locus_calendriers').update(champs).eq('id',id); if(error) throw error; const c=CALS.find(x=>x.id===id); if(c) Object.assign(c,champs);
     try{ localStorage.setItem(evK(),JSON.stringify({w:EVS||{},cals:CALS})); }catch(e){} }catch(e){ calMsg='Pas enregistré : '+String(e&&e.message||e); } }
@@ -1351,48 +1352,49 @@ function demiInfo(d){ const k=wkKey(parse(d)), w=parse(d).getDay(), we=w===0||w=
   const ps=[[],[]]; open().filter(p=>!isMini(p)).forEach(p=>{ if(p.weeks.includes(k)&&!we){ ps[0].push(p); ps[1].push(p); return; } if(p.days.includes(d)){ const [m,a]=demisP(p,d); if(m) ps[0].push(p); if(a) ps[1].push(p); } });
   [0,1].forEach(h=>ps[h].sort(prioSort)); return {es,ps,we}; }
 const evTri=L=>L.slice().sort((a,b)=>(b.journee-a.journee)||String(a.debut).localeCompare(String(b.debut)));
+/* Planning (27.11) : le Calendrier commun (commun/calendrier.js), le même que le numéro de semaine de l'accueil et la routine du lundi.
+   Vue simple (matin / après-midi), en heures ou mois, au choix (gardé comme sur la page du calendrier). Les projets s'y placent
+   en glissant ; un projet touché ouvre sa fiche ; congés hachurés. Les projets passent par un petit adaptateur (PBE) qui écrit
+   dans S.projects puis save() : la synchro et Annuler de l'Établi suivent. */
+let CALE=null, PLV=null, PL_LE={};
+const PBE={ liste:()=>S.projects.filter(p=>!isMini(p)), get:id=>{ const p=P(id); return p?JSON.parse(JSON.stringify(p)):null; }, domaines:()=>S.domains||[],
+  ecrire:p=>{ const i=S.projects.findIndex(x=>x.id===p.id); if(i<0) return; S.projects[i]=p; save(); if(ui.view!=='planning') render(); },
+  tirer:()=>pull().catch(()=>false), surChangement:()=>{} };
+function calE(){ if(CALE||!window.Calendrier||!UID) return CALE;
+  CALE=Calendrier.creer({sb,uid:UID,PB:PBE,url:SB_URL,cle:SB_KEY,toast,base:'../',ouvrirProjet:id=>detail(id)});
+  CALE.surChangement(()=>{ if(PLV&&document.getElementById('pl-cal')) PLV.dessiner(); });
+  return CALE; }
+const VUES_PL=['simple','heures','mois'];
+function vuePl(){ try{ const v=localStorage.getItem('locus-cal-vue-'+UID); if(VUES_PL.includes(v)) return v; }catch(e){} const pr=window.LocusProfil?LocusProfil.lire(UID):null; return pr&&VUES_PL.includes(pr.cal)?pr.cal:'simple'; }
+function vueSemPl(){ try{ const v=localStorage.getItem('locus-cal-vuesem-'+UID); if(v==='simple'||v==='heures') return v; }catch(e){} return 'simple'; }
+function garderVuePl(v){ try{ localStorage.setItem('locus-cal-vue-'+UID,v); if(v!=='mois') localStorage.setItem('locus-cal-vuesem-'+UID,v); }catch(e){} }
 function vPlanning(){
-  const mode=planMode(), tgt=ui.planStart||todayS;
-  const seg=`<div class="seg plseg"><button data-act="plMode" data-m="sem" aria-pressed="${mode==='sem'}">Semaine</button><button data-act="plMode" data-m="mois" aria-pressed="${mode==='mois'}">Mois</button></div>`;
-  if(mode==='mois') return vMois(seg,tgt);
-  const m0=monday(parse(tgt)), k=wkKey(m0); ui.wkShown=k;
-  const pw=new Date(m0), nw=new Date(m0); pw.setDate(pw.getDate()-7); nw.setDate(nw.getDate()+7); const fin=new Date(m0); fin.setDate(fin.getDate()+6);
-  evLocal(); hCharger(k); evCharger(k);
-  const c=inWeek(k), isCur=k===CUR; EVW=evTri(EVS[k]||[]);
-  const evBtn=(e,d)=>{ const i=EVW.indexOf(e), h=e.journee?'':(String(e.debut).slice(0,10)===d?String(e.debut).slice(11,16):''); return `<button class="aev" style="--ec:${coulCal(e.cal)}" data-act="ev" data-i="${i}">${h?`<i>${h}</i>`:''}<span>${esc(e.titre||'(sans titre)')}</span>${e.note?'<em class="evn" aria-label="avec remarques">✎</em>':''}</button>`; };
-  const rows=[0,1,2,3,4,5,6].map(j=>{ const d=new Date(m0); d.setDate(m0.getDate()+j); const ds=iso(d), inf=demiInfo(ds);
-    return `<div class="aday${inf.we?' we':''}${offOn(ds)?' off':''}"><div class="adl${ds===todayS?' tod':''}">${JR[j]}<b>${d.getDate()}</b></div>${[0,1].map(h=>{ const es=inf.es[h], ps=inf.ps[h], i=j*2+h;
-      return `<div class="ahalf${es.length?' busy':''}${ds===todayS?' tod':''}"${es.length?` style="--hc:${coulCal(es[0].cal)}"`:''} data-act="cell" data-d="${ds}" data-i="${i}">${es.map(e=>evBtn(e,ds)).join('')}${ps.map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}" data-i="${i}">${ui.chipX&&ui.chipX.id===p.id&&ui.chipX.i===i?`<span class="aplx" data-act="halfDel" data-id="${p.id}" data-i="${i}" role="button" aria-label="Enlever">✕</span>`:''}<span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!es.length&&!ps.length?`<span class="alibre">libre · +</span>`:''}</div>`; }).join('')}</div>`; }).join('');
-  $view.innerHTML=`${seg}<div class="gnav"><button data-act="planM" data-d="${iso(pw)}" aria-label="Semaine précédente">‹ S${wkNum(wkKey(pw))}</button><button class="mid" data-act="planM" data-d="">${isCur?'Cette semaine':'Aujourd\'hui'}</button><button data-act="planM" data-d="${iso(nw)}" aria-label="Semaine suivante">S${wkNum(wkKey(nw))} ›</button></div>
-  <div class="aweek" id="gantt">
-   <button class="wk wkh${isCur?' cur':''}" data-act="wkPick" data-k="${k}"><b>S${wkNum(k)}</b><span>${fmtD(m0)} – ${fmtD(fin)}</span><span class="${c.all.length>=MAXT?'full':''}">${c.all.length}/${MAXT} projets</span></button>
-   <div class="ahead"><span></span><span>matin</span><span>après-midi</span></div>
-   ${rows}
-  </div>
-  ${planBas()}`;
+  const C=calE(), vue=vuePl(), tgt=ui.planStart||todayS;
+  if(PLV){ PLV.detruire(); PLV=null; }
+  let nav, de, a, k, mois=tgt.slice(0,7);
+  if(vue==='mois'){ const t=parse(tgt), m1=new Date(t.getFullYear(),t.getMonth(),1), pm=new Date(m1.getFullYear(),m1.getMonth()-1,1), nm=new Date(m1.getFullYear(),m1.getMonth()+1,1), mEnd=new Date(m1.getFullYear(),m1.getMonth()+1,0);
+    k=wkKey(m1); de=iso(monday(m1)); const fin=monday(mEnd); fin.setDate(fin.getDate()+6); a=iso(fin);
+    const L=x=>MOIS_L[x.getMonth()]+(x.getFullYear()!==today.getFullYear()?' '+x.getFullYear():'');
+    nav=`<div class="gnav"><button data-act="planM" data-d="${iso(pm)}" aria-label="Mois précédent">‹ ${MOIS[pm.getMonth()]}</button><button class="mid" data-act="planM" data-d="">${L(m1)}</button><button data-act="planM" data-d="${iso(nm)}" aria-label="Mois suivant">${MOIS[nm.getMonth()]} ›</button></div>`; }
+  else { const m0=monday(parse(tgt)); k=wkKey(m0); const pw=new Date(m0), nw=new Date(m0); pw.setDate(pw.getDate()-7); nw.setDate(nw.getDate()+7); const fin=new Date(m0); fin.setDate(fin.getDate()+6); de=iso(m0); a=iso(fin);
+    const c=inWeek(k), isCur=k===CUR;
+    nav=`<div class="gnav"><button data-act="planM" data-d="${iso(pw)}" aria-label="Semaine précédente">‹ S${wkNum(wkKey(pw))}</button><button class="mid" data-act="planM" data-d="">${isCur?'Cette semaine':'Aujourd\'hui'}</button><button data-act="planM" data-d="${iso(nw)}" aria-label="Semaine suivante">S${wkNum(wkKey(nw))} ›</button></div>
+     <p class="note" style="margin:0 0 8px">S${wkNum(k)} · ${fmtD(m0)} – ${fmtD(fin)} · <span class="${c.all.length>=MAXT?'full':''}">${c.all.length}/${MAXT} projets</span>, dont ${c.n.length}/${MAXW} sur la semaine entière</p>`; }
+  ui.wkShown=k;
+  $view.innerHTML=`${nav}<div id="pl-cal"></div>${planBas()}`;
+  if(!C){ document.getElementById('pl-cal').innerHTML='<p class="note">Calendrier pas encore prêt.</p>'; return; }
+  PLV=C.monter(document.getElementById('pl-cal'),{vue,semaine:k,mois,placer:'p',trayReplie:true,choixVue:VUES_PL,
+    surVue:v=>{ garderVuePl(v); render(); },
+    ouvrir:x=>{ if(x.src==='p') detail(x.id); else C.fiche(x,{semaine:k}); },
+    vide:q=>{ if(q.mois){ garderVuePl(vueSemPl()); ui.planStart=q.jour; render(); window.scrollTo(0,0); return; } C.nouveau(q); },
+    semaineChoisie:wk=>{ garderVuePl(vueSemPl()); ui.planStart=iso(wkMon(wk)); render(); window.scrollTo(0,0); },
+    jourClasse:d=>offOn(d)?'off':''});
+  const cle=de+'|'+a; if(!PL_LE[cle]||Date.now()-PL_LE[cle]>60000){ PL_LE[cle]=Date.now(); C.charger(de,a); }
 }
-function planBas(){ return `<div class="planlegend">${CALS.length?CALS.map(x=>`<span><b style="background:${coulCal(x.id)}"></b>${esc(x.nom)}</span>`).join(''):''}<span><b class="lg-busy"></b>pris dans un agenda</span><span><b style="background:var(--jour-off-2)"></b>congés</span></div>
-  <p class="note">Touche une demi-journée pour y placer un projet, ou glisse sur plusieurs (au doigt : appuie longuement d'abord). Le numéro de semaine place sur toute la semaine. Glisse un projet vers une autre demi-journée pour le déplacer (au doigt : appuie longuement d'abord) ; appui long sans bouger : une croix pour l'enlever de là.</p>
-  <div class="dacts"><button class="btn ghost" data-act="cals">${pic('journal')} Agendas${CALS.length?' ('+CALS.length+')':''}</button><button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés${S.offs.length?' ('+S.offs.length+')':''}</button></div>`; }
-function vMois(seg,tgt){
-  const t=parse(tgt), m1=new Date(t.getFullYear(),t.getMonth(),1), mEnd=new Date(t.getFullYear(),t.getMonth()+1,0), g0=monday(m1);
-  const ks=[]; for(let d=new Date(g0); d<=mEnd||ks.length<5; d.setDate(d.getDate()+7)){ ks.push(wkKey(d)); if(ks.length>=6) break; }
-  evLocal(); hChargerPlage(ks); evChargerPlage(ks);
-  const pm=new Date(m1.getFullYear(),m1.getMonth()-1,1), nm=new Date(m1.getFullYear(),m1.getMonth()+1,1);
-  const sel=ui.moisSel&&ui.moisSel.slice(0,7)===iso(m1).slice(0,7)?ui.moisSel:(todayS.slice(0,7)===iso(m1).slice(0,7)?todayS:iso(m1));
-  let cells=''; for(let i=0;i<ks.length*7;i++){ const d=new Date(g0); d.setDate(g0.getDate()+i); const ds=iso(d), inf=demiInfo(ds), out=d.getMonth()!==m1.getMonth();
-    const band=h=>{ const ps=inf.ps[h]; if(ps.length) return `<span class="mh2" style="background:${ps[0].color};color:${ink(ps[0].color)}">${ps[0].emoji}${ps.length>1?`<small>+${ps.length-1}</small>`:''}</span>`; return `<span class="mh2${inf.es[h].length?' busy':''}"${inf.es[h].length?` style="--hc:${coulCal(inf.es[h][0].cal)}"`:''}></span>`; };
-    cells+=`<button class="mday${out?' out':''}${inf.we?' we':''}${offOn(ds)?' off':''}${ds===todayS?' tod':''}" data-act="moisJ" data-d="${ds}" aria-pressed="${ds===sel}"><b>${d.getDate()}</b>${band(0)}${band(1)}</button>`; }
-  const inf=demiInfo(sel), k=wkKey(parse(sel)); EVW=evTri(EVS[k]||[]); ui.wkShown=k;
-  const i0=((parse(sel).getDay()+6)%7)*2;
-  const det=[0,1].map(h=>`<div class="mrw"><span class="lbl">${h?'Après-midi':'Matin'}</span><div class="mlist2">${inf.es[h].map(e=>`<button class="aev" style="--ec:${coulCal(e.cal)}" data-act="ev" data-i="${EVW.indexOf(e)}">${e.journee?'':`<i>${String(e.debut).slice(0,10)===sel?String(e.debut).slice(11,16):''}</i>`}<span>${esc(e.titre||'(sans titre)')}</span></button>`).join('')}${inf.ps[h].map(p=>`<button class="achip" style="${pv(p)}" data-act="open" data-id="${p.id}"><span class="ae">${p.emoji}</span><span>${esc(p.name)}</span></button>`).join('')}${!inf.es[h].length&&!inf.ps[h].length?'<span class="alibre">libre</span>':''}<button class="linkbtn" data-act="moisPl" data-k="${k}" data-a="${i0+h}" data-b="${i0+h}">+ Placer</button></div></div>`).join('');
-  const L=x=>MOIS_L[x.getMonth()]+(x.getFullYear()!==today.getFullYear()?' '+x.getFullYear():'');
-  $view.innerHTML=`${seg}<div class="gnav"><button data-act="planM" data-d="${iso(pm)}" aria-label="Mois précédent">‹ ${MOIS[pm.getMonth()]}</button><button class="mid" data-act="planM" data-d="">${L(m1)}</button><button data-act="planM" data-d="${iso(nm)}" aria-label="Mois suivant">${MOIS[nm.getMonth()]} ›</button></div>
-  <div class="mois"><div class="mgrid2">${JR.map(x=>`<span class="mhd">${x}</span>`).join('')}${cells}</div></div>
-  <div class="mdet2"><div class="mdh"><b>${dayLbl(sel)} ${MOIS_L[parse(sel).getMonth()]}</b><button class="linkbtn" data-act="moisSem" data-d="${sel}">Voir la semaine ›</button></div>${det}
-   <button class="btn ghost" data-act="moisPl" data-k="${k}" data-a="${i0}" data-b="${i0+1}">Placer un projet sur la journée</button></div>
-  ${planBas()}`;
-}
+function planBas(){ const cals=(CALE&&(CALE.etat().proton||{}).cals)||CALS||[];
+  return `<div class="planlegend">${cals.map(x=>`<span><b style="background:${CALE?CALE.coulCal(x.id):coulCal(x.id)}"></b>${esc(x.nom)}</span>`).join('')}<span><b style="background:var(--jour-off-2)"></b>congés (hachurés)</span></div>
+  <p class="note">Glisse un projet sur une demi-journée, une heure, le jour lui-même (toute la journée) ou « Semaine » ; sors-le du calendrier pour l'enlever de ce jour. Touche un projet pour ouvrir sa fiche, une case vide pour ajouter un rendez-vous ou placer un projet. Le même calendrier s'ouvre par le numéro de semaine de l'accueil.</p>
+  <div class="dacts"><button class="btn ghost" data-act="cals">${pic('journal')} Agendas${cals.length?' ('+cals.length+')':''}</button><button class="btn ghost" data-act="offs">${pic('conge')} Vacances et congés${S.offs.length?' ('+S.offs.length+')':''}</button></div>`; }
 
 /* Vue projets */
 function needReprise(){ return !S.reprise&&S.projects.some(p=>(p.tags||[]).some(t=>T(t))); }
@@ -2812,7 +2814,7 @@ function addBadges(){ if(!kbdOn()) return;
   document.querySelectorAll('.slots > .slot:not(.free) .band').forEach((b,i)=>put(b,String(i+1)));
   put(document.querySelector('.vrac form.inline'),'5');
   put(document.querySelector('.gnav button:first-child'),'4'); put(document.querySelector('.gnav button:last-child'),'6',true);
-  put($sheet.querySelector('.xbtn'),'0',true);
+  put($sheet.querySelector('.xbtn:not(.annulb)'),'0',true);
 }
 const q=v=>String(v).replace(/["\\]/g,'\\$&');
 function fkey(el){ if(!el||el===document.body||el===document.documentElement) return null;
@@ -2839,7 +2841,7 @@ document.addEventListener('keydown',e=>{
   if(k.startsWith('Arrow')){ e.preventDefault(); move(k==='ArrowDown'||k==='ArrowRight'?1:-1); return; }
   if(k==='Enter'){ if(t.type==='checkbox'){ e.preventDefault(); t.click(); } return; }
   const sheetOpen=!$scrim.hidden;
-  if(k==='0'||k==='Escape'){ e.preventDefault(); if(sheetOpen){ const b=$sheet.querySelector('.xbtn'); b?b.click():closeSheet(); } else if(MINI&&ui.view!=='mini'){ goView('mini'); } return; }
+  if(k==='0'||k==='Escape'){ e.preventDefault(); if(sheetOpen){ const b=$sheet.querySelector('.xbtn:not(.annulb)'); b?b.click():closeSheet(); } else if(MINI&&ui.view!=='mini'){ goView('mini'); } return; }
   if(k==='*'){ e.preventDefault(); summary(); return; }
   if(k==='#'){ e.preventDefault(); ctx=null; newSheet(false); return; }
   if(sheetOpen) return;

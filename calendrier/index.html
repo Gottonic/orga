@@ -35,35 +35,10 @@ main{max-width:860px;margin:0 auto;padding:12px max(12px,env(safe-area-inset-rig
 .aide{font-size:12.5px;color:var(--on-page);opacity:.75;margin:0}
 .fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:18px;border:0;background:var(--accent);color:var(--on-acc);display:grid;place-items:center;cursor:pointer;z-index:20;box-shadow:0 6px 18px color-mix(in srgb,var(--page) 60%,transparent)}
 .fab svg{width:24px;height:24px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
-/* feuille */
-.scrim{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--creux) 72%,transparent);display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
-@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:22px}}
-.shead{display:flex;align-items:flex-start;gap:10px}
-.shead h2{flex:1;margin:0;font:700 17px/1.25 var(--f-display);letter-spacing:-.02em}
-.shead h2 small{display:block;font:500 12.5px/1.3 var(--f-body);color:var(--ink-3);letter-spacing:0;margin-top:3px}
-.xb{border:0;background:var(--surface-2);color:var(--ink);border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
-.champ{display:flex;flex-direction:column;gap:5px}
-.lbl{font:600 10.5px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
-.in{height:42px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);padding:0 12px;font-size:15px;width:100%;min-width:0}
-textarea.in{height:auto;min-height:64px;padding:10px 12px;resize:vertical}
-.rang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.rang .in{flex:1}
-.choix{display:flex;flex-wrap:wrap;gap:6px}
-.choix button,.choix label{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:99px;padding:6px 12px;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.choix button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
-.choix .pt{width:10px;height:10px;border-radius:4px;background:var(--c)}
-.coche{display:flex;gap:10px;align-items:center;font-size:15px;cursor:pointer}
-.coche input{width:20px;height:20px;accent-color:var(--accent)}
-.pied{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
-.btn{border:0;border-radius:99px;padding:10px 18px;font-weight:600;font-size:14.5px;cursor:pointer;background:var(--surface-2);color:var(--ink);text-decoration:none;text-align:center}
-.btn.pri{background:var(--accent);color:var(--on-acc)}
-.btn.dang{background:var(--bad-soft);color:var(--bad)}
-.btn.gauche{margin-right:auto}
-.note{font-size:12.5px;color:var(--ink-3);margin:0}
-.info{display:flex;flex-direction:column;gap:2px}
-.info b{font-size:15px}
 /* connexion */
+.login .in{height:42px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);padding:0 12px;font-size:15px;width:100%}
+.login .btn{border:0;border-radius:99px;padding:10px 18px;font-weight:600;font-size:14.5px;cursor:pointer;background:var(--accent);color:var(--on-acc)}
+.login .note{font-size:12.5px;color:var(--ink-3);margin:0}
 .login{position:fixed;inset:0;z-index:70;background:var(--page);display:grid;place-items:center;padding:20px}
 .login form{background:var(--surface);color:var(--ink);border-radius:20px;padding:20px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
 .login h1{margin:0;font:700 20px var(--f-display)}
@@ -84,7 +59,6 @@ textarea.in{height:auto;min-height:64px;padding:10px 12px;resize:vertical}
   <p class="aide" id="aide"></p>
 </main>
 <button class="fab" id="fab" type="button" aria-label="Nouvel événement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-<div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="../commun/supabase.js"></script>
 <script src="../commun/projets.js"></script>
@@ -140,98 +114,9 @@ function afficher(){ entete(); if(V) V.regler({vue:E.vue,semaine:E.sem,mois:E.mo
 function aller(o){ Object.assign(E,o); try{ const u=new URL(location.href); u.searchParams.set('vue',E.vue); if(E.vue==='mois'){ u.searchParams.set('mois',E.mois); u.searchParams.delete('sem'); } else { u.searchParams.set('sem',E.sem); u.searchParams.delete('mois'); } history.replaceState(null,'',u); }catch(e){}
   afficher(); const [a,b]=plage(); C.charger(a,b); }
 
-/* ---------- feuilles ---------- */
-function ouvrirFeuille(h){ $('sheet').innerHTML=h; $('scrim').hidden=false; }
-function fermer(){ $('scrim').hidden=true; $('sheet').innerHTML=''; }
-let posé=null;
-$('scrim').addEventListener('pointerdown',e=>{ posé=e.target; });
-$('scrim').addEventListener('click',e=>{ if(e.target===$('scrim')&&posé===$('scrim')) fermer(); });
-const tete=(t,s)=>`<div class="shead"><h2>${t}${s?`<small>${s}</small>`:''}</h2><button class="xb" type="button" data-r="fermer">Fermer</button></div>`;
-function quandL(x){ const j=x.jour?dateL(x.jour):'toute la semaine '+(x.sem?'S'+K.wkNum(x.sem):'');
-  if(x.debut) return j+' · '+K.hCourt(x.debut)+(x.min?'–'+K.hCourt(K.hhmm(Math.min(1440,K.enMin(x.debut)+x.min))):'');
-  return j+(x.moment?' · '+K.MOMENT_L[x.moment]:x.jour?' · journée':''); }
-/* régler vite le jour et le moment d'un élément placé (au lieu de glisser) */
-function vQuand(x){ const m=x.debut?'heure':x.moment||'jour';
-  return `<div class="champ"><span class="lbl">Quand</span><div class="rang"><input class="in" type="date" id="q-jour" value="${esc(x.jour)}" aria-label="Jour" style="flex:0 1 170px"></div>
-   <div class="choix" id="q-mom">${[['jour','Journée'],['matin','Matin'],['aprem','Après-midi'],['heure','À une heure']].map(([k,l])=>`<button type="button" data-q="${k}" aria-pressed="${m===k}">${l}</button>`).join('')}</div>
-   <div class="rang" id="q-h"${m==='heure'?'':' hidden'}><input class="in" type="time" id="q-heure" value="${esc(x.debut||'09:00')}" step="900" aria-label="Heure" style="flex:0 1 140px"></div></div>`; }
-function lireQuand(){ const k=(document.querySelector('#q-mom [aria-pressed="true"]')||{}).dataset||{}, q={jour:$('q-jour').value};
-  if(k.q==='heure') q.debut=$('q-heure').value||'09:00'; else if(k.q==='matin'||k.q==='aprem') q.moment=k.q; else q.moment=null; return q; }
-let X=null; /* l'élément ouvert */
-function ouvrir(x){ X=x;
-  if(x.src==='e'){ formEv(C.ev(x.id)); return; }
-  if(x.src==='x'){ const e=x.ev||{}, cal=((C.etat().proton||{}).cals||[]).find(c=>c.id===e.cal);
-    ouvrirFeuille(tete(esc(x.titre),esc(cal?cal.nom:'Proton'))+`<div class="info"><b>${esc(quandL(x))}</b>${e.lieu?`<span class="note">${esc(e.lieu)}</span>`:''}</div>${e.note?`<p class="note" style="white-space:pre-wrap">${esc(e.note)}</p>`:''}<p class="note">Ce rendez-vous vient de Proton : il se change là-bas, puis « Actualiser ».</p><div class="pied"><a class="btn pri" href="https://calendar.proton.me/" target="_blank" rel="noopener">Ouvrir Proton Calendar</a></div>`); return; }
-  if(x.src==='d'){ ouvrirFeuille(tete(esc(x.titre),x.ech==='projet'?'Échéance du projet':'Échéance · '+esc(x.de||''))+`<div class="info"><b>${esc(dateL(x.jour))}</b></div><p class="note">Une échéance se change dans l’Établi (la date de la tâche ou du projet).</p><div class="pied"><a class="btn pri" href="../etabli/#${x.dom?'d':'p'}:${encodeURIComponent(x.id)}">Ouvrir dans l’Établi</a></div>`); return; }
-  const nom={p:'Projet',f:'Séance de la Forge',t:'Tâche'}[x.src];
-  let h=tete(esc(x.titre),nom+(x.tray?' · pas encore placé':' · '+esc(quandL(x))));
-  if(x.src==='t'){ const n=C.tache(x.id)||{}; h+=`<label class="coche"><input type="checkbox" id="t-fait" ${n.x?'checked':''}> Faite</label>`; }
-  if(x.sem) h+=`<p class="note">Placé sur toute la semaine. Glisse-le sur un jour pour le mettre sur une demi-journée ou une heure.</p>`;
-  else h+=vQuand(x.tray?Object.assign({},x,{jour:x.semaine?lundi(x.semaine):(E.vue==='mois'?AUJ():lundi(E.sem))}):x);
-  if(x.src==='f') h+=`<p class="note">Une séance reste dans sa semaine (S${K.wkNum(x.semaine)}).</p>`;
-  const lien=x.src==='p'?`<a class="btn" href="../etabli/#p:${encodeURIComponent(x.id)}">Ouvrir la fiche</a>`:x.src==='f'?`<a class="btn" href="../forge/">Ouvrir la Forge</a>`:'';
-  h+=`<div class="pied">${x.tray?'':`<button class="btn dang gauche" type="button" data-r="oter">${x.sem?'Enlever de la semaine':'Enlever de ce jour'}</button>`}${lien}${x.sem?'':`<button class="btn pri" type="button" data-r="qOk">${x.tray?'Placer':'Enregistrer'}</button>`}</div>`;
-  ouvrirFeuille(h); }
-
-/* ---------- un événement : nouveau ou à modifier ---------- */
-let R=null;
-function formEv(r,ctx){ ctx=ctx||{};
-  const jour=ctx.jour||(E.vue==='mois'?AUJ():(AUJ()>=lundi(E.sem)&&AUJ()<=K.plusJ(lundi(E.sem),6)?AUJ():lundi(E.sem)));
-  R=r?Object.assign({},r):{type:'rdv',titre:'',jour,moment:ctx.moment||null,debut:ctx.debut||null,duree_min:60,options:{}};
-  const o=R.options||{}, m=R.debut?'heure':R.moment||(r?'jour':ctx.debut?'heure':ctx.moment||'heure');
-  const projets=PB?PB.liste().filter(p=>!p.closed&&p.size!=='perm').sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr')):[];
-  const durees=[15,30,45,60,90,120,180,240,300,360,480];
-  ouvrirFeuille(tete(r?'Modifier':'Nouveau',r?esc(K.TYPE_N[r.type]||''):'dans le calendrier')
-   +`<div class="choix" id="e-type" role="group" aria-label="Type">${K.TYPES.filter(([k])=>r?!['projet','tache'].includes(k)||k===R.type:true).map(([k,l,c])=>`<button type="button" data-type="${k}" aria-pressed="${R.type===k}" style="--c:${c}"><i class="pt"></i>${l}</button>`).join('')}</div>`
-   +`<div class="champ" id="e-projet-c" hidden><span class="lbl">Projet</span><select class="in" id="e-projet"><option value="">— un bloc libre (titre ci-dessous)</option>${projets.map(p=>`<option value="${esc(p.id)}">${esc(((p.emoji||'')+' '+p.name).trim())}</option>`).join('')}</select><span class="note" id="e-projet-n">Un projet de l’Établi se place comme dans la routine (son jour, sa demi-journée ou son heure).</span></div>`
-   +`<div class="champ" id="e-titre-c"><span class="lbl">Titre</span><input class="in" id="e-titre" value="${esc(R.titre||'')}" placeholder="Dentiste, cours de parkour…" autocomplete="off" enterkeyhint="done"></div>`
-   +`<div class="champ"><span class="lbl">Jour</span><div class="rang"><input class="in" type="date" id="e-jour" value="${esc(R.jour)}" style="flex:0 1 170px"><label class="coche" style="font-size:13.5px"><input type="checkbox" id="e-plus" ${R.jusqu_au?'checked':''}> plusieurs jours</label></div>
-     <div class="rang" id="e-jusqu-c"${R.jusqu_au?'':' hidden'}><span class="note">jusqu’au</span><input class="in" type="date" id="e-jusqu" value="${esc(R.jusqu_au||R.jour)}" style="flex:0 1 170px"></div></div>`
-   +`<div class="champ" id="e-quand-c"><span class="lbl">Quand</span><div class="choix" id="q-mom">${[['jour','Journée'],['matin','Matin'],['aprem','Après-midi'],['heure','À une heure']].map(([k,l])=>`<button type="button" data-q="${k}" aria-pressed="${m===k}">${l}</button>`).join('')}</div>
-     <div class="rang" id="q-h"${m==='heure'?'':' hidden'}><input class="in" type="time" id="q-heure" value="${esc(R.debut||ctx.debut||'09:00')}" step="900" aria-label="Heure" style="flex:0 1 130px"><select class="in" id="e-duree" aria-label="Durée" style="flex:0 1 130px">${durees.map(d=>`<option value="${d}"${(R.duree_min||60)===d?' selected':''}>${K.fmtMin(d)}</option>`).join('')}</select></div></div>`
-   +`<div class="champ" id="e-lieu-c"><span class="lbl">Lieu</span><input class="in" id="e-lieu" value="${esc(R.lieu||'')}" autocomplete="off"></div>`
-   +`<details id="e-opt"${o.declare||o.trajet_min||o.prepa_min?' open':''}><summary class="lbl" style="cursor:pointer">Options</summary><div class="champ" style="margin-top:8px">
-      <label class="coche" id="e-decl-c"><input type="checkbox" id="e-decl" ${o.declare?'checked':''}> Déclaré (gain intermédiaire)</label>
-      <div class="rang"><span class="note" style="width:92px">Trajet</span><input class="in" type="number" min="0" step="5" id="e-trajet" value="${o.trajet_min||''}" placeholder="0" style="flex:0 1 90px"><span class="note">min (avant et après)</span></div>
-      <div class="rang"><span class="note" style="width:92px">Préparation</span><input class="in" type="number" min="0" step="5" id="e-prepa" value="${o.prepa_min||''}" placeholder="0" style="flex:0 1 90px"><span class="note">min (avant)</span></div></div></details>`
-   +`<div class="champ" id="e-note-c"><span class="lbl">Note</span><textarea class="in" id="e-note" rows="2">${esc(R.note||'')}</textarea></div>`
-   +`<div class="pied">${r?'<button class="btn dang gauche" type="button" data-r="evSuppr">Supprimer</button>':''}<button class="btn" type="button" data-r="fermer">Annuler</button><button class="btn pri" type="button" data-r="evOk">Enregistrer</button></div>`);
-  majForm(); if(!r) setTimeout(()=>{ const t=$('e-titre'); if(t) t.focus(); },60); }
-function majForm(){ const ty=R.type, pj=ty==='projet'&&$('e-projet').value, ta=ty==='tache'&&!R.id;
-  $('e-projet-c').hidden=ty!=='projet'||!!R.id; $('e-titre-c').hidden=!!pj; $('e-decl-c').hidden=ty!=='job';
-  $('e-lieu-c').hidden=!!pj||ta; $('e-opt').hidden=!!pj||ta; $('e-note-c').hidden=!!pj||ta; $('e-plus').parentElement.hidden=!!pj||ta; if(pj||ta){ $('e-plus').checked=false; $('e-jusqu-c').hidden=true; }
-  $('e-duree').hidden=!!pj||ta; }
-async function evOk(){ const t=$('e-titre').value.trim(), jour=$('e-jour').value, k=(document.querySelector('#q-mom [aria-pressed="true"]')||{}).dataset||{};
-  if(!jour){ toast('Choisis un jour'); return; }
-  const q={moment:k.q==='matin'||k.q==='aprem'?k.q:null, debut:k.q==='heure'?($('q-heure').value||'09:00'):null};
-  const pj=R.type==='projet'&&!R.id&&$('e-projet').value;
-  if(pj){ const x=C.elProjet(pj); fermer(); if(x) await C.poser(x,Object.assign({jour},q)); return; }
-  if(!t){ toast('Il faut un titre'); $('e-titre').focus(); return; }
-  if(R.type==='tache'&&!R.id){ fermer(); await C.nouvelleTache(t,jour,q); toast('Tâche ajoutée'); return; }
-  const plus=$('e-plus').checked&&!q.debut&&!q.moment?$('e-jusqu').value:($('e-plus').checked?$('e-jusqu').value:null);
-  const n=v=>{ const x=Math.max(0,Math.round(+v||0)); return x||undefined; };
-  const opt=Object.assign({},R.options||{},{declare:R.type==='job'&&$('e-decl').checked?true:undefined,trajet_min:n($('e-trajet').value),prepa_min:n($('e-prepa').value)});
-  Object.keys(opt).forEach(x=>{ if(opt[x]===undefined) delete opt[x]; });
-  const r=Object.assign({},R,{titre:t,jour,jusqu_au:plus&&plus>jour?plus:null,moment:q.moment,debut:q.debut,duree_min:q.debut?+$('e-duree').value:(R.duree_min||null),lieu:$('e-lieu').value.trim()||null,note:$('e-note').value.trim()||null,options:opt});
-  fermer(); const id=await C.enregistrerEv(r); if(id) toast(R.id?'Modifié':'Ajouté'); }
-
-$('sheet').addEventListener('click',async e=>{ const b=e.target.closest('button'); if(!b) return;
-  if(b.dataset.type){ R.type=b.dataset.type; b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); majForm(); return; }
-  if(b.dataset.q){ b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); $('q-h').hidden=b.dataset.q!=='heure'; return; }
-  const r=b.dataset.r; if(!r) return;
-  if(r==='fermer'){ fermer(); return; }
-  if(r==='evOk'){ evOk(); return; }
-  if(r==='evSuppr'){ if(!b.dataset.sur){ b.dataset.sur='1'; b.textContent='Supprimer ?'; setTimeout(()=>{ if(b.isConnected){ delete b.dataset.sur; b.textContent='Supprimer'; } },4000); return; }
-    fermer(); if(await C.supprimerEv(R.id)) toast('Supprimé'); return; }
-  if(r==='oter'){ const x=X; fermer(); if(await C.oter(x)) toast('Enlevé'); return; }
-  if(r==='qOk'){ const x=X, q=lireQuand(); if(!q.jour){ toast('Choisis un jour'); return; } fermer(); await C.poser(x,q); return; }
-});
-$('sheet').addEventListener('change',e=>{ const el=e.target;
-  if(el.id==='t-fait'&&X){ C.cocherTache(X.id,el.checked); return; }
-  if(el.id==='e-plus'){ $('e-jusqu-c').hidden=!el.checked; if(el.checked&&$('e-jusqu').value<$('e-jour').value) $('e-jusqu').value=$('e-jour').value; return; }
-  if(el.id==='e-projet'){ majForm(); return; } });
-$('sheet').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='e-titre'){ e.preventDefault(); evOk(); } });
-addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('scrim').hidden) fermer(); });
+/* ---------- les fiches : dans commun/calendrier.js (C.fiche, C.nouveau), les mêmes que dans la routine et l'Établi ---------- */
+const ouvrir=x=>C.fiche(x,{semaine:E.sem});
+const formEv=(r,q)=>C.nouveau(q||{jour:E.vue==='mois'?AUJ():(AUJ()>=lundi(E.sem)&&AUJ()<=K.plusJ(lundi(E.sem),6)?AUJ():lundi(E.sem))});
 
 /* ---------- barre ---------- */
 document.querySelector('.seg').addEventListener('click',e=>{ const b=e.target.closest('[data-vue]'); if(!b||b.dataset.vue===E.vue) return; const v=b.dataset.vue;
@@ -249,7 +134,7 @@ document.addEventListener('click',e=>{ const a=e.target.closest('a[href^="../"]'
 /* ---------- démarrage ---------- */
 async function entrer(user){
   UID=user.id; $('login').hidden=true; PB=Projets.base(sb,UID);
-  C=Calendrier.creer({sb,uid:UID,PB,url:SB_URL,cle:SB_KEY,toast});
+  C=Calendrier.creer({sb,uid:UID,PB,url:SB_URL,cle:SB_KEY,toast,base:'../',lienCible:DANS?'_top':''});
   if(window.LocusProfil) await LocusProfil.tirer(sb,UID).catch(()=>{});
   E.vue=VUES.includes(Q.get('vue'))?Q.get('vue'):vueGardee();
   if(/^\d{4}-W\d\d$/.test(Q.get('sem')||'')) E.sem=Q.get('sem');
