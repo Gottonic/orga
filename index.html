@@ -334,7 +334,7 @@ const fmtMin=m=>m>=60?Math.floor(m/60)+' h'+(m%60?' '+pad(m%60):''):m+' min';
 function chronoTxt(){ if(!CHRONO||!CHRONO.debut) return ''; const m=Math.max(0,Math.floor((Date.now()-new Date(CHRONO.debut))/60000)); return Math.floor(m/60)+':'+pad(m%60); }
 
 /* domaines épinglés sur l'accueil (case « Épingler sur l'accueil » de la vue d'un domaine dans l'Établi, 27.11) */
-function epingles(){ return PB?PB.domaines().filter(d=>d&&d.epingle&&!d.closed).sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr')):[]; }
+function epingles(){ return PB?PB.domaines().filter(d=>d&&d.epingle&&!d.closed).sort((a,b)=>(a.epO||1e9)-(b.epO||1e9)||String(a.name).localeCompare(String(b.name),'fr')):[]; } /* ordre choisi dans l'Établi (d.epO), sinon par nom */
 function tuileDom(d){ return `<article class="carre dom" data-lieu="etabli" style="--dc:${esc(d.color||'#8A8F98')}"><a href="etabli/#d:${esc(d.id)}" data-dans="etabli" data-hash="d:${esc(d.id)}"><span class="plaque" aria-hidden="true">${esc(d.emoji||'📁')}</span><span class="nom">${esc(d.name)}</span></a></article>`; }
 /* Priorités (module de Mon Locus, 27.11) : l'étape n°1 de chaque projet en cours, ou les échéances par date (Projets.priorites,
    même calcul que l'écran Priorités de l'Établi ; la bascule est partagée avec lui : « etabli-prio ») */
@@ -1057,7 +1057,7 @@ async function domainesNeutre(lu){ const p=prof(); if(!lu||!p||p.style!=='neutre
   const ds=PB.domaines(), nomL=x=>String(x||'').trim().toLowerCase(), t=Date.now();
   [['Pro','pro','💼','#2F7F86'],['Perso','perso','🏡','#D9799A']].forEach(([n,nat,em,c],k)=>{ const ex=ds.find(d=>!d.closed&&nomL(d.name)===nomL(n));
     if(ex){ if(!ex.epingle) PB.ecrire(Object.assign({},ex,{epingle:true})); return; }
-    PB.ecrire(Projets.nouveauDomaine({id:'d'+t+k+nat,name:n,nature:nat,emoji:em,color:c,epingle:true})); });
+    PB.ecrire(Projets.nouveauDomaine({id:'d'+t+k+nat,name:n,nature:nat,emoji:em,color:c,epingle:true,epO:k+1})); });
   PROFIL=Object.assign({},p,{domaines0:true}); await LocusProfil.enregistrer(sb,UID,PROFIL); render(); }
 async function entrer(user){
   UID=user.id; reprendre(); PB=Projets.base(sb,UID); try{ AB=window.Achats?Achats.base(sb,UID):null; }catch(e){ AB=null; } PB.surChangement(()=>{ if($plein.hidden) render(); else if($plein.dataset.e) vRoutine(); });

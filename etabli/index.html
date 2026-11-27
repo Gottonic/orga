@@ -625,6 +625,10 @@ details.more .field{margin-top:10px}
 .shead h2{font-size:1.3rem;font-weight:700;flex:1;min-width:0;line-height:1.15}
 .shead h2 small{display:block;font-size:.78rem;font-weight:400;font-family:var(--mono);opacity:.85;margin-top:3px}
 .xbtn{border:1.5px solid currentColor;background:transparent;color:inherit;padding:6px 10px;font-weight:700;font-size:.85rem;flex:none}
+/* ↶ dans l'en-tête des fiches (27.11) : le voile cache l'en-tête de l'app, et au premier plan depuis l'accueil il n'y en a pas */
+.xbtn.annulb{padding:4px 6px;display:grid;place-items:center;border-color:transparent}
+.xbtn.annulb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
+.xbtn.annulb[hidden]{display:none}
 .sbody{padding:16px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
 .state{display:inline-block;padding:3px 8px;font-weight:700;font-size:.85rem;border:1px solid var(--bd);margin-right:4px}
 .folder{display:flex;align-items:stretch;border:1px solid var(--bd);background:var(--cell);color:var(--ink);--muted:var(--ink-3)}
@@ -824,6 +828,10 @@ details.more .field{margin-top:10px}
 .addrow .inline .tduein{flex:none;width:auto;max-width:11rem;border-right:0}
 .tdue-ed{flex:none;width:auto;max-width:10.5rem;padding:6px 6px;font-size:.9rem}
 .prio .mlist li{border-left:6px solid var(--pc,transparent)}
+.epl .mlist li{border-left:6px solid var(--pc,transparent);padding-left:0}
+.epl .mlist .mt{padding-left:12px}
+.epl .epm{flex:none;width:46px;align-self:stretch;border:0;border-left:1px solid var(--line);background:none;color:var(--ink);font-size:1.05rem;cursor:pointer}
+.epl .epm:disabled{color:var(--ink-3);opacity:.45;cursor:default}
 .pinfo .pdue,.pinfo .pplan{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.78rem;padding:2px 8px;border:1px solid var(--line);background:var(--cell);color:var(--ink);--muted:var(--ink-3)}
 .pinfo .pplan.off{color:var(--muted);border-style:dashed;background:transparent}
 .pinfo .ic{width:14px;height:14px}
@@ -914,6 +922,7 @@ body{background:var(--page);letter-spacing:.005em;-webkit-font-smoothing:antiali
 <script src="../commun/achats.js"></script>
 <script src="../commun/dossier.js"></script>
 <script src="../commun/pictos.js"></script>
+<script src="../commun/annuler.js"></script>
 <script>
 (function(){
 const MAXN=3, MAXS=2, MAXW=3, MAXT=5, URG=21, KEY='etabli-maquette-v4';
@@ -1139,7 +1148,8 @@ function vDomaines(){
   const card=d=>{ const ps=domProjects(d.id).filter(p=>!p.closed).sort((x,y)=>(Projets.etat(x,todayS)==='idee')-(Projets.etat(y,todayS)==='idee')||prioSort(x,y)), nt=openTasks(d).length;
     return `<div class="dcard" style="${pv(d)}"><button class="dhead" data-act="dom" data-id="${d.id}"><span class="emo">${d.emoji||'📁'}</span><b>${esc(d.name)}</b><span class="dn">${ps.length} projet${ps.length>1?'s':''}${nt?' · '+nt+' tâche'+(nt>1?'s':''):''}</span><span class="vgo">›</span></button>
     ${ps.length?`<div class="dps">${ps.map(p=>`<button class="dp${p.later?' idee':''}" style="${pv(p)}" data-act="open" data-id="${p.id}">${p.emoji} ${esc(p.name)}${isPerm(p)?' ∞':''}</button>`).join('')}</div>`:''}</div>`; };
-  $view.innerHTML=`${S.inbox.length?`<div class="alert" style="margin-top:14px"><div><b>Ancien vrac · ${S.inbox.length}</b> : la Bibliothèque les reprend (Vide-tête › Reprendre).</div><a class="btn" style="text-decoration:none" href="../bibliotheque/#vide">Ouvrir</a></div>`:''}<div class="dcards">${ds.map(card).join('')}${card(autresD())}</div>
+  const ep=epingles(), epl=ep.length?`<div class="field epl" style="margin-top:14px"><span class="lbl">Sur l’accueil · ${ep.length}</span><ul class="mlist">${ep.map((d,i)=>`<li style="${pv(d)}"><button class="mt" data-act="dom" data-id="${d.id}"><b>${d.emoji||'📁'} ${esc(d.name)}</b></button><button class="epm" data-act="epHaut" data-id="${d.id}" ${i?'':'disabled'} aria-label="Monter ${esc(d.name)}">↑</button><button class="epm" data-act="epBas" data-id="${d.id}" ${i<ep.length-1?'':'disabled'} aria-label="Descendre ${esc(d.name)}">↓</button></li>`).join('')}</ul><p class="note" style="margin:0">L’ordre des tuiles sur l’accueil. Pour en ajouter : « Épingler sur l’accueil » en bas d’un domaine.</p></div>`:'';
+  $view.innerHTML=`${epl}${S.inbox.length?`<div class="alert" style="margin-top:14px"><div><b>Ancien vrac · ${S.inbox.length}</b> : la Bibliothèque les reprend (Vide-tête › Reprendre).</div><a class="btn" style="text-decoration:none" href="../bibliotheque/#vide">Ouvrir</a></div>`:''}<div class="dcards">${ds.map(card).join('')}${card(autresD())}</div>
   <div class="dacts"><button class="btn ghost" data-act="newDom">+ Domaine</button><button class="btn ghost" data-act="prio">${pic('priorites')} Priorités</button>${FB?`<button class="btn ghost" data-act="atrier">${pic('entree')} À trier · ${fichiersDe(Dossier.A_TRIER).length}</button>`:''}</div>
   ${arch.length?`<details class="more"><summary>Domaines archivés · ${arch.length}</summary><div class="pchips" style="margin-top:8px">${arch.map(d=>`<button class="pchip dom closed" style="${pv(d)}" data-act="dom" data-id="${d.id}">${d.emoji} ${esc(d.name)}</button>`).join('')}</div></details>`:''}`;
 }
@@ -1647,7 +1657,12 @@ function histPush(kind){ try{ history.pushState({etabli:kind},''); }catch(e){} }
 function histDrop(n){ if(n>0){ skipPop++; try{ history.go(-n); }catch(e){ skipPop--; } } }
 function goView(v){ if(MINI){ if(v==='mini'&&histView){ histView=false; histDrop(1); } else if(v!=='mini'&&ui.view==='mini'&&!histView){ histView=true; histPush('view'); } } ui.view=v; if(v==='semaine') ui.wk=CUR; window.scrollTo(0,0); render(); }
 addEventListener('popstate',()=>{ if(skipPop>0){ skipPop--; return; } if(histNotes){ histNotes=false; notesBibFermer(true); return; } if(histSheet){ histSheet=false; closeSheet(true); return; } if(histView){ histView=false; ui.view='mini'; window.scrollTo(0,0); render(); } });
-function openSheet(html,key){ notesGarder(); if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; $sheet.classList.toggle('tall',/^d:/.test(key||'')); $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; notesPlacer(); }
+function openSheet(html,key){ notesGarder(); if($scrim.hidden&&!histSheet){ histSheet=true; histPush('sheet'); } const keep=!$scrim.hidden&&key&&key===sheetKey; const st=$sheet.scrollTop; const opened=keep?[...$sheet.querySelectorAll('details')].map(d=>d.open):null; $sheet.innerHTML=html; annulDansFiche(); $sheet.classList.toggle('tall',/^d:/.test(key||'')); $scrim.hidden=false; if(keep){ $sheet.querySelectorAll('details').forEach((d,i)=>{ if(opened[i]!=null) d.open=opened[i]; }); $sheet.scrollTop=st; } else $sheet.scrollTop=0; sheetKey=key||null; notesPlacer(); }
+/* le bouton ↶ de la fiche ouverte : visible tant qu'il y a un pas à annuler */
+function annulDansFiche(){ const h=$sheet.querySelector('.shead'); if(!h||!UNDO||h.querySelector('.annulb')) return; const x=h.querySelector('.xbtn'); const b=document.createElement('button'); b.type='button'; b.className='xbtn annulb'; b.dataset.annuler=''; b.setAttribute('aria-label','Annuler'); b.title='Annuler (Ctrl+Z)';
+  b.innerHTML='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 8l4 4M3 8h9a5 5 0 0 1 0 10H8"/></svg>'; b.hidden=!UNDO.n(); b.addEventListener('pointerdown',e=>e.preventDefault()); b.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('locus:annuler',{detail:{}})));
+  if(x) x.before(b); else h.appendChild(b); }
+document.addEventListener('locus:annulable',e=>{ const n=(e.detail&&e.detail.n)||0; document.querySelectorAll('#sheet .annulb').forEach(b=>{ b.hidden=!n; }); });
 function closeSheet(fromPop){
   /* une fiche projet ouverte depuis la vue d'un domaine ou les Priorités revient à cet écran (27.11) */
   const r=ui.retour; if(r&&sheetKey&&/^d:/.test(sheetKey)&&(r.k==='prio'||D(r.id))){ ui.retour=null; ui.edit=false; if(nbFrame){ nbFrame.remove(); nbFrame=null; } if(fromPop===true&&!histSheet){ histSheet=true; histPush('sheet'); } if(r.k==='prio') prioSheet(); else domainSheet(r.id); return; }
@@ -1666,7 +1681,12 @@ function parseTask(t){ const m=String(t).match(TASK_DUR); let mins=null; if(m){ 
 function fmtMins(m){ if(!m) return ''; if(m>=480&&m%480===0) return (m/480)+' j'; const h=Math.floor(m/60), r=Math.round(m%60); return h?(h+' h'+(r?' '+String(r).padStart(2,'0'):'')):r+' min'; }
 function taskText(t){ return esc(t).replace(/\((\d+(?:[.,]\d+)?)\s*(min|h|j)\)/ig,'<span class="tdur">$1 $2</span>').replace(/(^|\s)@admin\b/ig,'$1<span class="tadm">admin</span>'); }
 const nextOf=p=>{ const u=Projets.etapeUne(p); return u?u.t.replace(TASK_DUR,'').replace(/(^|\s)@admin\b/ig,' ').replace(/\s+/g,' ').trim():(p.next||''); };
-function sinkDone(p){ const nt=Projets.trierTaches(p.tasks); if(nt.length!==p.tasks.length||nt.some((x,i)=>x!==p.tasks[i])) p.tasks=nt; }
+/* Dans un domaine (27.11) : les tâches datées pas faites passent en tête, par date ; les autres gardent leur ordre.
+   Une branche (étape) compte par sa première échéance. Pas dans les projets : l'ordre des étapes y a un sens. */
+function datesEnTete(L){ const br=[]; let i=0; while(i<L.length){ const j=Projets.finBranche(L,i); br.push(L.slice(i,j)); i=j; }
+  const due=b=>b[0].d?null:(b.filter(x=>!x.d&&x.due).map(x=>x.due).sort()[0]||null);
+  const avec=br.filter(due).sort((a,b)=>due(a).localeCompare(due(b))), sans=br.filter(b=>!due(b)); return [].concat(...avec,...sans); }
+function sinkDone(p){ let nt=Projets.trierTaches(p.tasks); if(Projets.estDomaine(p)) nt=datesEnTete(nt); if(nt.length!==p.tasks.length||nt.some((x,i)=>x!==p.tasks[i])) p.tasks=nt; }
 /* Tâches en arbre (25.11) : étapes pliées, gardées sur cet appareil */
 const PLIS='etabli-plis'; let plis={}; try{ plis=JSON.parse(localStorage.getItem(PLIS)||'{}')||{}; }catch(e){}
 const pliK=(p,x)=>p.id+'|'+x.t, estPlie=(p,x)=>!!plis[pliK(p,x)];
@@ -1819,6 +1839,9 @@ function domainSheet(id,msg){
 }
 /* Priorités (27.11) : l'étape n°1 de chaque projet en cours, ou les échéances (tâches datées et projets) par date.
    Même calcul que la tuile de l'accueil (Projets.priorites). Adresse directe : etabli/#priorites. */
+/* Domaines épinglés sur l'accueil, dans l'ordre choisi (d.epO, 27.11 ; sans ordre : à la fin, par nom). Même tri que l'accueil (epingles). */
+function epingles(){ return S.domains.filter(d=>d.epingle&&!d.closed).sort((a,b)=>(a.epO||1e9)-(b.epO||1e9)||String(a.name).localeCompare(String(b.name),'fr')); }
+function epDeplacer(id,dir){ const L=epingles(), i=L.findIndex(d=>d.id===id), j=i+dir; if(i<0||j<0||j>=L.length) return; [L[i],L[j]]=[L[j],L[i]]; L.forEach((d,k)=>{ d.epO=k+1; }); save(); render(); }
 const PRIO_K='etabli-prio';
 function prioMode(){ if(!ui.prioMode){ try{ ui.prioMode=localStorage.getItem(PRIO_K)||'etapes'; }catch(e){ ui.prioMode='etapes'; } } return ui.prioMode==='echeances'?'echeances':'etapes'; }
 function prioSheet(){ sheetId=null; ctx=null; draft=null; placeMode=null;
@@ -2274,7 +2297,7 @@ function tagsSheet(confirmId){
    <p class="note" style="margin:0">Supprimer un tag le retire des projets, sans toucher aux projets eux-mêmes.</p></div>`,'tags');
 }
 function copy(text,el){const fb=()=>{try{const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast('Texte sélectionné, copie-le');}catch(e){}}; try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>toast('Copié'),fb); else fb(); }catch(e){fb();}}
-document.addEventListener('focusout',e=>{ const t=e.target; if(!t||!t.classList||!t.classList.contains('tedit')) return; const p=H(sheetId); if(!p) return; const i=Number(t.dataset.ti), v=t.value.trim(); if(!p.tasks[i]) return;
+document.addEventListener('focusout',e=>{ const t=e.target; if(!t||!t.classList||!t.classList.contains('tedit')) return; const p=H(sheetId); if(!p) return; const i=t._x?p.tasks.indexOf(t._x):Number(t.dataset.ti), v=t.value.trim(); if(i<0||!p.tasks[i]) return;
   if(v) p.tasks[i].t=v;
   else if(Projets.estEtape(p.tasks,i)){ const j=Projets.finBranche(p.tasks,i); for(let k=i+1;k<j;k++){ const m=Projets.niveau(p.tasks[k])-1; if(m>0) p.tasks[k].n=m; else delete p.tasks[k].n; } p.tasks.splice(i,1); sinkDone(p); toast(j>i+1?'Étape supprimée, ses tâches remontent d\'un cran':'Étape supprimée'); }
   else { p.tasks.splice(i,1); sinkDone(p); toast('Tâche supprimée'); }
@@ -2526,6 +2549,7 @@ document.addEventListener('click',e=>{
   else if(a==='domEdit'){ ui.domEdit=true; domainSheet(sheetId); }
   else if(a==='domEditOk'){ ui.domEdit=false; domainSheet(sheetId); }
   else if(a==='prio'){ ui.retour=null; prioSheet(); }
+  else if(a==='epHaut'||a==='epBas') epDeplacer(id,a==='epHaut'?-1:1);
   else if(a==='prioMode'){ ui.prioMode=el.dataset.v; try{ localStorage.setItem(PRIO_K,ui.prioMode); }catch(err){} prioSheet(); }
   else if(a==='tdueAdd'){ const f=el.closest('form'), i=f&&f.querySelector('.tduein'); if(!i) return; const on=i.hidden; i.hidden=!on; el.setAttribute('aria-pressed',String(on)); if(!on) i.value=''; else { try{ i.focus(); if(i.showPicker) i.showPicker(); }catch(err){} } }
   else if(a==='mkDossier'){ const p=P(sheetId); if(!p) return; p.dossier=Dossier.cheminProjet(p,domOf(p)); save(); toast('Locus/'+p.dossier+(fsEtat==='granted'?'':' · créé à la prochaine ouverture sur l\'ordinateur')); syncFichiers().then(fichiersChanges); detail(p.id); }
@@ -2631,8 +2655,8 @@ document.addEventListener('click',e=>{
   else if(a==='tsub'){ const p=H(sheetId), k=Number(el.dataset.i), x=p&&p.tasks[k]; if(!x) return; if(ui.subNew&&ui.subNew.pid===p.id&&ui.subNew.i===k){ ui.subNew=null; majTaches(p); return; } if(estPlie(p,x)) plier(p,x); ui.subNew={pid:p.id,i:k}; majTaches(p); const i=document.getElementById('f-sub'); if(i) try{ i.focus(); }catch(err){} }
   else if(a==='tsupNo'){ ui.tSup=null; refresh(sheetId); }
   else if(a==='tsupOk'){ const p=H(sheetId), i=Number(el.dataset.i); ui.tSup=null; if(!p||!p.tasks[i]){ refresh(sheetId); return; } const j=Projets.finBranche(p.tasks,i), t=p.tasks[i].t; p.tasks.splice(i,j-i); sinkDone(p); save(); refresh(sheetId); toast(j-i>1?'Étape supprimée avec ses tâches':'« '+t+' » supprimée'); }
-  else if(a==='tedit'){ const p=H(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp);
-    if(!Projets.estEtape(p.tasks,i)){ const dt=document.createElement('input'); dt.type='date'; dt.className='input tdue-ed'; dt.value=p.tasks[i].due||''; dt.dataset.ti=i; dt.setAttribute('aria-label','Échéance (en option)'); dt.title='Échéance (en option)'; inp.after(dt); }
+  else if(a==='tedit'){ const p=H(sheetId); if(!p||p.closed) return; const i=Number(el.dataset.i), inp=document.createElement('input'); inp.className='input tedit'; inp.autocomplete='off'; inp.setAttribute('autocorrect','off'); inp.value=p.tasks[i].t; inp.dataset.ti=i; inp._x=p.tasks[i]; inp.setAttribute('aria-label','Modifier la tâche'); el.replaceWith(inp);
+    if(!Projets.estEtape(p.tasks,i)){ const dt=document.createElement('input'); dt.type='date'; dt.className='input tdue-ed'; dt.value=p.tasks[i].due||''; dt.dataset.ti=i; dt._x=p.tasks[i]; dt.setAttribute('aria-label','Échéance (en option)'); dt.title='Échéance (en option)'; inp.after(dt); }
     try{ inp.focus(); const L=inp.value.length; inp.setSelectionRange(L,L); }catch(err){} }
   else if(a==='minis'){ if(MINI) petitesSheet(); else goView('taches'); }
   else if(a==='tFaites'){ ui.tFaites=!ui.tFaites; render(); }
@@ -2722,9 +2746,9 @@ document.addEventListener('change',e=>{
   if(t.dataset.freecol==='color'){ const p=P(sheetId); if(p){ p.color=t.value.toUpperCase(); save(); detail(sheetId); } return; }
   if(t.dataset.freecol==='ncolor'){ if(draft){ syncDraft(); draft.color=t.value.toUpperCase(); newSheet(true); } return; }
   if(t.dataset.freecol){ const c=t.value.toUpperCase(); if(t.dataset.freecol==='domColor'){ const d=D(sheetId); if(d){ d.color=c; save(); domainSheet(sheetId); } } else if(ui.ndom){ const i=document.getElementById('f-ndom'); if(i) ui.ndom.name=i.value; ui.ndom.color=c; newDomSheet(); } return; }
-  if(t.dataset.act==='domPin'){ const d=D(sheetId); if(!d) return; if(t.checked) d.epingle=true; else delete d.epingle; save(); toast(t.checked?'Épinglé sur l’accueil':'Retiré de l’accueil'); return; }
+  if(t.dataset.act==='domPin'){ const d=D(sheetId); if(!d) return; if(t.checked){ d.epingle=true; d.epO=epingles().filter(x=>x!==d).reduce((m,x)=>Math.max(m,x.epO||0),0)+1; } else { delete d.epingle; delete d.epO; } save(); toast(t.checked?'Épinglé sur l’accueil':'Retiré de l’accueil'); return; }
   if(t.dataset.act==='prioChk'){ const h=H(t.dataset.id), i=Number(t.dataset.i); if(h&&h.tasks[i]){ Projets.cocher(h.tasks,i,t.checked); sinkDone(h); if(P(h.id)) h.touche=todayS; save(); setTimeout(()=>{ if(sheetKey==='prio') prioSheet(); },250); } return; }
-  if(t.classList&&t.classList.contains('tdue-ed')){ const p=H(sheetId), i=Number(t.dataset.ti); if(p&&p.tasks[i]){ if(t.value) p.tasks[i].due=t.value; else delete p.tasks[i].due; save(); toast(t.value?'Échéance : '+fmt(t.value):'Sans échéance'); } return; }
+  if(t.classList&&t.classList.contains('tdue-ed')){ const p=H(sheetId), i=p&&t._x?p.tasks.indexOf(t._x):Number(t.dataset.ti); if(p&&i>=0&&p.tasks[i]){ if(t.value) p.tasks[i].due=t.value; else delete p.tasks[i].due; sinkDone(p); save(); toast(t.value?'Échéance : '+fmt(t.value):'Sans échéance'); } return; }
   if(t.dataset.act==='task'){const p=H(sheetId); Projets.cocher(p.tasks,Number(t.dataset.i),t.checked); sinkDone(p); save(); setTimeout(()=>refresh(sheetId),180); return;}
   if(t.dataset.act==='ptask'){const h=H(t.dataset.d), x=h&&h.tasks[Number(t.dataset.i)]; if(x){ Projets.cocher(h.tasks,Number(t.dataset.i),t.checked); sinkDone(h); save(); setTimeout(()=>{ if(enTaches()) render(); else petitesSheet(); },250); } return;}
   if(t.dataset.durother){ const v=parseFloat(String(t.value).replace(',','.')); if(!(v>0)) return; if(t.dataset.durother==='ndur'){ const was=draft.size; syncDraft(); nPreview(); if(draft.size!==was) setTimeout(()=>{ if(draft&&sheetKey==='new') newSheet(true); },180); } else { const p=P(sheetId); applyDur(p,v); save(); detail(sheetId); } return; }
@@ -2861,9 +2885,21 @@ function markSeen(){ seen={}; S.projects.forEach(p=>{ seen[p.id]=canonP(p); }); 
 function save(){ if(!UID) return; recolor(); try{ gardeSuivre(); }catch(e){}
   S.projects.forEach(p=>{ const c=canonP(p); if(!quiet){ if(seen[p.id]==null){ if(!p.touche) p.touche=todayS; } else if(seen[p.id]!==c) p.touche=todayS; } seen[p.id]=canonP(p); });
   const cur=rowsOf(S); let ch=false;
-  for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ prev[k]=v; dirty.add(k); ch=true; } }
-  for(const k in prev){ if(!(k in cur)){ delete prev[k]; dirty.add(k); ch=true; } }
+  for(const k in cur){ const v=canon(cur[k]); if(prev[k]!==v){ if(!quiet) noterAnnul(k,k in prev?prev[k]:null); prev[k]=v; dirty.add(k); ch=true; } }
+  for(const k in prev){ if(!(k in cur)){ if(!quiet) noterAnnul(k,prev[k]); delete prev[k]; dirty.add(k); ch=true; } }
   if(ch){ persist(); schedulePush(); setSync(); } }
+/* Annuler / refaire (27.11, commun/annuler.js) : projets et domaines (lignes p: et d: de rows), tout ce que save() écrit.
+   Pas suivis : les créneaux du planning (h: de biblio_rows), les achats (Marché), les dépenses (Banque), les fichiers.
+   Rien n'est noté avant la fin de l'ouverture, ni pendant une synchro ou une reprise (pull, migrate…). */
+let UNDO=null, annulPret=false;
+function noterAnnul(k,avant){ if(UNDO&&annulPret) UNDO.noter(k,avant); }
+function nomLigne(v){ try{ const d=JSON.parse(v); return d&&d.name?((d.emoji?d.emoji+' ':'')+d.name):''; }catch(e){ return ''; } }
+function annulRemettre(av,refaire){ let nom='';
+  av.forEach((v,k)=>{ if(!nom) nom=nomLigne(v!=null?v:prev[k]); if(v==null) delete prev[k]; else prev[k]=v; dirty.add(k); });
+  S=fromRows(prev); markSeen(); ui.tSup=null; ui.subNew=null; persist(); setSync(); schedulePush(); render();
+  if(!$scrim.hidden){ if(sheetKey==='prio') prioSheet(); else if(sheetKey&&/^(d|dom):/.test(sheetKey)){ if(H(sheetId)) refresh(sheetId); else { ui.retour=null; closeSheet(); } } }
+  toast((refaire?'Refait':'Annulé')+(nom?' · '+nom:'')); }
+if(window.LocusAnnuler) UNDO=LocusAnnuler.creer({ filtre:k=>/^[pd]:/.test(k), lire:k=>k in prev?prev[k]:null, remettre:annulRemettre, message:m=>toast(m) });
 function schedulePush(d){ clearTimeout(pushTimer); pushTimer=setTimeout(push,d==null?1200:d); }
 async function push(){
   if(!sb||!UID||pushing||!dirty.size){ setSync(); return; }
@@ -2896,7 +2932,7 @@ async function pull(full){
       if(data.length<1000) break; from+=1000;
     }
     lastPull=maxTs; persist();
-    if(changed){ S=fromRows(prev); markSeen(); migratePetites(); migrateLater(); migrateArbre(); render(); majVueOuverte(); }
+    if(changed){ const a0=annulPret; annulPret=false; try{ S=fromRows(prev); markSeen(); migratePetites(); migrateLater(); migrateArbre(); } finally { annulPret=a0; } render(); majVueOuverte(); }
     lastOk=Date.now(); syncErr=''; setSync(); return true;
   }catch(e){ syncErr=(e&&e.message)||String(e); setSync(); return false; }
 }
@@ -2933,7 +2969,7 @@ async function enter(user){
   if(migratePetites()|migrateLater()|migrateArbre()) render();
   if(recolor()){ quiet=true; save(); quiet=false; render(); }
   if(ok&&!c&&!Object.keys(prev).length){ S.reprise={le:todayS}; S.domaines={le:todayS}; save(); render(); } /* nouveau compte : domaines et projets dès le départ */
-  push(); envoyerVide();
+  push(); envoyerVide(); annulPret=true;
   try{ if(/[?&]dans=accueil/.test(location.search)&&window.parent!==window) parent.postMessage({locus:1,etat:'charge'},location.origin); }catch(e){} /* prête pour les fenêtres rapides de l'accueil */
 }
 async function startApp(){
