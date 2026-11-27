@@ -1001,7 +1001,8 @@ $main.addEventListener('click',e=>{ const t=e.target.closest('.apps>.carre,.apps
   const a=t.querySelector('a.c-tete,:scope>a'); if(a){ e.preventDefault(); a.click(); } });
 $main.addEventListener('click',e=>{ if(e.target.closest('section#b-obj')){ ouvrirObjectifs(); return; } const b=e.target.closest('button'); if(!b) return;
   if(b.id==='b-routine'){ ouvrirRoutine(); return; }
-  if(b.id==='b-semaine'){ ouvrirSemaine(); return; }
+  /* le numéro de semaine ouvre le Calendrier (27.11, calendrier/ et commun/calendrier.js) ; l'ancienne vue (ouvrirSemaine) reste pour la routine */
+  if(b.id==='b-semaine'){ ouvrirDans('calendrier','plein=1&sem='+CUR()); return; }
   if(b.dataset.styleInit&&window.LocusProfil){ PROFIL=LocusProfil.nouveauStyle(null,b.dataset.styleInit); LocusProfil.enregistrer(sb,UID,PROFIL).then(()=>PB&&PB.tirer().then(lu=>domainesNeutre(lu))); render(); toast(b.dataset.styleInit==='neutre'?'Style Neutre : tout se règle dans Réglages › Mon Locus':'Style Village'); return; }
   if(b.id==='b-obj'){ ouvrirObjectifs(); return; }
   if(b.dataset.prio){ try{ localStorage.setItem(PRIO_K,b.dataset.prio); }catch(e){} render(); return; }
@@ -1025,7 +1026,7 @@ function ouvrirDans(app,params,hash){
   if($dans) return;
   $fond=document.createElement('div'); $fond.className='dans-fond'; $fond.innerHTML='<span class="att" aria-label="Ouverture…"></span>'; document.body.appendChild($fond);
   $x=document.createElement('button'); $x.type='button'; $x.className='dans-x'; $x.setAttribute('aria-label','Revenir à l’accueil'); $x.innerHTML=P('supprimer'); $x.addEventListener('click',fermerDans); document.body.appendChild($x);
-  if(app==='forge') $x.hidden=true;
+  if(app==='forge'||app==='calendrier') $x.hidden=true; /* ces deux-là disent eux-mêmes quand fermer (le calendrier : son bouton retour) */
   document.body.style.overflow='hidden';
   if(CHAUDES.includes(app)&&!/plein=1/.test(params||'')){ const c=chauffer(app), ordre={locus:'ouvrir',p:Object.fromEntries(new URLSearchParams(params||'')),hash:hash||''}; $dans=c.f; $dans.classList.add('actif');
     if(c.charge) c.f.contentWindow.postMessage(ordre,location.origin); else c.ordre=ordre; }
